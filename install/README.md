@@ -585,7 +585,8 @@ install/
 ├── 05-multi-site-sync.md           # Cross-site synchronization
 ├── 06-ot-network-config.md         # OT network and protocol setup
 ├── 07-security-hardening.md        # Security hardening procedures
-└── 08-validation-testing.md        # Testing and go-live checklist
+├── 08-validation-testing.md        # Testing and go-live checklist
+└── 09-architecture-diagrams.md     # Detailed diagrams, services, and ports
 ```
 
 ### Document Purpose
@@ -603,6 +604,7 @@ install/
 | **06-ot-network-config.md** | OT protocol setup | Phase 5 of deployment |
 | **07-security-hardening.md** | Security configuration | Phase 6 of deployment |
 | **08-validation-testing.md** | Testing procedures | Phase 6, before go-live |
+| **09-architecture-diagrams.md** | Visual diagrams, services, ports | Reference during all phases |
 
 ---
 
