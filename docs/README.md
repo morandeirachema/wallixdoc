@@ -125,9 +125,18 @@ This documentation provides an in-depth exploration of WALLIX Privileged Access 
 ## WALLIX Version Coverage
 
 This documentation covers:
-- **WALLIX Bastion**: Version 9.x / 10.x
-- **WALLIX Access Manager**: Version 4.x
-- **WALLIX PEDM**: Version 2.x
+- **WALLIX Bastion**: Version 12.x (12.0, 12.1.x)
+- **WALLIX Access Manager**: Version 5.x
+- **WALLIX PEDM**: Version 3.x
+
+### What's New in WALLIX Bastion 12.x
+- **OpenID Connect (OIDC)** authentication support
+- **Single Sign-On (SSO)** without repeated credentials
+- **RDP resolution enforcement** via connection policy
+- **Whole disk encryption** (LUKS) automatic configuration
+- **Debian 12 (Bookworm)** base operating system
+- **High security level** as default with Argon2ID key derivation
+- **New upgrade procedure** for major and minor versions
 
 ---
 
@@ -151,7 +160,7 @@ This is a living document. Contributions and corrections are welcome.
 
 ---
 
-**Document Version**: 2.0
+**Document Version**: 3.0 (WALLIX Bastion 12.x)
 **Last Updated**: January 2026
 **Author**: PAM Professional Guide Series
 **Total Sections**: 29 (Core: 14, Industrial/OT: 9, Enterprise: 6)

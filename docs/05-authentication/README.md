@@ -9,8 +9,9 @@
 5. [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
 6. [Kerberos & SSO](#kerberos--sso)
 7. [SAML Federation](#saml-federation)
-8. [Certificate-Based Authentication](#certificate-based-authentication)
-9. [Authentication Chaining](#authentication-chaining)
+8. [OpenID Connect (OIDC)](#openid-connect-oidc) *(New in 12.x)*
+9. [Certificate-Based Authentication](#certificate-based-authentication)
+10. [Authentication Chaining](#authentication-chaining)
 
 ---
 
@@ -33,10 +34,10 @@ WALLIX Bastion supports multiple authentication layers:
 |   +---------------------------------------------------------------------+  |
 |   |                    PRIMARY AUTHENTICATION                            |  |
 |   |                                                                      |  |
-|   |  +---------+  +---------+  +---------+  +---------+  +---------+  |  |
-|   |  |  Local  |  |  LDAP/  |  | RADIUS  |  |Kerberos |  |  SAML   |  |  |
-|   |  |         |  |   AD    |  |         |  |         |  |         |  |  |
-|   |  +---------+  +---------+  +---------+  +---------+  +---------+  |  |
+|   |  +-------+ +-------+ +-------+ +-------+ +-------+ +-------+   |  |
+|   |  | Local | | LDAP/ | |RADIUS | |Kerber.| | SAML  | | OIDC  |   |  |
+|   |  |       | |  AD   | |       | |       | |       | | (12.x)|   |  |
+|   |  +-------+ +-------+ +-------+ +-------+ +-------+ +-------+   |  |
 |   |                                                                      |  |
 |   +---------------------------------------------------------------------+  |
 |     |                                                                        |
@@ -614,6 +615,95 @@ SAML 2.0 enables federation with identity providers (IdP) for SSO.
 | ADFS | Full support |
 | Google Workspace | Full support |
 | WALLIX Trustelem | Native integration |
+
+---
+
+## OpenID Connect (OIDC)
+
+*New in WALLIX Bastion 12.x*
+
+### Overview
+
+OpenID Connect (OIDC) provides seamless authentication with identity providers supporting the standard. This integration enhances security and simplifies user access management through Single Sign-On (SSO).
+
+### Key Features
+
+- **Single Sign-On (SSO)**: Users can access Bastion without repeatedly entering credentials
+- **Standard Compliance**: Full OpenID Connect 1.0 specification support
+- **Multiple IdP Support**: Azure AD, Okta, Google, Keycloak, and others
+- **Token-Based**: Secure JWT token authentication
+
+### Configuration
+
+```json
+{
+  "oidc": {
+    "enabled": true,
+    "provider_url": "https://login.microsoftonline.com/{tenant-id}/v2.0",
+    "client_id": "your-client-id",
+    "client_secret": "<CLIENT_SECRET>",
+    "scopes": ["openid", "profile", "email"],
+    "redirect_uri": "https://bastion.company.com/auth/oidc/callback",
+    "claims_mapping": {
+      "username": "preferred_username",
+      "email": "email",
+      "groups": "groups"
+    },
+    "auto_create_users": false,
+    "default_profile": "user"
+  }
+}
+```
+
+### Provider Examples
+
+**Azure AD Configuration:**
+```json
+{
+  "oidc": {
+    "enabled": true,
+    "provider_url": "https://login.microsoftonline.com/{tenant-id}/v2.0",
+    "client_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "client_secret": "<CLIENT_SECRET>",
+    "scopes": ["openid", "profile", "email", "User.Read"]
+  }
+}
+```
+
+**Okta Configuration:**
+```json
+{
+  "oidc": {
+    "enabled": true,
+    "provider_url": "https://your-domain.okta.com",
+    "client_id": "your-okta-client-id",
+    "client_secret": "<CLIENT_SECRET>",
+    "scopes": ["openid", "profile", "email", "groups"]
+  }
+}
+```
+
+**Keycloak Configuration:**
+```json
+{
+  "oidc": {
+    "enabled": true,
+    "provider_url": "https://keycloak.company.com/realms/your-realm",
+    "client_id": "wallix-bastion",
+    "client_secret": "<CLIENT_SECRET>",
+    "scopes": ["openid", "profile", "email"]
+  }
+}
+```
+
+### Troubleshooting OIDC
+
+| Issue | Solution |
+|-------|----------|
+| Token validation fails | Verify provider_url matches IdP configuration |
+| User not found | Enable auto_create_users or pre-create users |
+| Groups not mapped | Check claims_mapping configuration |
+| Redirect fails | Verify redirect_uri matches IdP allowed callbacks |
 
 ---
 

@@ -690,7 +690,7 @@
 
   # Create Cloud SQL instance
   gcloud sql instances create wallix-db \
-    --database-version=POSTGRES_14 \
+    --database-version=POSTGRES_15 \
     --tier=db-custom-2-8192 \
     --region=us-central1 \
     --availability-type=REGIONAL \
@@ -840,7 +840,7 @@ resource "google_compute_instance" "wallix_primary" {
 # Cloud SQL PostgreSQL
 resource "google_sql_database_instance" "wallix_db" {
   name             = "wallix-db"
-  database_version = "POSTGRES_14"
+  database_version = "POSTGRES_15"
   region           = var.region
 
   settings {

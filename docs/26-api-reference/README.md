@@ -1239,7 +1239,7 @@
   {
     "status": "success",
     "data": {
-      "version": "10.0.1",
+      "version": "12.1.1",
       "uptime_seconds": 864000,
       "status": "healthy",
       "components": {

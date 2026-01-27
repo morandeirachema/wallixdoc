@@ -98,10 +98,10 @@
   +------------------------------------------------------------------------+
   | Image                          | Description                           |
   +--------------------------------+---------------------------------------+
-  | wallix/bastion:latest          | Latest stable release                 |
-  | wallix/bastion:10.0            | Version 10.0.x                        |
-  | wallix/bastion:9.2             | Version 9.2.x                         |
-  | wallix/bastion:10.0.1-alpine   | Alpine-based (smaller)                |
+  | wallix/bastion:latest          | Latest stable release (12.x)          |
+  | wallix/bastion:12.1            | Version 12.1.x                        |
+  | wallix/bastion:12.0            | Version 12.0.x                        |
+  | wallix/bastion:12.1.1-alpine   | Alpine-based (smaller)                |
   +--------------------------------+---------------------------------------+
 
   IMAGE DETAILS
@@ -110,7 +110,7 @@
   +------------------------------------------------------------------------+
   | Property              | Value                                          |
   +-----------------------+------------------------------------------------+
-  | Base Image            | Debian 11 (Bullseye) or Alpine                 |
+  | Base Image            | Debian 12 (Bookworm) or Alpine                 |
   | Exposed Ports         | 22, 443, 3389, 5900                            |
   | Default User          | wab                                            |
   | Config Directory      | /etc/opt/wab/                                  |
@@ -151,7 +151,7 @@
 
   services:
     wallix-bastion:
-      image: wallix/bastion:10.0
+      image: wallix/bastion:12.1
       container_name: wallix-bastion
       hostname: wallix-bastion
       restart: unless-stopped
@@ -186,7 +186,7 @@
         retries: 3
 
     wallix-db:
-      image: postgres:14-alpine
+      image: postgres:15-alpine
       container_name: wallix-db
       restart: unless-stopped
       volumes:
@@ -269,7 +269,7 @@
     -e POSTGRES_USER=wallix \
     -e POSTGRES_PASSWORD=SecurePassword \
     -v wallix-db:/var/lib/postgresql/data \
-    postgres:14-alpine
+    postgres:15-alpine
 
   # Start WALLIX Bastion
   docker run -d \
@@ -287,7 +287,7 @@
     -v wallix-config:/etc/opt/wab \
     -v wallix-data:/var/wab \
     -v wallix-recordings:/var/wab/recorded \
-    wallix/bastion:10.0
+    wallix/bastion:12.1
 
   --------------------------------------------------------------------------
 
@@ -311,7 +311,7 @@
     --mount type=bind,source=/path/to/secrets,target=/run/secrets,readonly \
     --memory=8g \
     --cpus=4 \
-    wallix/bastion:10.0
+    wallix/bastion:12.1
 
 +==============================================================================+
 ```
@@ -480,7 +480,7 @@
       spec:
         containers:
         - name: wallix-bastion
-          image: wallix/bastion:10.0
+          image: wallix/bastion:12.1
           ports:
           - containerPort: 443
             name: https
@@ -622,7 +622,7 @@
       spec:
         containers:
         - name: postgres
-          image: postgres:14-alpine
+          image: postgres:15-alpine
           ports:
           - containerPort: 5432
           env:
@@ -737,7 +737,7 @@
 
   # Rolling update
   kubectl set image deployment/wallix-bastion \
-    wallix-bastion=wallix/bastion:10.1 -n wallix
+    wallix-bastion=wallix/bastion:12.1 -n wallix
 
   # Check rollout status
   kubectl rollout status deployment/wallix-bastion -n wallix
@@ -794,7 +794,7 @@
   # Image configuration
   image:
     repository: wallix/bastion
-    tag: "10.0"
+    tag: "12.1"
     pullPolicy: IfNotPresent
 
   # Replica count
@@ -1084,7 +1084,7 @@
   +---------------------------------+--------------------------------------+
   | Use official images             | wallix/bastion from trusted registry |
   | Scan for vulnerabilities        | Trivy, Clair, or cloud-native scans  |
-  | Use specific tags               | :10.0.1 not :latest                  |
+  | Use specific tags               | :12.1.1 not :latest                  |
   | Verify image signatures         | cosign, Notary                       |
   | Use read-only root filesystem   | Where possible                       |
   +---------------------------------+--------------------------------------+

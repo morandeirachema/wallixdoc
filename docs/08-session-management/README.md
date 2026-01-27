@@ -440,7 +440,7 @@
 |  SAMPLE CEF OUTPUT                                                            |
 |  =================                                                            |
 |                                                                               |
-|  CEF:0|WALLIX|Bastion|9.0|100|Session Started|5|                             |
+|  CEF:0|WALLIX|Bastion|12.1|100|Session Started|5|                             |
 |  src=10.0.1.50 suser=jsmith dhost=srv-prod-01                                |
 |  duser=root proto=SSH sessionId=SES-2024-001-ABC123                          |
 |  rt=Jan 15 2024 09:30:15                                                     |

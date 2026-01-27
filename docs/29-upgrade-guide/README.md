@@ -27,11 +27,10 @@
   +------------------------------------------------------------------------+
   | From Version    | To Version      | Direct Upgrade | Notes             |
   +-----------------+-----------------+----------------+-------------------+
-  | 9.0.x           | 9.1.x           | Yes            | Minor upgrade     |
-  | 9.1.x           | 9.2.x           | Yes            | Minor upgrade     |
-  | 9.2.x           | 10.0.x          | Yes            | Major upgrade     |
   | 10.0.x          | 10.1.x          | Yes            | Minor upgrade     |
-  | 8.x             | 10.x            | No             | Upgrade to 9.x    |
+  | 10.1.x          | 12.0.x          | Yes            | Major upgrade     |
+  | 12.0.x          | 12.1.x          | Yes            | Minor upgrade     |
+  | 9.x             | 12.x            | No             | Upgrade to 10.x   |
   |                 |                 |                | first             |
   +-----------------+-----------------+----------------+-------------------+
 
@@ -40,12 +39,13 @@
 
   +------------------------------------------------------------------------+
   |                                                                        |
-  |   8.0 --> 8.1 --> 8.2 --> 9.0 --> 9.1 --> 9.2 --> 10.0 --> 10.1       |
-  |                          |                       |                     |
-  |                          +--- MAJOR UPGRADE -----+                     |
+  |   9.x --> 10.0 --> 10.1 --> 12.0 --> 12.1                             |
+  |                    |                |                                  |
+  |                    +- MAJOR UPGRADE-+                                  |
   |                                                                        |
   |   * Minor upgrades (x.Y): Generally safe, minimal changes              |
   |   * Major upgrades (X.0): Review release notes carefully               |
+  |   * NOTE: Version 11.x was skipped (10.x -> 12.x)                      |
   |                                                                        |
   +------------------------------------------------------------------------+
 
@@ -58,13 +58,13 @@
   | Type            | Risk    | Downtime | When to Use                     |
   +-----------------+---------+----------+---------------------------------+
   | Patch Update    | Low     | Minutes  | Security fixes, bug fixes       |
-  | (9.0.1->9.0.2)  |         |          | within same minor version       |
+  | (12.0.1->12.0.2)|         |          | within same minor version       |
   +-----------------+---------+----------+---------------------------------+
   | Minor Upgrade   | Medium  | 15-30min | New features, improvements      |
-  | (9.1->9.2)      |         |          | within same major version       |
+  | (12.0->12.1)    |         |          | within same major version       |
   +-----------------+---------+----------+---------------------------------+
   | Major Upgrade   | Higher  | 30-60min | Significant changes, new        |
-  | (9.x->10.x)     |         |          | architecture, breaking changes  |
+  | (10.x->12.x)    |         |          | architecture, breaking changes  |
   +-----------------+---------+----------+---------------------------------+
 
   --------------------------------------------------------------------------
@@ -227,54 +227,81 @@
 
 ## Version-Specific Upgrades
 
-### Version 9.x to 10.x Upgrade
+### Version 10.x to 12.x Upgrade
 
 ```
 +==============================================================================+
-|                   VERSION 9.x TO 10.x UPGRADE                                |
+|                   VERSION 10.x TO 12.x UPGRADE                               |
 +==============================================================================+
 
-  BREAKING CHANGES IN 10.x
+  BREAKING CHANGES IN 12.x
   ========================
 
   +------------------------------------------------------------------------+
   | Change                        | Impact                    | Action     |
   +-------------------------------+---------------------------+------------+
-  | API v1 deprecated             | Old integrations may fail | Update API |
-  |                               |                           | calls to v2|
+  | Debian 12 base OS             | OS upgrade required       | Plan full  |
+  |                               |                           | reinstall  |
   +-------------------------------+---------------------------+------------+
-  | New authentication flow       | MFA configuration changes | Review MFA |
-  |                               |                           | settings   |
+  | API v3.11 removed             | Old integrations fail     | Update to  |
+  |                               |                           | latest API |
   +-------------------------------+---------------------------+------------+
-  | Database schema changes       | Longer migration time     | Plan for   |
-  |                               |                           | 30+ min    |
+  | /api/apikeys deprecated       | API key management change | Use        |
+  |                               |                           | /apikeys-v2|
   +-------------------------------+---------------------------+------------+
-  | Recording format update       | Old player may not work   | Use new    |
-  |                               |                           | player     |
+  | Legacy license keys removed   | Old licenses invalid      | Get new    |
+  |                               |                           | license    |
   +-------------------------------+---------------------------+------------+
-  | Configuration file changes    | Manual config may need    | Review     |
-  |                               | updates                   | config     |
+  | HA DRBD scripts removed       | Manual HA config needed   | Review HA  |
+  |                               |                           | setup      |
+  +-------------------------------+---------------------------+------------+
+  | Security level "high" default | Stricter crypto settings  | Review SSH |
+  |                               |                           | ciphers    |
+  +-------------------------------+---------------------------+------------+
+  | RDP-JUMPHOST policy removed   | Jumphost config changes   | Update RDP |
+  |                               |                           | policies   |
+  +-------------------------------+---------------------------+------------+
+  | Legacy UI pages removed       | User Groups, API Keys,    | Use new UI |
+  |                               | My Authorizations pages   |            |
   +-------------------------------+---------------------------+------------+
 
   --------------------------------------------------------------------------
 
-  SPECIFIC STEPS FOR 9.x to 10.x
-  ==============================
+  NEW FEATURES IN 12.x
+  ====================
+
+  * OpenID Connect (OIDC) authentication support
+  * Single Sign-On (SSO) integration
+  * RDP session resolution enforcement
+  * Whole disk encryption (LUKS) - auto-configured on install
+  * Kerberos password reconciliation for Windows plugins
+  * Network discovery with latency measurement
+  * Enhanced HA database replication synchronization
+  * Argon2ID as default key derivation function
+  * 4GB quota on /home partition by default
+
+  --------------------------------------------------------------------------
+
+  SPECIFIC STEPS FOR 10.x to 12.x
+  ===============================
 
   PRE-UPGRADE:
 
-  1. Verify PostgreSQL version is 14+
+  1. Verify PostgreSQL version is 15+
      psql --version
-     # If < 14, upgrade PostgreSQL first
+     # If < 15, upgrade PostgreSQL first
 
   2. Check for deprecated features in use
      wab-admin deprecation-check
 
   3. Export API integrations configuration
-     # Review all scripts using API v1
+     # Review all scripts using deprecated API endpoints
 
   4. Backup custom scripts/plugins
      cp -r /etc/opt/wab/scripts /backup/
+
+  5. Verify SMTP server has valid certificate
+     # SMTP certificate validation is now mandatory
 
   UPGRADE EXECUTION:
 
@@ -282,10 +309,10 @@
      systemctl stop wabengine
 
   2. Run database pre-migration check
-     wab-admin db-premigrate --version 10.0
+     wab-admin db-premigrate --version 12.0
 
   3. Apply upgrade package
-     wab-admin upgrade --package wallix-10.0.0.wab
+     wab-admin upgrade --package wallix-12.0.0.wab
 
   4. Run database migration
      wab-admin db-migrate
@@ -299,8 +326,12 @@
   1. Verify new features enabled
      wab-admin feature-check
 
-  2. Test API v2 integrations
+  2. Test API integrations
      curl -X GET "https://wallix/api/v2/status" -H "Authorization: Bearer ..."
+
+  3. Review SSH cipher configuration (now defaults to high security)
+     # Allowed ciphers: aes256-gcm@openssh.com, aes128-gcm@openssh.com,
+     # aes256-ctr, aes192-ctr, aes128-ctr
 
   3. Verify recording playback with new player
 
@@ -314,7 +345,7 @@
 |                   MINOR VERSION UPGRADES                                     |
 +==============================================================================+
 
-  MINOR UPGRADE PROCEDURE (e.g., 10.0 to 10.1)
+  MINOR UPGRADE PROCEDURE (e.g., 12.0 to 12.1)
   ============================================
 
   Minor upgrades are generally straightforward with minimal breaking changes.
@@ -322,14 +353,14 @@
   QUICK UPGRADE STEPS:
 
   1. Create backup
-     wab-admin backup --full --output /backup/pre-10.1-upgrade.tar.gz
+     wab-admin backup --full --output /backup/pre-12.1-upgrade.tar.gz
 
   2. Download and verify package
-     sha256sum wallix-10.1.0.wab
+     sha256sum wallix-12.1.0.wab
      # Compare with published checksum
 
   3. Apply upgrade
-     wab-admin upgrade --package wallix-10.1.0.wab
+     wab-admin upgrade --package wallix-12.1.0.wab
 
   4. Restart services (automatic in most cases)
      systemctl restart wabengine
@@ -342,7 +373,7 @@
 
   --------------------------------------------------------------------------
 
-  PATCH UPDATES (e.g., 10.0.1 to 10.0.2)
+  PATCH UPDATES (e.g., 12.0.1 to 12.0.2)
   ======================================
 
   Patch updates contain bug fixes and security updates.
@@ -353,7 +384,7 @@
      wab-admin export-config --output /backup/config-pre-patch.xml
 
   2. Apply patch
-     wab-admin patch --package wallix-10.0.2-patch.wab
+     wab-admin patch --package wallix-12.0.2-patch.wab
 
   3. Verify
      wab-admin version
@@ -403,10 +434,10 @@
   3. Transfer upgrade package
      +--------------------------------------------------------------------+
      | # Verify package on server                                         |
-     | ls -la /tmp/wallix-10.0.0.wab                                      |
+     | ls -la /tmp/wallix-12.0.0.wab                                      |
      |                                                                    |
      | # Verify checksum                                                  |
-     | sha256sum /tmp/wallix-10.0.0.wab                                   |
+     | sha256sum /tmp/wallix-12.0.0.wab                                   |
      | # Compare with official checksum from WALLIX                       |
      +--------------------------------------------------------------------+
 
@@ -445,7 +476,7 @@
   6. Apply upgrade package
      +--------------------------------------------------------------------+
      | # Run upgrade                                                      |
-     | wab-admin upgrade --package /tmp/wallix-10.0.0.wab                  |
+     | wab-admin upgrade --package /tmp/wallix-12.0.0.wab                  |
      |                                                                    |
      | # Monitor output for errors                                        |
      | # Typical output:                                                  |
@@ -624,7 +655,7 @@
 
   4. On STANDBY node - Apply upgrade
      +--------------------------------------------------------------------+
-     | wab-admin upgrade --package /tmp/wallix-10.0.0.wab                  |
+     | wab-admin upgrade --package /tmp/wallix-12.0.0.wab                  |
      +--------------------------------------------------------------------+
 
   5. On STANDBY node - Start services
@@ -683,7 +714,7 @@
      | systemctl stop wabengine                                           |
      |                                                                    |
      | # Apply upgrade                                                    |
-     | wab-admin upgrade --package /tmp/wallix-10.0.0.wab                  |
+     | wab-admin upgrade --package /tmp/wallix-12.0.0.wab                  |
      |                                                                    |
      | # Start services                                                   |
      | systemctl start wabengine                                          |
@@ -900,7 +931,7 @@
   | wab-admin restore --full --file /backup/upgrade-20240127.tar.gz        |
   |                                                                        |
   | # Or reinstall previous version package                                |
-  | wab-admin upgrade --package /backup/wallix-9.2.0.wab --force           |
+  | wab-admin upgrade --package /backup/wallix-10.1.0.wab --force          |
   +------------------------------------------------------------------------+
 
   STEP 5: START SERVICES

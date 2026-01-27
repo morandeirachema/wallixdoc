@@ -157,10 +157,10 @@
   +------------------------------------------------------------------------+
   | OS                 | Version              | Notes                       |
   +--------------------+----------------------+-----------------------------+
-  | Debian             | 11 (Bullseye)        | Primary platform            |
-  | Debian             | 12 (Bookworm)        | Supported                   |
-  | Ubuntu Server      | 20.04 LTS            | With WALLIX repo            |
+  | Debian             | 12 (Bookworm)        | Primary platform (12.x)     |
+  | Debian             | 11 (Bullseye)        | Legacy support              |
   | Ubuntu Server      | 22.04 LTS            | With WALLIX repo            |
+  | Ubuntu Server      | 24.04 LTS            | With WALLIX repo            |
   | RHEL               | 8.x                  | Enterprise support          |
   | RHEL               | 9.x                  | Enterprise support          |
   +--------------------+----------------------+-----------------------------+
@@ -173,12 +173,12 @@
   +------------------------------------------------------------------------+
   | Component          | Version              | Notes                       |
   +--------------------+----------------------+-----------------------------+
-  | PostgreSQL         | 13, 14, 15           | Internal or external        |
-  |                    |                      | 14 recommended              |
+  | PostgreSQL         | 14, 15, 16           | Internal or external        |
+  |                    |                      | 15+ recommended for 12.x    |
   +--------------------+----------------------+-----------------------------+
 
   External Database Requirements:
-  * PostgreSQL 14+ recommended
+  * PostgreSQL 15+ recommended for WALLIX 12.x
   * UTF-8 encoding
   * At least 10,000 max_connections
   * Sufficient shared_buffers (25% of RAM)

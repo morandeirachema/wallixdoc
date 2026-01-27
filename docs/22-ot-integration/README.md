@@ -79,7 +79,7 @@
   Common Event Format (CEF) structure from WALLIX:
 
   +------------------------------------------------------------------------+
-  | CEF:0|WALLIX|Bastion|9.0|100|User Authentication|5|                    |
+  | CEF:0|WALLIX|Bastion|12.1|100|User Authentication|5|                    |
   |   src=192.168.1.100                                                    |
   |   suser=jsmith                                                         |
   |   outcome=success                                                      |
@@ -174,7 +174,7 @@
 
   LEEF Log Example:
   +------------------------------------------------------------------------+
-  | LEEF:2.0|WALLIX|Bastion|9.0|SessionStart|                              |
+  | LEEF:2.0|WALLIX|Bastion|12.1|SessionStart|                              |
   |   src=192.168.1.100                                                    |
   |   dst=10.10.10.50                                                      |
   |   usrName=jsmith                                                       |
