@@ -575,16 +575,17 @@ wabadmin audit --last 10
 
 ```
 install/
-├── README.md                    # This file - Overview and quick start
-├── HOWTO.md                     # Comprehensive step-by-step guide (1600+ lines)
-├── 01-prerequisites.md          # Hardware, software, network requirements
-├── 02-site-a-primary.md         # Primary site HA cluster installation
-├── 03-site-b-secondary.md       # Secondary site HA cluster installation
-├── 04-site-c-remote.md          # Remote standalone installation
-├── 05-multi-site-sync.md        # Cross-site synchronization
-├── 06-ot-network-config.md      # OT network and protocol setup
-├── 07-security-hardening.md     # Security hardening procedures
-└── 08-validation-testing.md     # Testing and go-live checklist
+├── README.md                       # This file - Overview and quick start
+├── HOWTO.md                        # Comprehensive step-by-step guide (1600+ lines)
+├── 00-debian-luks-installation.md  # Debian 12 + LUKS installation for VMs
+├── 01-prerequisites.md             # Hardware, software, network requirements
+├── 02-site-a-primary.md            # Primary site HA cluster installation
+├── 03-site-b-secondary.md          # Secondary site HA cluster installation
+├── 04-site-c-remote.md             # Remote standalone installation
+├── 05-multi-site-sync.md           # Cross-site synchronization
+├── 06-ot-network-config.md         # OT network and protocol setup
+├── 07-security-hardening.md        # Security hardening procedures
+└── 08-validation-testing.md        # Testing and go-live checklist
 ```
 
 ### Document Purpose
@@ -593,6 +594,7 @@ install/
 |----------|---------|-------------|
 | **README.md** | Project overview, architecture, quick reference | Project kickoff, stakeholder briefings |
 | **HOWTO.md** | Complete step-by-step deployment guide | During installation, troubleshooting |
+| **00-debian-luks-installation.md** | Debian 12 + LUKS setup for VMs | Phase 1, VM preparation |
 | **01-prerequisites.md** | Infrastructure requirements | Before procurement, during planning |
 | **02-site-a-primary.md** | Primary site installation | Phase 2 of deployment |
 | **03-site-b-secondary.md** | Secondary site installation | Phase 3 of deployment |
