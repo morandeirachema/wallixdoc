@@ -157,8 +157,8 @@
   +------------------------------------------------------------------------+
   | OS                 | Version              | Notes                       |
   +--------------------+----------------------+-----------------------------+
-  | Debian             | 12 (Bookworm)        | Primary platform (12.x)     |
-  | Debian             | 11 (Bullseye)        | Legacy support              |
+  | Debian             | 12 (Bookworm)        | REQUIRED for new 12.x installs |
+  | Debian             | 11 (Bullseye)        | Migration only (not for new) |
   | Ubuntu Server      | 22.04 LTS            | With WALLIX repo            |
   | Ubuntu Server      | 24.04 LTS            | With WALLIX repo            |
   | RHEL               | 8.x                  | Enterprise support          |
@@ -173,8 +173,8 @@
   +------------------------------------------------------------------------+
   | Component          | Version              | Notes                       |
   +--------------------+----------------------+-----------------------------+
-  | PostgreSQL         | 14, 15, 16           | Internal or external        |
-  |                    |                      | 15+ recommended for 12.x    |
+  | PostgreSQL         | 15, 16, 17           | Internal or external        |
+  |                    |                      | 15+ REQUIRED for 12.x       |
   +--------------------+----------------------+-----------------------------+
 
   External Database Requirements:
@@ -540,7 +540,7 @@
   POSTGRESQL TUNING
   =================
 
-  /etc/postgresql/14/main/postgresql.conf:
+  /etc/postgresql/15/main/postgresql.conf:
   +------------------------------------------------------------------------+
   | # Memory Settings                                                      |
   | shared_buffers = 4GB              # 25% of total RAM                   |

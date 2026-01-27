@@ -71,9 +71,9 @@
 
 | Version | Status | Notes |
 |---------|--------|-------|
-| v3.0 | Current | Latest stable API |
-| v2.0 | Supported | Legacy support |
-| v1.0 | Deprecated | Migration recommended |
+| v2.0 | Current | Stable API for 12.x |
+| v1.0 | Removed | NOT supported in 12.x |
+| v3.x | Removed | NOT supported in 12.x |
 
 ### CyberArk Comparison
 
