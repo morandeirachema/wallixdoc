@@ -28,8 +28,8 @@
   https://<wallix-host>/api/
 
   Version-specific endpoints:
-  https://<wallix-host>/api/v1/        # API v1 (legacy)
-  https://<wallix-host>/api/v2/        # API v2 (current)
+  https://<wallix-host>/api/v2/        # API v2 (current - use this)
+  https://<wallix-host>/api/v1/        # API v1 (REMOVED in 12.x - do not use)
 
   --------------------------------------------------------------------------
 
