@@ -3,11 +3,13 @@
 ## Table of Contents
 
 1. [Cloud Deployment Overview](#cloud-deployment-overview)
-2. [AWS Deployment](#aws-deployment)
-3. [Azure Deployment](#azure-deployment)
-4. [Google Cloud Platform](#google-cloud-platform)
-5. [Hybrid Cloud Architecture](#hybrid-cloud-architecture)
-6. [Cloud Security Considerations](#cloud-security-considerations)
+2. [Deployment Model Comparison](#deployment-model-comparison)
+3. [SaaS Architecture Details](#saas-architecture-details)
+4. [AWS Deployment](#aws-deployment)
+5. [Azure Deployment](#azure-deployment)
+6. [Google Cloud Platform](#google-cloud-platform)
+7. [Hybrid Cloud Architecture](#hybrid-cloud-architecture)
+8. [Cloud Security Considerations](#cloud-security-considerations)
 
 ---
 
@@ -78,9 +80,215 @@
   |   +----------------+                   +----------------+             |
   |                                                                        |
   +------------------------------------------------------------------------+
+  |                                                                        |
+  | MODEL 4: SaaS (WALLIX-MANAGED)                                         |
+  | ==============================                                         |
+  |                                                                        |
+  |   * Fully managed PAM solution hosted by WALLIX                        |
+  |   * No infrastructure to deploy or maintain                            |
+  |   * WALLIX handles all updates, backups, and HA                        |
+  |   * Connect via HTTPS - ready to use immediately                       |
+  |                                                                        |
+  |   +----------------------------------------------------------------+   |
+  |   |                    WALLIX CLOUD                                |   |
+  |   |   +----------------------------------------------------------+ |   |
+  |   |   |                   WALLIX-MANAGED                         | |   |
+  |   |   |                                                          | |   |
+  |   |   |  +------------+  +------------+  +------------+          | |   |
+  |   |   |  | Bastion    |  | Database   |  | Recording  |          | |   |
+  |   |   |  | Cluster    |  | Cluster    |  | Storage    |          | |   |
+  |   |   |  | (HA)       |  | (HA)       |  | (Replicated)|         | |   |
+  |   |   |  +------------+  +------------+  +------------+          | |   |
+  |   |   |                                                          | |   |
+  |   |   |  * Auto-scaling      * Geo-redundancy                    | |   |
+  |   |   |  * 24/7 monitoring   * Automatic updates                 | |   |
+  |   |   |  * SLA-backed        * Compliance certifications         | |   |
+  |   |   +----------------------------------------------------------+ |   |
+  |   +----------------------------------------------------------------+   |
+  |                              |                                         |
+  |                         HTTPS (443)                                    |
+  |                              |                                         |
+  |   +----------------------------------------------------------------+   |
+  |   |                    YOUR ENVIRONMENT                            |   |
+  |   |                                                                |   |
+  |   |   [Users]  [Admins]  -->  WALLIX SaaS  -->  [Your Targets]     |   |
+  |   |                                                                |   |
+  |   +----------------------------------------------------------------+   |
+  |                                                                        |
+  +------------------------------------------------------------------------+
 
 +==============================================================================+
 ```
+
+### Deployment Model Comparison
+
+| Feature | IaaS (Self-Managed) | Marketplace | Hybrid | SaaS |
+|---------|---------------------|-------------|--------|------|
+| **Infrastructure** | You manage | You manage | You manage | WALLIX manages |
+| **Database HA** | You configure PostgreSQL streaming | You configure | You configure | Included |
+| **Backups** | Your responsibility | Your responsibility | Your responsibility | Included |
+| **Updates** | You schedule | You schedule | You schedule | Automatic |
+| **Scaling** | Manual | Manual | Manual | Automatic |
+| **SLA** | Depends on cloud | Depends on cloud | Depends on cloud | WALLIX SLA |
+| **Compliance** | Your responsibility | Your responsibility | Your responsibility | WALLIX certified |
+| **Initial Setup** | Days-weeks | Hours-days | Days-weeks | Minutes |
+| **Cost Model** | License + infra | License + infra | License + infra | Subscription |
+
+### When to Choose Each Model
+
+```
++==============================================================================+
+|                    DEPLOYMENT MODEL DECISION GUIDE                           |
++==============================================================================+
+|                                                                              |
+|  CHOOSE IaaS (SELF-MANAGED) WHEN:                                            |
+|  ================================                                            |
+|  * You need full control over infrastructure                                 |
+|  * Regulatory requirements mandate self-hosting                              |
+|  * You have existing cloud infrastructure and expertise                      |
+|  * Air-gapped or isolated networks required                                  |
+|  * Custom integration with on-premises systems needed                        |
+|                                                                              |
+|  --------------------------------------------------------------------------  |
+|                                                                              |
+|  CHOOSE MARKETPLACE IMAGE WHEN:                                              |
+|  ==============================                                              |
+|  * You want faster deployment with tested configuration                      |
+|  * You prefer pay-as-you-go or BYOL licensing                                |
+|  * You have cloud expertise but want simplified setup                        |
+|                                                                              |
+|  --------------------------------------------------------------------------  |
+|                                                                              |
+|  CHOOSE HYBRID WHEN:                                                         |
+|  ===================                                                         |
+|  * You have workloads in both on-premises and cloud                          |
+|  * You want centralized management across environments                       |
+|  * Latency to cloud targets is a concern                                     |
+|  * Gradual cloud migration is planned                                        |
+|                                                                              |
+|  --------------------------------------------------------------------------  |
+|                                                                              |
+|  CHOOSE SaaS WHEN:                                                           |
+|  =================                                                           |
+|  * You want zero infrastructure management                                   |
+|  * Fast deployment is critical (minutes, not days)                           |
+|  * You prefer predictable subscription costs                                 |
+|  * 24/7 managed operations are important                                     |
+|  * Compliance certifications (SOC 2, ISO 27001) are required                 |
+|  * Your targets are accessible via internet or VPN                           |
+|                                                                              |
++==============================================================================+
+```
+
+### SaaS Architecture Details
+
+```
++==============================================================================+
+|                    WALLIX SaaS ARCHITECTURE                                  |
++==============================================================================+
+|                                                                              |
+|  WALLIX-MANAGED INFRASTRUCTURE                                               |
+|  =============================                                               |
+|                                                                              |
+|  +------------------------------------------------------------------------+  |
+|  |                         WALLIX CLOUD                                   |  |
+|  |                                                                        |  |
+|  |  REGION 1 (Primary)              REGION 2 (DR)                         |  |
+|  |  +--------------------------+    +--------------------------+          |  |
+|  |  |                          |    |                          |          |  |
+|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
+|  |  |  | Load Balancer      |  |    |  | Load Balancer      |  |          |  |
+|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
+|  |  |           |              |    |           |              |          |  |
+|  |  |  +--------+--------+     |    |  +--------+--------+     |          |  |
+|  |  |  |        |        |     |    |  |        |        |     |          |  |
+|  |  |  v        v        v     |    |  v        v        v     |          |  |
+|  |  | +--+    +--+    +--+     |    | +--+    +--+    +--+     |          |  |
+|  |  | |B1|    |B2|    |B3|     |    | |B1|    |B2|    |B3|     |          |  |
+|  |  | +--+    +--+    +--+     |    | +--+    +--+    +--+     |          |  |
+|  |  |  Bastion Cluster (HA)    |    |  Bastion Cluster (DR)    |          |  |
+|  |  |                          |    |                          |          |  |
+|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
+|  |  |  | PostgreSQL Cluster |<======>| PostgreSQL Cluster |  |          |  |
+|  |  |  | (Primary)          |  |Sync|  | (Standby)          |  |          |  |
+|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
+|  |  |                          |    |                          |          |  |
+|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
+|  |  |  | Object Storage     |<======>| Object Storage     |  |          |  |
+|  |  |  | (Recordings)       |  |Sync|  | (Recordings)       |  |          |  |
+|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
+|  |  |                          |    |                          |          |  |
+|  |  +--------------------------+    +--------------------------+          |  |
+|  |                                                                        |  |
+|  |  MANAGED SERVICES:                                                     |  |
+|  |  * 24/7 Monitoring & Alerting    * Automatic Backups (daily)           |  |
+|  |  * Automatic Patching            * Geo-redundant Storage               |  |
+|  |  * Auto-scaling                  * DDoS Protection                     |  |
+|  |  * Incident Response             * Compliance Auditing                 |  |
+|  |                                                                        |  |
+|  +------------------------------------------------------------------------+  |
+|                                                                              |
++==============================================================================+
+```
+
+### SaaS Connectivity Options
+
+```
++==============================================================================+
+|                    SaaS CONNECTIVITY                                         |
++==============================================================================+
+|                                                                              |
+|  OPTION 1: INTERNET-ACCESSIBLE TARGETS                                       |
+|  =====================================                                       |
+|                                                                              |
+|  [User] --HTTPS--> [WALLIX SaaS] --SSH/RDP--> [Cloud Targets]               |
+|                                                                              |
+|  * Targets have public IPs or are behind NAT                                 |
+|  * Firewall allows inbound from WALLIX SaaS IP ranges                        |
+|  * Simplest setup                                                            |
+|                                                                              |
+|  --------------------------------------------------------------------------  |
+|                                                                              |
+|  OPTION 2: VPN/TUNNEL TO YOUR NETWORK                                        |
+|  =====================================                                       |
+|                                                                              |
+|  [User] --HTTPS--> [WALLIX SaaS] --VPN Tunnel--> [Your Network] --> [Targets]|
+|                                                                              |
+|  * Site-to-site VPN between WALLIX SaaS and your network                     |
+|  * Access private/internal targets                                           |
+|  * Requires VPN gateway on your side                                         |
+|                                                                              |
+|  --------------------------------------------------------------------------  |
+|                                                                              |
+|  OPTION 3: WALLIX ACCESS MANAGER (GATEWAY)                                   |
+|  =========================================                                   |
+|                                                                              |
+|  [User] --HTTPS--> [WALLIX SaaS] --HTTPS--> [Access Manager] --> [Targets]  |
+|                         ^                         |                          |
+|                         |      Your Network       |                          |
+|                         +-------------------------+                          |
+|                                                                              |
+|  * Deploy Access Manager in your network                                     |
+|  * Outbound-only connection to WALLIX SaaS                                   |
+|  * No inbound firewall rules needed                                          |
+|  * Best for OT/air-gapped environments                                       |
+|                                                                              |
++==============================================================================+
+```
+
+### SaaS vs Self-Hosted: Database Replication
+
+| Aspect | Self-Hosted | SaaS |
+|--------|-------------|------|
+| **Replication Type** | PostgreSQL Streaming (you configure) | Managed by WALLIX |
+| **Failover** | Pacemaker + manual setup | Automatic |
+| **Backup** | Your scripts/tools | Included (daily) |
+| **Recovery Point (RPO)** | Depends on your config | Near-zero |
+| **Recovery Time (RTO)** | Minutes (if configured) | Seconds |
+| **Geo-redundancy** | Your responsibility | Included |
+| **Monitoring** | Your tools | 24/7 WALLIX NOC |
+
+> **Note**: For self-hosted PostgreSQL streaming replication setup, see [10-postgresql-streaming-replication.md](../install/10-postgresql-streaming-replication.md) in the install guide.
 
 ---
 
