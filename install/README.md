@@ -311,8 +311,8 @@ This repository provides **production-ready** installation and configuration doc
 │  ┌─────────────────────────────────────────────────────────────────────────────────────┐   │
 │  │                         INFRASTRUCTURE LAYER                                         │   │
 │  │  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐   │   │
-│  │  │ Debian 12       │ │ Pacemaker/      │ │ DRBD (Block     │ │ Corosync        │   │   │
-│  │  │ (Bookworm)      │ │ Corosync (HA)   │ │ Replication)    │ │ (Cluster Comm)  │   │   │
+│  │  │ Debian 12       │ │ Pacemaker/      │ │ PostgreSQL      │ │ Corosync        │   │   │
+│  │  │ (Bookworm)      │ │ Corosync (HA)   │ │ (Streaming Rep) │ │ (Cluster Comm)  │   │   │
 │  │  └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────────┘   │   │
 │  └─────────────────────────────────────────────────────────────────────────────────────┘   │
 │                                                                                             │
@@ -453,8 +453,8 @@ This repository provides **production-ready** installation and configuration doc
 | **RDP Access** | 3389 | TCP | Inbound |
 | **Web UI** | 443 | TCP | Inbound |
 | **Cluster Sync** | 5404-5406 | UDP | Between nodes |
-| **PostgreSQL** | 5432 | TCP | Internal |
-| **DRBD Replication** | 7789 | TCP | Between nodes |
+| **PostgreSQL Streaming** | 5432 | TCP | Between nodes |
+| **PCSD (Cluster Mgmt)** | 2224 | TCP | Between nodes |
 
 ---
 
@@ -586,7 +586,8 @@ install/
 ├── 06-ot-network-config.md         # OT network and protocol setup
 ├── 07-security-hardening.md        # Security hardening procedures
 ├── 08-validation-testing.md        # Testing and go-live checklist
-└── 09-architecture-diagrams.md     # Detailed diagrams, services, and ports
+├── 09-architecture-diagrams.md     # Detailed diagrams, services, and ports
+└── 10-postgresql-streaming-replication.md  # Database HA configuration
 ```
 
 ### Document Purpose
@@ -605,6 +606,7 @@ install/
 | **07-security-hardening.md** | Security configuration | Phase 6 of deployment |
 | **08-validation-testing.md** | Testing procedures | Phase 6, before go-live |
 | **09-architecture-diagrams.md** | Visual diagrams, services, ports | Reference during all phases |
+| **10-postgresql-streaming-replication.md** | Database HA setup | HA cluster configuration |
 
 ---
 

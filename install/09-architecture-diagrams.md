@@ -118,8 +118,8 @@
 |   | +------------------------------+ |    | +------------------------------+ |      |
 |   | | wallix-bastion    (main)     | |    | | wallix-bastion    (main)     | |      |
 |   | | postgresql        (primary)  |<======>| postgresql        (replica)  | |      |
-|   | | nginx             (web)      | |DRBD| | nginx             (web)      | |      |
-|   | | sshd              (access)   | |Sync| | sshd              (access)   | |      |
+|   | | nginx             (web)      | | PG | | nginx             (web)      | |      |
+|   | | sshd              (access)   | |Stream| sshd              (access)   | |      |
 |   | | wabproxy          (sessions) | |    | | wabproxy          (sessions) | |      |
 |   | | pacemaker         (cluster)  | |    | | pacemaker         (cluster)  | |      |
 |   | | corosync          (comm)     | |    | | corosync          (comm)     | |      |
@@ -129,8 +129,8 @@
 |   | |         STORAGE              | |    | |         STORAGE              | |      |
 |   | +------------------------------+ |    | +------------------------------+ |      |
 |   | | /              (LUKS)        |<======>| /              (LUKS)        | |      |
-|   | | /var/lib/wallix (DRBD)       | |Block| /var/lib/wallix (DRBD)       | |      |
-|   | | /var/lib/pgsql  (DRBD)       | |Sync| | /var/lib/pgsql  (DRBD)       | |      |
+|   | | /var/lib/wallix (NFS shared) | | NFS| | /var/lib/wallix (NFS shared) | |      |
+|   | | /var/lib/pgsql  (streaming)  | |    | | /var/lib/pgsql  (replica)    | |      |
 |   | +------------------------------+ |    | +------------------------------+ |      |
 |   +----------------------------------+    +----------------------------------+      |
 |                                                                                     |
@@ -139,7 +139,6 @@
 |   |   Node 1 (192.168.100.10)  <========================>  Node 2 (192.168.100.11)||
 |   |                                                                                ||
 |   |   Corosync:   UDP 5404-5406  (Cluster communication, heartbeat)               ||
-|   |   DRBD:       TCP 7789       (Block-level data replication)                   ||
 |   |   PostgreSQL: TCP 5432       (Database streaming replication)                 ||
 |   |                                                                                ||
 |   +--------------------------------------------------------------------------------+|
@@ -211,8 +210,8 @@
 |  |                      HA CLUSTER LAYER (HA nodes only)                 ||
 |  |                                                                       ||
 |  |  +---------------+  +---------------+  +---------------+              ||
-|  |  | Pacemaker     |  | Corosync      |  | DRBD          |              ||
-|  |  | (Resource Mgr)|  | UDP 5404-5406 |  | TCP 7789      |              ||
+|  |  | Pacemaker     |  | Corosync      |  | PostgreSQL    |              ||
+|  |  | (Resource Mgr)|  | UDP 5404-5406 |  | TCP 5432      |              ||
 |  |  +---------------+  +---------------+  +---------------+              ||
 |  +-----------------------------------------------------------------------+|
 +===========================================================================+
@@ -255,12 +254,11 @@
 |   | |    SERVICES (RUNNING)        | |    | |    SERVICES (STANDBY)        | |
 |   | +------------------------------+ |    | +------------------------------+ |
 |   | | wallix-bastion  [*] ACTIVE   | |    | | wallix-bastion  [ ] STOPPED  | |
-|   | | postgresql      [*] PRIMARY  |<======>| postgresql      [ ] STANDBY  | |
-|   | | nginx           [*] RUNNING  | |DRBD| | nginx           [ ] STOPPED  | |
-|   | | wabproxy        [*] RUNNING  | |Sync| | wabproxy        [ ] STOPPED  | |
+|   | | postgresql      [*] PRIMARY  |<======>| postgresql      [*] STANDBY  | |
+|   | | nginx           [*] RUNNING  | | PG | | nginx           [ ] STOPPED  | |
+|   | | wabproxy        [*] RUNNING  | |Stream| wabproxy        [ ] STOPPED  | |
 |   | | pacemaker       [*] RUNNING  | |    | | pacemaker       [*] RUNNING  | |
 |   | | corosync        [*] RUNNING  | |    | | corosync        [*] RUNNING  | |
-|   | | drbd            [*] PRIMARY  | |    | | drbd            [*] SECONDARY| |
 |   | +------------------------------+ |    | +------------------------------+ |
 |   |                                  |    |                                  |
 |   | Storage: READ-WRITE              |    | Storage: READ-ONLY (sync)        |
@@ -457,7 +455,7 @@
 |   |                  |<=================================>|                  |
 |   |   NODE 1         |           every 1 second          |   NODE 2         |
 |   |   ** ACTIVE **   |                                   |   STANDBY        |
-|   |                  |        DRBD Sync (TCP 7789)       |                  |
+|   |                  |      PG Streaming (TCP 5432)      |                  |
 |   |   VIP: 10.0.1.20 |<=================================>|                  |
 |   |                  |           continuous              |                  |
 |   +--------+---------+                                   +------------------+
@@ -483,7 +481,7 @@
 |                                                                             |
 |   T+3s:   Failure confirmed (3 missed heartbeats)                           |
 |   T+5s:   STONITH executed (if configured)                                  |
-|   T+10s:  DRBD promoted to Primary on Node 2                                |
+|   T+10s:  PostgreSQL promoted to Primary on Node 2                          |
 |   T+15s:  Services starting on Node 2                                       |
 |   T+25s:  VIP migrated to Node 2                                            |
 |   T+30s:  Node 2 fully active                                               |
@@ -558,8 +556,8 @@
 |                       |                  | depends on (HA only)           |
 |                       |                  v                                |
 |   LEVEL 1             |           +-------------+  +-------------+        |
-|   (HA/Cluster)        |           |    DRBD     |  |  Pacemaker  |        |
-|                       |           |   :7789     |  |  /Corosync  |        |
+|   (HA/Cluster)        |           | PG Streaming|  |  Pacemaker  |        |
+|                       |           |   :5432     |  |  /Corosync  |        |
 |                       |           +------+------+  +------+------+        |
 |                       |                  |                |               |
 |                       +------------------+----------------+               |
@@ -640,8 +638,7 @@
 |   5404    UDP        Corosync         Bidirect     Cluster multicast      |
 |   5405    UDP        Corosync         Bidirect     Cluster unicast        |
 |   5406    UDP        Corosync         Bidirect     Cluster communication  |
-|   7789    TCP        DRBD             Bidirect     Block replication      |
-|   5432    TCP        PostgreSQL       Bidirect     DB replication         |
+|   5432    TCP        PostgreSQL       Bidirect     DB streaming replic.   |
 |                                                                           |
 +===========================================================================+
 
@@ -689,8 +686,8 @@
 |   | USER ACCESS     | ADMIN ACCESS    | AUTHENTICATION  | CLUSTER (HA)   |
 |   +-----------------+-----------------+-----------------+-----------------+
 |   | 443/tcp (HTTPS) | 22/tcp (SSH)    | 389/tcp (LDAP)  | 5404-5406/udp  |
-|   | 22/tcp (SSH)    |                 | 636/tcp (LDAPS) | 7789/tcp (DRBD)|
-|   | 3389/tcp (RDP)  |                 | 88/tcp (Kerb)   | 5432/tcp (PG)  |
+|   | 22/tcp (SSH)    |                 | 636/tcp (LDAPS) | 5432/tcp (PG)  |
+|   | 3389/tcp (RDP)  |                 | 88/tcp (Kerb)   | 2224/tcp (PCS) |
 |   +-----------------+-----------------+-----------------+-----------------+
 |                                                                           |
 |   OPTIONAL PORTS (Based on features used)                                 |
@@ -732,8 +729,7 @@
 
 # Cluster Communication (from peer node only)
 -A INPUT -s 192.168.100.11 -p udp --dport 5404:5406 -j ACCEPT  # Corosync
--A INPUT -s 192.168.100.11 -p tcp --dport 7789 -j ACCEPT       # DRBD
--A INPUT -s 192.168.100.11 -p tcp --dport 5432 -j ACCEPT       # PostgreSQL
+-A INPUT -s 192.168.100.11 -p tcp --dport 5432 -j ACCEPT       # PostgreSQL streaming
 -A INPUT -s 192.168.100.11 -p tcp --dport 2224 -j ACCEPT       # PCSD
 
 # Multi-site Sync (from Site B and Site C)
@@ -885,12 +881,11 @@ systemctl status wallix-bastion wallix-* nginx postgresql
 crm status
 pcs status
 
-# Check DRBD status (HA nodes)
-drbd-overview
-cat /proc/drbd
-
-# Check PostgreSQL replication
+# Check PostgreSQL replication (on primary)
 sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+
+# Check PostgreSQL recovery status (on standby)
+sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
 
 # Check listening ports
 ss -tlnp | grep -E '(22|443|3389|5432|5900)'

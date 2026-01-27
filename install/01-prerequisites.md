@@ -256,10 +256,10 @@
   +--------------------+-------------+---------+----------------------------+
   | Node 1             | Node 2      | 5432    | PostgreSQL streaming       |
   | Node 1             | Node 2      | 5405    | Corosync cluster           |
-  | Node 1             | Node 2      | 7789    | DRBD (if used)             |
+  | Node 1             | Node 2      | 2224    | PCSD (cluster mgmt)        |
   | Node 2             | Node 1      | 5432    | PostgreSQL streaming       |
   | Node 2             | Node 1      | 5405    | Corosync cluster           |
-  | Node 2             | Node 1      | 7789    | DRBD (if used)             |
+  | Node 2             | Node 1      | 2224    | PCSD (cluster mgmt)        |
   +--------------------+-------------+---------+----------------------------+
 
 +==============================================================================+
