@@ -58,6 +58,7 @@
 
 | File | Purpose |
 |------|---------|
+| [appliance-setup-guide.md](./appliance-setup-guide.md) | Quick appliance setup (standalone & HA) |
 | [HOWTO.md](./HOWTO.md) | Complete step-by-step guide (1700+ lines) |
 | [00-debian-luks-installation.md](./00-debian-luks-installation.md) | Debian 12 + LUKS setup |
 | [01-prerequisites.md](./01-prerequisites.md) | Requirements checklist |
