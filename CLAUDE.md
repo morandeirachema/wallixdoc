@@ -18,7 +18,7 @@ This file provides context for AI assistants (Claude, Copilot, etc.) working wit
 wallix/
 ├── CLAUDE.md              # This file - AI assistant context
 ├── README.md              # Repository overview and navigation
-├── docs/                  # Product documentation (29 sections)
+├── docs/                  # Product documentation (34 sections)
 │   ├── README.md          # Documentation index with learning paths
 │   ├── 01-introduction/   # Company and product overview
 │   ├── 02-architecture/   # System architecture and deployment models
@@ -48,7 +48,11 @@ wallix/
 │   ├── 26-api-reference/        # REST API documentation
 │   ├── 27-error-reference/      # Error codes and remediation
 │   ├── 28-system-requirements/  # Hardware, sizing, performance
-│   └── 29-upgrade-guide/        # Version upgrades, HA clusters
+│   ├── 29-upgrade-guide/        # Version upgrades, HA clusters
+│   ├── 30-operational-runbooks/ # Daily/weekly/monthly procedures
+│   ├── 31-faq-known-issues/     # FAQ, known issues, compatibility
+│   ├── 32-incident-response/    # Security incident playbooks
+│   └── 33-compliance-audit/     # SOC2, ISO27001, PCI-DSS, HIPAA, GDPR
 └── install/               # Multi-site OT installation guide
     ├── README.md          # Architecture overview, 30-day timeline
     ├── HOWTO.md           # Step-by-step guide (1685 lines)

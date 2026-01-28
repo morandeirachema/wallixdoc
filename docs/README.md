@@ -7,7 +7,7 @@
 |                        DOCUMENTATION QUALITY METRICS                         |
 +==============================================================================+
 |                                                                              |
-|  Total Sections: 29          Total Diagrams: 100+        ASCII Only: Yes    |
+|  Total Sections: 34          Total Diagrams: 100+        ASCII Only: Yes    |
 |                                                                              |
 |  +-------------------------------+----------------------------------------+  |
 |  | Category                      | Coverage                               |  |
@@ -18,7 +18,10 @@
 |  | Container/Kubernetes          | Docker, Helm, OpenShift                |  |
 |  | API Reference                 | All endpoints with examples            |  |
 |  | Error Codes                   | Full reference with remediation        |  |
-|  | CyberArk Comparisons          | Throughout all sections                |  |
+|  | Operational Runbooks          | Daily/weekly/monthly procedures        |  |
+|  | Incident Response             | Security playbooks, forensics          |  |
+|  | Compliance Frameworks         | SOC2, ISO27001, PCI-DSS, HIPAA, GDPR   |  |
+|  | FAQ & Known Issues            | Common questions, compatibility        |  |
 |  +-------------------------------+----------------------------------------+  |
 |                                                                              |
 +==============================================================================+
@@ -67,12 +70,22 @@ This documentation provides an in-depth exploration of WALLIX Privileged Access 
 
 | Section | Description | Audience |
 |---------|-------------|----------|
+| [00 - Official Resources](./00-official-resources/README.md) | Curated links to official WALLIX documentation | All |
 | [24 - Cloud Deployment](./24-cloud-deployment/README.md) | AWS, Azure, GCP deployment architectures, IAM integration | Architects, Cloud |
 | [25 - Container Deployment](./25-container-deployment/README.md) | Docker, Kubernetes, Helm, OpenShift deployment | DevOps, Engineers |
 | [26 - API Reference](./26-api-reference/README.md) | Complete REST API endpoints, methods, examples | Developers, Engineers |
 | [27 - Error Reference](./27-error-reference/README.md) | Error codes, causes, resolution steps, diagnostics | Support, Admins |
 | [28 - System Requirements](./28-system-requirements/README.md) | Hardware specs, sizing, performance tuning | Architects, Engineers |
 | [29 - Upgrade Guide](./29-upgrade-guide/README.md) | Version upgrades, HA cluster upgrade, rollback | Admins, Engineers |
+
+### Operations, Compliance & Incident Response
+
+| Section | Description | Audience |
+|---------|-------------|----------|
+| [30 - Operational Runbooks](./30-operational-runbooks/README.md) | Daily/weekly/monthly procedures, maintenance, backup | Operations, Admins |
+| [31 - FAQ & Known Issues](./31-faq-known-issues/README.md) | Common questions, known issues, compatibility matrix | All |
+| [32 - Incident Response](./32-incident-response/README.md) | Security incident playbooks, forensics, recovery | Security, Operations |
+| [33 - Compliance & Audit](./33-compliance-audit/README.md) | SOC 2, ISO 27001, PCI-DSS, HIPAA, GDPR mapping | Compliance, Security |
 
 ---
 
@@ -117,7 +130,17 @@ This documentation provides an in-depth exploration of WALLIX Privileged Access 
 
 ### For Support/Operations
 ```
-12-Troubleshooting → 27-Error-Reference → 29-Upgrade-Guide → 28-System-Requirements
+12-Troubleshooting → 27-Error-Reference → 30-Operational-Runbooks → 31-FAQ-Known-Issues
+```
+
+### For Security/Incident Response
+```
+32-Incident-Response → 08-Session-Management → 12-Troubleshooting → 31-FAQ-Known-Issues
+```
+
+### For Compliance/Audit
+```
+33-Compliance-Audit → 20-IEC62443-Compliance → 08-Session-Management → 06-Authorization
 ```
 
 ---
@@ -160,7 +183,7 @@ This is a living document. Contributions and corrections are welcome.
 
 ---
 
-**Document Version**: 3.0 (WALLIX Bastion 12.x)
+**Document Version**: 4.0 (WALLIX Bastion 12.x)
 **Last Updated**: January 2026
 **Author**: PAM Professional Guide Series
-**Total Sections**: 29 (Core: 14, Industrial/OT: 9, Enterprise: 6)
+**Total Sections**: 34 (Core: 14, Industrial/OT: 9, Enterprise: 7, Operations/Compliance: 4)
