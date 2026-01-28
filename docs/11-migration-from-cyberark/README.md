@@ -11,6 +11,10 @@
 7. [Validation & Testing](#validation--testing)
 8. [Common Challenges](#common-challenges)
 
+## Related Documents
+
+- **[CyberArk vs WALLIX Comparison](./cyberark-wallix-comparison.md)** - Learn WALLIX through CyberArk comparison: architecture, CPM vs Password Manager, OT capabilities, feature matrix
+
 ---
 
 ## Migration Overview
