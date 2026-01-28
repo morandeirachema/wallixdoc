@@ -34,16 +34,21 @@ This repository contains comprehensive documentation for **WALLIX Bastion 12.x**
 ```
 wallix/
 ├── README.md              ← You are here
+├── CLAUDE.md              ← AI assistant context file
 ├── docs/                  ← Product documentation (30 sections)
 │   ├── README.md          ← Documentation index
+│   ├── 00-official-resources/  ← Curated official WALLIX links
 │   ├── 01-introduction/
 │   ├── 02-getting-started/
 │   ├── ...
-│   └── 30-appendices/
-└── install/               ← Multi-site OT installation guide
-    ├── README.md          ← Installation overview
-    ├── HOWTO.md           ← Step-by-step guide (1600+ lines)
-    └── 01-08-*.md         ← Detailed installation procedures
+│   └── 29-upgrade-guide/
+├── install/               ← Multi-site OT installation guide
+│   ├── README.md          ← Installation overview
+│   ├── HOWTO.md           ← Step-by-step guide (1600+ lines)
+│   └── 00-10-*.md         ← Detailed installation procedures
+└── examples/              ← Code examples for automation
+    ├── terraform/         ← Infrastructure as Code examples
+    └── api/               ← REST API examples (Python, curl)
 ```
 
 ---
@@ -57,6 +62,8 @@ wallix/
 | **Step-by-step setup** | [install/HOWTO.md](./install/HOWTO.md) | Comprehensive installation walkthrough |
 | **API Reference** | [docs/26-api-reference/](./docs/26-api-reference/README.md) | REST API documentation |
 | **Upgrade Guide** | [docs/29-upgrade-guide/](./docs/29-upgrade-guide/README.md) | Version upgrade procedures |
+| **Official Resources** | [docs/00-official-resources/](./docs/00-official-resources/README.md) | Curated WALLIX links and PDFs |
+| **Code Examples** | [examples/](./examples/README.md) | Terraform and API examples |
 
 ---
 
@@ -232,5 +239,6 @@ This documentation is provided for WALLIX Bastion deployment and administration 
 <p align="center">
   <a href="./docs/README.md">Documentation</a> •
   <a href="./install/README.md">Installation Guide</a> •
-  <a href="./install/HOWTO.md">Step-by-Step HOWTO</a>
+  <a href="./examples/README.md">Examples</a> •
+  <a href="./docs/00-official-resources/README.md">Official Resources</a>
 </p>
