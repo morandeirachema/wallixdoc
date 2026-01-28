@@ -897,6 +897,342 @@ nc -zv localhost 3389
 
 ---
 
+## OT Environment Configuration
+
+### OT Zone Placement
+
+```
++============================================================================+
+|                       OT ZONE ARCHITECTURE                                 |
++============================================================================+
+|                                                                            |
+|  IEC 62443 ZONE MODEL - WALLIX PLACEMENT                                   |
+|  =======================================                                   |
+|                                                                            |
+|  ENTERPRISE ZONE (Level 4-5)                                               |
+|  +----------------------------------------------------------------------+  |
+|  |  [Corporate Network]  [ERP]  [Email]  [Users]                        |  |
+|  +----------------------------------+-----------------------------------+  |
+|                                     |                                      |
+|  ===================================|=== ENTERPRISE DMZ ==============     |
+|                                     |                                      |
+|  OT DMZ (Level 3.5) <-- WALLIX HERE |                                      |
+|  +----------------------------------+-----------------------------------+  |
+|  |                                  |                                   |  |
+|  |  +=========================+     |     +---------------------+       |  |
+|  |  |    WALLIX BASTION       |<----+     | Historian Mirror    |       |  |
+|  |  |                         |           | (Read-Only)         |       |  |
+|  |  | * Secure gateway        |           +---------------------+       |  |
+|  |  | * Session recording     |                                         |  |
+|  |  | * Protocol proxy        |           +---------------------+       |  |
+|  |  | * Credential vault      |           | Patch Server        |       |  |
+|  |  +=========================+           +---------------------+       |  |
+|  |              |                                                       |  |
+|  +--------------|-------------------------------------------------------+  |
+|                 |                                                          |
+|  ===============|========= INDUSTRIAL FIREWALL ========================    |
+|                 |                                                          |
+|  OPERATIONS ZONE (Level 3) - Security Level 3                              |
+|  +--------------|-------------------------------------------------------+  |
+|  |              v                                                       |  |
+|  |  [SCADA Server]    [Historian]    [Engineering WS]                   |  |
+|  +----------------------------------+-----------------------------------+  |
+|                                     |                                      |
+|  ===================================|=== CONTROL FIREWALL =============    |
+|                                     |                                      |
+|  CONTROL ZONE (Level 2) - Security Level 2                                 |
+|  +----------------------------------+-----------------------------------+  |
+|  |              v                                                       |  |
+|  |  [HMI Stations]    [Control Server]    [Operator WS]                 |  |
+|  +----------------------------------+-----------------------------------+  |
+|                                     |                                      |
+|  ===================================|=== FIELD FIREWALL ===============    |
+|                                     |                                      |
+|  FIELD ZONE (Level 0-1) - Security Level 1                                 |
+|  +----------------------------------------------------------------------+  |
+|  |              v                                                       |  |
+|  |  [PLCs]    [RTUs]    [DCS]    [Safety Systems]    [Sensors]          |  |
+|  +----------------------------------------------------------------------+  |
+|                                                                            |
+|  KEY: All access to OT zones MUST go through WALLIX Bastion                |
+|                                                                            |
++============================================================================+
+```
+
+### OT Network Configuration
+
+```bash
+# Configure OT DMZ network interface (if separate from management)
+cat >> /etc/network/interfaces.d/wallix << 'EOF'
+
+# OT DMZ interface (for OT zone access)
+auto eth2
+iface eth2 inet static
+    address 10.100.10.5
+    netmask 255.255.255.0
+    # No gateway - OT traffic routed through firewalls
+EOF
+
+systemctl restart networking
+```
+
+### Enable Industrial Protocol Support
+
+```bash
+# Enable Universal Tunneling for industrial protocols
+wabadmin config-set tunneling.enabled true
+wabadmin config-set tunneling.protocols "modbus,s7comm,ethernetip,opcua,bacnet,dnp3"
+
+# Configure tunnel settings
+wabadmin config-set tunneling.timeout 3600          # 1 hour max session
+wabadmin config-set tunneling.keepalive 60          # Keepalive interval
+wabadmin config-set tunneling.max_tunnels 100       # Max concurrent tunnels
+
+# Restart services
+systemctl restart wallix-bastion
+```
+
+### Configure Industrial Protocol Tunnels
+
+```bash
+# Create tunnel configuration file
+cat > /etc/opt/wab/tunnels.json << 'EOF'
+{
+  "tunnels": [
+    {
+      "name": "modbus-plc-line1",
+      "description": "Modbus access to Production Line 1 PLCs",
+      "protocol": "modbus",
+      "local_port": 10502,
+      "remote_host": "10.100.40.10",
+      "remote_port": 502,
+      "authorization_required": true,
+      "recording": true,
+      "allowed_groups": ["ot-engineers", "plc-programmers"]
+    },
+    {
+      "name": "s7-siemens-plc",
+      "description": "S7comm access to Siemens S7-1500",
+      "protocol": "s7comm",
+      "local_port": 10102,
+      "remote_host": "10.100.40.20",
+      "remote_port": 102,
+      "authorization_required": true,
+      "recording": true,
+      "allowed_groups": ["siemens-engineers"]
+    },
+    {
+      "name": "opcua-historian",
+      "description": "OPC UA access to Historian",
+      "protocol": "opcua",
+      "local_port": 14840,
+      "remote_host": "10.100.20.20",
+      "remote_port": 4840,
+      "authorization_required": true,
+      "recording": true,
+      "tls_enabled": true,
+      "allowed_groups": ["data-engineers"]
+    }
+  ]
+}
+EOF
+
+# Apply tunnel configuration
+wabadmin tunnel-reload
+wabadmin tunnel-status
+```
+
+### Add OT Devices
+
+```bash
+# Add SCADA server
+wabadmin device-create \
+    --name "SCADA-Primary" \
+    --host "10.100.20.10" \
+    --description "Primary SCADA Server" \
+    --domain "OT-Operations"
+
+wabadmin service-create \
+    --device "SCADA-Primary" \
+    --name "RDP" \
+    --protocol "RDP" \
+    --port 3389
+
+wabadmin service-create \
+    --device "SCADA-Primary" \
+    --name "SSH" \
+    --protocol "SSH" \
+    --port 22
+
+# Add HMI stations
+wabadmin device-create \
+    --name "HMI-Station-01" \
+    --host "10.100.30.10" \
+    --description "Operator HMI Station 1" \
+    --domain "OT-Control"
+
+wabadmin service-create \
+    --device "HMI-Station-01" \
+    --name "VNC" \
+    --protocol "VNC" \
+    --port 5900
+
+# Add Engineering Workstation (for PLC programming)
+wabadmin device-create \
+    --name "ENG-WS-01" \
+    --host "10.100.20.30" \
+    --description "Engineering WS with TIA Portal/RSLogix" \
+    --domain "OT-Operations"
+
+wabadmin service-create \
+    --device "ENG-WS-01" \
+    --name "RDP" \
+    --protocol "RDP" \
+    --port 3389
+```
+
+### Configure Shared HMI Accounts
+
+```bash
+# HMI stations often use shared operator accounts
+# WALLIX provides individual accountability through session recording
+
+wabadmin account-create \
+    --name "operator" \
+    --device "HMI-Station-01" \
+    --description "Shared operator account" \
+    --checkout-required false \
+    --credential-injection true
+
+# Users connect through WALLIX, credentials are injected
+# Session is recorded with individual user identity
+```
+
+### OT Approval Workflows
+
+```bash
+# Require approval for access to critical OT systems
+wabadmin approval-create \
+    --name "plc-access-approval" \
+    --description "Approval required for PLC access" \
+    --approvers "ot-supervisors" \
+    --timeout 60 \
+    --target-groups "field-zone-plcs"
+
+wabadmin approval-create \
+    --name "scada-access-approval" \
+    --description "Approval required for SCADA changes" \
+    --approvers "ot-managers" \
+    --dual-approval true \
+    --timeout 120 \
+    --target-groups "scada-servers"
+```
+
+### Offline/Air-Gapped Configuration
+
+```bash
+# For air-gapped or intermittently connected sites
+# Enable offline credential caching
+
+wabadmin config-set offline.enabled true
+wabadmin config-set offline.cache_duration 168    # 7 days cache
+wabadmin config-set offline.sync_interval 3600    # Sync hourly when connected
+wabadmin config-set offline.local_auth true       # Allow local auth if disconnected
+
+# Configure local credential cache encryption
+wabadmin config-set offline.cache_encryption "AES-256-GCM"
+wabadmin config-set offline.cache_key_rotation 86400  # Daily key rotation
+
+# Restart services
+systemctl restart wallix-bastion
+```
+
+### OT Security Hardening
+
+```bash
+# OT-specific security settings
+
+# 1. Disable unnecessary protocols
+wabadmin config-set protocols.telnet.enabled false  # Unless required for legacy
+wabadmin config-set protocols.ftp.enabled false
+
+# 2. Enable enhanced logging for OT
+wabadmin config-set logging.ot_verbose true
+wabadmin config-set logging.protocol_debug true
+
+# 3. Configure session recording retention (compliance)
+wabadmin config-set recording.retention_days 365    # 1 year for IEC 62443
+wabadmin config-set recording.compression true
+wabadmin config-set recording.encryption true
+
+# 4. Enable industrial protocol alerting
+wabadmin config-set alerts.plc_write true           # Alert on PLC writes
+wabadmin config-set alerts.scada_config_change true # Alert on SCADA changes
+wabadmin config-set alerts.safety_system_access true
+
+# 5. Configure emergency bypass (break-glass)
+wabadmin config-set emergency.enabled true
+wabadmin config-set emergency.code_rotation 24      # Change code every 24 hours
+wabadmin config-set emergency.audit_alert true      # Alert on emergency use
+wabadmin config-set emergency.require_justification true
+```
+
+### OT Firewall Rules
+
+```bash
+# Firewall rules for WALLIX in OT DMZ
+
+# Allow management access from IT (HTTPS only)
+iptables -A INPUT -s 10.0.1.0/24 -p tcp --dport 443 -j ACCEPT
+
+# Allow user connections for session proxying
+iptables -A INPUT -s 10.0.0.0/8 -p tcp --dport 22 -j ACCEPT    # SSH
+iptables -A INPUT -s 10.0.0.0/8 -p tcp --dport 3389 -j ACCEPT  # RDP
+iptables -A INPUT -s 10.0.0.0/8 -p tcp --dport 5900 -j ACCEPT  # VNC
+
+# Allow industrial protocol tunnels (from users through WALLIX)
+iptables -A INPUT -s 10.0.0.0/8 -p tcp --dport 10502 -j ACCEPT # Modbus tunnel
+iptables -A INPUT -s 10.0.0.0/8 -p tcp --dport 10102 -j ACCEPT # S7comm tunnel
+iptables -A INPUT -s 10.0.0.0/8 -p tcp --dport 14840 -j ACCEPT # OPC UA tunnel
+
+# Allow WALLIX to access OT zones
+iptables -A OUTPUT -d 10.100.20.0/24 -j ACCEPT  # Operations zone
+iptables -A OUTPUT -d 10.100.30.0/24 -j ACCEPT  # Control zone
+iptables -A OUTPUT -d 10.100.40.0/24 -j ACCEPT  # Field zone
+
+# Save rules
+iptables-save > /etc/iptables/rules.v4
+```
+
+### Verify OT Configuration
+
+```bash
+# Check industrial protocol status
+wabadmin protocol-status
+
+# Expected output:
+# Protocol     | Status  | Connections
+# -------------+---------+-------------
+# SSH          | Active  | 12
+# RDP          | Active  | 8
+# VNC          | Active  | 3
+# Modbus       | Active  | 5
+# S7comm       | Active  | 2
+# OPC UA       | Active  | 1
+
+# Check tunnel status
+wabadmin tunnel-status
+
+# Check offline cache status
+wabadmin offline-status
+
+# Test connectivity to OT devices
+wabadmin device-test "SCADA-Primary"
+wabadmin device-test "HMI-Station-01"
+```
+
+---
+
 ## Related Documentation
 
 - [HOWTO.md](./HOWTO.md) - Complete multi-site installation guide
