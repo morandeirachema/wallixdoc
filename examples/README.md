@@ -1,27 +1,8 @@
 # WALLIX Bastion Examples
 
-This directory contains practical code examples for automating and integrating with WALLIX Bastion.
+> Practical code examples for automating and integrating with WALLIX Bastion.
 
-## Directory Structure
-
-```
-examples/
-├── terraform/          # Infrastructure as Code examples
-│   ├── README.md       # Terraform provider setup guide
-│   ├── provider.tf     # Provider configuration
-│   └── resources/      # Resource examples
-└── api/                # REST API examples
-    ├── README.md       # API usage guide
-    ├── python/         # Python scripts
-    └── curl/           # curl command examples
-```
-
-## Prerequisites
-
-- WALLIX Bastion 12.x installed and configured
-- API access enabled with valid API key
-- For Terraform: Terraform 1.0+ installed
-- For Python: Python 3.8+ with `requests` library
+---
 
 ## Quick Start
 
@@ -29,39 +10,85 @@ examples/
 
 ```bash
 cd terraform
-terraform init
-terraform plan
+export TF_VAR_bastion_host="bastion.example.com"
+export TF_VAR_bastion_user="admin"
+export TF_VAR_bastion_token="your-api-key"
+terraform init && terraform plan
 ```
 
-### Python API
+### Python
 
 ```bash
 cd api/python
 pip install requests
+export BASTION_HOST="bastion.example.com"
+export BASTION_USER="admin"
+export BASTION_API_KEY="your-api-key"
 python list_devices.py
 ```
 
-### curl Examples
+### curl
 
 ```bash
 cd api/curl
+export BASTION_HOST="bastion.example.com"
+export BASTION_USER="admin"
+export BASTION_API_KEY="your-api-key"
 ./get_status.sh
 ```
 
-## Official Resources
+---
 
-- [Terraform Provider Registry](https://registry.terraform.io/providers/wallix/wallix-bastion)
-- [Terraform Provider GitHub](https://github.com/wallix/terraform-provider-wallix-bastion)
-- [REST API Samples (Official)](https://github.com/wallix/wbrest_samples)
-- [SCIM API Documentation](https://scim.wallix.com/scim/doc/Usage.html)
+## Contents
 
-## Version Compatibility
-
-| Terraform Provider | WALLIX Bastion API | Terraform Version |
-|-------------------|--------------------|--------------------|
-| 0.14.x | v3.12 | >= 1.0 |
-| 0.13.x | v3.3, v3.6 | >= 0.14 |
+```
+examples/
+├── terraform/
+│   ├── provider.tf              # Provider configuration
+│   └── resources/device.tf      # Device examples
+└── api/
+    ├── python/
+    │   ├── bastion_client.py    # Reusable API client
+    │   └── list_devices.py      # Device listing
+    └── curl/
+        ├── get_status.sh        # Status check
+        └── list_devices.sh      # Device listing
+```
 
 ---
 
-See individual directories for detailed documentation and examples.
+## Prerequisites
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| WALLIX Bastion | 12.x | Target system |
+| Terraform | 1.0+ | IaC |
+| Python | 3.8+ | API scripts |
+| API Key | - | Authentication |
+
+---
+
+## Compatibility
+
+| Provider Version | API Version | Terraform |
+|------------------|-------------|-----------|
+| 0.14.x | v3.12 | >= 1.0 |
+| 0.13.x | v3.6 | >= 0.14 |
+
+---
+
+## Resources
+
+| Resource | Link |
+|----------|------|
+| Terraform Registry | https://registry.terraform.io/providers/wallix/wallix-bastion |
+| Provider GitHub | https://github.com/wallix/terraform-provider-wallix-bastion |
+| API Samples | https://github.com/wallix/wbrest_samples |
+| SCIM API | https://scim.wallix.com/scim/doc/Usage.html |
+
+---
+
+<p align="center">
+  <a href="./terraform/README.md">Terraform</a> •
+  <a href="./api/README.md">API</a>
+</p>
