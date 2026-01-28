@@ -1381,6 +1381,810 @@
 
 ---
 
+## SCIM API
+
+### SCIM 2.0 Overview
+
+```
++==============================================================================+
+|                   SCIM 2.0 API                                               |
++==============================================================================+
+
+  OVERVIEW
+  ========
+
+  SCIM (System for Cross-domain Identity Management) 2.0 provides standardized
+  user provisioning and deprovisioning from identity providers (IdP).
+
+  BASE URL
+  ========
+
+  https://<wallix-host>/scim/v2/
+
+  --------------------------------------------------------------------------
+
+  SUPPORTED RESOURCES
+  ===================
+
+  +------------------------------------------------------------------------+
+  | Resource      | Endpoint            | Description                      |
+  +---------------+---------------------+----------------------------------+
+  | Users         | /scim/v2/Users      | User provisioning                |
+  | Groups        | /scim/v2/Groups     | Group provisioning               |
+  | Schemas       | /scim/v2/Schemas    | Schema discovery                 |
+  | ResourceTypes | /scim/v2/ResourceTypes | Supported resource types      |
+  | ServiceProvider | /scim/v2/ServiceProviderConfig | SCIM capabilities   |
+  +---------------+---------------------+----------------------------------+
+
+  --------------------------------------------------------------------------
+
+  AUTHENTICATION
+  ==============
+
+  SCIM API uses Bearer token authentication:
+
+  +------------------------------------------------------------------------+
+  | curl -X GET "https://wallix.company.com/scim/v2/Users" \               |
+  |   -H "Authorization: Bearer <scim-api-token>" \                        |
+  |   -H "Content-Type: application/scim+json"                             |
+  +------------------------------------------------------------------------+
+
+  Generate SCIM token via:
+  Admin > System > SCIM Configuration > Generate Token
+
++==============================================================================+
+```
+
+### User Provisioning
+
+```
++==============================================================================+
+|                   SCIM USER OPERATIONS                                       |
++==============================================================================+
+
+  LIST USERS
+  ==========
+
+  GET /scim/v2/Users
+
+  Query Parameters:
+  +------------------------------------------------------------------------+
+  | Parameter    | Type    | Description                                   |
+  +--------------+---------+-----------------------------------------------+
+  | filter       | string  | SCIM filter expression                        |
+  | startIndex   | integer | 1-based index for pagination                  |
+  | count        | integer | Number of results per page                    |
+  | sortBy       | string  | Attribute to sort by                          |
+  | sortOrder    | string  | ascending or descending                       |
+  +--------------+---------+-----------------------------------------------+
+
+  Example Request:
+  GET /scim/v2/Users?filter=userName eq "jsmith"&count=10
+
+  Response:
+  {
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+    "totalResults": 1,
+    "startIndex": 1,
+    "itemsPerPage": 10,
+    "Resources": [
+      {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+        "id": "usr_12345",
+        "userName": "jsmith",
+        "name": {
+          "formatted": "John Smith",
+          "familyName": "Smith",
+          "givenName": "John"
+        },
+        "displayName": "John Smith",
+        "emails": [
+          {
+            "value": "jsmith@company.com",
+            "type": "work",
+            "primary": true
+          }
+        ],
+        "active": true,
+        "groups": [
+          {
+            "value": "grp_001",
+            "display": "ot_engineers",
+            "$ref": "https://wallix.company.com/scim/v2/Groups/grp_001"
+          }
+        ],
+        "meta": {
+          "resourceType": "User",
+          "created": "2024-01-15T10:00:00Z",
+          "lastModified": "2024-01-20T14:30:00Z",
+          "location": "https://wallix.company.com/scim/v2/Users/usr_12345"
+        }
+      }
+    ]
+  }
+
+  --------------------------------------------------------------------------
+
+  GET USER
+  ========
+
+  GET /scim/v2/Users/{id}
+
+  Response:
+  {
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "id": "usr_12345",
+    "userName": "jsmith",
+    "name": {
+      "formatted": "John Smith",
+      "familyName": "Smith",
+      "givenName": "John"
+    },
+    "displayName": "John Smith",
+    "emails": [
+      {
+        "value": "jsmith@company.com",
+        "type": "work",
+        "primary": true
+      }
+    ],
+    "phoneNumbers": [
+      {
+        "value": "+1-555-1234",
+        "type": "work"
+      }
+    ],
+    "active": true,
+    "groups": [
+      {
+        "value": "grp_001",
+        "display": "ot_engineers"
+      }
+    ],
+    "urn:wallix:scim:schemas:1.0:User": {
+      "mfaEnabled": true,
+      "mfaType": "totp",
+      "language": "en",
+      "timezone": "America/New_York"
+    },
+    "meta": {
+      "resourceType": "User",
+      "created": "2024-01-15T10:00:00Z",
+      "lastModified": "2024-01-20T14:30:00Z"
+    }
+  }
+
+  --------------------------------------------------------------------------
+
+  CREATE USER
+  ===========
+
+  POST /scim/v2/Users
+
+  Request:
+  {
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "userName": "mwilson",
+    "name": {
+      "familyName": "Wilson",
+      "givenName": "Mary"
+    },
+    "displayName": "Mary Wilson",
+    "emails": [
+      {
+        "value": "mwilson@company.com",
+        "type": "work",
+        "primary": true
+      }
+    ],
+    "active": true,
+    "urn:wallix:scim:schemas:1.0:User": {
+      "mfaEnabled": true,
+      "mfaType": "totp"
+    }
+  }
+
+  Response (201 Created):
+  {
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+    "id": "usr_67890",
+    "userName": "mwilson",
+    ...
+    "meta": {
+      "resourceType": "User",
+      "created": "2024-01-27T10:00:00Z",
+      "location": "https://wallix.company.com/scim/v2/Users/usr_67890"
+    }
+  }
+
+  --------------------------------------------------------------------------
+
+  UPDATE USER (PUT - Full Replace)
+  ================================
+
+  PUT /scim/v2/Users/{id}
+
+  Request: Full user object (replaces existing)
+
+  --------------------------------------------------------------------------
+
+  UPDATE USER (PATCH - Partial Update)
+  ====================================
+
+  PATCH /scim/v2/Users/{id}
+
+  Request:
+  {
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "replace",
+        "path": "displayName",
+        "value": "Mary J. Wilson"
+      },
+      {
+        "op": "add",
+        "path": "phoneNumbers",
+        "value": [
+          {
+            "value": "+1-555-5678",
+            "type": "mobile"
+          }
+        ]
+      },
+      {
+        "op": "replace",
+        "path": "active",
+        "value": false
+      }
+    ]
+  }
+
+  --------------------------------------------------------------------------
+
+  DELETE USER
+  ===========
+
+  DELETE /scim/v2/Users/{id}
+
+  Response: 204 No Content
+
++==============================================================================+
+```
+
+### Group Provisioning
+
+```
++==============================================================================+
+|                   SCIM GROUP OPERATIONS                                      |
++==============================================================================+
+
+  LIST GROUPS
+  ===========
+
+  GET /scim/v2/Groups
+
+  Response:
+  {
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:ListResponse"],
+    "totalResults": 5,
+    "Resources": [
+      {
+        "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+        "id": "grp_001",
+        "displayName": "ot_engineers",
+        "members": [
+          {
+            "value": "usr_12345",
+            "display": "jsmith",
+            "$ref": "https://wallix.company.com/scim/v2/Users/usr_12345"
+          }
+        ],
+        "meta": {
+          "resourceType": "Group",
+          "created": "2024-01-10T08:00:00Z",
+          "lastModified": "2024-01-25T16:00:00Z"
+        }
+      }
+    ]
+  }
+
+  --------------------------------------------------------------------------
+
+  CREATE GROUP
+  ============
+
+  POST /scim/v2/Groups
+
+  Request:
+  {
+    "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
+    "displayName": "ot_vendors",
+    "members": [
+      {
+        "value": "usr_12345"
+      },
+      {
+        "value": "usr_67890"
+      }
+    ]
+  }
+
+  --------------------------------------------------------------------------
+
+  UPDATE GROUP MEMBERSHIP
+  =======================
+
+  PATCH /scim/v2/Groups/{id}
+
+  Add members:
+  {
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "add",
+        "path": "members",
+        "value": [
+          {"value": "usr_11111"}
+        ]
+      }
+    ]
+  }
+
+  Remove members:
+  {
+    "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
+    "Operations": [
+      {
+        "op": "remove",
+        "path": "members[value eq \"usr_12345\"]"
+      }
+    ]
+  }
+
++==============================================================================+
+```
+
+### SCIM Filter Expressions
+
+```
++==============================================================================+
+|                   SCIM FILTER SYNTAX                                         |
++==============================================================================+
+
+  SUPPORTED OPERATORS
+  ===================
+
+  +------------------------------------------------------------------------+
+  | Operator | Description              | Example                          |
+  +----------+--------------------------+----------------------------------+
+  | eq       | Equal                    | userName eq "jsmith"             |
+  | ne       | Not equal                | active ne false                  |
+  | co       | Contains                 | displayName co "Smith"           |
+  | sw       | Starts with              | userName sw "vendor_"            |
+  | ew       | Ends with                | email ew "@company.com"          |
+  | gt       | Greater than             | meta.created gt "2024-01-01"     |
+  | ge       | Greater or equal         | meta.lastModified ge "2024-01-01"|
+  | lt       | Less than                | meta.created lt "2024-12-31"     |
+  | le       | Less or equal            | meta.lastModified le "2024-12-31"|
+  | pr       | Present (has value)      | phoneNumbers pr                  |
+  | and      | Logical AND              | active eq true and userName sw "a"|
+  | or       | Logical OR               | userName eq "a" or userName eq "b"|
+  | not      | Logical NOT              | not(active eq false)             |
+  +----------+--------------------------+----------------------------------+
+
+  --------------------------------------------------------------------------
+
+  FILTER EXAMPLES
+  ===============
+
+  Find active users:
+  GET /scim/v2/Users?filter=active eq true
+
+  Find users by email domain:
+  GET /scim/v2/Users?filter=emails.value ew "@company.com"
+
+  Find users in specific group:
+  GET /scim/v2/Users?filter=groups.display eq "ot_engineers"
+
+  Find users created after date:
+  GET /scim/v2/Users?filter=meta.created gt "2024-01-01T00:00:00Z"
+
+  Complex filter:
+  GET /scim/v2/Users?filter=active eq true and (userName sw "vendor_" or
+    groups.display eq "ot_vendors")
+
++==============================================================================+
+```
+
+### IdP Integration Examples
+
+```
++==============================================================================+
+|                   IDP SCIM INTEGRATION                                       |
++==============================================================================+
+
+  AZURE AD / ENTRA ID
+  ===================
+
+  Configuration in Azure Portal:
+  +------------------------------------------------------------------------+
+  | 1. Enterprise Applications > New Application > WALLIX Bastion          |
+  | 2. Provisioning > Automatic                                            |
+  |                                                                        |
+  | Tenant URL: https://wallix.company.com/scim/v2                         |
+  | Secret Token: <SCIM API Token from WALLIX>                             |
+  |                                                                        |
+  | Mappings:                                                              |
+  | +-------------------------------+----------------------------------+   |
+  | | Azure AD Attribute            | WALLIX SCIM Attribute            |   |
+  | +-------------------------------+----------------------------------+   |
+  | | userPrincipalName             | userName                         |   |
+  | | displayName                   | displayName                      |   |
+  | | givenName                     | name.givenName                   |   |
+  | | surname                       | name.familyName                  |   |
+  | | mail                          | emails[type eq "work"].value     |   |
+  | | Switch([IsSoftDeleted],...)   | active                           |   |
+  | +-------------------------------+----------------------------------+   |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  OKTA
+  ====
+
+  Configuration in Okta Admin:
+  +------------------------------------------------------------------------+
+  | 1. Applications > Add Application > SCIM 2.0 Test App                  |
+  | 2. Provisioning > Configure API Integration                            |
+  |                                                                        |
+  | SCIM connector base URL: https://wallix.company.com/scim/v2            |
+  | Unique identifier field: userName                                      |
+  | Authentication Mode: HTTP Header                                       |
+  | Authorization: Bearer <token>                                          |
+  |                                                                        |
+  | Supported provisioning actions:                                        |
+  | [x] Create Users                                                       |
+  | [x] Update User Attributes                                             |
+  | [x] Deactivate Users                                                   |
+  | [x] Push Groups                                                        |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  PING IDENTITY
+  =============
+
+  Configuration:
+  +------------------------------------------------------------------------+
+  | Outbound Provisioning > SCIM                                           |
+  |                                                                        |
+  | Base URL: https://wallix.company.com/scim/v2                           |
+  | Authentication: Bearer Token                                           |
+  | Token: <SCIM API Token>                                                |
+  |                                                                        |
+  | Attribute Mapping:                                                     |
+  | - Map PingOne user attributes to SCIM User schema                      |
+  | - Configure group push for WALLIX group membership                     |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+---
+
+## Bulk Operations
+
+### Bulk API Endpoints
+
+```
++==============================================================================+
+|                   BULK OPERATIONS API                                        |
++==============================================================================+
+
+  BULK REQUEST
+  ============
+
+  POST /api/v2/bulk
+
+  Perform multiple operations in a single request.
+
+  Request:
+  {
+    "operations": [
+      {
+        "method": "POST",
+        "path": "/devices",
+        "body": {
+          "name": "plc-line1",
+          "host": "10.10.1.10",
+          "domain": "ot_devices"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/devices",
+        "body": {
+          "name": "plc-line2",
+          "host": "10.10.1.11",
+          "domain": "ot_devices"
+        }
+      },
+      {
+        "method": "POST",
+        "path": "/accounts",
+        "body": {
+          "name": "admin",
+          "device_id": "$response[0].data.id",
+          "credential_type": "password",
+          "credentials": {"password": "secure123"}
+        }
+      }
+    ],
+    "fail_on_error": false
+  }
+
+  Response:
+  {
+    "status": "success",
+    "data": {
+      "total": 3,
+      "successful": 3,
+      "failed": 0,
+      "results": [
+        {
+          "index": 0,
+          "status": 201,
+          "data": {"id": "dev_001", "name": "plc-line1"}
+        },
+        {
+          "index": 1,
+          "status": 201,
+          "data": {"id": "dev_002", "name": "plc-line2"}
+        },
+        {
+          "index": 2,
+          "status": 201,
+          "data": {"id": "acc_001", "name": "admin"}
+        }
+      ]
+    }
+  }
+
+  --------------------------------------------------------------------------
+
+  BULK DELETE
+  ===========
+
+  DELETE /api/v2/bulk
+
+  Request:
+  {
+    "resource_type": "devices",
+    "ids": ["dev_001", "dev_002", "dev_003"],
+    "cascade": true
+  }
+
+  Response:
+  {
+    "status": "success",
+    "data": {
+      "deleted": 3,
+      "cascaded": {
+        "accounts": 5,
+        "authorizations": 2
+      }
+    }
+  }
+
+  --------------------------------------------------------------------------
+
+  BULK EXPORT
+  ===========
+
+  GET /api/v2/export
+
+  Query Parameters:
+  +------------------------------------------------------------------------+
+  | Parameter     | Type   | Description                                   |
+  +---------------+--------+-----------------------------------------------+
+  | resource_type | string | devices, accounts, users, groups, all         |
+  | format        | string | json, csv                                     |
+  | domain        | string | Filter by domain                              |
+  +---------------+--------+-----------------------------------------------+
+
+  Example:
+  GET /api/v2/export?resource_type=devices&format=csv&domain=ot_devices
+
+  --------------------------------------------------------------------------
+
+  BULK IMPORT
+  ===========
+
+  POST /api/v2/import
+
+  Request (multipart/form-data):
+  - file: CSV or JSON file
+  - resource_type: devices, accounts, users
+  - mode: create, update, upsert
+  - dry_run: true/false
+
+  Response:
+  {
+    "status": "success",
+    "data": {
+      "mode": "upsert",
+      "dry_run": false,
+      "processed": 100,
+      "created": 75,
+      "updated": 25,
+      "errors": []
+    }
+  }
+
++==============================================================================+
+```
+
+---
+
+## Audit API
+
+### Audit Query Endpoints
+
+```
++==============================================================================+
+|                   AUDIT API ENDPOINTS                                        |
++==============================================================================+
+
+  QUERY AUDIT LOGS
+  ================
+
+  GET /api/v2/audit/logs
+
+  Query Parameters:
+  +------------------------------------------------------------------------+
+  | Parameter   | Type     | Description                                   |
+  +-------------+----------+-----------------------------------------------+
+  | start_date  | datetime | Start of time range (ISO 8601)                |
+  | end_date    | datetime | End of time range (ISO 8601)                  |
+  | event_type  | string   | auth, session, config, approval, password     |
+  | user_id     | string   | Filter by user ID                             |
+  | target_id   | string   | Filter by target device/account               |
+  | severity    | string   | info, warning, error, critical                |
+  | outcome     | string   | success, failure                              |
+  | page        | integer  | Page number                                   |
+  | per_page    | integer  | Results per page (max 1000)                   |
+  +-------------+----------+-----------------------------------------------+
+
+  Example:
+  GET /api/v2/audit/logs?event_type=session&start_date=2024-01-01&outcome=success
+
+  Response:
+  {
+    "status": "success",
+    "data": [
+      {
+        "id": "aud_001",
+        "timestamp": "2024-01-27T10:30:00Z",
+        "event_type": "session.start",
+        "severity": "info",
+        "outcome": "success",
+        "user": {
+          "id": "usr_001",
+          "username": "jsmith",
+          "ip": "192.168.1.100"
+        },
+        "target": {
+          "device": "plc-line1",
+          "account": "root",
+          "protocol": "ssh"
+        },
+        "details": {
+          "session_id": "ses_001",
+          "authorization": "engineers_to_plcs"
+        }
+      }
+    ],
+    "meta": {
+      "total": 5000,
+      "page": 1,
+      "per_page": 100
+    }
+  }
+
+  --------------------------------------------------------------------------
+
+  AUDIT STATISTICS
+  ================
+
+  GET /api/v2/audit/stats
+
+  Query Parameters:
+  +------------------------------------------------------------------------+
+  | Parameter   | Type     | Description                                   |
+  +-------------+----------+-----------------------------------------------+
+  | start_date  | datetime | Start of time range                           |
+  | end_date    | datetime | End of time range                             |
+  | group_by    | string   | user, device, event_type, hour, day, month    |
+  +-------------+----------+-----------------------------------------------+
+
+  Example:
+  GET /api/v2/audit/stats?start_date=2024-01-01&end_date=2024-01-31&group_by=user
+
+  Response:
+  {
+    "status": "success",
+    "data": {
+      "period": {
+        "start": "2024-01-01T00:00:00Z",
+        "end": "2024-01-31T23:59:59Z"
+      },
+      "totals": {
+        "sessions": 15000,
+        "unique_users": 50,
+        "unique_devices": 200,
+        "failed_logins": 25
+      },
+      "by_user": [
+        {
+          "user": "jsmith",
+          "sessions": 500,
+          "devices_accessed": 45,
+          "total_duration_hours": 120
+        }
+      ]
+    }
+  }
+
+  --------------------------------------------------------------------------
+
+  COMPLIANCE REPORTS
+  ==================
+
+  GET /api/v2/audit/reports/{report_type}
+
+  Available Reports:
+  +------------------------------------------------------------------------+
+  | Report Type         | Description                                      |
+  +---------------------+--------------------------------------------------+
+  | access_review       | User access certification report                 |
+  | privileged_activity | High-privilege actions summary                   |
+  | password_compliance | Password rotation compliance                     |
+  | session_summary     | Session statistics and trends                    |
+  | failed_access       | Failed authentication attempts                   |
+  +---------------------+--------------------------------------------------+
+
+  Example:
+  GET /api/v2/audit/reports/password_compliance?start_date=2024-01-01
+
+  Response:
+  {
+    "status": "success",
+    "data": {
+      "report_type": "password_compliance",
+      "generated_at": "2024-01-27T10:00:00Z",
+      "summary": {
+        "total_accounts": 500,
+        "compliant": 475,
+        "non_compliant": 25,
+        "compliance_rate": 95.0
+      },
+      "non_compliant_accounts": [
+        {
+          "account": "legacy_service@server1",
+          "last_rotation": "2023-06-15T00:00:00Z",
+          "days_overdue": 195,
+          "reason": "Rotation failed - connection timeout"
+        }
+      ]
+    }
+  }
+
++==============================================================================+
+```
+
+---
+
 ## Next Steps
 
 Continue to [27 - Error Reference](../27-error-reference/README.md) for error codes and troubleshooting.

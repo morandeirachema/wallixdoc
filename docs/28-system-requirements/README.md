@@ -764,6 +764,269 @@
 
 ---
 
+## Performance Benchmarks
+
+### Baseline Performance Metrics
+
+```
++==============================================================================+
+|                   PERFORMANCE BENCHMARKS                                     |
++==============================================================================+
+
+  TESTED CONFIGURATION
+  ====================
+
+  Test Environment:
+  +------------------------------------------------------------------------+
+  | Component        | Specification                                        |
+  +------------------+------------------------------------------------------+
+  | Hardware         | 16 vCPU, 64 GB RAM, NVMe SSD                         |
+  | OS               | Debian 12 (Bookworm)                                 |
+  | WALLIX Version   | 12.1.x                                               |
+  | PostgreSQL       | 16.x with optimized settings                         |
+  | Network          | 10 Gbps, < 1ms latency to targets                    |
+  +------------------+------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  SESSION ESTABLISHMENT BENCHMARKS
+  ================================
+
+  SSH Session Establishment:
+  +------------------------------------------------------------------------+
+  | Metric                          | Value          | Notes               |
+  +---------------------------------+----------------+---------------------+
+  | Average connection time         | 0.8 - 1.2 sec  | Auth + connection   |
+  | Authentication only             | 0.2 - 0.4 sec  | LDAP + MFA          |
+  | Target connection               | 0.3 - 0.5 sec  | Network dependent   |
+  | Session initialization          | 0.2 - 0.3 sec  | Recording start     |
+  | 99th percentile                 | 2.0 sec        | Under load          |
+  +---------------------------------+----------------+---------------------+
+
+  RDP Session Establishment:
+  +------------------------------------------------------------------------+
+  | Metric                          | Value          | Notes               |
+  +---------------------------------+----------------+---------------------+
+  | Average connection time         | 2.0 - 3.5 sec  | Auth + NLA + video  |
+  | Authentication only             | 0.3 - 0.5 sec  | LDAP + MFA          |
+  | Target connection (NLA)         | 0.8 - 1.5 sec  | NLA negotiation     |
+  | First frame displayed           | 1.5 - 2.5 sec  | Screen visible      |
+  | 99th percentile                 | 5.0 sec        | Under load          |
+  +---------------------------------+----------------+---------------------+
+
+  VNC Session Establishment:
+  +------------------------------------------------------------------------+
+  | Metric                          | Value          | Notes               |
+  +---------------------------------+----------------+---------------------+
+  | Average connection time         | 1.0 - 2.0 sec  | Auth + connection   |
+  | First frame displayed           | 1.2 - 2.2 sec  | Screen visible      |
+  +---------------------------------+----------------+---------------------+
+
+  --------------------------------------------------------------------------
+
+  THROUGHPUT BENCHMARKS
+  =====================
+
+  Maximum Concurrent Sessions:
+  +------------------------------------------------------------------------+
+  | System Size      | SSH Sessions | RDP Sessions | Mixed (50/50)         |
+  +------------------+--------------+--------------+-----------------------+
+  | Small (4C/16GB)  | 200          | 100          | 150                   |
+  | Medium (8C/32GB) | 500          | 250          | 375                   |
+  | Large (16C/64GB) | 1000         | 500          | 750                   |
+  | XL (32C/128GB)   | 2000         | 1000         | 1500                  |
+  +------------------+--------------+--------------+-----------------------+
+
+  Sessions Per Second (New Session Rate):
+  +------------------------------------------------------------------------+
+  | System Size      | SSH          | RDP          | Mixed                 |
+  +------------------+--------------+--------------+-----------------------+
+  | Small            | 10/sec       | 5/sec        | 7/sec                 |
+  | Medium           | 25/sec       | 12/sec       | 18/sec                |
+  | Large            | 50/sec       | 25/sec       | 37/sec                |
+  | XL               | 100/sec      | 50/sec       | 75/sec                |
+  +------------------+--------------+--------------+-----------------------+
+
+  --------------------------------------------------------------------------
+
+  CREDENTIAL OPERATION BENCHMARKS
+  ===============================
+
+  Password Operations:
+  +------------------------------------------------------------------------+
+  | Operation                       | Average Time   | 99th Percentile     |
+  +---------------------------------+----------------+---------------------+
+  | Password checkout               | 50 - 100 ms    | 200 ms              |
+  | Password injection (SSH)        | 20 - 50 ms     | 100 ms              |
+  | Password injection (RDP)        | 50 - 100 ms    | 200 ms              |
+  | Password rotation (Linux)       | 1 - 3 sec      | 5 sec               |
+  | Password rotation (Windows)     | 2 - 5 sec      | 10 sec              |
+  | Bulk rotation (100 accounts)    | 2 - 5 min      | 10 min              |
+  +---------------------------------+----------------+---------------------+
+
+  --------------------------------------------------------------------------
+
+  API PERFORMANCE BENCHMARKS
+  ==========================
+
+  API Response Times:
+  +------------------------------------------------------------------------+
+  | Endpoint                        | Average        | 99th Percentile     |
+  +---------------------------------+----------------+---------------------+
+  | GET /api/v2/users (list 100)    | 50 ms          | 150 ms              |
+  | GET /api/v2/devices (list 100)  | 40 ms          | 120 ms              |
+  | POST /api/v2/users (create)     | 80 ms          | 200 ms              |
+  | POST /api/v2/sessions/search    | 100 ms         | 300 ms              |
+  | GET /api/v2/audit/logs          | 150 ms         | 500 ms              |
+  +---------------------------------+----------------+---------------------+
+
+  API Throughput:
+  +------------------------------------------------------------------------+
+  | Operation                       | Requests/sec   | Notes               |
+  +---------------------------------+----------------+---------------------+
+  | Read operations                 | 500 - 1000     | GET endpoints       |
+  | Write operations                | 100 - 200      | POST/PUT/DELETE     |
+  | Bulk operations                 | 50 - 100       | Batch imports       |
+  +---------------------------------+----------------+---------------------+
+
+  --------------------------------------------------------------------------
+
+  RECORDING PERFORMANCE BENCHMARKS
+  ================================
+
+  Recording Storage and I/O:
+  +------------------------------------------------------------------------+
+  | Protocol        | Recording Rate | Disk I/O      | Storage/Hour        |
+  +-----------------+----------------+---------------+---------------------+
+  | SSH (text)      | 10 - 50 KB/s   | Minimal       | 5 - 20 MB           |
+  | SSH (full)      | 50 - 200 KB/s  | Low           | 20 - 80 MB          |
+  | RDP (standard)  | 200 - 500 KB/s | Medium        | 100 - 200 MB        |
+  | RDP (HD)        | 500 KB - 2 MB/s| High          | 200 - 500 MB        |
+  | VNC             | 100 - 400 KB/s | Medium        | 50 - 150 MB         |
+  +-----------------+----------------+---------------+---------------------+
+
+  Recording Playback:
+  +------------------------------------------------------------------------+
+  | Operation                       | Performance    | Notes               |
+  +---------------------------------+----------------+---------------------+
+  | Playback start (local)          | < 2 sec        | First frame         |
+  | Playback start (NAS)            | 2 - 5 sec      | Network dependent   |
+  | Search indexing (per hour rec)  | 30 - 60 sec    | OCR processing      |
+  | Search query (indexed)          | 0.5 - 2 sec    | Full-text search    |
+  +---------------------------------+----------------+---------------------+
+
++==============================================================================+
+```
+
+### Performance Testing Methodology
+
+```
++==============================================================================+
+|                   PERFORMANCE TESTING PROCEDURES                             |
++==============================================================================+
+
+  LOAD TESTING PROCEDURE
+  ======================
+
+  Preparation:
+  +------------------------------------------------------------------------+
+  | 1. Configure test environment matching production specs                |
+  | 2. Create test users and targets (representative sample)               |
+  | 3. Disable non-essential logging during baseline tests                 |
+  | 4. Establish baseline metrics with single user                         |
+  +------------------------------------------------------------------------+
+
+  Test Scenarios:
+  +------------------------------------------------------------------------+
+  | Scenario          | Description                    | Duration          |
+  +-------------------+--------------------------------+-------------------+
+  | Ramp-up           | Gradually increase sessions    | 30 min            |
+  | Steady state      | Hold at target load            | 60 min            |
+  | Spike             | Sudden session surge           | 5 min             |
+  | Endurance         | Sustained load over time       | 4-8 hours         |
+  +-------------------+--------------------------------+-------------------+
+
+  --------------------------------------------------------------------------
+
+  KEY METRICS TO MEASURE
+  ======================
+
+  System Metrics:
+  +------------------------------------------------------------------------+
+  | Metric                          | Threshold      | Alert Level         |
+  +---------------------------------+----------------+---------------------+
+  | CPU utilization                 | < 70%          | > 85%               |
+  | Memory utilization              | < 80%          | > 90%               |
+  | Disk I/O wait                   | < 10%          | > 20%               |
+  | Network utilization             | < 70%          | > 85%               |
+  | Database connections            | < 80% of max   | > 90% of max        |
+  +---------------------------------+----------------+---------------------+
+
+  Application Metrics:
+  +------------------------------------------------------------------------+
+  | Metric                          | Target         | Unacceptable        |
+  +---------------------------------+----------------+---------------------+
+  | Session establishment time      | < 2 sec        | > 5 sec             |
+  | API response time (p95)         | < 200 ms       | > 1 sec             |
+  | Authentication time             | < 500 ms       | > 2 sec             |
+  | Error rate                      | < 0.1%         | > 1%                |
+  | Session failure rate            | < 0.01%        | > 0.1%              |
+  +---------------------------------+----------------+---------------------+
+
+  --------------------------------------------------------------------------
+
+  BENCHMARK COMMANDS
+  ==================
+
+  System Performance:
+  +------------------------------------------------------------------------+
+  | # CPU and memory                                                       |
+  | vmstat 1 60 | tee /tmp/vmstat.log                                      |
+  |                                                                        |
+  | # Disk I/O                                                             |
+  | iostat -x 1 60 | tee /tmp/iostat.log                                   |
+  |                                                                        |
+  | # Network                                                              |
+  | sar -n DEV 1 60 | tee /tmp/network.log                                 |
+  |                                                                        |
+  | # Process details                                                      |
+  | pidstat -p $(pgrep -d, -f wallix) 1 60 | tee /tmp/process.log          |
+  +------------------------------------------------------------------------+
+
+  Database Performance:
+  +------------------------------------------------------------------------+
+  | # Connection count                                                     |
+  | watch -n 5 "psql -c 'SELECT count(*) FROM pg_stat_activity;'"          |
+  |                                                                        |
+  | # Slow queries                                                         |
+  | psql -c "SELECT * FROM pg_stat_statements ORDER BY total_exec_time     |
+  |   DESC LIMIT 10;"                                                      |
+  |                                                                        |
+  | # Cache hit ratio                                                      |
+  | psql -c "SELECT sum(heap_blks_hit) / (sum(heap_blks_hit) +             |
+  |   sum(heap_blks_read)) * 100 AS ratio FROM pg_statio_user_tables;"     |
+  +------------------------------------------------------------------------+
+
+  Application Performance:
+  +------------------------------------------------------------------------+
+  | # Active sessions                                                      |
+  | wabadmin sessions --active --count                                     |
+  |                                                                        |
+  | # Session establishment timing                                         |
+  | time ssh -o ProxyCommand="ssh -W %h:%p wallix-user@bastion"            |
+  |   target-user@target-server hostname                                   |
+  |                                                                        |
+  | # API response time                                                    |
+  | curl -w "%{time_total}" -o /dev/null -s                                |
+  |   -H "Authorization: Bearer $TOKEN"                                    |
+  |   https://bastion/api/v2/users                                         |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+---
+
 ## Next Steps
 
 Continue to [29 - Upgrade Guide](../29-upgrade-guide/README.md) for version upgrade procedures.

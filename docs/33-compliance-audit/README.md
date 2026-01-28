@@ -454,6 +454,265 @@ wabadmin users --with-roles --export > nis2/user-roles.csv
 
 ---
 
+## IEC 62443 Compliance
+
+### IEC 62443 Control Mapping
+
+```
++==============================================================================+
+|                   IEC 62443 CONTROL MAPPING                                  |
++==============================================================================+
+
+  FOUNDATIONAL REQUIREMENTS (FR)
+  ==============================
+
+  FR1 - Identification and Authentication Control (IAC)
+  +------------------------------------------------------------------------+
+  | Control ID | Requirement                    | WALLIX Implementation     |
+  +------------+--------------------------------+---------------------------+
+  | IAC-1      | Human user identification      | User accounts, AD/LDAP    |
+  | IAC-2      | Software process identification| Service accounts          |
+  | IAC-3      | Hardware device identification | Device management         |
+  | IAC-4      | Human user authentication      | MFA, strong passwords     |
+  | IAC-5      | Software process authentication| API keys, certificates    |
+  | IAC-6      | Hardware device authentication | Certificate auth          |
+  | IAC-7      | Password-based authentication  | Vault, rotation           |
+  | IAC-8      | Public key-based authentication| SSH keys, certificates    |
+  | IAC-9      | Authenticator management       | Credential lifecycle      |
+  | IAC-10     | Authenticator feedback         | Secure credential display |
+  | IAC-11     | Unsuccessful login attempts    | Account lockout           |
+  | IAC-12     | System use notification        | Login banners             |
+  | IAC-13     | Access via untrusted networks  | Proxy through DMZ         |
+  | IAC-14     | Strength of authentication     | MFA enforcement           |
+  +------------+--------------------------------+---------------------------+
+
+  FR2 - Use Control (UC)
+  +------------------------------------------------------------------------+
+  | Control ID | Requirement                    | WALLIX Implementation     |
+  +------------+--------------------------------+---------------------------+
+  | UC-1       | Authorization enforcement      | RBAC, authorizations      |
+  | UC-2       | Wireless use control           | Network segmentation      |
+  | UC-3       | Use control for portable media | Session restrictions      |
+  | UC-4       | Use control for mobile code    | Protocol restrictions     |
+  | UC-5       | Session lock                   | Idle timeout              |
+  | UC-6       | Session termination            | Auto-termination          |
+  | UC-7       | Concurrent session control     | Session limits            |
+  | UC-8       | Auditable events               | Session recording         |
+  | UC-9       | Audit storage capacity         | Recording storage         |
+  | UC-10      | Response to audit failures     | Alerting                  |
+  | UC-11      | Time stamps                    | NTP synchronization       |
+  | UC-12      | Non-repudiation                | Audit logs, recordings    |
+  +------------+--------------------------------+---------------------------+
+
+  FR3 - System Integrity (SI)
+  +------------------------------------------------------------------------+
+  | Control ID | Requirement                    | WALLIX Implementation     |
+  +------------+--------------------------------+---------------------------+
+  | SI-1       | Communication integrity        | TLS 1.3 encryption        |
+  | SI-2       | Malicious code protection      | Session isolation         |
+  | SI-3       | Security functionality verify  | Health checks             |
+  | SI-4       | Software and info integrity    | Checksums, signing        |
+  | SI-5       | Input validation               | Protocol validation       |
+  | SI-6       | Deterministic output           | Consistent responses      |
+  | SI-7       | Error handling                 | Secure error handling     |
+  +------------+--------------------------------+---------------------------+
+
+  FR4 - Data Confidentiality (DC)
+  +------------------------------------------------------------------------+
+  | Control ID | Requirement                    | WALLIX Implementation     |
+  +------------+--------------------------------+---------------------------+
+  | DC-1       | Information confidentiality    | Credential vault, AES-256 |
+  | DC-2       | Access control                 | Authorization policies    |
+  | DC-3       | Use of cryptography            | TLS, AES, Argon2ID        |
+  | DC-4       | Public key infrastructure      | Certificate management    |
+  +------------+--------------------------------+---------------------------+
+
+  FR5 - Restricted Data Flow (RDF)
+  +------------------------------------------------------------------------+
+  | Control ID | Requirement                    | WALLIX Implementation     |
+  +------------+--------------------------------+---------------------------+
+  | RDF-1      | Network segmentation           | Zone-based deployment     |
+  | RDF-2      | Zone boundary protection       | Proxy architecture        |
+  | RDF-3      | General-purpose person-person  | Session monitoring        |
+  | RDF-4      | Application partitioning       | Isolated sessions         |
+  | RDF-5      | Session authenticity           | Session authentication    |
+  +------------+--------------------------------+---------------------------+
+
+  FR6 - Timely Response to Events (TRE)
+  +------------------------------------------------------------------------+
+  | Control ID | Requirement                    | WALLIX Implementation     |
+  +------------+--------------------------------+---------------------------+
+  | TRE-1      | Audit log accessibility        | Centralized logging       |
+  | TRE-2      | Continuous monitoring          | Real-time session monitor |
+  | TRE-3      | Response mechanisms            | Session termination       |
+  +------------+--------------------------------+---------------------------+
+
+  FR7 - Resource Availability (RA)
+  +------------------------------------------------------------------------+
+  | Control ID | Requirement                    | WALLIX Implementation     |
+  +------------+--------------------------------+---------------------------+
+  | RA-1       | Denial-of-service protection   | Rate limiting             |
+  | RA-2       | Resource management            | Capacity planning         |
+  | RA-3       | Control system backup          | Configuration backup      |
+  | RA-4       | Control system recovery        | DR procedures             |
+  | RA-5       | Emergency power                | UPS integration           |
+  | RA-6       | Network and security config    | HA clustering             |
+  | RA-7       | Least functionality            | Minimal services          |
+  +------------+--------------------------------+---------------------------+
+
++==============================================================================+
+```
+
+### Security Level (SL) Requirements
+
+```
++==============================================================================+
+|                   IEC 62443 SECURITY LEVELS                                  |
++==============================================================================+
+
+  SECURITY LEVEL DEFINITIONS
+  ==========================
+
+  +------------------------------------------------------------------------+
+  | SL   | Description                   | Threat Profile                  |
+  +------+-------------------------------+---------------------------------+
+  | SL 1 | Protection against casual     | Low capability, motivation      |
+  |      | or coincidental violation     | Insider threats                 |
+  +------+-------------------------------+---------------------------------+
+  | SL 2 | Protection against            | Moderate capability             |
+  |      | intentional violation         | Generic attack tools            |
+  +------+-------------------------------+---------------------------------+
+  | SL 3 | Protection against            | High capability, sophistication |
+  |      | sophisticated means           | Targeted attacks                |
+  +------+-------------------------------+---------------------------------+
+  | SL 4 | Protection against            | Nation-state level              |
+  |      | state-sponsored attacks       | Custom exploits, 0-days         |
+  +------+-------------------------------+---------------------------------+
+
+  --------------------------------------------------------------------------
+
+  WALLIX CONFIGURATION BY SECURITY LEVEL
+  ======================================
+
+  SL 1 - Basic Protection:
+  +------------------------------------------------------------------------+
+  | [ ] User authentication (username/password)                            |
+  | [ ] Basic role-based access control                                    |
+  | [ ] Session logging enabled                                            |
+  | [ ] Password rotation (90-day)                                         |
+  | [ ] TLS 1.2+ for web interface                                         |
+  +------------------------------------------------------------------------+
+
+  SL 2 - Moderate Protection:
+  +------------------------------------------------------------------------+
+  | [ ] All SL 1 requirements PLUS:                                        |
+  | [ ] MFA required for all users                                         |
+  | [ ] Session recording enabled                                          |
+  | [ ] Approval workflows for sensitive access                            |
+  | [ ] Password rotation (30-day)                                         |
+  | [ ] SIEM integration                                                   |
+  | [ ] TLS 1.3 enforcement                                                |
+  +------------------------------------------------------------------------+
+
+  SL 3 - High Protection:
+  +------------------------------------------------------------------------+
+  | [ ] All SL 2 requirements PLUS:                                        |
+  | [ ] Hardware MFA (FIDO2/smartcard)                                     |
+  | [ ] HA cluster deployment                                              |
+  | [ ] Session recording with OCR/keystroke logging                       |
+  | [ ] Time-based access restrictions                                     |
+  | [ ] Command restrictions/blocking                                      |
+  | [ ] Real-time session monitoring                                       |
+  | [ ] Encrypted storage (at-rest)                                        |
+  | [ ] Network segmentation (OT zones)                                    |
+  +------------------------------------------------------------------------+
+
+  SL 4 - Maximum Protection:
+  +------------------------------------------------------------------------+
+  | [ ] All SL 3 requirements PLUS:                                        |
+  | [ ] Multi-factor with biometrics                                       |
+  | [ ] Four-eyes approval requirement                                     |
+  | [ ] HSM for key management                                             |
+  | [ ] Air-gapped backup systems                                          |
+  | [ ] Continuous security monitoring                                     |
+  | [ ] Penetration testing (quarterly)                                    |
+  | [ ] Zero-trust network architecture                                    |
+  | [ ] Physical security integration                                      |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+---
+
+## CIS Controls Mapping
+
+### CIS Controls v8 Mapping
+
+```
++==============================================================================+
+|                   CIS CONTROLS V8 MAPPING                                    |
++==============================================================================+
+
+  IMPLEMENTATION GROUP 1 (IG1) - Essential
+  =========================================
+
+  +------------------------------------------------------------------------+
+  | Control | Description                    | WALLIX Implementation        |
+  +---------+--------------------------------+------------------------------+
+  | 5.1     | Establish account management   | User provisioning, lifecycle |
+  | 5.2     | Use unique passwords           | Vault, password policies     |
+  | 5.3     | Disable dormant accounts       | Access review, auto-disable  |
+  | 5.4     | Restrict admin privileges      | Least privilege, RBAC        |
+  | 6.1     | Establish access granting proc | Authorization workflows      |
+  | 6.2     | Establish access revoking proc | Deprovisioning procedures    |
+  | 6.3     | Require MFA for ext access     | MFA for all external users   |
+  | 6.4     | Require MFA for admin access   | MFA for administrators       |
+  | 6.5     | Require MFA for remote access  | MFA for all remote access    |
+  | 8.1     | Establish audit log management | Centralized logging          |
+  | 8.2     | Collect audit logs             | Session logs, audit trail    |
+  | 8.3     | Ensure adequate log storage    | Recording storage            |
+  +---------+--------------------------------+------------------------------+
+
+  IMPLEMENTATION GROUP 2 (IG2) - Foundational
+  ===========================================
+
+  +------------------------------------------------------------------------+
+  | Control | Description                    | WALLIX Implementation        |
+  +---------+--------------------------------+------------------------------+
+  | 5.5     | Establish/maintain inventory   | Device/account inventory     |
+  | 5.6     | Centralize account management  | AD/LDAP integration          |
+  | 6.6     | Establish/maintain access ACL  | Authorization policies       |
+  | 6.7     | Centralize access control      | Single PAM solution          |
+  | 6.8     | Define/maintain RBAC           | User groups, target groups   |
+  | 8.4     | Standardize time sync          | NTP configuration            |
+  | 8.5     | Collect detailed audit logs    | Keystroke, command logging   |
+  | 8.6     | Collect DNS query audit logs   | Protocol logging             |
+  | 8.7     | Collect URL request audit logs | HTTP session logging         |
+  | 8.9     | Centralize audit logs          | SIEM integration             |
+  | 8.10    | Retain audit logs              | Configurable retention       |
+  | 8.11    | Conduct audit log reviews      | Reporting, dashboards        |
+  +---------+--------------------------------+------------------------------+
+
+  IMPLEMENTATION GROUP 3 (IG3) - Organizational
+  =============================================
+
+  +------------------------------------------------------------------------+
+  | Control | Description                    | WALLIX Implementation        |
+  +---------+--------------------------------+------------------------------+
+  | 8.12    | Collect admin service logs     | Admin session recording      |
+  | 12.1    | Maintain network infra mgmt    | Network device PAM           |
+  | 12.7    | Maintain portable endpoints    | Jump host architecture       |
+  | 13.6    | Deploy DLP                     | Session controls, blocking   |
+  | 16.8    | Separate prod/non-prod         | Domain separation            |
+  | 16.12   | Implement app logging          | API audit logging            |
+  +---------+--------------------------------+------------------------------+
+
++==============================================================================+
+```
+
+---
+
 ## Evidence Collection Procedures
 
 ### Automated Evidence Collection Script

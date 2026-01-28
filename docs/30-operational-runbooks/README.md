@@ -1051,6 +1051,407 @@ wabadmin account rotate <account_id> --force
 
 ---
 
+## Vendor Maintenance Procedures
+
+### Scheduled Vendor Access Windows
+
+```
++==============================================================================+
+|                   VENDOR MAINTENANCE PROCEDURES                              |
++==============================================================================+
+
+  PRE-MAINTENANCE CHECKLIST
+  =========================
+
+  Before granting vendor access:
+  +------------------------------------------------------------------------+
+  | [ ] Verify valid change ticket/work order                              |
+  | [ ] Confirm scheduled maintenance window                               |
+  | [ ] Notify affected system owners                                      |
+  | [ ] Create/enable time-limited authorization                           |
+  | [ ] Enable enhanced monitoring for vendor sessions                     |
+  | [ ] Assign internal observer (4-eyes if required)                      |
+  | [ ] Document expected activities                                       |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  CREATE TEMPORARY VENDOR ACCESS
+  ==============================
+
+  Via CLI:
+  +------------------------------------------------------------------------+
+  | # Create time-limited authorization for vendor                         |
+  | wabadmin authorization create \                                        |
+  |   --name "vendor-maint-CHG123456" \                                    |
+  |   --user-group "vendor-company-name" \                                 |
+  |   --target-group "maintenance-targets" \                               |
+  |   --start-time "2024-01-27T22:00:00" \                                 |
+  |   --end-time "2024-01-28T02:00:00" \                                   |
+  |   --approval-required true \                                           |
+  |   --recording true \                                                   |
+  |   --description "Maintenance window CHG123456"                         |
+  |                                                                        |
+  | # Verify authorization created                                         |
+  | wabadmin authorization show "vendor-maint-CHG123456"                   |
+  +------------------------------------------------------------------------+
+
+  Via API:
+  +------------------------------------------------------------------------+
+  | curl -X POST "https://wallix/api/v2/authorizations" \                  |
+  |   -H "Authorization: Bearer $TOKEN" \                                  |
+  |   -H "Content-Type: application/json" \                                |
+  |   -d '{                                                                |
+  |     "name": "vendor-maint-CHG123456",                                  |
+  |     "user_group": "vendor-company-name",                               |
+  |     "target_group": "maintenance-targets",                             |
+  |     "valid_from": "2024-01-27T22:00:00Z",                              |
+  |     "valid_until": "2024-01-28T02:00:00Z",                             |
+  |     "approval_required": true,                                         |
+  |     "is_recorded": true                                                |
+  |   }'                                                                   |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  DURING MAINTENANCE MONITORING
+  =============================
+
+  +------------------------------------------------------------------------+
+  | # Monitor active vendor sessions                                       |
+  | watch -n 10 'wabadmin sessions --filter "user_group=vendor-*"'         |
+  |                                                                        |
+  | # Real-time session view (if Web UI available)                         |
+  | # Navigate to: Monitoring > Active Sessions > Filter by user group     |
+  |                                                                        |
+  | # Enable command alerts for specific patterns                          |
+  | wabadmin alert create \                                                |
+  |   --name "vendor-critical-commands" \                                  |
+  |   --session-filter "user_group=vendor-*" \                             |
+  |   --command-pattern "(rm -rf|shutdown|reboot|format)" \                |
+  |   --action "notify,log"                                                |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  POST-MAINTENANCE CLEANUP
+  ========================
+
+  +------------------------------------------------------------------------+
+  | # Disable/delete temporary authorization                               |
+  | wabadmin authorization delete "vendor-maint-CHG123456"                 |
+  |                                                                        |
+  | # Verify no active vendor sessions                                     |
+  | wabadmin sessions --filter "user_group=vendor-*" --status active       |
+  |                                                                        |
+  | # Rotate passwords on accessed accounts                                |
+  | wabadmin rotation --target-group "maintenance-targets" --execute       |
+  |                                                                        |
+  | # Generate maintenance activity report                                 |
+  | wabadmin report --type session-activity \                              |
+  |   --filter "user_group=vendor-*" \                                     |
+  |   --time-range "2024-01-27T22:00:00,2024-01-28T02:00:00" \             |
+  |   --output "/reports/vendor-maint-CHG123456.pdf"                       |
+  |                                                                        |
+  | # Review and archive session recordings                                |
+  | wabadmin recordings --tag "CHG123456" \                                |
+  |   --time-range "2024-01-27T22:00:00,2024-01-28T02:00:00"               |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+---
+
+## Disaster Recovery Scenarios
+
+### DR Scenario Runbooks
+
+```
++==============================================================================+
+|                   DISASTER RECOVERY SCENARIOS                                |
++==============================================================================+
+
+  SCENARIO 1: PRIMARY SITE FAILURE
+  ================================
+
+  Symptoms:
+  - Primary WALLIX cluster unreachable
+  - Users cannot authenticate
+  - Active sessions disconnected
+
+  Recovery Steps:
+  +------------------------------------------------------------------------+
+  | # 1. Verify primary site is truly unavailable                          |
+  | ping primary-wallix.company.com                                        |
+  | telnet primary-wallix.company.com 443                                  |
+  |                                                                        |
+  | # 2. On secondary site - promote to primary                            |
+  | # (Requires manual intervention for safety)                            |
+  | wabadmin dr-promote --confirm                                          |
+  |                                                                        |
+  | # 3. Update DNS to point to secondary site                             |
+  | # (Or update load balancer configuration)                              |
+  |                                                                        |
+  | # 4. Verify secondary is operational                                   |
+  | wabadmin status                                                        |
+  | wabadmin health-check                                                  |
+  |                                                                        |
+  | # 5. Notify users of failover                                          |
+  | # 6. Monitor for issues                                                |
+  | # 7. Document incident                                                 |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  SCENARIO 2: DATABASE CORRUPTION
+  ===============================
+
+  Symptoms:
+  - Service errors mentioning database
+  - Authentication failures
+  - Missing data in UI
+
+  Recovery Steps:
+  +------------------------------------------------------------------------+
+  | # 1. Stop WALLIX services                                              |
+  | systemctl stop wallix-bastion                                          |
+  |                                                                        |
+  | # 2. Check database status                                             |
+  | sudo -u postgres psql -c "SELECT 1;"                                   |
+  | sudo -u postgres psql -c "SELECT pg_is_in_recovery();"                 |
+  |                                                                        |
+  | # 3. If replication is available, failover to standby                  |
+  | # On standby server:                                                   |
+  | sudo -u postgres pg_ctl promote -D /var/lib/postgresql/15/main         |
+  |                                                                        |
+  | # 4. If no standby, restore from backup                                |
+  | sudo -u postgres pg_restore -d wallix \                                |
+  |   /var/backup/wallix/database-YYYYMMDD.dump                            |
+  |                                                                        |
+  | # 5. Start WALLIX services                                             |
+  | systemctl start wallix-bastion                                         |
+  |                                                                        |
+  | # 6. Verify data integrity                                             |
+  | wabadmin verify --database                                             |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  SCENARIO 3: CERTIFICATE EXPIRATION (EMERGENCY)
+  ==============================================
+
+  Symptoms:
+  - HTTPS certificate warnings/errors
+  - Users cannot access Web UI
+  - API calls failing with SSL errors
+
+  Recovery Steps:
+  +------------------------------------------------------------------------+
+  | # 1. Generate self-signed certificate (temporary)                      |
+  | openssl req -x509 -nodes -days 30 -newkey rsa:4096 \                   |
+  |   -keyout /tmp/emergency.key -out /tmp/emergency.crt \                 |
+  |   -subj "/CN=wallix.company.com"                                       |
+  |                                                                        |
+  | # 2. Backup current certificates                                       |
+  | cp /etc/wallix/ssl/server.crt /etc/wallix/ssl/server.crt.expired       |
+  | cp /etc/wallix/ssl/server.key /etc/wallix/ssl/server.key.expired       |
+  |                                                                        |
+  | # 3. Install emergency certificate                                     |
+  | cp /tmp/emergency.crt /etc/wallix/ssl/server.crt                       |
+  | cp /tmp/emergency.key /etc/wallix/ssl/server.key                       |
+  | chmod 640 /etc/wallix/ssl/server.*                                     |
+  |                                                                        |
+  | # 4. Restart services                                                  |
+  | systemctl restart wallix-bastion                                       |
+  |                                                                        |
+  | # 5. Verify access (users will see certificate warning)                |
+  | curl -k https://localhost/api/health                                   |
+  |                                                                        |
+  | # 6. Expedite proper certificate renewal                               |
+  | # Generate CSR and submit to CA immediately                            |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  SCENARIO 4: CREDENTIAL VAULT BREACH SUSPECTED
+  =============================================
+
+  Symptoms:
+  - Unauthorized access detected
+  - Suspicious audit log entries
+  - Security alert from SIEM
+
+  Recovery Steps:
+  +------------------------------------------------------------------------+
+  | # 1. IMMEDIATELY terminate all active sessions                         |
+  | wabadmin sessions --kill-all --confirm                                 |
+  |                                                                        |
+  | # 2. Disable all vendor and external accounts                          |
+  | wabadmin users --filter "type=external" --disable-all                  |
+  |                                                                        |
+  | # 3. Rotate ALL managed credentials                                    |
+  | wabadmin rotation --all --force --execute                              |
+  |                                                                        |
+  | # 4. Change master encryption key (if key compromise suspected)        |
+  | wabadmin key-management rotate-master-key --confirm                    |
+  |                                                                        |
+  | # 5. Export audit logs for investigation                               |
+  | wabadmin audit --export --all --output /forensics/audit-export.json    |
+  |                                                                        |
+  | # 6. Notify security team and management                               |
+  | # 7. Begin forensic investigation                                      |
+  | # 8. Follow incident response procedures                               |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+---
+
+## Monitoring Alert Response
+
+### Alert Response Procedures
+
+```
++==============================================================================+
+|                   ALERT RESPONSE PROCEDURES                                  |
++==============================================================================+
+
+  CRITICAL ALERTS - IMMEDIATE RESPONSE
+  ====================================
+
+  ALERT: Service Down
+  +------------------------------------------------------------------------+
+  | Trigger: wallix-bastion service not running                            |
+  | Response Time: Immediate (< 5 minutes)                                 |
+  |                                                                        |
+  | Steps:                                                                 |
+  | 1. Check service status: systemctl status wallix-bastion               |
+  | 2. Check logs: journalctl -u wallix-bastion --since "10 min ago"       |
+  | 3. Check disk space: df -h                                             |
+  | 4. Check database: sudo -u postgres psql -c "SELECT 1;"                |
+  | 5. Attempt restart: systemctl restart wallix-bastion                   |
+  | 6. If fails, check for config errors: wabadmin config --verify         |
+  | 7. Escalate if not resolved in 15 minutes                              |
+  +------------------------------------------------------------------------+
+
+  ALERT: Cluster Node Failure
+  +------------------------------------------------------------------------+
+  | Trigger: Pacemaker reports node offline or failed resources            |
+  | Response Time: Immediate (< 5 minutes)                                 |
+  |                                                                        |
+  | Steps:                                                                 |
+  | 1. Check cluster status: crm status                                    |
+  | 2. Verify services on surviving node are running                       |
+  | 3. Check network between nodes: ping <other-node>                      |
+  | 4. Check corosync: corosync-quorumtool -s                              |
+  | 5. If node is recoverable, bring online: crm node online <node>        |
+  | 6. If not recoverable, clean up: crm resource cleanup                  |
+  | 7. Plan node recovery during maintenance window                        |
+  +------------------------------------------------------------------------+
+
+  ALERT: Multiple Authentication Failures
+  +------------------------------------------------------------------------+
+  | Trigger: > 10 failed logins from same IP in 5 minutes                  |
+  | Response Time: < 15 minutes                                            |
+  |                                                                        |
+  | Steps:                                                                 |
+  | 1. Identify source IP and user                                         |
+  | 2. Check if legitimate user with wrong password                        |
+  | 3. If suspicious, block IP at firewall                                 |
+  | 4. Check for account lockout: wabadmin user show <username>            |
+  | 5. Review full audit for the IP                                        |
+  | 6. If attack, notify security team                                     |
+  | 7. Consider adding IP to permanent block list                          |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  HIGH ALERTS - RESPONSE WITHIN 1 HOUR
+  ====================================
+
+  ALERT: Password Rotation Failures
+  +------------------------------------------------------------------------+
+  | Trigger: Multiple rotation failures for same account                   |
+  | Response Time: < 1 hour                                                |
+  |                                                                        |
+  | Steps:                                                                 |
+  | 1. Identify failed account: wabadmin rotation --failed                 |
+  | 2. Check error details in rotation log                                 |
+  | 3. Test connectivity to target: wabadmin connectivity-test <target>    |
+  | 4. Verify rotation credentials are valid                               |
+  | 5. Attempt manual rotation: wabadmin account rotate <account> --verbose|
+  | 6. If network issue, coordinate with network team                      |
+  | 7. Update ticket system with status                                    |
+  +------------------------------------------------------------------------+
+
+  ALERT: High Disk Usage
+  +------------------------------------------------------------------------+
+  | Trigger: Disk usage > 80%                                              |
+  | Response Time: < 1 hour                                                |
+  |                                                                        |
+  | Steps:                                                                 |
+  | 1. Identify largest consumers: du -sh /var/lib/wallix/*                |
+  | 2. Check recording storage: du -sh /var/lib/wallix/recordings/         |
+  | 3. Check log files: du -sh /var/log/wallix/                            |
+  | 4. If recordings, apply retention policy                               |
+  | 5. If logs, force rotation: logrotate -f /etc/logrotate.d/wallix       |
+  | 6. If database, consider archiving old data                            |
+  | 7. Plan storage expansion if recurring                                 |
+  +------------------------------------------------------------------------+
+
+  ALERT: Replication Lag
+  +------------------------------------------------------------------------+
+  | Trigger: PostgreSQL replication lag > 5 minutes                        |
+  | Response Time: < 1 hour                                                |
+  |                                                                        |
+  | Steps:                                                                 |
+  | 1. Check replication status on primary                                 |
+  | 2. Check network between primary and standby                           |
+  | 3. Check standby server health (CPU, disk I/O)                         |
+  | 4. Check for long-running queries blocking replication                 |
+  | 5. If network issue, coordinate with network team                      |
+  | 6. If standby overloaded, consider query offloading                    |
+  | 7. Document and monitor trend                                          |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  MEDIUM ALERTS - RESPONSE WITHIN 24 HOURS
+  ========================================
+
+  ALERT: Certificate Expiring
+  +------------------------------------------------------------------------+
+  | Trigger: Certificate expires in < 30 days                              |
+  | Response Time: < 24 hours (start renewal process)                      |
+  |                                                                        |
+  | Steps:                                                                 |
+  | 1. Identify expiring certificate                                       |
+  | 2. Generate CSR for renewal                                            |
+  | 3. Submit to CA for new certificate                                    |
+  | 4. Schedule installation during maintenance window                     |
+  | 5. Update certificate tracking system                                  |
+  +------------------------------------------------------------------------+
+
+  ALERT: License Threshold
+  +------------------------------------------------------------------------+
+  | Trigger: License usage > 80% of capacity                               |
+  | Response Time: < 24 hours                                              |
+  |                                                                        |
+  | Steps:                                                                 |
+  | 1. Review current license usage: wabadmin license-info                 |
+  | 2. Identify growth trend                                               |
+  | 3. Review and remove unused accounts/devices                           |
+  | 4. Contact WALLIX sales for license expansion quote                    |
+  | 5. Plan capacity increase before hitting limit                         |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+---
+
 ## Appendix: Quick Reference Commands
 
 ### Service Management

@@ -604,6 +604,676 @@
 
 ---
 
+## Database Tuning
+
+### PostgreSQL Tuning Guide
+
+```
++==============================================================================+
+|                   POSTGRESQL TUNING FOR WALLIX                               |
++==============================================================================+
+
+  MEMORY CONFIGURATION
+  ====================
+
+  Edit /etc/postgresql/15/main/postgresql.conf:
+
+  +------------------------------------------------------------------------+
+  | # Connection Settings                                                  |
+  | max_connections = 200            # Adjust based on concurrent users    |
+  |                                                                        |
+  | # Memory Settings (for 16GB RAM system)                                |
+  | shared_buffers = 4GB             # 25% of total RAM                    |
+  | effective_cache_size = 12GB      # 75% of total RAM                    |
+  | work_mem = 64MB                  # Per-operation memory                |
+  | maintenance_work_mem = 1GB       # For VACUUM, CREATE INDEX            |
+  |                                                                        |
+  | # WAL Settings                                                         |
+  | wal_buffers = 64MB               # 3% of shared_buffers                |
+  | min_wal_size = 1GB                                                     |
+  | max_wal_size = 4GB                                                     |
+  | checkpoint_completion_target = 0.9                                     |
+  |                                                                        |
+  | # Query Planner                                                        |
+  | random_page_cost = 1.1           # For SSD storage                     |
+  | effective_io_concurrency = 200   # For SSD storage                     |
+  |                                                                        |
+  | # Logging                                                              |
+  | log_min_duration_statement = 1000  # Log queries > 1 second            |
+  | log_checkpoints = on                                                   |
+  | log_connections = on                                                   |
+  | log_disconnections = on                                                |
+  | log_lock_waits = on                                                    |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  SIZING GUIDELINES
+  =================
+
+  +------------------------------------------------------------------------+
+  | System RAM | shared_buffers | effective_cache | work_mem | Connections |
+  +------------+----------------+-----------------+----------+-------------+
+  | 8 GB       | 2 GB           | 6 GB            | 32 MB    | 100         |
+  | 16 GB      | 4 GB           | 12 GB           | 64 MB    | 200         |
+  | 32 GB      | 8 GB           | 24 GB           | 128 MB   | 400         |
+  | 64 GB      | 16 GB          | 48 GB           | 256 MB   | 500         |
+  +------------+----------------+-----------------+----------+-------------+
+
+  --------------------------------------------------------------------------
+
+  REPLICATION TUNING
+  ==================
+
+  For HA clusters with streaming replication:
+
+  +------------------------------------------------------------------------+
+  | # Primary server settings                                              |
+  | wal_level = replica                                                    |
+  | max_wal_senders = 5                                                    |
+  | max_replication_slots = 5                                              |
+  | synchronous_commit = on          # or 'remote_apply' for strong        |
+  | synchronous_standby_names = '*'  # All standbys are synchronous        |
+  |                                                                        |
+  | # Standby server settings                                              |
+  | hot_standby = on                                                       |
+  | hot_standby_feedback = on                                              |
+  | max_standby_streaming_delay = 30s                                      |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  AUTOVACUUM TUNING
+  =================
+
+  +------------------------------------------------------------------------+
+  | # Autovacuum settings for high-transaction workloads                   |
+  | autovacuum = on                                                        |
+  | autovacuum_max_workers = 4                                             |
+  | autovacuum_naptime = 30s         # Check more frequently               |
+  | autovacuum_vacuum_threshold = 50                                       |
+  | autovacuum_analyze_threshold = 50                                      |
+  | autovacuum_vacuum_scale_factor = 0.05   # 5% of table                  |
+  | autovacuum_analyze_scale_factor = 0.025 # 2.5% of table                |
+  | autovacuum_vacuum_cost_delay = 2ms      # Reduce vacuum impact         |
+  | autovacuum_vacuum_cost_limit = 1000                                    |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  CONNECTION POOLING
+  ==================
+
+  For high-concurrency environments, consider PgBouncer:
+
+  /etc/pgbouncer/pgbouncer.ini:
+  +------------------------------------------------------------------------+
+  | [databases]                                                            |
+  | wallix = host=127.0.0.1 port=5432 dbname=wallix                        |
+  |                                                                        |
+  | [pgbouncer]                                                            |
+  | listen_port = 6432                                                     |
+  | listen_addr = 127.0.0.1                                                |
+  | auth_type = md5                                                        |
+  | auth_file = /etc/pgbouncer/userlist.txt                                |
+  |                                                                        |
+  | # Pool settings                                                        |
+  | pool_mode = transaction          # Transaction pooling                 |
+  | max_client_conn = 1000           # Max client connections              |
+  | default_pool_size = 50           # Connections per pool                |
+  | min_pool_size = 10               # Minimum connections                 |
+  | reserve_pool_size = 10           # Emergency connections               |
+  |                                                                        |
+  | # Timeouts                                                             |
+  | server_idle_timeout = 600        # Close idle server connections       |
+  | client_idle_timeout = 0          # No client timeout                   |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+### Database Performance Monitoring
+
+```
++==============================================================================+
+|                   DATABASE PERFORMANCE MONITORING                            |
++==============================================================================+
+
+  KEY METRICS TO MONITOR
+  ======================
+
+  +------------------------------------------------------------------------+
+  | Metric                    | Warning      | Critical     | Query        |
+  +---------------------------+--------------+--------------+--------------+
+  | Active connections        | > 80%        | > 95%        | pg_stat_act. |
+  | Connection wait time      | > 100ms      | > 500ms      | pg_stat_act. |
+  | Cache hit ratio           | < 95%        | < 90%        | pg_stat_db   |
+  | Transaction rate          | Trend        | Trend        | pg_stat_db   |
+  | Replication lag           | > 1 MB       | > 10 MB      | pg_stat_rep  |
+  | Dead tuples ratio         | > 10%        | > 20%        | pg_stat_ut   |
+  | Table bloat               | > 20%        | > 40%        | Custom       |
+  | Long-running queries      | > 5 min      | > 15 min     | pg_stat_act. |
+  +---------------------------+--------------+--------------+--------------+
+
+  --------------------------------------------------------------------------
+
+  MONITORING QUERIES
+  ==================
+
+  Cache Hit Ratio:
+  +------------------------------------------------------------------------+
+  | SELECT                                                                 |
+  |   sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read)) * 100|
+  |   AS cache_hit_ratio                                                   |
+  | FROM pg_statio_user_tables;                                            |
+  |                                                                        |
+  | -- Should be > 95% for good performance                                |
+  +------------------------------------------------------------------------+
+
+  Connection Statistics:
+  +------------------------------------------------------------------------+
+  | SELECT                                                                 |
+  |   state,                                                               |
+  |   count(*) as connections,                                             |
+  |   max(now() - state_change) as longest_duration                        |
+  | FROM pg_stat_activity                                                  |
+  | GROUP BY state;                                                        |
+  +------------------------------------------------------------------------+
+
+  Table Bloat Estimation:
+  +------------------------------------------------------------------------+
+  | SELECT                                                                 |
+  |   schemaname, relname,                                                 |
+  |   n_dead_tup,                                                          |
+  |   n_live_tup,                                                          |
+  |   round(n_dead_tup * 100.0 / nullif(n_live_tup + n_dead_tup, 0), 2)    |
+  |     AS dead_ratio                                                      |
+  | FROM pg_stat_user_tables                                               |
+  | WHERE n_dead_tup > 1000                                                |
+  | ORDER BY dead_ratio DESC                                               |
+  | LIMIT 20;                                                              |
+  +------------------------------------------------------------------------+
+
+  Slow Query Log Analysis:
+  +------------------------------------------------------------------------+
+  | SELECT                                                                 |
+  |   calls,                                                               |
+  |   round(total_exec_time::numeric, 2) as total_time_ms,                 |
+  |   round(mean_exec_time::numeric, 2) as mean_time_ms,                   |
+  |   round((100 * total_exec_time /                                       |
+  |     sum(total_exec_time) OVER ())::numeric, 2) AS percent,             |
+  |   substring(query, 1, 60) as query_preview                             |
+  | FROM pg_stat_statements                                                |
+  | ORDER BY total_exec_time DESC                                          |
+  | LIMIT 20;                                                              |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  INDEX OPTIMIZATION
+  ==================
+
+  Find Missing Indexes:
+  +------------------------------------------------------------------------+
+  | SELECT                                                                 |
+  |   schemaname, relname,                                                 |
+  |   seq_scan, seq_tup_read,                                              |
+  |   idx_scan, idx_tup_fetch,                                             |
+  |   seq_tup_read / NULLIF(seq_scan, 0) AS avg_seq_tup_read               |
+  | FROM pg_stat_user_tables                                               |
+  | WHERE seq_scan > 100                                                   |
+  |   AND seq_tup_read / NULLIF(seq_scan, 0) > 1000                        |
+  | ORDER BY seq_tup_read DESC                                             |
+  | LIMIT 20;                                                              |
+  |                                                                        |
+  | -- High seq_scan with high avg_seq_tup_read = potential missing index  |
+  +------------------------------------------------------------------------+
+
+  Unused Indexes:
+  +------------------------------------------------------------------------+
+  | SELECT                                                                 |
+  |   schemaname, relname, indexrelname,                                   |
+  |   idx_scan,                                                            |
+  |   pg_size_pretty(pg_relation_size(indexrelid)) AS index_size           |
+  | FROM pg_stat_user_indexes                                              |
+  | WHERE idx_scan = 0                                                     |
+  |   AND indexrelname NOT LIKE '%_pkey'                                   |
+  | ORDER BY pg_relation_size(indexrelid) DESC;                            |
+  |                                                                        |
+  | -- Consider dropping unused indexes to improve write performance       |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+---
+
+## Advanced Troubleshooting
+
+### System-Level Diagnostics
+
+```
++==============================================================================+
+|                   ADVANCED SYSTEM DIAGNOSTICS                                |
++==============================================================================+
+
+  PROCESS ANALYSIS
+  ================
+
+  Identify Resource-Intensive Processes:
+  +------------------------------------------------------------------------+
+  | # Top CPU consumers                                                    |
+  | ps aux --sort=-%cpu | head -15                                         |
+  |                                                                        |
+  | # Top memory consumers                                                 |
+  | ps aux --sort=-%mem | head -15                                         |
+  |                                                                        |
+  | # WALLIX-specific processes                                            |
+  | ps aux | grep -E "(wab|wallix|postgres)" | sort -k4 -rn                |
+  |                                                                        |
+  | # Process tree for WALLIX services                                     |
+  | pstree -p $(pgrep -f wallix-bastion)                                   |
+  +------------------------------------------------------------------------+
+
+  Thread Analysis:
+  +------------------------------------------------------------------------+
+  | # Count threads per process                                            |
+  | ps -eLf | grep wallix | wc -l                                          |
+  |                                                                        |
+  | # Thread states                                                        |
+  | ps -eLo pid,tid,state,comm | grep wallix | sort | uniq -c              |
+  |                                                                        |
+  | # Stuck threads (D state = uninterruptible sleep)                      |
+  | ps -eLo pid,tid,state,wchan,comm | grep -E "^.* D "                    |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  FILE DESCRIPTOR ANALYSIS
+  ========================
+
+  +------------------------------------------------------------------------+
+  | # Current file descriptor usage                                        |
+  | cat /proc/sys/fs/file-nr                                               |
+  | # Output: allocated  free  max                                         |
+  |                                                                        |
+  | # File descriptors by process                                          |
+  | for pid in $(pgrep -f wallix); do                                      |
+  |   echo "PID $pid: $(ls /proc/$pid/fd 2>/dev/null | wc -l) fds"         |
+  | done                                                                   |
+  |                                                                        |
+  | # Socket connections per process                                       |
+  | for pid in $(pgrep -f wallix); do                                      |
+  |   echo "PID $pid sockets:"                                             |
+  |   ss -tnp | grep "pid=$pid"                                            |
+  | done                                                                   |
+  |                                                                        |
+  | # If running out of file descriptors:                                  |
+  | # 1. Check current limit: ulimit -n                                    |
+  | # 2. Increase in /etc/security/limits.conf:                            |
+  | #    wallix soft nofile 65536                                          |
+  | #    wallix hard nofile 65536                                          |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  NETWORK TROUBLESHOOTING
+  =======================
+
+  Connection State Analysis:
+  +------------------------------------------------------------------------+
+  | # Connection states summary                                            |
+  | ss -s                                                                  |
+  |                                                                        |
+  | # Detailed TCP connections                                             |
+  | ss -tn | awk '{print $1}' | sort | uniq -c | sort -rn                  |
+  |                                                                        |
+  | # Connections to specific port (e.g., 22 for SSH)                      |
+  | ss -tn state established '( dport = :22 or sport = :22 )'              |
+  |                                                                        |
+  | # TIME_WAIT accumulation (potential issue)                             |
+  | ss -tn state time-wait | wc -l                                         |
+  | # If high, consider tuning:                                            |
+  | # net.ipv4.tcp_fin_timeout = 15                                        |
+  | # net.ipv4.tcp_tw_reuse = 1                                            |
+  +------------------------------------------------------------------------+
+
+  Network Latency Testing:
+  +------------------------------------------------------------------------+
+  | # Measure latency to target                                            |
+  | hping3 -S -p 22 -c 10 target-server                                    |
+  |                                                                        |
+  | # TCP connection time                                                  |
+  | time timeout 5 bash -c 'cat < /dev/null > /dev/tcp/target-server/22'   |
+  |                                                                        |
+  | # Continuous monitoring                                                |
+  | mtr --report --report-cycles 100 target-server                         |
+  +------------------------------------------------------------------------+
+
+  Packet Capture:
+  +------------------------------------------------------------------------+
+  | # Capture traffic for specific session                                 |
+  | tcpdump -i eth0 host target-server -w /tmp/capture.pcap                |
+  |                                                                        |
+  | # Capture SSH traffic                                                  |
+  | tcpdump -i eth0 port 22 -w /tmp/ssh-capture.pcap                       |
+  |                                                                        |
+  | # Capture with timing for latency analysis                             |
+  | tcpdump -i eth0 -tt host target-server                                 |
+  |                                                                        |
+  | # Filter for connection issues (RST, SYN without ACK)                  |
+  | tcpdump -i eth0 'tcp[tcpflags] & (tcp-rst) != 0'                       |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  MEMORY ANALYSIS
+  ===============
+
+  +------------------------------------------------------------------------+
+  | # Memory overview                                                      |
+  | free -h                                                                |
+  |                                                                        |
+  | # Detailed memory info                                                 |
+  | cat /proc/meminfo | grep -E "(MemTotal|MemFree|MemAvail|Buffers|Cache)"|
+  |                                                                        |
+  | # Memory per WALLIX process                                            |
+  | for pid in $(pgrep -f wallix); do                                      |
+  |   name=$(cat /proc/$pid/comm 2>/dev/null)                              |
+  |   mem=$(ps -o rss= -p $pid 2>/dev/null)                                |
+  |   echo "$name ($pid): $((mem/1024)) MB"                                |
+  | done                                                                   |
+  |                                                                        |
+  | # Memory mapping for specific process                                  |
+  | pmap -x $(pgrep -f wallix-bastion | head -1)                           |
+  |                                                                        |
+  | # OOM killer candidates                                                |
+  | for pid in $(pgrep -f wallix); do                                      |
+  |   echo "$pid: $(cat /proc/$pid/oom_score 2>/dev/null)"                 |
+  | done                                                                   |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  DISK I/O ANALYSIS
+  =================
+
+  +------------------------------------------------------------------------+
+  | # Real-time I/O statistics                                             |
+  | iostat -xz 1 5                                                         |
+  |                                                                        |
+  | # I/O by process                                                       |
+  | iotop -b -n 1 | head -20                                               |
+  |                                                                        |
+  | # Disk latency                                                         |
+  | ioping -c 10 /var/lib/wallix                                           |
+  |                                                                        |
+  | # Check for I/O wait                                                   |
+  | vmstat 1 5                                                             |
+  | # Column 'wa' shows I/O wait percentage                                |
+  |                                                                        |
+  | # Identify I/O bottleneck                                              |
+  | # High %util with low throughput = disk saturation                     |
+  | # High await = I/O latency issues                                      |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+### Application-Level Troubleshooting
+
+```
++==============================================================================+
+|                   APPLICATION TROUBLESHOOTING                                |
++==============================================================================+
+
+  SESSION DEBUGGING
+  =================
+
+  Enable Debug Logging:
+  +------------------------------------------------------------------------+
+  | # Temporary debug logging                                              |
+  | wabadmin log-level set --component session-proxy --level DEBUG         |
+  |                                                                        |
+  | # Reproduce issue                                                      |
+  |                                                                        |
+  | # Capture logs                                                         |
+  | tail -f /var/log/wallix/session-proxy.log | tee /tmp/debug.log         |
+  |                                                                        |
+  | # Reset log level after debugging                                      |
+  | wabadmin log-level set --component session-proxy --level INFO          |
+  +------------------------------------------------------------------------+
+
+  Session Trace:
+  +------------------------------------------------------------------------+
+  | # Trace specific session                                               |
+  | wabadmin session trace --session-id SES-123456                         |
+  |                                                                        |
+  | # Output includes:                                                     |
+  | # - Authentication steps                                               |
+  | # - Authorization checks                                               |
+  | # - Credential retrieval                                               |
+  | # - Connection establishment                                           |
+  | # - Protocol negotiation                                               |
+  | # - Timing for each step                                               |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  AUTHENTICATION DEBUGGING
+  ========================
+
+  LDAP Debugging:
+  +------------------------------------------------------------------------+
+  | # Test LDAP connectivity                                               |
+  | ldapsearch -x -H ldaps://dc.company.com:636 \                          |
+  |   -D "CN=wallix-svc,OU=Service,DC=company,DC=com" \                    |
+  |   -W -b "DC=company,DC=com" \                                          |
+  |   "(sAMAccountName=testuser)"                                          |
+  |                                                                        |
+  | # Test with SSL debugging                                              |
+  | LDAPTLS_REQCERT=never ldapsearch -x -H ldaps://dc.company.com:636 \    |
+  |   -D "CN=wallix-svc,OU=Service,DC=company,DC=com" \                    |
+  |   -W -d 255 \                                                          |
+  |   "(sAMAccountName=testuser)"                                          |
+  |                                                                        |
+  | # Check LDAP certificate                                               |
+  | echo | openssl s_client -connect dc.company.com:636 2>/dev/null | \    |
+  |   openssl x509 -noout -subject -dates                                  |
+  +------------------------------------------------------------------------+
+
+  RADIUS/MFA Debugging:
+  +------------------------------------------------------------------------+
+  | # Test RADIUS server                                                   |
+  | radtest username password radius-server 1812 shared-secret             |
+  |                                                                        |
+  | # Verbose test                                                         |
+  | radtest -x username password radius-server 1812 shared-secret          |
+  |                                                                        |
+  | # Check RADIUS server logs                                             |
+  | # On FreeRADIUS:                                                       |
+  | tail -f /var/log/freeradius/radius.log                                 |
+  +------------------------------------------------------------------------+
+
+  Kerberos Debugging:
+  +------------------------------------------------------------------------+
+  | # List Kerberos tickets                                                |
+  | klist                                                                  |
+  |                                                                        |
+  | # Get ticket for testing                                               |
+  | kinit username@REALM.COM                                               |
+  |                                                                        |
+  | # Test service ticket                                                  |
+  | kvno host/target-server.company.com                                    |
+  |                                                                        |
+  | # Enable Kerberos debug                                                |
+  | export KRB5_TRACE=/tmp/krb5.log                                        |
+  | # Run authentication test                                              |
+  | cat /tmp/krb5.log                                                      |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  PASSWORD ROTATION DEBUGGING
+  ===========================
+
+  +------------------------------------------------------------------------+
+  | # Enable rotation debugging                                            |
+  | wabadmin log-level set --component password-manager --level DEBUG      |
+  |                                                                        |
+  | # Trigger rotation manually                                            |
+  | wabadmin account rotate <account_id> --verbose                         |
+  |                                                                        |
+  | # Check rotation connector                                             |
+  | wabadmin connector test --connector-id <connector_id> \                |
+  |   --target <target> --account <account>                                |
+  |                                                                        |
+  | # View rotation queue                                                  |
+  | wabadmin rotation --queue --verbose                                    |
+  |                                                                        |
+  | # Check connector configuration                                        |
+  | wabadmin connector show <connector_id> --config                        |
+  +------------------------------------------------------------------------+
+
+  Common Rotation Issues:
+  +------------------------------------------------------------------------+
+  | Error                         | Possible Cause          | Solution     |
+  +-------------------------------+-------------------------+--------------+
+  | Connection timeout            | Network/firewall        | Check route  |
+  | Authentication failed         | Bad rotation creds      | Update creds |
+  | Permission denied             | Insufficient privileges | Grant access |
+  | Password complexity failed    | Policy mismatch         | Adjust policy|
+  | Account locked                | Too many attempts       | Unlock acct  |
+  | Protocol error                | Connector mismatch      | Verify conn. |
+  +-------------------------------+-------------------------+--------------+
+
+  --------------------------------------------------------------------------
+
+  CLUSTER TROUBLESHOOTING
+  =======================
+
+  +------------------------------------------------------------------------+
+  | # Detailed cluster status                                              |
+  | crm status full                                                        |
+  |                                                                        |
+  | # Resource history                                                     |
+  | crm resource history <resource_name>                                   |
+  |                                                                        |
+  | # Check for failures                                                   |
+  | crm_failcount -r <resource_name> -N <node_name> -G                     |
+  |                                                                        |
+  | # View cluster configuration                                           |
+  | crm configure show                                                     |
+  |                                                                        |
+  | # Cluster verification                                                 |
+  | crm_verify -L -V                                                       |
+  |                                                                        |
+  | # Check corosync membership                                            |
+  | corosync-cmapctl | grep members                                        |
+  |                                                                        |
+  | # Check quorum status                                                  |
+  | corosync-quorumtool -s                                                 |
+  |                                                                        |
+  | # Network connectivity between nodes                                   |
+  | corosync-cfgtool -s                                                    |
+  +------------------------------------------------------------------------+
+
+  Resource Recovery:
+  +------------------------------------------------------------------------+
+  | # Clear resource failures                                              |
+  | crm resource cleanup <resource_name>                                   |
+  |                                                                        |
+  | # Force resource restart                                               |
+  | crm resource restart <resource_name>                                   |
+  |                                                                        |
+  | # Move resource to specific node                                       |
+  | crm resource move <resource_name> <node_name>                          |
+  |                                                                        |
+  | # Clear location constraint after move                                 |
+  | crm resource clear <resource_name>                                     |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+### Diagnostic Data Collection
+
+```
++==============================================================================+
+|                   DIAGNOSTIC DATA COLLECTION                                 |
++==============================================================================+
+
+  SUPPORT BUNDLE GENERATION
+  =========================
+
+  +------------------------------------------------------------------------+
+  | # Generate comprehensive diagnostic bundle                             |
+  | wabadmin support-bundle --output /tmp/wallix-diag-$(date +%Y%m%d).tar.gz
+  |                                                                        |
+  | # Bundle includes:                                                     |
+  | # - Configuration files (sanitized)                                    |
+  | # - Recent logs (last 7 days)                                          |
+  | # - System information                                                 |
+  | # - Database statistics                                                |
+  | # - Network configuration                                              |
+  | # - Cluster status (if applicable)                                     |
+  | # - License information                                                |
+  +------------------------------------------------------------------------+
+
+  Manual Collection Script:
+  +------------------------------------------------------------------------+
+  | #!/bin/bash                                                            |
+  | # /opt/scripts/collect-diagnostics.sh                                  |
+  |                                                                        |
+  | DIAG_DIR="/tmp/wallix-diag-$(date +%Y%m%d-%H%M%S)"                     |
+  | mkdir -p "$DIAG_DIR"                                                   |
+  |                                                                        |
+  | # System info                                                          |
+  | uname -a > "$DIAG_DIR/system-info.txt"                                 |
+  | cat /etc/os-release >> "$DIAG_DIR/system-info.txt"                     |
+  | uptime >> "$DIAG_DIR/system-info.txt"                                  |
+  |                                                                        |
+  | # Resource usage                                                       |
+  | free -h > "$DIAG_DIR/memory.txt"                                       |
+  | df -h > "$DIAG_DIR/disk.txt"                                           |
+  | top -bn1 | head -30 > "$DIAG_DIR/top.txt"                              |
+  | ps auxf > "$DIAG_DIR/processes.txt"                                    |
+  |                                                                        |
+  | # Network                                                              |
+  | ss -tuln > "$DIAG_DIR/listening-ports.txt"                             |
+  | ss -tn > "$DIAG_DIR/connections.txt"                                   |
+  | ip addr > "$DIAG_DIR/ip-config.txt"                                    |
+  | ip route > "$DIAG_DIR/routes.txt"                                      |
+  |                                                                        |
+  | # Services                                                             |
+  | systemctl status wallix-bastion > "$DIAG_DIR/service-status.txt" 2>&1  |
+  | wabadmin status >> "$DIAG_DIR/service-status.txt" 2>&1                 |
+  |                                                                        |
+  | # Logs (last 1000 lines each)                                          |
+  | tail -1000 /var/log/wallix/application.log > "$DIAG_DIR/app.log"       |
+  | tail -1000 /var/log/wallix/session-proxy.log > "$DIAG_DIR/proxy.log"   |
+  | journalctl -u wallix-bastion --since "1 hour ago" > "$DIAG_DIR/jrnl.log"
+  |                                                                        |
+  | # Database (if accessible)                                             |
+  | sudo -u postgres psql -c "SELECT version();" > "$DIAG_DIR/db.txt" 2>&1 |
+  | sudo -u postgres psql -c "SELECT * FROM pg_stat_activity;" \           |
+  |   >> "$DIAG_DIR/db.txt" 2>&1                                           |
+  |                                                                        |
+  | # Cluster (if applicable)                                              |
+  | crm status > "$DIAG_DIR/cluster.txt" 2>&1 || true                      |
+  |                                                                        |
+  | # Create archive                                                       |
+  | tar -czvf "$DIAG_DIR.tar.gz" -C /tmp "$(basename $DIAG_DIR)"           |
+  | rm -rf "$DIAG_DIR"                                                     |
+  |                                                                        |
+  | echo "Diagnostic bundle created: $DIAG_DIR.tar.gz"                     |
+  +------------------------------------------------------------------------+
+
++==============================================================================+
+```
+
+---
+
 ## Next Steps
 
 Continue to [13 - Best Practices](../13-best-practices/README.md) for operational recommendations.
