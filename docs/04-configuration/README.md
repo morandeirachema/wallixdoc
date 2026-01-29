@@ -30,7 +30,7 @@ WALLIX Bastion uses a hierarchical object model to organize resources:
 |   |                                                                      |  |
 |   |   +-----------------------------------------------------------------+  |  |
 |   |   |                       DEVICE                                 |  |  |
-|   |   |   (Target system: server, appliance, database)              |  |  |
+|   |   |   (Target system: server, appliance, database)              |  |   |
 |   |   |                                                              |  |  |
 |   |   |   +---------------------+  +---------------------+         |  |  |
 |   |   |   |      SERVICE        |  |      SERVICE        |         |  |  |

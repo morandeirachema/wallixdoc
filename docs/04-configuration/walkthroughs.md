@@ -757,7 +757,7 @@ Target Groups:
 | Wrong port number | Connection timeout | Verify port with target admin |
 | Missing authorization | "Access denied" | Create authorization linking user group to target group |
 | Password policy mismatch | Rotation fails | Match policy to target requirements |
-| NLA disabled on Windows | Security warning | Enable NLA on Windows target |
+| NLA disabled on Windows | Security warning | Enable NLA on Windows target  |
 
 ---
 

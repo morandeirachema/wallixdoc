@@ -47,16 +47,16 @@
 |                                                                            |
 |  +------------------------------------------------------------------------+|
 |  |                                                                        ||
-|  |  Phase 1         Phase 2         Phase 3         Phase 4              ||
-|  |  -------         -------         -------         -------              ||
+|  |  Phase 1         Phase 2         Phase 3         Phase 4              | |
+|  |  -------         -------         -------         -------              | |
 |  |                                                                        ||
-|  |  Assessment  --> Preparation --> Migration  --> Validation            ||
+|  |  Assessment  --> Preparation --> Migration  --> Validation            | |
 |  |                                                                        ||
-|  |  * Inventory     * Design         * Data move     * Testing           ||
-|  |  * Mapping       * Setup WALLIX   * User migrate  * Validation        ||
-|  |  * Gap analysis  * Parallel run   * Cutover       * Documentation     ||
+|  |  * Inventory     * Design         * Data move     * Testing           | |
+|  |  * Mapping       * Setup WALLIX   * User migrate  * Validation        | |
+|  |  * Gap analysis  * Parallel run   * Cutover       * Documentation     | |
 |  |                                                                        ||
-|  |  2-4 weeks       2-4 weeks        2-8 weeks       1-2 weeks           ||
+|  |  2-4 weeks       2-4 weeks        2-8 weeks       1-2 weeks           | |
 |  |                                                                        ||
 |  +------------------------------------------------------------------------+|
 |                                                                            |

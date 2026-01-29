@@ -11,9 +11,9 @@ Choose your role to get a customized learning path. Each path includes estimated
 **Goal**: Launch sessions, basic troubleshooting, daily monitoring
 
 ```
-+==============================================================================+
++===============================================================================+
 |                   OPERATOR LEARNING PATH                                     |
-+==============================================================================+
++===============================================================================+
 
   WHO IS THIS FOR?
   ================
@@ -71,7 +71,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   [_] Run basic health check commands?
   [_] Generate a session report for a specific date?
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---
@@ -81,9 +81,9 @@ Choose your role to get a customized learning path. Each path includes estimated
 **Goal**: Deploy, configure, troubleshoot, and maintain WALLIX
 
 ```
-+==============================================================================+
++===============================================================================+
 |                   SYSTEM ENGINEER LEARNING PATH                              |
-+==============================================================================+
++===============================================================================+
 
   WHO IS THIS FOR?
   ================
@@ -175,7 +175,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   [_] Perform backup and disaster recovery?
   [_] Automate tasks via API?
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---
@@ -185,9 +185,9 @@ Choose your role to get a customized learning path. Each path includes estimated
 **Goal**: Audit, investigate, compliance reporting
 
 ```
-+==============================================================================+
++===============================================================================+
 |                   SECURITY ANALYST LEARNING PATH                             |
-+==============================================================================+
++===============================================================================+
 
   WHO IS THIS FOR?
   ================
@@ -256,7 +256,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   [_] Export evidence for incident response?
   [_] Configure SIEM integration and alerts?
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---
@@ -266,9 +266,9 @@ Choose your role to get a customized learning path. Each path includes estimated
 **Goal**: Secure industrial environments with PAM
 
 ```
-+==============================================================================+
++===============================================================================+
 |                   OT SECURITY SPECIALIST LEARNING PATH                       |
-+==============================================================================+
++===============================================================================+
 
   WHO IS THIS FOR?
   ================
@@ -366,7 +366,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   [_] Respond to OT-specific security incidents?
   [_] Deploy WALLIX in air-gapped environment?
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---
@@ -376,9 +376,9 @@ Choose your role to get a customized learning path. Each path includes estimated
 **Goal**: Automate WALLIX deployment and management
 
 ```
-+==============================================================================+
++===============================================================================+
 |                   DEVOPS ENGINEER LEARNING PATH                              |
-+==============================================================================+
++===============================================================================+
 
   WHO IS THIS FOR?
   ================
@@ -437,7 +437,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   [_] Integrate WALLIX with CI/CD pipeline?
   [_] Implement auto-discovery and onboarding?
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---

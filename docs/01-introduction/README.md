@@ -263,7 +263,7 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 |--------|----------|--------|
 | **Architecture** | Agent-based session management | Proxy-based session management |
 | **Deployment** | Multiple components | Unified appliance |
-| **Vault Design** | Proprietary file system | Database-backed (PostgreSQL) |
+| **Vault Design** | Proprietary file system | Database-backed (PostgreSQL)  |
 | **Market Origin** | Israel/US | European (France) |
 | **Primary Focus** | Enterprise secrets & PAM | PAM with OT/industrial focus |
 
