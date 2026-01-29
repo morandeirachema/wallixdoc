@@ -49,9 +49,9 @@
 The **flagship PAM platform** providing comprehensive privileged access management.
 
 ```
-+-------------------------------------------------------------+
++=============================================================+
 |                     WALLIX BASTION                          |
-+-------------------------------------------------------------+
++=============================================================+
 |                                                             |
 |  +-----------------+    +-----------------+                |
 |  |  SESSION        |    |  PASSWORD       |                |
@@ -65,7 +65,7 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 |                                                             |
 |  Protocols: RDP | SSH | HTTPS | VNC | Telnet | Custom      |
 |                                                             |
-+-------------------------------------------------------------+
++=============================================================+
 ```
 
 **Key Capabilities:**
@@ -82,10 +82,10 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 **Privileged Access Management for Operational Technology** — WALLIX's unified PAM solution specifically designed for OT/industrial environments.
 
 ```
-+-------------------------------------------------------------+
++=============================================================+
 |                      WALLIX PAM4OT                          |
 |              (Built on WALLIX Bastion Technology)           |
-+-------------------------------------------------------------+
++=============================================================+
 |                                                             |
 |  +-------------------+    +-------------------+             |
 |  | SECURE REMOTE     |    | JUST-IN-TIME      |             |
@@ -108,7 +108,7 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 |  Industrial Protocols: Modbus | OPC UA | S7comm | DNP3      |
 |  Standard Protocols:   RDP | SSH | VNC | HTTPS | Telnet     |
 |                                                             |
-+-------------------------------------------------------------+
++=============================================================+
 ```
 
 **Key Features:**
@@ -304,9 +304,9 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 WALLIX uses a **modular licensing** approach:
 
 ```
-+-------------------------------------------------------------+
++=============================================================+
 |                    LICENSING MODEL                          |
-+-------------------------------------------------------------+
++=============================================================+
 |                                                             |
 |  BASE LICENSE (Required)                                    |
 |  +-- Session Manager                                        |
@@ -318,7 +318,7 @@ WALLIX uses a **modular licensing** approach:
 |  +-- PEDM (endpoint privilege management)                   |
 |  +-- High Availability                                      |
 |                                                             |
-+-------------------------------------------------------------+
++=============================================================+
 ```
 
 ### License Metrics
