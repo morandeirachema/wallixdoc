@@ -1,6 +1,8 @@
-# WALLIX Bastion Documentation
+# WALLIX PAM4OT Documentation
 
-> Complete reference for WALLIX Bastion 12.x — 34 sections covering PAM fundamentals, industrial security, cloud deployment, operations, and compliance.
+> Complete reference for **PAM4OT** (Privileged Access Management for OT) — 34 sections covering PAM fundamentals, industrial/OT security, cloud deployment, operations, and compliance.
+>
+> PAM4OT is built on WALLIX Bastion 12.x technology, specifically designed for operational technology environments.
 
 ---
 

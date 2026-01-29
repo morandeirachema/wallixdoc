@@ -1,20 +1,23 @@
-# WALLIX Bastion 12.x Documentation
+# WALLIX PAM4OT Documentation
 
 <p align="center">
   <img src="https://www.wallix.com/wp-content/uploads/2021/03/wallix-logo.svg" alt="WALLIX Logo" width="200"/>
 </p>
 
 <p align="center">
-  <strong>Enterprise Privileged Access Management for IT & OT</strong>
+  <strong>Privileged Access Management for Operational Technology</strong><br/>
+  <sub>Powered by WALLIX Bastion 12.x</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/WALLIX-12.1.x-0066cc?style=flat-square" alt="Version"/>
+  <img src="https://img.shields.io/badge/PAM4OT-12.1.x-0066cc?style=flat-square" alt="Version"/>
   <img src="https://img.shields.io/badge/Debian-12-a80030?style=flat-square" alt="Debian"/>
   <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=flat-square" alt="PostgreSQL"/>
   <img src="https://img.shields.io/badge/IEC_62443-Compliant-228b22?style=flat-square" alt="Compliance"/>
-  <img src="https://img.shields.io/badge/Docs-34_Sections-purple?style=flat-square" alt="Sections"/>
+  <img src="https://img.shields.io/badge/NIST_800--82-Compliant-228b22?style=flat-square" alt="NIST"/>
 </p>
+
+> **PAM4OT** is WALLIX's unified privileged access management solution designed specifically for OT/industrial environments. It provides secure remote access, strong authentication, just-in-time access, session recording, and password management for critical infrastructure.
 
 ---
 

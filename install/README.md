@@ -1,11 +1,12 @@
-# WALLIX Bastion Multi-Site Installation
+# WALLIX PAM4OT Multi-Site Installation
 
 <p align="center">
-  <strong>Production deployment guide for OT/Industrial environments</strong>
+  <strong>Production deployment guide for OT/Industrial environments</strong><br/>
+  <sub>Powered by WALLIX Bastion 12.x</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/WALLIX-12.1.x-0066cc?style=flat-square" alt="Version"/>
+  <img src="https://img.shields.io/badge/PAM4OT-12.1.x-0066cc?style=flat-square" alt="Version"/>
   <img src="https://img.shields.io/badge/Sites-3-green?style=flat-square" alt="Sites"/>
   <img src="https://img.shields.io/badge/Nodes-5-blue?style=flat-square" alt="Nodes"/>
   <img src="https://img.shields.io/badge/IEC_62443-Compliant-228b22?style=flat-square" alt="Compliance"/>

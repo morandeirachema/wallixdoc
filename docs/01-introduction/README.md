@@ -77,6 +77,71 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 
 ---
 
+### WALLIX PAM4OT (This Documentation)
+
+**Privileged Access Management for Operational Technology** — WALLIX's unified PAM solution specifically designed for OT/industrial environments.
+
+```
++-------------------------------------------------------------+
+|                      WALLIX PAM4OT                          |
+|              (Built on WALLIX Bastion Technology)           |
++-------------------------------------------------------------+
+|                                                             |
+|  +-------------------+    +-------------------+             |
+|  | SECURE REMOTE     |    | JUST-IN-TIME      |             |
+|  | ACCESS            |    | ACCESS            |             |
+|  |                   |    |                   |             |
+|  | * VPN-less access |    | * Approval        |             |
+|  | * Vendor access   |    |   workflows       |             |
+|  | * Browser-based   |    | * Time-limited    |             |
+|  +-------------------+    +-------------------+             |
+|                                                             |
+|  +-------------------+    +-------------------+             |
+|  | SESSION           |    | PASSWORD          |             |
+|  | RECORDING         |    | MANAGEMENT        |             |
+|  |                   |    |                   |             |
+|  | * Full audit      |    | * Credential      |             |
+|  | * Compliance      |    |   vault           |             |
+|  | * Forensics       |    | * Least privilege |             |
+|  +-------------------+    +-------------------+             |
+|                                                             |
+|  Industrial Protocols: Modbus | OPC UA | S7comm | DNP3      |
+|  Standard Protocols:   RDP | SSH | VNC | HTTPS | Telnet     |
+|                                                             |
++-------------------------------------------------------------+
+```
+
+**Key Features:**
+- **Secure Remote Access**: VPN-less access for vendors and administrators
+- **Strong Authentication**: MFA to prevent account takeover
+- **Just-In-Time Access**: Privileges granted only when needed
+- **Session Recording**: Full audit trail for compliance (IEC 62443, NIST 800-82)
+- **Password Management**: Automated rotation, credential injection
+- **Least Privilege**: Minimize standing privileged access
+
+**Target Industries:**
+- Industrial manufacturing
+- Critical infrastructure (power, water, oil & gas)
+- Smart cities and infrastructure
+- Healthcare facilities
+
+> **Product Website**: https://www.wallix.com/ot-security/ot-products/ot-pam4ot/
+
+---
+
+### WALLIX Inside
+
+**Embedded OT Security** — White-label security technology for OEM integration.
+
+**Features:**
+- Plug & play secure connectivity for industrial systems
+- Password and access management embedded in vendor products
+- Security-by-design for industrial equipment manufacturers
+
+> **Product Website**: https://www.wallix.com/ot-security/ot-products/ot-wallix-inside/
+
+---
+
 ### WALLIX Access Manager
 
 **Web-based access portal** providing clientless HTML5 access to privileged sessions.
