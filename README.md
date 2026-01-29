@@ -69,7 +69,6 @@ wallix/
 | **OT/ICS Engineer** | [Industrial Overview](./docs/15-industrial-overview/README.md) → [Protocols](./docs/17-industrial-protocols/README.md) → [SCADA Access](./docs/18-scada-ics-access/README.md) |
 | **DevOps/Automation** | [API Reference](./docs/26-api-reference/README.md) → [Cloud Deployment](./docs/24-cloud-deployment/README.md) → [Examples](./examples/README.md) |
 | **Compliance Officer** | [IEC 62443](./docs/20-iec62443-compliance/README.md) → [Compliance Audit](./docs/33-compliance-audit/README.md) |
-| **Migrating from CyberArk** | [Migration Guide](./docs/11-migration-from-cyberark/README.md) → [Comparison](./docs/11-migration-from-cyberark/cyberark-wallix-comparison.md) |
 
 ### By Team
 
@@ -183,13 +182,6 @@ Production Architecture
 └── Site C: Remote Field (Standalone + Offline)
 ```
 
-### 3. Migration from CyberArk
-
-See [Migration Guide](./docs/11-migration-from-cyberark/README.md) for:
-- Component mapping (CPM → Password Manager, PSM → Session Manager)
-- Data migration procedures
-- Parallel operation strategy
-
 ---
 
 ## Official Resources
@@ -220,7 +212,6 @@ See [Migration Guide](./docs/11-migration-from-cyberark/README.md) for:
 | [08 - Session Management](./docs/08-session-management/README.md) | Recording, monitoring, audit trails |
 | [09 - API & Automation](./docs/09-api-automation/README.md) | REST API, DevOps integration |
 | [10 - High Availability](./docs/10-high-availability/README.md) | Clustering, DR, failover |
-| [11 - Migration](./docs/11-migration-from-cyberark/README.md) | CyberArk migration strategies |
 | [12 - Troubleshooting](./docs/12-troubleshooting/README.md) | Diagnostics, log analysis |
 | [13 - Best Practices](./docs/13-best-practices/README.md) | Security hardening, operations |
 

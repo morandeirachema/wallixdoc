@@ -738,4 +738,4 @@ mount_point = /var/wab/recorded
 
 ## Next Steps
 
-Continue to [11 - Migration from CyberArk](../11-migration-from-cyberark/README.md) for migration strategies.
+Continue to [12 - Troubleshooting](../12-troubleshooting/README.md) for diagnostics and common issues.

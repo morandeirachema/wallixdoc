@@ -30,7 +30,6 @@ wallix/
 │   ├── 08-session-management/   # Recording, monitoring, audit trails
 │   ├── 09-api-automation/       # REST API, DevOps integration
 │   ├── 10-high-availability/    # Clustering, DR, failover
-│   ├── 11-migration-from-cyberark/  # Migration strategies
 │   ├── 12-troubleshooting/      # Diagnostics, log analysis
 │   ├── 13-best-practices/       # Security hardening, operations
 │   ├── 14-appendix/             # Quick reference, glossary
