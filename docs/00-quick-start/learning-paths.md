@@ -12,7 +12,7 @@ Choose your role to get a customized learning path. Each path includes estimated
 
 ```
 +===============================================================================+
-|                   OPERATOR LEARNING PATH                                     |
+|                   OPERATOR LEARNING PATH                                      |
 +===============================================================================+
 
   WHO IS THIS FOR?
@@ -82,7 +82,7 @@ Choose your role to get a customized learning path. Each path includes estimated
 
 ```
 +===============================================================================+
-|                   SYSTEM ENGINEER LEARNING PATH                              |
+|                   SYSTEM ENGINEER LEARNING PATH                               |
 +===============================================================================+
 
   WHO IS THIS FOR?
@@ -186,7 +186,7 @@ Choose your role to get a customized learning path. Each path includes estimated
 
 ```
 +===============================================================================+
-|                   SECURITY ANALYST LEARNING PATH                             |
+|                   SECURITY ANALYST LEARNING PATH                              |
 +===============================================================================+
 
   WHO IS THIS FOR?
@@ -267,7 +267,7 @@ Choose your role to get a customized learning path. Each path includes estimated
 
 ```
 +===============================================================================+
-|                   OT SECURITY SPECIALIST LEARNING PATH                       |
+|                   OT SECURITY SPECIALIST LEARNING PATH                        |
 +===============================================================================+
 
   WHO IS THIS FOR?
@@ -377,7 +377,7 @@ Choose your role to get a customized learning path. Each path includes estimated
 
 ```
 +===============================================================================+
-|                   DEVOPS ENGINEER LEARNING PATH                              |
+|                   DEVOPS ENGINEER LEARNING PATH                               |
 +===============================================================================+
 
   WHO IS THIS FOR?

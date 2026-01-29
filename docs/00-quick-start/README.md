@@ -10,7 +10,7 @@ This guide gets you operational quickly. Read this first, then explore deeper se
 
 ```
 +===============================================================================+
-|                   WHY PAM EXISTS                                             |
+|                   WHY PAM EXISTS                                              |
 +===============================================================================+
 
   THE PROBLEM (Without PAM)
@@ -58,7 +58,7 @@ This guide gets you operational quickly. Read this first, then explore deeper se
 
 ```
 +===============================================================================+
-|                   WALLIX BASTION COMPONENTS                                  |
+|                   WALLIX BASTION COMPONENTS                                   |
 +===============================================================================+
 
   WHAT DOES EACH COMPONENT DO?
@@ -120,7 +120,7 @@ This guide gets you operational quickly. Read this first, then explore deeper se
 
 ```
 +===============================================================================+
-|                   WALLIX OBJECT MODEL                                        |
+|                   WALLIX OBJECT MODEL                                         |
 +===============================================================================+
 
   UNDERSTANDING THE HIERARCHY
@@ -311,7 +311,7 @@ wabadmin sessions --user jsmith --kill-all
 
 ```
 +===============================================================================+
-|                   COMMON MISTAKES TO AVOID                                   |
+|                   COMMON MISTAKES TO AVOID                                    |
 +===============================================================================+
 
   DON'T:
@@ -418,7 +418,7 @@ wabadmin audit --export --output /tmp/audit-export.json
 
 ```
 +===============================================================================+
-|                   WALLIX QUICK REFERENCE                                     |
+|                   WALLIX QUICK REFERENCE                                      |
 +===============================================================================+
 
   ESSENTIAL COMMANDS
