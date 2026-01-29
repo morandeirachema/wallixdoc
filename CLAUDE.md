@@ -133,16 +133,46 @@ Use these authoritative sources when verifying or extending documentation:
 - ASCII diagrams for architecture (fixed-width, no special characters)
 
 ### ASCII Diagram Guidelines
+
+**Standard Width**: All full-width diagrams must be exactly **79 characters** wide (81 total including border characters).
+
+**Outer Frame Format** (required for all diagrams):
 ```
-Use these characters for diagrams:
-┌───┐  Box corners and lines
-│   │  Vertical lines
-├───┤  Intersections
-└───┘  Bottom corners
-─────  Horizontal lines
-═════  Double lines for emphasis
-  │    Arrows: use simple ASCII
-  ▼    or unicode arrows sparingly
++===============================================================================+
+|  DIAGRAM TITLE                                                                |
++===============================================================================+
+|                                                                               |
+|  Content here with consistent padding to reach 79 chars                       |
+|                                                                               |
++===============================================================================+
+```
+
+**Key Rules**:
+- Outer borders use `=` (equals signs): `+===============================================================================+`
+- Inner component boxes use `-` (dashes): `+------------------+`
+- All content lines must be padded to exactly 79 characters between the `|` borders
+- Use 2 spaces after opening `|` and before closing `|`
+
+**Character Reference**:
+```
++=====+  Outer frame borders (equals signs)
++-----+  Inner component boxes (dashes)
+|     |  Vertical borders
+   |     Connection lines
+   v     Arrows (simple ASCII)
+```
+
+**Example Inner Components**:
+```
++===============================================================================+
+|  ARCHITECTURE DIAGRAM                                                         |
++===============================================================================+
+|                                                                               |
+|  +------------------+     +------------------+     +------------------+        |
+|  |   Component A    |     |   Component B    |     |   Component C    |        |
+|  +------------------+     +------------------+     +------------------+        |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Content Guidelines
