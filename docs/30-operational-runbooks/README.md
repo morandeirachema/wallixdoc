@@ -1452,6 +1452,20 @@ wabadmin account rotate <account_id> --force
 
 ---
 
+## Detailed Runbooks
+
+For specific operational scenarios, see these detailed guides:
+
+| Runbook | Description |
+|---------|-------------|
+| [Backup & Recovery](./backup-recovery.md) | Comprehensive backup strategy and restore procedures |
+| [Failover Testing](./failover-testing.md) | HA cluster failover validation procedures |
+| [Alert Escalation](./alert-escalation.md) | Alert response procedures and escalation paths |
+| [Breakglass Procedures](./breakglass-procedures.md) | Emergency access when normal auth fails |
+| [Emergency Vendor Access](./emergency-vendor-access.md) | OT emergency vendor access procedures |
+
+---
+
 ## Appendix: Quick Reference Commands
 
 ### Service Management

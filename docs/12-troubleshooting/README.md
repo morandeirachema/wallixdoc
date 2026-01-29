@@ -1274,6 +1274,19 @@
 
 ---
 
+## Additional Troubleshooting Guides
+
+For specific troubleshooting scenarios, see these detailed guides:
+
+| Guide | Description |
+|-------|-------------|
+| [Network Troubleshooting](./network-troubleshooting.md) | VIP, firewall, DNS, connectivity issues |
+| [SIEM Troubleshooting](./siem-troubleshooting.md) | Log forwarding, CEF format, Splunk/ELK issues |
+| [LDAP/AD Troubleshooting](./ldap-ad-troubleshooting.md) | LDAP connectivity, authentication, group sync |
+| [Certificate Management](./certificate-management.md) | SSL/TLS certificates, renewal, troubleshooting |
+
+---
+
 ## Next Steps
 
 Continue to [13 - Best Practices](../13-best-practices/README.md) for operational recommendations.

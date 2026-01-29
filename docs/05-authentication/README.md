@@ -816,6 +816,17 @@ Authentication Chain Example
 
 ---
 
+## Related Guides
+
+For specific authentication scenarios, see these detailed guides:
+
+| Guide | Description |
+|-------|-------------|
+| [FortiAuthenticator Integration](./fortiauthenticator-integration.md) | MFA integration with FortiAuthenticator |
+| [Kerberos Configuration](./kerberos-configuration.md) | AD Kerberos SSO setup and troubleshooting |
+
+---
+
 ## Next Steps
 
 Continue to [06 - Authorization](../06-authorization/README.md) to learn about access control and authorization policies.
