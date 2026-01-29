@@ -1001,6 +1001,12 @@ IT Security Team
 
 ---
 
+## Next Steps
+
+Continue to [33 - Compliance & Audit](../33-compliance-audit/README.md) for compliance standards and audit preparation.
+
+---
+
 *Document Version: 1.0*
 *Last Updated: January 2026*
 *Review Frequency: Quarterly*

@@ -438,7 +438,11 @@
 
 ---
 
-**End of WALLIX PAM Professional Guide**
+## Next Steps
+
+Continue to [15 - Industrial Overview](../15-industrial-overview/README.md) for OT/industrial-specific documentation.
+
+---
 
 *Document Version: 1.0*
-*Last Updated: 2024*
+*Last Updated: January 2026*

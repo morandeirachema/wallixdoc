@@ -191,6 +191,22 @@ wabadmin audit --last 10
 
 ---
 
+## Next Steps
+
+After completing installation:
+
+| Step | Document |
+|------|----------|
+| Configure authentication | [Authentication Guide](../docs/05-authentication/README.md) |
+| Set up monitoring | [Monitoring & Observability](../docs/11-monitoring-observability/README.md) |
+| Review best practices | [Best Practices](../docs/13-best-practices/README.md) |
+| Configure OT protocols | [Industrial Protocols](../docs/17-industrial-protocols/README.md) |
+| Set up operational procedures | [Operational Runbooks](../docs/30-operational-runbooks/README.md) |
+
+For pre-production testing, see the [Pre-Production Lab Guide](../pre/README.md).
+
+---
+
 <p align="center">
   <a href="./HOWTO.md">Full Guide</a> •
   <a href="./01-prerequisites.md">Prerequisites</a> •

@@ -799,5 +799,11 @@ When contacting support, provide:
 
 ---
 
+## Next Steps
+
+Continue to [32 - Incident Response](../32-incident-response/README.md) for security incident playbooks and procedures.
+
+---
+
 *Document Version: 1.0*
 *Last Updated: January 2026*

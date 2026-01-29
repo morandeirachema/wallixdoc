@@ -1508,5 +1508,11 @@ wabadmin backup --verify /path/to/backup.tar.gz
 
 ---
 
+## Next Steps
+
+Continue to [31 - FAQ & Known Issues](../31-faq-known-issues/README.md) for common questions and troubleshooting tips.
+
+---
+
 *Document Version: 1.0*
 *Last Updated: January 2026*

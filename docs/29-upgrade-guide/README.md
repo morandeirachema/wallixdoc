@@ -1023,4 +1023,6 @@ This upgrade guide covers:
 
 ---
 
-Return to [Main Index](../README.md) for navigation to other sections.
+## Next Steps
+
+Continue to [30 - Operational Runbooks](../30-operational-runbooks/README.md) for day-to-day operational procedures.
