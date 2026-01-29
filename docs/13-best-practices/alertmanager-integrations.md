@@ -184,7 +184,7 @@ mv prometheus-msteams-linux-amd64 /usr/local/bin/prometheus-msteams
 # Create config
 cat > /etc/prometheus-msteams/config.yml << 'EOF'
 connectors:
-  - teams: "https://outlook.office.com/webhook/xxx/IncomingWebhook/xxx/xxx"
+  - teams: "https://YOUR_TENANT.webhook.office.com/webhookb2/YOUR_WEBHOOK_ID"
 
 templates_file: /etc/prometheus-msteams/card.tmpl
 EOF
@@ -381,7 +381,7 @@ receivers:
 
 global:
   resolve_timeout: 5m
-  slack_api_url: 'https://hooks.slack.com/services/xxx/xxx/xxx'
+  slack_api_url: 'https://hooks.slack.com/services/YOUR_WORKSPACE/YOUR_CHANNEL/YOUR_TOKEN'
   smtp_smarthost: 'smtp.company.com:587'
   smtp_from: 'alertmanager@company.com'
   smtp_auth_username: 'alertmanager'
