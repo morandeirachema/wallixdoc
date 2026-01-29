@@ -52,150 +52,142 @@ plc-sim         A     10.10.3.10
 ### PAM4OT Nodes (x2)
 
 ```
-+------------------------------------------------------------------------------+
-|  PAM4OT NODE SPECIFICATION                                                   |
-+------------------------------------------------------------------------------+
-|                                                                              |
-|  Name:        pam4ot-node1 / pam4ot-node2                                   |
-|  OS:          Debian 12 (Bookworm)                                          |
-|                                                                              |
-|  COMPUTE                          STORAGE                                   |
-|  -------                          -------                                   |
-|  vCPU:     4                      OS Disk:    50 GB (SSD)                   |
-|  RAM:      16 GB                  Data Disk:  150 GB (SSD)                  |
-|                                                                              |
-|  NETWORK                                                                    |
-|  -------                                                                    |
-|  NIC 1:    Management VLAN (10.10.1.0/24)                                  |
-|                                                                              |
-|  Node 1: 10.10.1.11                                                        |
-|  Node 2: 10.10.1.12                                                        |
-|  VIP:    10.10.1.100                                                       |
-|                                                                              |
-+------------------------------------------------------------------------------+
++===============================================================================+
+|  PAM4OT NODE SPECIFICATION                                                    |
++===============================================================================+
+|                                                                               |
+|  Name:        pam4ot-node1 / pam4ot-node2                                     |
+|  OS:          Debian 12 (Bookworm)                                            |
+|                                                                               |
+|  COMPUTE                          STORAGE                                     |
+|  -------                          -------                                     |
+|  vCPU:     4                      OS Disk:    50 GB (SSD)                     |
+|  RAM:      16 GB                  Data Disk:  150 GB (SSD)                    |
+|                                                                               |
+|  NETWORK                                                                      |
+|  -------                                                                      |
+|  NIC 1:    Management VLAN (10.10.1.0/24)                                     |
+|                                                                               |
+|  Node 1: 10.10.1.11                                                           |
+|  Node 2: 10.10.1.12                                                           |
+|  VIP:    10.10.1.100                                                          |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Active Directory DC
 
 ```
-+------------------------------------------------------------------------------+
-|  ACTIVE DIRECTORY SPECIFICATION                                              |
-+------------------------------------------------------------------------------+
-|                                                                              |
-|  Name:        dc-lab                                                        |
-|  OS:          Windows Server 2022                                           |
-|  IP:          10.10.1.10                                                    |
-|                                                                              |
-|  COMPUTE                          STORAGE                                   |
-|  -------                          -------                                   |
-|  vCPU:     2                      OS Disk:    60 GB                         |
-|  RAM:      4 GB                                                             |
-|                                                                              |
-|  ROLES                                                                      |
-|  -----                                                                      |
-|  - Active Directory Domain Services                                         |
-|  - DNS Server                                                               |
-|  - Certificate Services (optional)                                          |
-|                                                                              |
-|  Domain: LAB.LOCAL                                                          |
-|                                                                              |
-+------------------------------------------------------------------------------+
++===============================================================================+
+|  ACTIVE DIRECTORY SPECIFICATION                                               |
++===============================================================================+
+|                                                                               |
+|  Name:        dc-lab                                                          |
+|  OS:          Windows Server 2022                                             |
+|  IP:          10.10.1.10                                                      |
+|                                                                               |
+|  COMPUTE                          STORAGE                                     |
+|  -------                          -------                                     |
+|  vCPU:     2                      OS Disk:    60 GB                           |
+|  RAM:      4 GB                                                               |
+|                                                                               |
+|  ROLES                                                                        |
+|  -----                                                                        |
+|  - Active Directory Domain Services                                           |
+|  - DNS Server                                                                 |
+|  - Certificate Services (optional)                                            |
+|                                                                               |
+|  Domain: LAB.LOCAL                                                            |
+|                                                                               |
++===============================================================================+
 ```
 
 ### SIEM Server
 
 ```
-+------------------------------------------------------------------------------+
-|  SIEM SPECIFICATION                                                          |
-+------------------------------------------------------------------------------+
-|                                                                              |
-|  Name:        siem-lab                                                      |
-|  OS:          Ubuntu 22.04 LTS                                              |
-|  IP:          10.10.1.50                                                    |
-|                                                                              |
-|  COMPUTE                          STORAGE                                   |
-|  -------                          -------                                   |
-|  vCPU:     4                      OS Disk:    100 GB                        |
-|  RAM:      16 GB                  Data Disk:  400 GB (logs)                 |
-|                                                                              |
-|  OPTIONS (choose one)                                                       |
-|  -------------------                                                        |
-|  - Splunk Enterprise (trial license)                                        |
-|  - Elastic Stack (ELK)                                                      |
-|  - Wazuh                                                                    |
-|                                                                              |
-+------------------------------------------------------------------------------+
++===============================================================================+
+|  SIEM SPECIFICATION                                                           |
++===============================================================================+
+|                                                                               |
+|  Name:        siem-lab                                                        |
+|  OS:          Ubuntu 22.04 LTS                                                |
+|  IP:          10.10.1.50                                                      |
+|                                                                               |
+|  COMPUTE                          STORAGE                                     |
+|  -------                          -------                                     |
+|  vCPU:     4                      OS Disk:    100 GB                          |
+|  RAM:      16 GB                  Data Disk:  400 GB (logs)                   |
+|                                                                               |
+|  OPTIONS (choose one)                                                         |
+|  -------------------                                                          |
+|  - Splunk Enterprise (trial license)                                          |
+|  - Elastic Stack (ELK)                                                        |
+|  - Wazuh                                                                      |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Monitoring Server
 
 ```
-+------------------------------------------------------------------------------+
-|  OBSERVABILITY SPECIFICATION                                                 |
-+------------------------------------------------------------------------------+
-|                                                                              |
-|  Name:        monitor-lab                                                   |
-|  OS:          Ubuntu 22.04 LTS                                              |
-|  IP:          10.10.1.60                                                    |
-|                                                                              |
-|  COMPUTE                          STORAGE                                   |
-|  -------                          -------                                   |
-|  vCPU:     2                      OS Disk:    100 GB                        |
-|  RAM:      8 GB                                                             |
-|                                                                              |
-|  STACK                                                                      |
-|  -----                                                                      |
-|  - Prometheus (metrics collection)                                          |
-|  - Grafana (dashboards)                                                     |
-|  - Alertmanager (alerts)                                                    |
-|                                                                              |
-+------------------------------------------------------------------------------+
++===============================================================================+
+|  OBSERVABILITY SPECIFICATION                                                  |
++===============================================================================+
+|                                                                               |
+|  Name:        monitor-lab                                                     |
+|  OS:          Ubuntu 22.04 LTS                                                |
+|  IP:          10.10.1.60                                                      |
+|                                                                               |
+|  COMPUTE                          STORAGE                                     |
+|  -------                          -------                                     |
+|  vCPU:     2                      OS Disk:    100 GB                          |
+|  RAM:      8 GB                                                               |
+|                                                                               |
+|  STACK                                                                        |
+|  -----                                                                        |
+|  - Prometheus (metrics collection)                                            |
+|  - Grafana (dashboards)                                                       |
+|  - Alertmanager (alerts)                                                      |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Test Target VMs
 
 ```
-+------------------------------------------------------------------------------+
-|  TEST TARGETS                                                                |
-+------------------------------------------------------------------------------+
-
-  LINUX TEST (SSH Target)
-  -----------------------
-  Name:    linux-test
-  OS:      Ubuntu 22.04 LTS
-  IP:      10.10.2.10
-  vCPU:    2
-  RAM:     4 GB
-  Disk:    40 GB
-
-  WINDOWS TEST (RDP Target)
-  -------------------------
-  Name:    windows-test
-  OS:      Windows Server 2022
-  IP:      10.10.2.20
-  vCPU:    2
-  RAM:     8 GB
-  Disk:    60 GB
-
-  NETWORK DEVICE (SSH/Telnet Target)
-  ----------------------------------
-  Name:    network-test
-  OS:      VyOS 1.4 or pfSense
-  IP:      10.10.2.30
-  vCPU:    1
-  RAM:     2 GB
-  Disk:    20 GB
-
-  PLC SIMULATOR (OT Target)
-  -------------------------
-  Name:    plc-sim
-  OS:      Ubuntu 22.04 + OpenPLC/Modbus sim
-  IP:      10.10.3.10
-  vCPU:    1
-  RAM:     2 GB
-  Disk:    20 GB
-
-+------------------------------------------------------------------------------+
++===============================================================================+
+|  TEST TARGETS                                                                 |
++===============================================================================+
+|                                                                               |
+|  LINUX TEST (SSH Target)                                                      |
+|  -----------------------                                                      |
+|  Name:    linux-test                                                          |
+|  OS:      Ubuntu 22.04 LTS                                                    |
+|  IP:      10.10.2.10                                                          |
+|  vCPU:    2 / RAM: 4 GB / Disk: 40 GB                                         |
+|                                                                               |
+|  WINDOWS TEST (RDP Target)                                                    |
+|  -------------------------                                                    |
+|  Name:    windows-test                                                        |
+|  OS:      Windows Server 2022                                                 |
+|  IP:      10.10.2.20                                                          |
+|  vCPU:    2 / RAM: 8 GB / Disk: 60 GB                                         |
+|                                                                               |
+|  NETWORK DEVICE (SSH/Telnet Target)                                           |
+|  ----------------------------------                                           |
+|  Name:    network-test                                                        |
+|  OS:      VyOS 1.4 or pfSense                                                 |
+|  IP:      10.10.2.30                                                          |
+|  vCPU:    1 / RAM: 2 GB / Disk: 20 GB                                         |
+|                                                                               |
+|  PLC SIMULATOR (OT Target)                                                    |
+|  -------------------------                                                    |
+|  Name:    plc-sim                                                             |
+|  OS:      Ubuntu 22.04 + OpenPLC/Modbus sim                                   |
+|  IP:      10.10.3.10                                                          |
+|  vCPU:    1 / RAM: 2 GB / Disk: 20 GB                                         |
+|                                                                               |
++===============================================================================+
 ```
 
 ---

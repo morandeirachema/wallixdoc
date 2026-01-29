@@ -71,43 +71,43 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 3. Click **Add LDAP Domain**
 
 ```
-+------------------------------------------------------------------------------+
-|  LDAP DOMAIN CONFIGURATION                                                   |
-+------------------------------------------------------------------------------+
-|                                                                              |
-|  GENERAL                                                                     |
-|  -------                                                                     |
-|  Domain Name:           LAB.LOCAL                                            |
-|  Description:           Lab Active Directory                                 |
-|  Default Domain:        [x] Yes                                              |
-|                                                                              |
-|  CONNECTION                                                                  |
-|  ----------                                                                  |
-|  Server:                dc-lab.lab.local                                     |
-|  Port:                  636                                                  |
-|  Use SSL/TLS:           [x] LDAPS                                            |
-|  Verify Certificate:    [x] Yes (uncheck if using self-signed)              |
-|                                                                              |
-|  BIND CREDENTIALS                                                            |
-|  ----------------                                                            |
-|  Bind DN:               CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,         |
-|                         DC=lab,DC=local                                      |
-|  Bind Password:         WallixSvc123!                                        |
-|                                                                              |
-|  SEARCH SETTINGS                                                             |
-|  ---------------                                                             |
-|  Base DN:               DC=lab,DC=local                                      |
-|  User Search Filter:    (&(objectClass=user)(sAMAccountName=%s))            |
-|  User Search Base:      OU=Users,OU=PAM4OT,DC=lab,DC=local                  |
-|                                                                              |
-|  ATTRIBUTE MAPPING                                                           |
-|  -----------------                                                           |
-|  Username Attribute:    sAMAccountName                                       |
-|  Display Name:          displayName                                          |
-|  Email:                 mail                                                 |
-|  Groups:                memberOf                                             |
-|                                                                              |
-+------------------------------------------------------------------------------+
++===============================================================================+
+|  LDAP DOMAIN CONFIGURATION                                                    |
++===============================================================================+
+|                                                                               |
+|  GENERAL                                                                      |
+|  -------                                                                      |
+|  Domain Name:           LAB.LOCAL                                             |
+|  Description:           Lab Active Directory                                  |
+|  Default Domain:        [x] Yes                                               |
+|                                                                               |
+|  CONNECTION                                                                   |
+|  ----------                                                                   |
+|  Server:                dc-lab.lab.local                                      |
+|  Port:                  636                                                   |
+|  Use SSL/TLS:           [x] LDAPS                                             |
+|  Verify Certificate:    [x] Yes (uncheck if using self-signed)                |
+|                                                                               |
+|  BIND CREDENTIALS                                                             |
+|  ----------------                                                             |
+|  Bind DN:               CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,          |
+|                         DC=lab,DC=local                                       |
+|  Bind Password:         WallixSvc123!                                         |
+|                                                                               |
+|  SEARCH SETTINGS                                                              |
+|  ---------------                                                              |
+|  Base DN:               DC=lab,DC=local                                       |
+|  User Search Filter:    (&(objectClass=user)(sAMAccountName=%s))              |
+|  User Search Base:      OU=Users,OU=PAM4OT,DC=lab,DC=local                    |
+|                                                                               |
+|  ATTRIBUTE MAPPING                                                            |
+|  -----------------                                                            |
+|  Username Attribute:    sAMAccountName                                        |
+|  Display Name:          displayName                                           |
+|  Email:                 mail                                                  |
+|  Groups:                memberOf                                              |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Via CLI/API
@@ -198,16 +198,16 @@ Configuration > User Groups > Add
 ```
 Configuration > Authentication > LDAP > LAB.LOCAL > Group Mapping
 
-+------------------------------------------------------------------------------+
-|  AD Group (DN)                                      | PAM4OT Group           |
-+-----------------------------------------------------+------------------------+
-| CN=PAM4OT-Admins,OU=Groups,OU=PAM4OT,DC=lab,DC=local| LDAP-Admins           |
-| CN=PAM4OT-Operators,OU=Groups,OU=PAM4OT,DC=lab,...  | LDAP-Operators        |
-| CN=PAM4OT-Auditors,OU=Groups,OU=PAM4OT,DC=lab,...   | LDAP-Auditors         |
-| CN=Linux-Admins,OU=Groups,OU=PAM4OT,DC=lab,DC=local | LDAP-Linux-Admins     |
-| CN=Windows-Admins,OU=Groups,OU=PAM4OT,DC=lab,...    | LDAP-Windows-Admins   |
-| CN=OT-Engineers,OU=Groups,OU=PAM4OT,DC=lab,DC=local | LDAP-OT-Engineers     |
-+------------------------------------------------------------------------------+
++===============================================================================+
+| AD Group (DN)                                       | PAM4OT Group            |
++===============================================================================+
+| CN=PAM4OT-Admins,OU=Groups,OU=PAM4OT,DC=lab,DC=local| LDAP-Admins             |
+| CN=PAM4OT-Operators,OU=Groups,OU=PAM4OT,DC=lab,...  | LDAP-Operators          |
+| CN=PAM4OT-Auditors,OU=Groups,OU=PAM4OT,DC=lab,...   | LDAP-Auditors           |
+| CN=Linux-Admins,OU=Groups,OU=PAM4OT,DC=lab,DC=local | LDAP-Linux-Admins       |
+| CN=Windows-Admins,OU=Groups,OU=PAM4OT,DC=lab,...    | LDAP-Windows-Admins     |
+| CN=OT-Engineers,OU=Groups,OU=PAM4OT,DC=lab,DC=local | LDAP-OT-Engineers       |
++===============================================================================+
 ```
 
 ### Via API

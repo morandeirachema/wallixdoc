@@ -100,20 +100,20 @@ This guide covers setting up a pre-production environment with:
 ### Firewall Rules
 
 ```
-+-------------------------------------------------------------------------------+
-| SOURCE          | DESTINATION       | PORT      | PURPOSE                     |
-+-------------------------------------------------------------------------------+
-| Users           | VIP (10.10.1.100) | 443       | Web UI                      |
-| Users           | VIP (10.10.1.100) | 22        | SSH Proxy                   |
-| Users           | VIP (10.10.1.100) | 3389      | RDP Proxy                   |
-| PAM4OT nodes    | dc-lab            | 636       | LDAPS                       |
-| PAM4OT nodes    | dc-lab            | 88        | Kerberos                    |
-| PAM4OT nodes    | siem-lab          | 514/6514  | Syslog                      |
-| PAM4OT nodes    | Test targets      | 22,3389   | Session proxying            |
-| pam4ot-node1    | pam4ot-node2      | 5432      | PostgreSQL replication      |
-| pam4ot-node1    | pam4ot-node2      | 5404-5406 | Corosync cluster            |
-| monitor-lab     | PAM4OT nodes      | 9100      | Prometheus metrics          |
-+-------------------------------------------------------------------------------+
++===============================================================================+
+| SOURCE          | DESTINATION       | PORT      | PURPOSE                      |
++===============================================================================+
+| Users           | VIP (10.10.1.100) | 443       | Web UI                       |
+| Users           | VIP (10.10.1.100) | 22        | SSH Proxy                    |
+| Users           | VIP (10.10.1.100) | 3389      | RDP Proxy                    |
+| PAM4OT nodes    | dc-lab            | 636       | LDAPS                        |
+| PAM4OT nodes    | dc-lab            | 88        | Kerberos                     |
+| PAM4OT nodes    | siem-lab          | 514/6514  | Syslog                       |
+| PAM4OT nodes    | Test targets      | 22,3389   | Session proxying             |
+| pam4ot-node1    | pam4ot-node2      | 5432      | PostgreSQL replication       |
+| pam4ot-node1    | pam4ot-node2      | 5404-5406 | Corosync cluster             |
+| monitor-lab     | PAM4OT nodes      | 9100      | Prometheus metrics           |
++===============================================================================+
 ```
 
 ---
