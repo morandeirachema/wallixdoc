@@ -9,23 +9,23 @@ This guide covers integrating PAM4OT with Splunk or ELK for security monitoring.
 ## Integration Architecture
 
 ```
-+==============================================================================+
-|                   SIEM INTEGRATION                                            |
-+==============================================================================+
++===============================================================================+
+|                            SIEM INTEGRATION                                   |
++===============================================================================+
 
-  PAM4OT Cluster                              SIEM Platform
-  ==============                              =============
+  PAM4OT Cluster                                   SIEM Platform
+  ==============                                   =============
 
-  +----------------+                     +----------------------+
-  | pam4ot-node1   |---+                 |    siem-lab          |
-  | Syslog Client  |   |   Syslog/TLS    |                      |
-  +----------------+   +---------------->|  Splunk Enterprise   |
-                       |   Port 6514     |  or ELK Stack        |
-  +----------------+   |                 |                      |
-  | pam4ot-node2   |---+                 |  - Log indexing      |
-  | Syslog Client  |                     |  - Dashboards        |
-  +----------------+                     |  - Alerts            |
-                                         +----------------------+
+  +------------------+                        +-----------------------+
+  |  pam4ot-node1    |----+                   |      siem-lab         |
+  |  Syslog Client   |    |    Syslog/TLS     |                       |
+  +------------------+    +------------------>|   Splunk Enterprise   |
+                          |    Port 6514      |   or ELK Stack        |
+  +------------------+    |                   |                       |
+  |  pam4ot-node2    |----+                   |   - Log indexing      |
+  |  Syslog Client   |                        |   - Dashboards        |
+  +------------------+                        |   - Alerts            |
+                                              +-----------------------+
 
   LOG TYPES FORWARDED:
   - Authentication events (login success/failure)
@@ -34,7 +34,7 @@ This guide covers integrating PAM4OT with Splunk or ELK for security monitoring.
   - Password events (rotation, checkout)
   - System events (service status, errors)
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---

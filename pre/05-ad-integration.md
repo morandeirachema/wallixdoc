@@ -9,31 +9,31 @@ This guide covers integrating PAM4OT with Active Directory for user authenticati
 ## Integration Overview
 
 ```
-+==============================================================================+
-|                   AD AUTHENTICATION FLOW                                      |
-+==============================================================================+
++===============================================================================+
+|                         AD AUTHENTICATION FLOW                                |
++===============================================================================+
 
-  User Login                PAM4OT                    Active Directory
-  ==========                ======                    ================
+  User Login                  PAM4OT                      Active Directory
+  ==========                  ======                      ================
 
-  1. User enters       2. PAM4OT binds to AD    3. AD validates
-     AD credentials        using service account     user credentials
+  1. User enters         2. PAM4OT binds to AD       3. AD validates
+     AD credentials         using service account       user credentials
 
-  +--------+          +----------------+          +----------------+
-  | jadmin |   --->   |   PAM4OT       |   --->   |  DC-LAB        |
-  | ****   |          |                |          |                |
-  +--------+          | LDAPS:636      |          | Validate user  |
-                      | Bind: wallix-svc|          | Check groups   |
-                      +----------------+          +----------------+
-                             |                           |
-                             |    4. Return user info    |
-                             |    & group membership     |
-                             |<--------------------------|
-                             |
-                      5. Map AD groups to
-                         PAM4OT permissions
+  +----------+           +------------------+           +------------------+
+  |  jadmin  |   --->    |     PAM4OT       |   --->    |     DC-LAB       |
+  |   ****   |           |                  |           |                  |
+  +----------+           |  LDAPS:636       |           |  Validate user   |
+                         |  Bind: wallix-svc|           |  Check groups    |
+                         +------------------+           +------------------+
+                                  |                              |
+                                  |     4. Return user info      |
+                                  |     & group membership       |
+                                  |<-----------------------------|
+                                  |
+                         5. Map AD groups to
+                            PAM4OT permissions
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---

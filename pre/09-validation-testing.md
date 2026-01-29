@@ -9,32 +9,32 @@ This guide covers all validation tests to verify the PAM4OT lab environment is w
 ## Test Categories Overview
 
 ```
-+==============================================================================+
-|                   VALIDATION TEST CATEGORIES                                  |
-+==============================================================================+
++===============================================================================+
+|                        VALIDATION TEST CATEGORIES                             |
++===============================================================================+
 
-  1. INFRASTRUCTURE TESTS          2. PAM4OT FUNCTIONAL TESTS
-  ========================          ==========================
-  - VM connectivity                 - Authentication (local/LDAP)
-  - DNS resolution                  - Session management
-  - Network segmentation            - Password checkout
-  - Storage verification            - Recording playback
+  1. INFRASTRUCTURE TESTS            2. PAM4OT FUNCTIONAL TESTS
+  =======================            ==========================
+  - VM connectivity                  - Authentication (local/LDAP)
+  - DNS resolution                   - Session management
+  - Network segmentation             - Password checkout
+  - Storage verification             - Recording playback
 
-  3. HA CLUSTER TESTS               4. INTEGRATION TESTS
-  ===================               ====================
-  - Failover scenarios              - AD group mapping
-  - VIP movement                    - SIEM log forwarding
-  - Replication health              - Metrics collection
-  - Split-brain prevention          - Alert triggering
+  3. HA CLUSTER TESTS                4. INTEGRATION TESTS
+  ===================                ====================
+  - Failover scenarios               - AD group mapping
+  - VIP movement                     - SIEM log forwarding
+  - Replication health               - Metrics collection
+  - Split-brain prevention           - Alert triggering
 
-  5. SECURITY TESTS                 6. PERFORMANCE TESTS
-  =================                 ====================
-  - Certificate validation          - Concurrent sessions
-  - TLS configuration               - Authentication throughput
-  - Access controls                 - API response times
-  - Audit logging                   - Database performance
+  5. SECURITY TESTS                  6. PERFORMANCE TESTS
+  =================                  ====================
+  - Certificate validation           - Concurrent sessions
+  - TLS configuration                - Authentication throughput
+  - Access controls                  - API response times
+  - Audit logging                    - Database performance
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---
@@ -550,9 +550,9 @@ EOF
 ## Test Results Summary Template
 
 ```
-+==============================================================================+
-|                   TEST RESULTS SUMMARY                                        |
-+==============================================================================+
++===============================================================================+
+|                          TEST RESULTS SUMMARY                                 |
++===============================================================================+
 
   Test Date: ____________________
   Tester: ____________________
@@ -560,53 +560,53 @@ EOF
 
   INFRASTRUCTURE TESTS
   --------------------
-  [ ] VM Connectivity          [PASS/FAIL]
-  [ ] DNS Resolution           [PASS/FAIL]
-  [ ] Port Connectivity        [PASS/FAIL]
+  [ ] VM Connectivity            [PASS/FAIL]
+  [ ] DNS Resolution             [PASS/FAIL]
+  [ ] Port Connectivity          [PASS/FAIL]
 
   PAM4OT FUNCTIONAL TESTS
   -----------------------
-  [ ] Local Authentication     [PASS/FAIL]
-  [ ] LDAP Authentication      [PASS/FAIL]
-  [ ] SSH Session              [PASS/FAIL]
-  [ ] Web UI Access            [PASS/FAIL]
-  [ ] Password Checkout        [PASS/FAIL]
+  [ ] Local Authentication       [PASS/FAIL]
+  [ ] LDAP Authentication        [PASS/FAIL]
+  [ ] SSH Session                [PASS/FAIL]
+  [ ] Web UI Access              [PASS/FAIL]
+  [ ] Password Checkout          [PASS/FAIL]
 
   HA CLUSTER TESTS
   ----------------
-  [ ] Cluster Status           [PASS/FAIL]
-  [ ] Replication Health       [PASS/FAIL]
-  [ ] VIP Failover             [PASS/FAIL]
-  [ ] Service Continuity       [PASS/FAIL]
+  [ ] Cluster Status             [PASS/FAIL]
+  [ ] Replication Health         [PASS/FAIL]
+  [ ] VIP Failover               [PASS/FAIL]
+  [ ] Service Continuity         [PASS/FAIL]
 
   INTEGRATION TESTS
   -----------------
-  [ ] AD Group Mapping         [PASS/FAIL]
-  [ ] SIEM Log Forwarding      [PASS/FAIL]
-  [ ] Prometheus Metrics       [PASS/FAIL]
-  [ ] Alert Triggering         [PASS/FAIL]
+  [ ] AD Group Mapping           [PASS/FAIL]
+  [ ] SIEM Log Forwarding        [PASS/FAIL]
+  [ ] Prometheus Metrics         [PASS/FAIL]
+  [ ] Alert Triggering           [PASS/FAIL]
 
   SECURITY TESTS
   --------------
-  [ ] Certificate Valid        [PASS/FAIL]
-  [ ] TLS Configuration        [PASS/FAIL]
-  [ ] Account Lockout          [PASS/FAIL]
-  [ ] Audit Logging            [PASS/FAIL]
+  [ ] Certificate Valid          [PASS/FAIL]
+  [ ] TLS Configuration          [PASS/FAIL]
+  [ ] Account Lockout            [PASS/FAIL]
+  [ ] Audit Logging              [PASS/FAIL]
 
   PERFORMANCE TESTS
   -----------------
-  [ ] Concurrent Auth          [PASS/FAIL]
-  [ ] API Response Time        [PASS/FAIL]  (Target: < 500ms)
-  [ ] Database Performance     [PASS/FAIL]
+  [ ] Concurrent Auth            [PASS/FAIL]
+  [ ] API Response Time          [PASS/FAIL]  (Target: < 500ms)
+  [ ] Database Performance       [PASS/FAIL]
 
   OVERALL STATUS: ____________
 
   NOTES:
-  ______________________________________________________________________
-  ______________________________________________________________________
-  ______________________________________________________________________
+  _______________________________________________________________________
+  _______________________________________________________________________
+  _______________________________________________________________________
 
-+==============================================================================+
++===============================================================================+
 ```
 
 ---
