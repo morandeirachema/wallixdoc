@@ -212,6 +212,7 @@ Production Architecture
 | [08 - Session Management](./docs/08-session-management/README.md) | Recording, monitoring, audit trails |
 | [09 - API & Automation](./docs/09-api-automation/README.md) | REST API, DevOps integration |
 | [10 - High Availability](./docs/10-high-availability/README.md) | Clustering, DR, failover |
+| [11 - Monitoring & Observability](./docs/11-monitoring-observability/README.md) | Prometheus, Grafana, alerting |
 | [12 - Troubleshooting](./docs/12-troubleshooting/README.md) | Diagnostics, log analysis |
 | [13 - Best Practices](./docs/13-best-practices/README.md) | Security hardening, operations |
 

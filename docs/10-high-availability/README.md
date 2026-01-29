@@ -738,4 +738,4 @@ mount_point = /var/wab/recorded
 
 ## Next Steps
 
-Continue to [12 - Troubleshooting](../12-troubleshooting/README.md) for diagnostics and common issues.
+Continue to [11 - Monitoring & Observability](../11-monitoring-observability/README.md) for Prometheus, Grafana, and alerting configuration.

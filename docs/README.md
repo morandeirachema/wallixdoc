@@ -23,6 +23,7 @@
 | 08 | [Session Management](./08-session-management/README.md) | Recording, monitoring, audit trails |
 | 09 | [API & Automation](./09-api-automation/README.md) | REST API, scripting, DevOps integration |
 | 10 | [High Availability](./10-high-availability/README.md) | Clustering, DR, backup, failover |
+| 11 | [Monitoring & Observability](./11-monitoring-observability/README.md) | Prometheus, Grafana, alerting, logs |
 | 12 | [Troubleshooting](./12-troubleshooting/README.md) | Diagnostics, common issues, log analysis |
 | 13 | [Best Practices](./13-best-practices/README.md) | Security hardening, design patterns |
 | 14 | [Appendix](./14-appendix/README.md) | Glossary, quick reference, cheat sheets |
