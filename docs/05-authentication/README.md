@@ -763,7 +763,7 @@ Multiple authentication methods can be chained for defense in depth.
 Authentication Chain Example
 ============================
 
-+-----------------------------------------------------------------+
++=================================================================+
 |                                                                  |
 |   Step 1: Primary Authentication                                |
 |   ---------------------------------------                             |
@@ -785,7 +785,7 @@ Authentication Chain Example
 |                    v                                            |
 |   AUTHENTICATION COMPLETE                                        |
 |                                                                  |
-+-----------------------------------------------------------------+
++=================================================================+
 ```
 
 ### Chain Policy
