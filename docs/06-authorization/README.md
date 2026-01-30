@@ -24,36 +24,36 @@ WALLIX Authorization answers: **WHO** can access **WHAT**, **WHEN**, and **HOW**
 |                        AUTHORIZATION MODEL                                    |
 +===============================================================================+
 |                                                                               |
-|    +-----------------+                           +-----------------+         |
-|    |   USER GROUP    |                           |  TARGET GROUP   |         |
-|    |                 |                           |                 |         |
-|    |  "Linux-Admins" |                           | "Prod-Servers"  |         |
-|    |                 |                           |                 |         |
-|    |  * jsmith       |                           | * root@srv-01   |         |
-|    |  * bjones       |                           | * root@srv-02   |         |
-|    |  * mwilson      |                           | * admin@srv-03  |         |
-|    +--------+--------+                           +--------+--------+         |
-|             |                                             |                  |
-|             |              WHO + WHAT                     |                  |
-|             +------------------+---------------------------+                  |
-|                                |                                             |
-|                                v                                             |
-|             +--------------------------------------+                         |
-|             |          AUTHORIZATION               |                         |
-|             |                                      |                         |
-|             |  +--------------------------------+  |                         |
-|             |  | WHEN: Time Restrictions        |  |                         |
-|             |  |  * Mon-Fri 08:00-18:00        |  |                         |
-|             |  +--------------------------------+  |                         |
-|             |                                      |                         |
-|             |  +--------------------------------+  |                         |
-|             |  | HOW: Policies                  |  |                         |
-|             |  |  * Recording: Required         |  |                         |
-|             |  |  * Approval: Optional          |  |                         |
-|             |  |  * Subprotocols: SHELL, SFTP   |  |                         |
-|             |  +--------------------------------+  |                         |
-|             |                                      |                         |
-|             +--------------------------------------+                         |
+|    +-----------------+                           +-----------------+          |
+|    |   USER GROUP    |                           |  TARGET GROUP   |          |
+|    |                 |                           |                 |          |
+|    |  "Linux-Admins" |                           | "Prod-Servers"  |          |
+|    |                 |                           |                 |          |
+|    |  * jsmith       |                           | * root@srv-01   |          |
+|    |  * bjones       |                           | * root@srv-02   |          |
+|    |  * mwilson      |                           | * admin@srv-03  |          |
+|    +--------+--------+                           +--------+--------+          |
+|             |                                             |                   |
+|             |              WHO + WHAT                     |                   |
+|             +------------------+--------------------------+                   |
+|                                |                                              |
+|                                v                                              |
+|             +--------------------------------------+                          |
+|             |          AUTHORIZATION               |                          |
+|             |                                      |                          |
+|             |  +--------------------------------+  |                          |
+|             |  | WHEN: Time Restrictions        |  |                          |
+|             |  |  * Mon-Fri 08:00-18:00         |  |                          |
+|             |  +--------------------------------+  |                          |
+|             |                                      |                          |
+|             |  +--------------------------------+  |                          |
+|             |  | HOW: Policies                  |  |                          |
+|             |  |  * Recording: Required         |  |                          |
+|             |  |  * Approval: Optional          |  |                          |
+|             |  |  * Subprotocols: SHELL, SFTP   |  |                          |
+|             |  +--------------------------------+  |                          |
+|             |                                      |                          |
+|             +--------------------------------------+                          |
 |                                                                               |
 +===============================================================================+
 ```
@@ -82,34 +82,34 @@ WALLIX Authorization answers: **WHO** can access **WHAT**, **WHEN**, and **HOW**
 |  REQUIRED PROPERTIES                                                          |
 |  ===================                                                          |
 |                                                                               |
-|  +-------------------+-----------------------------------------------------+ |
-|  | user_group        | Which users get access                              | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | target_group      | Which targets they can access                       | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | authorization_name| Unique identifier                                   | |
-|  +-------------------+-----------------------------------------------------+ |
+|  +-------------------+-----------------------------------------------------+  |
+|  | user_group        | Which users get access                              |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | target_group      | Which targets they can access                       |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | authorization_name| Unique identifier                                   |  |
+|  +-------------------+-----------------------------------------------------+  |
 |                                                                               |
 |  OPTIONAL PROPERTIES                                                          |
 |  ===================                                                          |
 |                                                                               |
-|  +-------------------+-----------------------------------------------------+ |
-|  | description       | Human-readable description                          | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | active            | Enable/disable authorization                        | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | is_recorded       | Record sessions (true/false)                        | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | is_critical       | Mark as critical (extra confirmation)               | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | approval_required | Require approval before access                      | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | has_comment       | Require comment/ticket for session                  | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | time_frames       | When access is allowed                              | |
-|  +-------------------+-----------------------------------------------------+ |
-|  | subprotocols      | Which connection features allowed                   | |
-|  +-------------------+-----------------------------------------------------+ |
+|  +-------------------+-----------------------------------------------------+  |
+|  | description       | Human-readable description                          |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | active            | Enable/disable authorization                        |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | is_recorded       | Record sessions (true/false)                        |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | is_critical       | Mark as critical (extra confirmation)               |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | approval_required | Require approval before access                      |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | has_comment       | Require comment/ticket for session                  |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | time_frames       | When access is allowed                              |  |
+|  +-------------------+-----------------------------------------------------+  |
+|  | subprotocols      | Which connection features allowed                   |  |
+|  +-------------------+-----------------------------------------------------+  |
 |                                                                               |
 +===============================================================================+
 ```
@@ -124,28 +124,28 @@ WALLIX Authorization answers: **WHO** can access **WHAT**, **WHEN**, and **HOW**
 |  SSH SUBPROTOCOLS                                                             |
 |  ----------------                                                             |
 |                                                                               |
-|  +--------------+-----------------------------+----------------------------+ |
-|  | Subprotocol  | Description                 | Security Consideration     | |
-|  +--------------+-----------------------------+----------------------------+ |
-|  | SHELL        | Interactive shell access    | Standard, usually allow    | |
-|  | SCP          | Secure copy (file transfer) | Data exfiltration risk     | |
-|  | SFTP         | Secure FTP                  | Data exfiltration risk     | |
-|  | X11          | X Window forwarding         | Rarely needed, deny        | |
-|  | TUNNEL       | SSH port forwarding         | Can bypass security        | |
-|  +--------------+-----------------------------+----------------------------+ |
+|  +--------------+-----------------------------+----------------------------+  |
+|  | Subprotocol  | Description                 | Security Consideration     |  |
+|  +--------------+-----------------------------+----------------------------+  |
+|  | SHELL        | Interactive shell access    | Standard, usually allow    |  |
+|  | SCP          | Secure copy (file transfer) | Data exfiltration risk     |  |
+|  | SFTP         | Secure FTP                  | Data exfiltration risk     |  |
+|  | X11          | X Window forwarding         | Rarely needed, deny        |  |
+|  | TUNNEL       | SSH port forwarding         | Can bypass security        |  |
+|  +--------------+-----------------------------+----------------------------+  |
 |                                                                               |
 |  RDP SUBPROTOCOLS                                                             |
 |  ----------------                                                             |
 |                                                                               |
-|  +--------------+-----------------------------+----------------------------+ |
-|  | Feature      | Description                 | Security Consideration     | |
-|  +--------------+-----------------------------+----------------------------+ |
-|  | Clipboard    | Copy/paste                  | Data leakage risk          | |
-|  | Drive        | Local drive mapping         | File transfer risk         | |
-|  | Printer      | Printer redirection         | Usually safe               | |
-|  | Smart Card   | Smart card passthrough      | Usually safe               | |
-|  | Audio        | Sound redirection           | Usually safe               | |
-|  +--------------+-----------------------------+----------------------------+ |
+|  +--------------+-----------------------------+----------------------------+  |
+|  | Feature      | Description                 | Security Consideration     |  |
+|  +--------------+-----------------------------+----------------------------+  |
+|  | Clipboard    | Copy/paste                  | Data leakage risk          |  |
+|  | Drive        | Local drive mapping         | File transfer risk         |  |
+|  | Printer      | Printer redirection         | Usually safe               |  |
+|  | Smart Card   | Smart card passthrough      | Usually safe               |  |
+|  | Audio        | Sound redirection           | Usually safe               |  |
+|  +--------------+-----------------------------+----------------------------+  |
 |                                                                               |
 +===============================================================================+
 ```
@@ -198,31 +198,31 @@ WALLIX Authorization answers: **WHO** can access **WHAT**, **WHEN**, and **HOW**
 |  User requests access to target                                               |
 |                    |                                                          |
 |                    v                                                          |
-|  +-----------------------------------------+                                 |
-|  |  1. Find matching authorization          |                                 |
-|  |     User in User Group?                  |----- NO ------> ACCESS DENIED  |
-|  |     Target in Target Group?              |                                 |
-|  +-----------------+-----------------------+                                 |
+|  +-----------------------------------------+                                  |
+|  |  1. Find matching authorization         |                                  |
+|  |     User in User Group?                 |----- NO ------> ACCESS DENIED    |
+|  |     Target in Target Group?             |                                  |
+|  +-----------------+-----------------------+                                  |
 |                    | YES                                                      |
 |                    v                                                          |
-|  +-----------------------------------------+                                 |
-|  |  2. Authorization active?                |----- NO ------> ACCESS DENIED  |
-|  +-----------------+-----------------------+                                 |
+|  +-----------------------------------------+                                  |
+|  |  2. Authorization active?               |----- NO ------> ACCESS DENIED    |
+|  +-----------------+-----------------------+                                  |
 |                    | YES                                                      |
 |                    v                                                          |
-|  +-----------------------------------------+                                 |
-|  |  3. Within allowed time frame?           |----- NO ------> ACCESS DENIED  |
-|  +-----------------+-----------------------+                                 |
+|  +-----------------------------------------+                                  |
+|  |  3. Within allowed time frame?          |----- NO ------> ACCESS DENIED    |
+|  +-----------------+-----------------------+                                  |
 |                    | YES                                                      |
 |                    v                                                          |
-|  +-----------------------------------------+                                 |
-|  |  4. Approval required?                   |----- YES -----> WAIT APPROVAL  |
-|  +-----------------+-----------------------+                                 |
+|  +-----------------------------------------+                                  |
+|  |  4. Approval required?                  |----- YES -----> WAIT APPROVAL    |
+|  +-----------------+-----------------------+                                  |
 |                    | NO                                                       |
 |                    v                                                          |
-|  +-----------------------------------------+                                 |
-|  |  5. Critical session confirmation?       |                                 |
-|  +-----------------+-----------------------+                                 |
+|  +-----------------------------------------+                                  |
+|  |  5. Critical session confirmation?      |                                  |
+|  +-----------------+-----------------------+                                  |
 |                    |                                                          |
 |                    v                                                          |
 |              ACCESS GRANTED                                                   |
@@ -318,40 +318,40 @@ WALLIX Authorization answers: **WHO** can access **WHAT**, **WHEN**, and **HOW**
 |  TYPE 1: SIMPLE APPROVAL                                                      |
 |  =======================                                                      |
 |                                                                               |
-|  User ------> Request ------> Approver ------> Access                        |
+|  User ------> Request ------> Approver ------> Access                         |
 |                                                                               |
 |  * Single approver required                                                   |
 |  * First-come approval                                                        |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  TYPE 2: MULTI-APPROVER                                                       |
 |  ======================                                                       |
 |                                                                               |
-|  User ------> Request ------> Approver 1 --+--> Access                       |
-|                         +--> Approver 2 --+                                 |
+|  User ------> Request ------> Approver 1 --+--> Access                        |
+|                         +--> Approver 2 --+                                   |
 |                                                                               |
 |  * Multiple approvers can approve                                             |
 |  * Any one approval sufficient                                                |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  TYPE 3: QUORUM                                                               |
 |  =============                                                                |
 |                                                                               |
-|  User ------> Request ------> Approver 1 --+                                 |
-|                         +--> Approver 2 --+--> Access (2 of 3 required)     |
-|                         +--> Approver 3 --+                                 |
+|  User ------> Request ------> Approver 1 --+                                  |
+|                         +--> Approver 2 --+--> Access (2 of 3 required)       |
+|                         +--> Approver 3 --+                                   |
 |                                                                               |
 |  * Minimum number of approvals required                                       |
 |  * Configurable quorum                                                        |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  TYPE 4: SEQUENTIAL                                                           |
 |  ==================                                                           |
 |                                                                               |
-|  User ------> Request ------> Approver 1 ------> Approver 2 ------> Access   |
+|  User ------> Request ------> Approver 1 ------> Approver 2 ------> Access    |
 |                                                                               |
 |  * Approvers in sequence                                                      |
 |  * Each must approve before next                                              |
@@ -396,9 +396,9 @@ WALLIX Authorization answers: **WHO** can access **WHAT**, **WHEN**, and **HOW**
 |                      APPROVAL REQUEST FLOW                                    |
 +===============================================================================+
 |                                                                               |
-|  +---------+                    +-------------+                              |
-|  |  User   |                    |  Approver   |                              |
-|  +----+----+                    +------+------+                              |
+|  +---------+                    +-------------+                               |
+|  |  User   |                    |  Approver   |                               |
+|  +----+----+                    +------+------+                               |
 |       |                                |                                      |
 |       |  1. Request access             |                                      |
 |       |  (with justification)          |                                      |
@@ -438,30 +438,30 @@ WALLIX Authorization answers: **WHO** can access **WHAT**, **WHEN**, and **HOW**
 |                       RECORDING POLICY OPTIONS                                |
 +===============================================================================+
 |                                                                               |
-|  +--------------------+----------------------------------------------+  |
-|  | Policy Setting     | Description                                      |  |
-|  +--------------------+----------------------------------------------+  |
-|  | is_recorded: true  | All sessions are recorded                        |  |
-|  +--------------------+----------------------------------------------+  |
-|  | is_recorded: false | No recording (use sparingly)                     |  |
-|  +--------------------+----------------------------------------------+  |
-|  | record_input: true | Record keystrokes/input                          |  |
-|  +--------------------+----------------------------------------------+  |
-|  | record_output: true| Record screen/output                             |  |
-|  +--------------------+----------------------------------------------+  |
+|  +--------------------+----------------------------------------------+        |
+|  | Policy Setting     | Description                                  |        |
+|  +--------------------+----------------------------------------------+        |
+|  | is_recorded: true  | All sessions are recorded                    |        |
+|  +--------------------+----------------------------------------------+        |
+|  | is_recorded: false | No recording (use sparingly)                 |        |
+|  +--------------------+----------------------------------------------+        |
+|  | record_input: true | Record keystrokes/input                      |        |
+|  +--------------------+----------------------------------------------+        |
+|  | record_output: true| Record screen/output                         |        |
+|  +--------------------+----------------------------------------------+        |
 |                                                                               |
 |  RECOMMENDED SETTINGS BY USE CASE                                             |
 |  --------------------------------                                             |
 |                                                                               |
-|  +----------------------+------------+------------+--------------------+    |
-|  | Use Case             | Recording  | Input      | Output             |    |
-|  +----------------------+------------+------------+--------------------+    |
-|  | Production Access    | Required   | Yes        | Yes                |    |
-|  | Development          | Optional   | Yes        | Yes                |    |
-|  | Break-glass          | Required   | Yes        | Yes                |    |
-|  | Service Account      | Required   | Yes        | Yes                |    |
-|  | Network Devices      | Required   | Yes        | Yes                |    |
-|  +----------------------+------------+------------+--------------------+    |
+|  +----------------------+------------+------------+--------------------+      |
+|  | Use Case             | Recording  | Input      | Output             |      |
+|  +----------------------+------------+------------+--------------------+      |
+|  | Production Access    | Required   | Yes        | Yes                |      |
+|  | Development          | Optional   | Yes        | Yes                |      |
+|  | Break-glass          | Required   | Yes        | Yes                |      |
+|  | Service Account      | Required   | Yes        | Yes                |      |
+|  | Network Devices      | Required   | Yes        | Yes                |      |
+|  +----------------------+------------+------------+--------------------+      |
 |                                                                               |
 +===============================================================================+
 ```
@@ -503,39 +503,39 @@ Critical sessions require additional confirmation before access.
 |                      CRITICAL SESSION WORKFLOW                                |
 +===============================================================================+
 |                                                                               |
-|  +---------+                                                                 |
-|  |  User   |                                                                 |
-|  +----+----+                                                                 |
+|  +---------+                                                                  |
+|  |  User   |                                                                  |
+|  +----+----+                                                                  |
 |       |                                                                       |
-|       |  1. Request critical target                                          |
+|       |  1. Request critical target                                           |
 |       v                                                                       |
-|  +------------------------------------------------------------+         |
-|  |                                                                 |         |
-|  |   +=========================================================+    |         |
-|  |   |          CRITICAL SESSION WARNING                      |    |         |
-|  |   +=========================================================+    |         |
-|  |   |                                                        |    |         |
-|  |   |  You are about to access a CRITICAL system.           |    |         |
-|  |   |                                                        |    |         |
-|  |   |  Target: root@prod-database-01                        |    |         |
-|  |   |  Domain: Production-Critical                          |    |         |
-|  |   |                                                        |    |         |
-|  |   |  This session will be:                                |    |         |
-|  |   |  * Fully recorded                                     |    |         |
-|  |   |  * Subject to audit review                            |    |         |
-|  |   |  * Time-limited (4 hours max)                         |    |         |
-|  |   |                                                        |    |         |
-|  |   |  Please provide justification:                        |    |         |
-|  |   |  +------------------------------------------------+   |    |         |
-|  |   |  | INC-12345: Emergency database maintenance      |   |    |         |
-|  |   |  +------------------------------------------------+   |    |         |
-|  |   |                                                        |    |         |
-|  |   |  [ ] I understand and accept                          |    |         |
-|  |   |                                                        |    |         |
-|  |   |         [Cancel]  [Confirm & Connect]                 |    |         |
-|  |   +=========================================================+    |         |
-|  |                                                                 |         |
-|  +-------------------------------------------------------------+         |
+|  +----------------------------------------------------------------+           |
+|  |                                                                |           |
+|  |   +=========================================================+  |           |
+|  |   |          CRITICAL SESSION WARNING                       |  |           |
+|  |   +=========================================================+  |           |
+|  |   |                                                         |  |           |
+|  |   |  You are about to access a CRITICAL system.             |  |           |
+|  |   |                                                         |  |           |
+|  |   |  Target: root@prod-database-01                          |  |           |
+|  |   |  Domain: Production-Critical                            |  |           |
+|  |   |                                                         |  |           |
+|  |   |  This session will be:                                  |  |           |
+|  |   |  * Fully recorded                                       |  |           |
+|  |   |  * Subject to audit review                              |  |           |
+|  |   |  * Time-limited (4 hours max)                           |  |           |
+|  |   |                                                         |  |           |
+|  |   |  Please provide justification:                          |  |           |
+|  |   |  +------------------------------------------------+     |  |           |
+|  |   |  | INC-12345: Emergency database maintenance      |     |  |           |
+|  |   |  +------------------------------------------------+     |  |           |
+|  |   |                                                         |  |           |
+|  |   |  [ ] I understand and accept                            |  |           |
+|  |   |                                                         |  |           |
+|  |   |         [Cancel]  [Confirm & Connect]                   |  |           |
+|  |   +=========================================================+  |           |
+|  |                                                                |           |
+|  +----------------------------------------------------------------+           |
 |                                                                               |
 +===============================================================================+
 ```

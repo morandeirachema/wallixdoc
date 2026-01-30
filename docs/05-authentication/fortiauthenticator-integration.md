@@ -19,12 +19,12 @@ This guide covers complete integration of FortiAuthenticator with PAM4OT for mul
   1. User enters         2. PAM4OT sends         3. FortiAuth validates
      username/password      RADIUS request           and sends push/OTP
 
-  +------------+         +----------------+         +------------------+
+  +------------+         +----------------+         +-------------------+
   |   User     |  --->   |    PAM4OT      |  --->   | FortiAuthenticator|
-  | username   |         |                |         |                  |
-  | password   |         | RADIUS Client  |         | RADIUS Server    |
-  +------------+         +----------------+         | Push/SMS/Token   |
-       |                        |                   +------------------+
+  | username   |         |                |         |                   |
+  | password   |         | RADIUS Client  |         | RADIUS Server     |
+  +------------+         +----------------+         | Push/SMS/Token    |
+       |                        |                   +-------------------+
        |                        |                          |
        |    4. MFA Challenge    |                          |
        |<-----------------------|                          |

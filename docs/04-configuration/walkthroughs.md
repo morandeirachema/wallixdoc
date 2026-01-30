@@ -16,17 +16,17 @@ These walkthroughs guide you through common configuration tasks with screenshots
 
 ```
 +==============================================================================+
-| PATH: Configuration > Domains > Add Domain                                    |
+| PATH: Configuration > Domains > Add Domain                                   |
 +==============================================================================+
-|                                                                               |
-| Domain Name:     [Linux-Production    ]                                       |
-|                                                                               |
-| Domain Type:     (x) Local Domain                                             |
-|                  ( ) Global Domain                                            |
-|                                                                               |
-| Description:     [Production Linux servers              ]                     |
-|                                                                               |
-|                              [Cancel]  [Create Domain]                        |
+|                                                                              |
+| Domain Name:     [Linux-Production    ]                                      |
+|                                                                              |
+| Domain Type:     (x) Local Domain                                            |
+|                  ( ) Global Domain                                           |
+|                                                                              |
+| Description:     [Production Linux servers              ]                    |
+|                                                                              |
+|                              [Cancel]  [Create Domain]                       |
 +==============================================================================+
 ```
 
@@ -47,20 +47,20 @@ curl -X POST "https://bastion/api/domains" \
 
 ```
 +==============================================================================+
-| PATH: Configuration > Devices > Add Device                                    |
+| PATH: Configuration > Devices > Add Device                                   |
 +==============================================================================+
-|                                                                               |
-| Device Name:     [srv-web-01          ]                                       |
-|                                                                               |
+|                                                                              |
+| Device Name:     [srv-web-01          ]                                      |
+|                                                                              |
 | Host:            [10.1.10.10          ]    [Test Connectivity]               |
-|                                                                               |
-| Domain:          [Linux-Production ▼  ]                                       |
-|                                                                               |
-| Description:     [Production web server                 ]                     |
-|                                                                               |
+|                                                                              |
+| Domain:          [Linux-Production ▼  ]                                      |
+|                                                                              |
+| Description:     [Production web server                 ]                    |
+|                                                                              |
 | Alias:           [web1                ]  (optional short name)               |
-|                                                                               |
-|                              [Cancel]  [Create Device]                        |
+|                                                                              |
+|                              [Cancel]  [Create Device]                       |
 +==============================================================================+
 ```
 
@@ -82,22 +82,22 @@ curl -X POST "https://bastion/api/devices" \
 
 ```
 +==============================================================================+
-| PATH: Configuration > Devices > srv-web-01 > Services > Add Service           |
+| PATH: Configuration > Devices > srv-web-01 > Services > Add Service          |
 +==============================================================================+
-|                                                                               |
-| Service Type:    [SSH ▼               ]                                       |
-|                                                                               |
-| Port:            [22                  ]    (default: 22)                      |
-|                                                                               |
-| Connection Policy: [Standard ▼        ]                                       |
-|                                                                               |
+|                                                                              |
+| Service Type:    [SSH ▼               ]                                      |
+|                                                                              |
+| Port:            [22                  ]    (default: 22)                     |
+|                                                                              |
+| Connection Policy: [Standard ▼        ]                                      |
+|                                                                              |
 | Subprotocols:    [x] SSH Shell                                               |
-|                  [x] SCP                                                      |
-|                  [x] SFTP                                                     |
+|                  [x] SCP                                                     |
+|                  [x] SFTP                                                    |
 |                  [ ] X11 Forwarding                                          |
 |                  [ ] Remote Commands                                         |
-|                                                                               |
-|                              [Cancel]  [Add Service]                          |
+|                                                                              |
+|                              [Cancel]  [Add Service]                         |
 +==============================================================================+
 ```
 
@@ -105,33 +105,33 @@ curl -X POST "https://bastion/api/devices" \
 
 ```
 +==============================================================================+
-| PATH: Configuration > Devices > srv-web-01 > Accounts > Add Account           |
+| PATH: Configuration > Devices > srv-web-01 > Accounts > Add Account          |
 +==============================================================================+
-|                                                                               |
-| Account Name:    [root                ]                                       |
-|                                                                               |
+|                                                                              |
+| Account Name:    [root                ]                                      |
+|                                                                              |
 | Credential Type: (x) Password                                                |
 |                  ( ) SSH Key                                                 |
 |                  ( ) Certificate                                             |
-|                                                                               |
+|                                                                              |
 | Password:        [********************]    [Generate]                        |
-|                                                                               |
+|                                                                              |
 | ─── Password Rotation ────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Auto-Rotate:     [x] Enable automatic rotation                               |
-|                                                                               |
-| Rotation Period: [Weekly ▼            ]                                       |
-|                                                                               |
-| Password Policy: [Linux-Strong ▼      ]                                       |
-|                  - Length: 16+                                                |
-|                  - Special chars: Required                                    |
-|                  - Numbers: Required                                          |
-|                                                                               |
+|                                                                              |
+| Rotation Period: [Weekly ▼            ]                                      |
+|                                                                              |
+| Password Policy: [Linux-Strong ▼      ]                                      |
+|                  - Length: 16+                                               |
+|                  - Special chars: Required                                   |
+|                  - Numbers: Required                                         |
+|                                                                              |
 | ─── Checkout Settings ────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Allow Checkout:  [ ] Enable password checkout                                |
-|                                                                               |
-|                              [Cancel]  [Add Account]                          |
+|                                                                              |
+|                              [Cancel]  [Add Account]                         |
 +==============================================================================+
 ```
 
@@ -139,23 +139,23 @@ curl -X POST "https://bastion/api/devices" \
 
 ```
 +==============================================================================+
-| PATH: Configuration > User Groups > Add User Group                            |
+| PATH: Configuration > User Groups > Add User Group                           |
 +==============================================================================+
-|                                                                               |
-| Group Name:      [Linux-Admins        ]                                       |
-|                                                                               |
-| Description:     [Administrators with root access       ]                     |
-|                                                                               |
+|                                                                              |
+| Group Name:      [Linux-Admins        ]                                      |
+|                                                                              |
+| Description:     [Administrators with root access       ]                    |
+|                                                                              |
 | ─── Members ──────────────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Available Users:              | Selected Users:                              |
 | +-------------------+         | +-------------------+                        |
 | | jsmith            | [>>]    | | admin             |                        |
 | | mwilson           |         | |                   |                        |
 | | bthompson         |         | |                   |                        |
 | +-------------------+         | +-------------------+                        |
-|                                                                               |
-|                              [Cancel]  [Create Group]                         |
+|                                                                              |
+|                              [Cancel]  [Create Group]                        |
 +==============================================================================+
 ```
 
@@ -163,23 +163,23 @@ curl -X POST "https://bastion/api/devices" \
 
 ```
 +==============================================================================+
-| PATH: Configuration > Target Groups > Add Target Group                        |
+| PATH: Configuration > Target Groups > Add Target Group                       |
 +==============================================================================+
-|                                                                               |
-| Group Name:      [Linux-Prod-Root     ]                                       |
-|                                                                               |
-| Description:     [Root accounts on production Linux     ]                     |
-|                                                                               |
+|                                                                              |
+| Group Name:      [Linux-Prod-Root     ]                                      |
+|                                                                              |
+| Description:     [Root accounts on production Linux     ]                    |
+|                                                                              |
 | ─── Accounts ─────────────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Available Accounts:           | Selected Accounts:                           |
 | +-------------------+         | +-------------------+                        |
 | | srv-db-01/root    | [>>]    | | srv-web-01/root   |                        |
 | | srv-app-01/root   |         | |                   |                        |
 | | srv-app-02/root   |         | |                   |                        |
 | +-------------------+         | +-------------------+                        |
-|                                                                               |
-|                              [Cancel]  [Create Group]                         |
+|                                                                              |
+|                              [Cancel]  [Create Group]                        |
 +==============================================================================+
 ```
 
@@ -187,28 +187,28 @@ curl -X POST "https://bastion/api/devices" \
 
 ```
 +==============================================================================+
-| PATH: Configuration > Authorizations > Add Authorization                      |
+| PATH: Configuration > Authorizations > Add Authorization                     |
 +==============================================================================+
-|                                                                               |
-| Authorization Name: [Linux-Admins-Root ]                                      |
-|                                                                               |
-| User Group:      [Linux-Admins ▼      ]                                       |
-| Target Group:    [Linux-Prod-Root ▼   ]                                       |
-|                                                                               |
+|                                                                              |
+| Authorization Name: [Linux-Admins-Root ]                                     |
+|                                                                              |
+| User Group:      [Linux-Admins ▼      ]                                      |
+| Target Group:    [Linux-Prod-Root ▼   ]                                      |
+|                                                                              |
 | ─── Session Settings ─────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Recording:       [x] Record all sessions                                     |
 | Keystroke Log:   [x] Log all keystrokes                                      |
-|                                                                               |
+|                                                                              |
 | ─── Approval Workflow ────────────────────────────────────────────           |
-|                                                                               |
-| Require Approval: [ ] Require approval before access                          |
-|                                                                               |
+|                                                                              |
+| Require Approval: [ ] Require approval before access                         |
+|                                                                              |
 | ─── Time Restrictions ────────────────────────────────────────────           |
-|                                                                               |
-| Time Restriction: [ ] Limit access to specific times                          |
-|                                                                               |
-|                              [Cancel]  [Create Authorization]                 |
+|                                                                              |
+| Time Restriction: [ ] Limit access to specific times                         |
+|                                                                              |
+|                              [Cancel]  [Create Authorization]                |
 +==============================================================================+
 ```
 
@@ -257,26 +257,26 @@ Configuration > Devices > Add
 
 ```
 +==============================================================================+
-| PATH: Configuration > Devices > srv-dc-01 > Services > Add Service            |
+| PATH: Configuration > Devices > srv-dc-01 > Services > Add Service           |
 +==============================================================================+
-|                                                                               |
-| Service Type:    [RDP ▼               ]                                       |
-|                                                                               |
-| Port:            [3389                ]                                       |
-|                                                                               |
+|                                                                              |
+| Service Type:    [RDP ▼               ]                                      |
+|                                                                              |
+| Port:            [3389                ]                                      |
+|                                                                              |
 | ─── RDP Settings ─────────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Network Level Auth: [x] Enable NLA (recommended)                             |
-|                                                                               |
-| TLS Mode:        [TLS 1.2+ ▼          ]                                       |
-|                                                                               |
+|                                                                              |
+| TLS Mode:        [TLS 1.2+ ▼          ]                                      |
+|                                                                              |
 | Subprotocols:    [x] Drive Mapping                                           |
 |                  [x] Clipboard                                               |
 |                  [ ] Printer Redirection                                     |
 |                  [ ] USB Redirection                                         |
 |                  [ ] Smart Card                                              |
-|                                                                               |
-|                              [Cancel]  [Add Service]                          |
+|                                                                              |
+|                              [Cancel]  [Add Service]                         |
 +==============================================================================+
 ```
 
@@ -284,31 +284,31 @@ Configuration > Devices > Add
 
 ```
 +==============================================================================+
-| Account Configuration for Domain Account                                      |
+| Account Configuration for Domain Account                                     |
 +==============================================================================+
-|                                                                               |
-| Account Name:    [administrator       ]                                       |
-|                                                                               |
+|                                                                              |
+| Account Name:    [administrator       ]                                      |
+|                                                                              |
 | Domain Account:  [x] This is a domain account                                |
-|                                                                               |
-| AD Domain:       [CORP                ]                                       |
+|                                                                              |
+| AD Domain:       [CORP                ]                                      |
 | (NetBIOS or FQDN: CORP or corp.company.com)                                  |
-|                                                                               |
+|                                                                              |
 | Credential Type: (x) Password                                                |
-|                                                                               |
-| Password:        [********************]                                       |
-|                                                                               |
+|                                                                              |
+| Password:        [********************]                                      |
+|                                                                              |
 | ─── Password Rotation ────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Auto-Rotate:     [x] Enable                                                  |
-| Rotation Period: [30 days ▼           ]                                       |
-| Target Type:     [Windows AD ▼        ]                                       |
-|                                                                               |
+| Rotation Period: [30 days ▼           ]                                      |
+| Target Type:     [Windows AD ▼        ]                                      |
+|                                                                              |
 | ─── Credential Injection ─────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Auto-Logon:      [x] Inject credentials automatically                        |
 | Show Password:   [ ] Allow user to see password                              |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -531,26 +531,26 @@ Configuration > Devices > Add
 
 ```
 +==============================================================================+
-| Service Configuration: SSH Tunnel for S7comm                                  |
+| Service Configuration: SSH Tunnel for S7comm                                 |
 +==============================================================================+
-|                                                                               |
-| Service Type:    [SSH ▼               ]                                       |
-|                                                                               |
-| Port:            [22                  ]                                       |
-|                                                                               |
+|                                                                              |
+| Service Type:    [SSH ▼               ]                                      |
+|                                                                              |
+| Port:            [22                  ]                                      |
+|                                                                              |
 | ─── Tunneling Configuration ──────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Enable Tunneling: [x] Allow port forwarding through this service             |
-|                                                                               |
+|                                                                              |
 | Allowed Tunnels:                                                             |
-|                                                                               |
-| | Local Port | Remote Host    | Remote Port | Description       |           |
-| |------------|----------------|-------------|-------------------|           |
-| | 102        | 192.168.50.10  | 102         | S7comm Protocol   |           |
-| | 4840       | 192.168.50.10  | 4840        | OPC UA (optional) |           |
-|                                                                               |
-|                              [+ Add Tunnel]                                   |
-|                                                                               |
+|                                                                              |
+| | Local Port | Remote Host    | Remote Port | Description       |            |
+| |------------|----------------|-------------|-------------------|            |
+| | 102        | 192.168.50.10  | 102         | S7comm Protocol   |            |
+| | 4840       | 192.168.50.10  | 4840        | OPC UA (optional) |            |
+|                                                                              |
+|                              [+ Add Tunnel]                                  |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -568,35 +568,35 @@ Account Configuration:
 
 ```
 +==============================================================================+
-| Authorization: OT-Engineers-PLCs                                              |
+| Authorization: OT-Engineers-PLCs                                             |
 +==============================================================================+
-|                                                                               |
-| User Group:      [OT-Engineers ▼      ]                                       |
-| Target Group:    [Level1-PLCs ▼       ]                                       |
-|                                                                               |
+|                                                                              |
+| User Group:      [OT-Engineers ▼      ]                                      |
+| Target Group:    [Level1-PLCs ▼       ]                                      |
+|                                                                              |
 | ─── Security Settings ────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Recording:       [x] REQUIRED - All sessions recorded                        |
 | Keystroke Log:   [x] Enabled                                                 |
-|                                                                               |
+|                                                                              |
 | ─── Approval Workflow ────────────────────────────────────────────           |
-|                                                                               |
-| Require Approval: [x] Yes - Approval required for all access                  |
-| Approvers:       [OT-Supervisors ▼    ]                                       |
-|                                                                               |
+|                                                                              |
+| Require Approval: [x] Yes - Approval required for all access                 |
+| Approvers:       [OT-Supervisors ▼    ]                                      |
+|                                                                              |
 | ─── 4-Eyes Control ───────────────────────────────────────────────           |
-|                                                                               |
-| 4-Eyes Required: [x] Supervisor must observe session                          |
-| Supervisors:     [OT-Supervisors ▼    ]                                       |
-|                                                                               |
+|                                                                              |
+| 4-Eyes Required: [x] Supervisor must observe session                         |
+| Supervisors:     [OT-Supervisors ▼    ]                                      |
+|                                                                              |
 | ─── Time Restrictions ────────────────────────────────────────────           |
-|                                                                               |
+|                                                                              |
 | Maintenance Windows Only:                                                    |
 | [x] Saturday 02:00 - 06:00                                                   |
 | [x] Sunday 02:00 - 06:00                                                     |
-|                                                                               |
+|                                                                              |
 | Or: Approved maintenance tickets                                             |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -647,37 +647,37 @@ Required Information:
 
 ```
 +==============================================================================+
-| PATH: Configuration > Authentication > LDAP > Add LDAP Source                 |
+| PATH: Configuration > Authentication > LDAP > Add LDAP Source                |
 +==============================================================================+
-|                                                                               |
-| Source Name:     [Corporate-AD        ]                                       |
-|                                                                               |
+|                                                                              |
+| Source Name:     [Corporate-AD        ]                                      |
+|                                                                              |
 | ─── Connection ───────────────────────────────────────────────────           |
-|                                                                               |
-| Host:            [dc01.corp.company.com                 ]                     |
-| Port:            [636                 ]                                       |
+|                                                                              |
+| Host:            [dc01.corp.company.com                 ]                    |
+| Port:            [636                 ]                                      |
 | Use TLS:         [x] LDAPS (recommended)                                     |
 | Certificate:     [x] Verify server certificate                               |
-|                                                                               |
+|                                                                              |
 | ─── Bind Account ─────────────────────────────────────────────────           |
-|                                                                               |
-| Bind DN:         [CN=wallix-svc,OU=Service Accounts,DC=corp,DC=company,DC=com]|
-| Bind Password:   [********************]                                       |
-|                                                                               |
+|                                                                              |
+| Bind DN:        [CN=wallix-svc,OU=Service Accounts,DC=corp,DC=company,DC=com]|
+| Bind Password:  [********************]                                       |
+|                                                                              |
 | ─── Search Configuration ─────────────────────────────────────────           |
-|                                                                               |
-| Base DN:         [DC=corp,DC=company,DC=com             ]                     |
-| User Filter:     [(&(objectClass=user)(sAMAccountName=%s))  ]                 |
-| Group Filter:    [(&(objectClass=group)(member=%s))         ]                 |
-|                                                                               |
+|                                                                              |
+| Base DN:         [DC=corp,DC=company,DC=com             ]                    |
+| User Filter:     [(&(objectClass=user)(sAMAccountName=%s))  ]                |
+| Group Filter:    [(&(objectClass=group)(member=%s))         ]                |
+|                                                                              |
 | ─── Attribute Mapping ────────────────────────────────────────────           |
-|                                                                               |
-| Username:        [sAMAccountName      ]                                       |
-| Display Name:    [displayName         ]                                       |
-| Email:           [mail                ]                                       |
-| Groups:          [memberOf            ]                                       |
-|                                                                               |
-|                              [Test Connection]  [Save]                        |
+|                                                                              |
+| Username:        [sAMAccountName      ]                                      |
+| Display Name:    [displayName         ]                                      |
+| Email:           [mail                ]                                      |
+| Groups:          [memberOf            ]                                      |
+|                                                                              |
+|                              [Test Connection]  [Save]                       |
 +==============================================================================+
 ```
 
@@ -685,16 +685,16 @@ Required Information:
 
 ```
 +==============================================================================+
-| Group Mapping Configuration                                                   |
+| Group Mapping Configuration                                                  |
 +==============================================================================+
-|                                                                               |
+|                                                                              |
 | AD Group                          | WALLIX Group                             |
 | ----------------------------------|------------------------------------------|
 | CN=IT-Admins,OU=Groups,DC=...     | Linux-Admins                             |
 | CN=Windows-Admins,OU=Groups,DC=...| Windows-Admins                           |
 | CN=OT-Engineers,OU=Groups,DC=...  | OT-Engineers                             |
 | CN=PAM-Admins,OU=Groups,DC=...    | WALLIX-Admins (full admin access)        |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
