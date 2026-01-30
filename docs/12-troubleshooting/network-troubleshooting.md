@@ -109,7 +109,7 @@ iptables -L -n | grep 22
 | PAM4OT | SIEM | 514 | TCP | `nc -zv siem-lab 514` |
 | PAM4OT | Targets | 22 | TCP | `nc -zv linux-test 22` |
 | PAM4OT | Targets | 3389 | TCP | `nc -zv windows-test 3389` |
-| Node1 | Node2 | 5432 | TCP | `nc -zv node2 5432` |
+| Node1 | Node2 | 3306 | TCP | `nc -zv node2 3306` |
 | Node1 | Node2 | 5405 | UDP | `nc -zuv node2 5405` |
 
 ### Test All Ports Script
@@ -143,8 +143,8 @@ echo -n "SIEM Syslog (514): "
 nc -zv -w2 siem.company.com 514 2>&1 | grep -q succeeded && echo "OK" || echo "FAILED"
 
 # Cluster
-echo -n "PostgreSQL Replication: "
-nc -zv -w2 pam4ot-node2.company.com 5432 2>&1 | grep -q succeeded && echo "OK" || echo "FAILED"
+echo -n "MariaDB Replication: "
+nc -zv -w2 pam4ot-node2.company.com 3306 2>&1 | grep -q succeeded && echo "OK" || echo "FAILED"
 
 # Targets
 echo -n "Linux Target (22): "
