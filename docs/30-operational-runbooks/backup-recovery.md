@@ -38,7 +38,7 @@ This document provides detailed backup, restore, and disaster recovery procedure
 
 | Component | Location | Frequency | Retention |
 |-----------|----------|-----------|-----------|
-| PostgreSQL Database | /var/lib/postgresql/15/main | Daily | 30 days |
+| MariaDB Database | /var/lib/mysql | Daily | 30 days |
 | Configuration Files | /etc/wab/ | Daily | 90 days |
 | SSL Certificates | /etc/ssl/wab/ | Weekly | 1 year |
 | Session Recordings | /var/wab/recorded/ | Daily incremental | Per policy |
@@ -75,15 +75,15 @@ log() {
 log "Starting database backup..."
 
 # Check if running on primary
-IS_PRIMARY=$(sudo -u postgres psql -t -c "SELECT NOT pg_is_in_recovery();")
-if [[ "${IS_PRIMARY}" != *"t"* ]]; then
+IS_PRIMARY=$(sudo mysql -N -e "SHOW SLAVE STATUS\G" | grep -c "Slave_IO_Running")
+if [[ "${IS_PRIMARY}" != "0" ]]; then
     log "This is not the primary node. Skipping database backup."
     exit 0
 fi
 
 # Create backup
-log "Creating PostgreSQL dump..."
-sudo -u postgres pg_dump wabdb | gzip > "${BACKUP_FILE}"
+log "Creating MariaDB dump..."
+mysqldump wabdb | gzip > "${BACKUP_FILE}"
 
 if [ $? -eq 0 ]; then
     BACKUP_SIZE=$(du -h "${BACKUP_FILE}" | cut -f1)
@@ -118,34 +118,34 @@ exit 0
 
 ```bash
 # Full database backup
-sudo -u postgres pg_dump wabdb > /backup/wabdb_manual_$(date +%Y%m%d).sql
+mysqldump wabdb > /backup/wabdb_manual_$(date +%Y%m%d).sql
 
 # Compressed backup
-sudo -u postgres pg_dump wabdb | gzip > /backup/wabdb_manual_$(date +%Y%m%d).sql.gz
+mysqldump wabdb | gzip > /backup/wabdb_manual_$(date +%Y%m%d).sql.gz
 
-# Custom format (allows selective restore)
-sudo -u postgres pg_dump -Fc wabdb > /backup/wabdb_manual_$(date +%Y%m%d).dump
+# Backup with routines and triggers
+mysqldump --routines --triggers wabdb > /backup/wabdb_manual_$(date +%Y%m%d).dump
 
-# Backup with global objects
-sudo -u postgres pg_dumpall --globals-only > /backup/globals_$(date +%Y%m%d).sql
+# Backup all databases with user privileges
+mysqldump --all-databases --add-drop-database > /backup/all_dbs_$(date +%Y%m%d).sql
 ```
 
 ### Point-in-Time Recovery Setup
 
 ```bash
-# Enable WAL archiving for PITR
-# In /etc/postgresql/15/main/postgresql.conf:
+# Enable binary logging for PITR
+# In /etc/mysql/mariadb.conf.d/50-server.cnf:
 
-archive_mode = on
-archive_command = 'cp %p /backup/pam4ot/wal_archive/%f'
-wal_level = replica
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
 
 # Create archive directory
-mkdir -p /backup/pam4ot/wal_archive
-chown postgres:postgres /backup/pam4ot/wal_archive
+mkdir -p /backup/pam4ot/binlog_archive
+chown mysql:mysql /backup/pam4ot/binlog_archive
 
-# Restart PostgreSQL
-systemctl restart postgresql
+# Restart MariaDB
+systemctl restart mariadb
 ```
 
 ---
@@ -183,7 +183,7 @@ tar -czvf "${BACKUP_FILE}" \
     /var/wab/keys/ \
     /etc/pacemaker/ \
     /etc/corosync/ \
-    /etc/postgresql/15/main/*.conf \
+    /etc/mysql/mariadb.conf.d/*.cnf \
     /tmp/pam4ot-config.json \
     2>/dev/null
 
@@ -352,18 +352,18 @@ fi
 systemctl stop wallix-bastion
 
 # Restore from SQL dump
-sudo -u postgres psql -c "DROP DATABASE IF EXISTS wabdb_restore;"
-sudo -u postgres psql -c "CREATE DATABASE wabdb_restore;"
+sudo mysql -e "DROP DATABASE IF EXISTS wabdb_restore;"
+sudo mysql -e "CREATE DATABASE wabdb_restore;"
 gunzip -c /backup/pam4ot/database/wabdb_20250128_010000.sql.gz | \
-    sudo -u postgres psql wabdb_restore
+    sudo mysql wabdb_restore
 
 # Verify restore
-sudo -u postgres psql wabdb_restore -c "SELECT COUNT(*) FROM users;"
+sudo mysql wabdb_restore -e "SELECT COUNT(*) FROM users;"
 
 # If verified, swap databases
-sudo -u postgres psql << EOF
-ALTER DATABASE wabdb RENAME TO wabdb_old;
-ALTER DATABASE wabdb_restore RENAME TO wabdb;
+sudo mysql << EOF
+RENAME DATABASE wabdb TO wabdb_old;
+RENAME DATABASE wabdb_restore TO wabdb;
 EOF
 
 # Start services
@@ -378,33 +378,27 @@ wabadmin status
 ```bash
 # PITR to specific timestamp
 
-# 1. Stop PostgreSQL
-systemctl stop postgresql
+# 1. Stop MariaDB
+systemctl stop mariadb
 
 # 2. Move current data
-mv /var/lib/postgresql/15/main /var/lib/postgresql/15/main_old
+mv /var/lib/mysql /var/lib/mysql_old
 
 # 3. Restore base backup
-tar -xzf /backup/pam4ot/basebackup/base_20250127.tar.gz -C /var/lib/postgresql/15/
+mariabackup --copy-back --target-dir=/backup/pam4ot/basebackup/base_20250127
 
-# 4. Create recovery configuration
-cat > /var/lib/postgresql/15/main/recovery.signal << EOF
-EOF
-
-cat > /var/lib/postgresql/15/main/postgresql.auto.conf << EOF
-restore_command = 'cp /backup/pam4ot/wal_archive/%f %p'
-recovery_target_time = '2025-01-28 14:30:00'
-recovery_target_action = 'promote'
-EOF
+# 4. Apply binary logs up to specific point
+mysqlbinlog --stop-datetime="2025-01-28 14:30:00" \
+  /backup/pam4ot/binlog_archive/mariadb-bin.* | mysql
 
 # 5. Set ownership
-chown -R postgres:postgres /var/lib/postgresql/15/main
+chown -R mysql:mysql /var/lib/mysql
 
-# 6. Start PostgreSQL
-systemctl start postgresql
+# 6. Start MariaDB
+systemctl start mariadb
 
 # 7. Monitor recovery
-tail -f /var/log/postgresql/postgresql-15-main.log
+tail -f /var/log/mysql/error.log
 ```
 
 ### Configuration Restore
@@ -437,7 +431,7 @@ systemctl restart wallix-bastion
 
 # Step 1: Stop all services
 systemctl stop wallix-bastion
-systemctl stop postgresql
+systemctl stop mariadb
 
 # Step 2: Restore database
 # (Follow Database Restore steps above)
@@ -454,10 +448,10 @@ rsync -av /backup/pam4ot/recordings/latest/ /var/wab/recorded/
 
 # Step 6: Fix permissions
 chown -R wabuser:wabgroup /var/wab/
-chown -R postgres:postgres /var/lib/postgresql/
+chown -R mysql:mysql /var/lib/mysql/
 
 # Step 7: Start services
-systemctl start postgresql
+systemctl start mariadb
 systemctl start wallix-bastion
 
 # Step 8: Verify

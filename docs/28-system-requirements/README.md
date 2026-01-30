@@ -173,12 +173,12 @@
   +------------------------------------------------------------------------+
   | Component          | Version              | Notes                       |
   +--------------------+----------------------+-----------------------------+
-  | PostgreSQL         | 15, 16, 17           | Internal or external        |
-  |                    |                      | 15+ REQUIRED for 12.x       |
+  | MariaDB            | 10.6, 10.11, 11.x    | Internal or external        |
+  |                    |                      | 10.6+ REQUIRED for 12.x     |
   +--------------------+----------------------+-----------------------------+
 
   External Database Requirements:
-  * PostgreSQL 15+ recommended for WALLIX 12.x
+  * MariaDB 10.11+ recommended for WALLIX 12.x
   * UTF-8 encoding
   * At least 10,000 max_connections
   * Sufficient shared_buffers (25% of RAM)
@@ -279,7 +279,7 @@
   | 3389     | TCP      | Users            | RDP Proxy                     |
   | 5900     | TCP      | Users            | VNC Proxy                     |
   | 23       | TCP      | Users            | Telnet Proxy (if enabled)     |
-  | 5432     | TCP      | HA Peer          | PostgreSQL replication        |
+  | 3306     | TCP      | HA Peer          | MariaDB replication           |
   | 443      | TCP      | HA Peer          | Cluster sync                  |
   +----------+----------+------------------+-------------------------------+
 
@@ -306,7 +306,7 @@
   | 443      | TCP      | NTP Server       | HTTPS time sync               |
   | 123      | UDP      | NTP Server       | NTP time sync                 |
   | 443      | TCP      | WALLIX Update    | Software updates              |
-  | 5432     | TCP      | External DB      | External PostgreSQL           |
+  | 3306     | TCP      | External DB      | External MariaDB              |
   +----------+----------+------------------+-------------------------------+
 
   --------------------------------------------------------------------------
@@ -382,7 +382,7 @@
   |   |                  |  |                  |  |                  |      |
   |   | 100 GB SSD       |  | 200 GB+ SSD      |  | 500 GB+ HDD/NAS  |      |
   |   |                  |  |                  |  |                  |      |
-  |   | - OS             |  | - PostgreSQL     |  | - Session videos |      |
+  |   | - OS             |  | - MariaDB        |  | - Session videos |      |
   |   | - Application    |  | - Config files   |  | - Audit data     |      |
   |   | - Logs           |  | - Temp data      |  | - Keystroke logs |      |
   |   +------------------+  +------------------+  +------------------+      |
@@ -540,7 +540,7 @@
   POSTGRESQL TUNING
   =================
 
-  /etc/postgresql/15/main/postgresql.conf:
+  /etc/mysql/mariadb.conf.d/50-server.cnf:
   +------------------------------------------------------------------------+
   | # Memory Settings                                                      |
   | shared_buffers = 4GB              # 25% of total RAM                   |
@@ -651,7 +651,7 @@
   | wab-admin session-count                                                |
   |                                                                        |
   | # Database connections                                                 |
-  | psql -c "SELECT count(*) FROM pg_stat_activity;"                       |
+  | sudo mysql -e "SHOW PROCESSLIST;" | wc -l                              |
   |                                                                        |
   | # System resources                                                     |
   | htop                                                                   |
@@ -783,7 +783,7 @@
   | Hardware         | 16 vCPU, 64 GB RAM, NVMe SSD                         |
   | OS               | Debian 12 (Bookworm)                                 |
   | WALLIX Version   | 12.1.x                                               |
-  | PostgreSQL       | 16.x with optimized settings                         |
+  | MariaDB          | 10.11.x with optimized settings                      |
   | Network          | 10 Gbps, < 1ms latency to targets                    |
   +------------------+------------------------------------------------------+
 
@@ -996,15 +996,15 @@
   Database Performance:
   +------------------------------------------------------------------------+
   | # Connection count                                                     |
-  | watch -n 5 "psql -c 'SELECT count(*) FROM pg_stat_activity;'"          |
+  | watch -n 5 "sudo mysql -e 'SHOW PROCESSLIST;' | wc -l"                 |
   |                                                                        |
   | # Slow queries                                                         |
-  | psql -c "SELECT * FROM pg_stat_statements ORDER BY total_exec_time     |
-  |   DESC LIMIT 10;"                                                      |
+  | sudo mysql -e "SELECT * FROM performance_schema.events_statements_summary_by_digest |
+  |   ORDER BY SUM_TIMER_WAIT DESC LIMIT 10;"                              |
   |                                                                        |
   | # Cache hit ratio                                                      |
-  | psql -c "SELECT sum(heap_blks_hit) / (sum(heap_blks_hit) +             |
-  |   sum(heap_blks_read)) * 100 AS ratio FROM pg_statio_user_tables;"     |
+  | sudo mysql -e "SHOW GLOBAL STATUS LIKE 'Innodb_buffer_pool_read%';"    |
+  |   # Calculate hit ratio from read_requests vs reads                    |
   +------------------------------------------------------------------------+
 
   Application Performance:

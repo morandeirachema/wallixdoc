@@ -116,7 +116,7 @@
   [ ] 2. CHECK SYSTEM REQUIREMENTS
       - Verify hardware meets new version requirements
       - Check disk space (need 2x current for safety)
-      - Verify PostgreSQL version compatibility
+      - Verify MariaDB version compatibility
       - Check browser compatibility for new UI features
 
   [ ] 3. VERIFY LICENSE
@@ -144,7 +144,7 @@
       - Document backup location
 
   [ ] 7. BACKUP DATABASE SEPARATELY
-      pg_dump -U wallix wallix > /backup/wallix-db-$(date +%F).sql
+      mysqldump -u wallix -p wallix > /backup/wallix-db-$(date +%F).sql
 
   [ ] 8. EXPORT CONFIGURATION
       wab-admin export-config --output /backup/config-$(date +%F).xml
@@ -287,9 +287,9 @@
 
   PRE-UPGRADE:
 
-  1. Verify PostgreSQL version is 15+
-     psql --version
-     # If < 15, upgrade PostgreSQL first
+  1. Verify MariaDB version is 10.6+
+     mysql --version
+     # If < 10.6, upgrade MariaDB first
 
   2. Check for deprecated features in use
      wab-admin deprecation-check
@@ -922,7 +922,7 @@
   | wab-admin restore --file /backup/upgrade-20240127_100000.tar.gz        |
   |                                                                        |
   | # Or restore database only                                             |
-  | psql -U wallix wallix < /backup/wallix-db-20240127.sql                 |
+  | sudo mysql wallix < /backup/wallix-db-20240127.sql                     |
   +------------------------------------------------------------------------+
 
   STEP 4: RESTORE PREVIOUS VERSION

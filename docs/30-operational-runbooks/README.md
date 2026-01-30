@@ -105,11 +105,8 @@ wabadmin approvals --status pending
 
 **7. Verify Replication Status**
 ```bash
-# Check PostgreSQL replication lag
-sudo -u postgres psql -c "SELECT client_addr, state, sent_lsn, write_lsn,
-  flush_lsn, replay_lsn,
-  pg_wal_lsn_diff(sent_lsn, replay_lsn) AS lag_bytes
-FROM pg_stat_replication;"
+# Check MariaDB replication lag
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
 # Check sync status
 wabadmin sync-status
@@ -367,23 +364,24 @@ wabadmin connectivity-test --sample 5
 **3. Database Optimization**
 ```bash
 # Analyze tables
-sudo -u postgres psql -d wallix -c "ANALYZE VERBOSE;"
+sudo mysql wallix -e "ANALYZE TABLE users, sessions, audit_log;"
 
-# Vacuum database
-sudo -u postgres psql -d wallix -c "VACUUM ANALYZE;"
+# Optimize tables
+sudo mysql wallix -e "OPTIMIZE TABLE users, sessions, audit_log;"
 
-# Check for bloat
-sudo -u postgres psql -d wallix -c "
-SELECT schemaname, relname,
-  pg_size_pretty(pg_total_relation_size(relid)) AS total_size,
-  pg_size_pretty(pg_relation_size(relid)) AS table_size,
-  pg_size_pretty(pg_total_relation_size(relid) - pg_relation_size(relid)) AS index_size
-FROM pg_catalog.pg_statio_user_tables
-ORDER BY pg_total_relation_size(relid) DESC
+# Check for table sizes
+sudo mysql wallix -e "
+SELECT table_name,
+  ROUND(((data_length + index_length) / 1024 / 1024), 2) AS total_size_mb,
+  ROUND((data_length / 1024 / 1024), 2) AS data_size_mb,
+  ROUND((index_length / 1024 / 1024), 2) AS index_size_mb
+FROM information_schema.tables
+WHERE table_schema = 'wallix'
+ORDER BY (data_length + index_length) DESC
 LIMIT 20;"
 
-# Reindex if needed (during maintenance window)
-sudo -u postgres psql -d wallix -c "REINDEX DATABASE wallix;"
+# Repair tables if needed (during maintenance window)
+sudo mysql wallix -e "CHECK TABLE users, sessions, audit_log;"
 ```
 
 **4. Log Rotation and Archival**
@@ -572,7 +570,7 @@ wabadmin rotation --retry <rotation_id>
 | Backup Type | Frequency | Retention | Contents |
 |-------------|-----------|-----------|----------|
 | Configuration | Daily | 30 days | Config files, policies, authorizations |
-| Database | Daily | 30 days | PostgreSQL dump |
+| Database | Daily | 30 days | MariaDB dump |
 | Full | Weekly | 90 days | All data, recordings, configs |
 | Offsite | Monthly | 1 year | Encrypted full backup |
 
@@ -677,8 +675,8 @@ wabadmin connectivity-test --all
 # 1. Stop WALLIX services
 systemctl stop wallix-bastion
 
-# 2. Restore PostgreSQL
-sudo -u postgres pg_restore -d wallix /var/backup/wallix/database-YYYYMMDD.dump
+# 2. Restore MariaDB
+sudo mysql wallix < /var/backup/wallix/database-YYYYMMDD.sql
 
 # 3. Start services
 systemctl start wallix-bastion
@@ -696,40 +694,40 @@ wabadmin verify --database
 **Daily: Check Database Health**
 ```bash
 # Check connections
-sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity;"
+sudo mysql -e "SHOW STATUS LIKE 'Threads_connected';"
 
 # Check database size
-sudo -u postgres psql -c "SELECT pg_size_pretty(pg_database_size('wallix'));"
+sudo mysql -e "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS size_mb FROM information_schema.tables WHERE table_schema = 'wallix';"
 
 # Check for long-running queries
-sudo -u postgres psql -c "
-SELECT pid, now() - pg_stat_activity.query_start AS duration, query
-FROM pg_stat_activity
-WHERE state != 'idle' AND now() - pg_stat_activity.query_start > interval '5 minutes';"
+sudo mysql -e "
+SELECT id, user, host, db, time, state, info
+FROM information_schema.processlist
+WHERE command != 'Sleep' AND time > 300;"
 ```
 
-**Weekly: Analyze and Vacuum**
+**Weekly: Analyze and Optimize**
 ```bash
 # Analyze all tables
-sudo -u postgres psql -d wallix -c "ANALYZE VERBOSE;"
+sudo mysql wallix -e "ANALYZE TABLE users, sessions, audit_log;"
 
-# Regular vacuum
-sudo -u postgres psql -d wallix -c "VACUUM ANALYZE;"
+# Optimize tables
+sudo mysql wallix -e "OPTIMIZE TABLE users, sessions, audit_log;"
 ```
 
-**Monthly: Full Vacuum and Reindex**
+**Monthly: Full Optimization and Check**
 ```bash
 # During maintenance window only!
 # This may lock tables temporarily
 
-# Full vacuum (reclaims space)
-sudo -u postgres psql -d wallix -c "VACUUM FULL ANALYZE;"
+# Full optimization (reclaims space)
+sudo mysql wallix -e "OPTIMIZE TABLE users, sessions, audit_log, devices, accounts;"
 
-# Reindex
-sudo -u postgres psql -d wallix -c "REINDEX DATABASE wallix;"
+# Check tables for errors
+sudo mysql wallix -e "CHECK TABLE users, sessions, audit_log;"
 
 # Update statistics
-sudo -u postgres psql -d wallix -c "ANALYZE;"
+sudo mysql wallix -e "ANALYZE TABLE users, sessions, audit_log;"
 ```
 
 ### Replication Health
@@ -737,17 +735,13 @@ sudo -u postgres psql -d wallix -c "ANALYZE;"
 **Check Replication Status**
 ```bash
 # On primary
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -e "SHOW MASTER STATUS;"
 
 # Check replication lag
-sudo -u postgres psql -c "
-SELECT client_addr,
-  pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS lag_bytes,
-  pg_size_pretty(pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn)) AS lag_pretty
-FROM pg_stat_replication;"
+sudo mysql -e "SHOW SLAVE STATUS\G" | grep -E "(Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master)"
 
 # On standby
-sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 ```
 
 **Alert Thresholds**
@@ -856,7 +850,7 @@ wabadmin health-check
 | LDAP Client | /etc/wallix/ssl/ldap-client.crt | LDAP/AD connection | Annual |
 | Syslog TLS | /etc/wallix/ssl/syslog.crt | Secure logging | Annual |
 | API Client | /etc/wallix/ssl/api-client.crt | API authentication | Annual  |
-| PostgreSQL | /var/lib/postgresql/ssl/ | Database encryption | Annual |
+| MariaDB | /var/lib/mysql/ssl/ | Database encryption | Annual |
 
 ### Certificate Renewal Procedure
 
@@ -899,7 +893,7 @@ echo | openssl s_client -connect localhost:443 2>/dev/null | \
 | Session | /var/log/wallix/sessions.log | 1 year |
 | Authentication | /var/log/wallix/auth.log | 90 days |
 | API | /var/log/wallix/api.log | 30 days |
-| PostgreSQL | /var/log/postgresql/ | 30 days |
+| MariaDB | /var/log/mysql/ | 30 days |
 
 ### Log Rotation Configuration
 
@@ -975,7 +969,7 @@ journalctl -u wallix-bastion --since "1 hour ago" -n 100
 df -h
 
 # 4. Check database connectivity
-sudo -u postgres psql -c "SELECT 1;"
+sudo mysql -e "SELECT 1;"
 
 # 5. Verify configuration
 wabadmin config --verify
@@ -994,8 +988,8 @@ systemctl start wallix-bastion
 crm status
 
 # 2. Identify which node has latest data
-# Check PostgreSQL on each node
-sudo -u postgres psql -c "SELECT pg_last_wal_receive_lsn();"
+# Check MariaDB on each node
+sudo mysql -e "SHOW SLAVE STATUS\G" | grep "Exec_Master_Log_Pos"
 
 # 3. Force one node as primary
 crm node standby <outdated-node>
@@ -1218,16 +1212,15 @@ wabadmin account rotate <account_id> --force
   | systemctl stop wallix-bastion                                          |
   |                                                                        |
   | # 2. Check database status                                             |
-  | sudo -u postgres psql -c "SELECT 1;"                                   |
-  | sudo -u postgres psql -c "SELECT pg_is_in_recovery();"                 |
+  | sudo mysql -e "SELECT 1;"                                              |
+  | sudo mysql -e "SHOW SLAVE STATUS\G"                                    |
   |                                                                        |
   | # 3. If replication is available, failover to standby                  |
   | # On standby server:                                                   |
-  | sudo -u postgres pg_ctl promote -D /var/lib/postgresql/15/main         |
+  | sudo mysql -e "STOP SLAVE; RESET SLAVE ALL;"                           |
   |                                                                        |
   | # 4. If no standby, restore from backup                                |
-  | sudo -u postgres pg_restore -d wallix \                                |
-  |   /var/backup/wallix/database-YYYYMMDD.dump                            |
+  | sudo mysql wallix < /var/backup/wallix/database-YYYYMMDD.sql           |
   |                                                                        |
   | # 5. Start WALLIX services                                             |
   | systemctl start wallix-bastion                                         |
@@ -1330,7 +1323,7 @@ wabadmin account rotate <account_id> --force
   | 1. Check service status: systemctl status wallix-bastion               |
   | 2. Check logs: journalctl -u wallix-bastion --since "10 min ago"       |
   | 3. Check disk space: df -h                                             |
-  | 4. Check database: sudo -u postgres psql -c "SELECT 1;"                |
+  | 4. Check database: sudo mysql -e "SELECT 1;"                           |
   | 5. Attempt restart: systemctl restart wallix-bastion                   |
   | 6. If fails, check for config errors: wabadmin config --verify         |
   | 7. Escalate if not resolved in 15 minutes                              |
@@ -1403,7 +1396,7 @@ wabadmin account rotate <account_id> --force
 
   ALERT: Replication Lag
   +------------------------------------------------------------------------+
-  | Trigger: PostgreSQL replication lag > 5 minutes                        |
+  | Trigger: MariaDB replication lag > 5 minutes                           |
   | Response Time: < 1 hour                                                |
   |                                                                        |
   | Steps:                                                                 |

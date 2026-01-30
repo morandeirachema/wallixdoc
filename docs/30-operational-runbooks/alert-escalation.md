@@ -36,7 +36,7 @@ This document defines response procedures for each alert type and escalation pat
 | Alert | Severity | Response Time | Primary | Escalation |
 |-------|----------|---------------|---------|------------|
 | PAM4OTNodeDown | Critical | 15 min | On-call SRE | OT Manager |
-| PostgreSQLDown | Critical | 15 min | DBA On-call | OT Manager |
+| MariaDBDown | Critical | 15 min | DBA On-call | OT Manager |
 | VIPNotResponding | Critical | 15 min | Network Team | SRE Lead |
 | HighCPU (>90%) | High | 1 hour | On-call SRE | SRE Lead |
 | HighMemory (>90%) | High | 1 hour | On-call SRE | SRE Lead |
@@ -129,52 +129,55 @@ wabadmin recording cleanup --older-than 90d
 
 ---
 
-## Alert: PostgreSQLDown
+## Alert: MariaDBDown
 
 ### Definition
-PostgreSQL database is not responding on one or both nodes.
+MariaDB database is not responding on one or both nodes.
 
 ### Immediate Actions
 
 ```bash
 # Check database status
-systemctl status postgresql
-sudo -u postgres pg_isready
+systemctl status mariadb
+sudo mysql -e "SELECT 1;"
 
 # Check if this is primary or replica
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
-# true = replica, false = primary
+sudo mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running"
+# If both are Yes = replica, if command returns empty = primary
 ```
 
 ### Resolution Actions
 
 **Service stopped:**
 ```bash
-systemctl start postgresql
-systemctl status postgresql
+systemctl start mariadb
+systemctl status mariadb
 ```
 
 **Corrupt data files:**
 ```bash
-# Check PostgreSQL logs
-tail -100 /var/log/postgresql/postgresql-15-main.log
+# Check MariaDB logs
+tail -100 /var/log/mysql/error.log
 
 # If corruption detected on replica:
 # Rebuild from primary
-systemctl stop postgresql
-rm -rf /var/lib/postgresql/15/main/*
-sudo -u postgres pg_basebackup -h pam4ot-node1 -D /var/lib/postgresql/15/main -U replicator -P -Xs -R
-systemctl start postgresql
+systemctl stop mariadb
+rm -rf /var/lib/mysql/*
+mariabackup --backup --target-dir=/tmp/backup --host=pam4ot-node1 --user=replicator --password=xxx
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
+systemctl start mariadb
 ```
 
 **Primary failed - promote replica:**
 ```bash
 # On replica:
-sudo -u postgres pg_ctl promote -D /var/lib/postgresql/15/main
+sudo mysql -e "STOP SLAVE; RESET SLAVE ALL;"
 
 # Verify it's now primary
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
-# Should return: f (false)
+sudo mysql -e "SHOW SLAVE STATUS\G"
+# Should return empty (no slave configured)
 ```
 
 ---
@@ -279,20 +282,13 @@ wabadmin cache clear
 ## Alert: ReplicationLag
 
 ### Definition
-PostgreSQL replication lag exceeds threshold (default: 60 seconds).
+MariaDB replication lag exceeds threshold (default: 60 seconds).
 
 ### Investigation
 
 ```bash
 # Check lag on primary
-sudo -u postgres psql -c "
-SELECT client_addr,
-       state,
-       sent_lsn,
-       write_lsn,
-       replay_lsn,
-       pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS lag_bytes
-FROM pg_stat_replication;"
+sudo mysql -e "SHOW SLAVE STATUS\G" | grep -E "(Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Master_Log_File|Read_Master_Log_Pos)"
 
 # Check network latency
 ping pam4ot-node2 -c 10
@@ -320,10 +316,13 @@ ssh pam4ot-node2 "iostat -x 1 5"
 **Rebuild replica (if lag too large):**
 ```bash
 # On replica:
-systemctl stop postgresql
-rm -rf /var/lib/postgresql/15/main/*
-sudo -u postgres pg_basebackup -h pam4ot-node1 -D /var/lib/postgresql/15/main -U replicator -P -Xs -R
-systemctl start postgresql
+systemctl stop mariadb
+rm -rf /var/lib/mysql/*
+mariabackup --backup --target-dir=/tmp/backup --host=pam4ot-node1 --user=replicator --password=xxx
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
+systemctl start mariadb
 ```
 
 ---
