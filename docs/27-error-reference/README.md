@@ -58,7 +58,7 @@
   | /var/log/wab/wabsession.log           | Session proxy logs             |
   | /var/log/wab/wabpassword.log          | Password rotation logs         |
   | /var/log/wab/wabaudit.log             | Audit trail                    |
-  | /var/log/postgresql/postgresql.log    | Database logs                  |
+  | /var/log/mysql/mariadb.log            | Database logs                  |
   +---------------------------------------+--------------------------------+
 
 +===============================================================================+
@@ -839,16 +839,16 @@
   Severity: CRITICAL
 
   Possible Causes:
-  * PostgreSQL service down
+  * MariaDB service down
   * Connection pool exhausted
   * Database corruption
   * Disk full
 
   Resolution:
-  1. Check PostgreSQL status: systemctl status postgresql
-  2. Verify connectivity: psql -h localhost -U wallix
+  1. Check MariaDB status: systemctl status mariadb
+  2. Verify connectivity: sudo mysql -h localhost -U wallix
   3. Check disk space: df -h
-  4. Review PostgreSQL logs
+  4. Review MariaDB logs
 
   --------------------------------------------------------------------------
 

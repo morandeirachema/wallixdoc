@@ -754,7 +754,7 @@
   | $ wab-admin backup --full --output /backup/wallix-$(date +%F).tar.gz   |
   |                                                                        |
   | BACKUP CONTENTS:                                                       |
-  | - PostgreSQL database dump                                             |
+  | - MariaDB database dump                                                |
   | - Configuration files                                                  |
   | - SSL certificates                                                     |
   | - Custom scripts/plugins                                               |
@@ -951,7 +951,7 @@
   | /var/wab/recorded/                     | Session recordings            |
   | /var/log/wab/                          | Application logs              |
   | /etc/opt/wab/certs/                    | SSL certificates              |
-  | /var/lib/postgresql/                   | Database files                |
+  | /var/lib/mysql/                        | Database files                |
   +----------------------------------------+-------------------------------+
 
   --------------------------------------------------------------------------

@@ -39,7 +39,7 @@
   |   | +-------------+  |                                                 |
   |   |                  |                                                 |
   |   | +-------------+  |                                                 |
-  |   | | PostgreSQL  |  |                                                 |
+  |   | | MariaDB     |  |                                                 |
   |   | | Container   |  |                                                 |
   |   | +-------------+  |                                                 |
   |   |                  |                                                 |
@@ -56,7 +56,7 @@
   |   | Kubernetes Cluster                                       |        |
   |   |                                                          |        |
   |   |  +----------------+  +----------------+  +-------------+ |        |
-  |   |  | WALLIX Pod 1   |  | WALLIX Pod 2   |  | PostgreSQL  | |        |
+  |   |  | WALLIX Pod 1   |  | WALLIX Pod 2   |  | MariaDB     | |        |
   |   |  | (Primary)      |  | (Standby)      |  | StatefulSet | |        |
   |   |  +----------------+  +----------------+  +-------------+ |        |
   |   |                                                          |        |
@@ -76,7 +76,7 @@
   |                                                                        |
   |   docker-compose.yml defines:                                          |
   |   - WALLIX Bastion service                                             |
-  |   - PostgreSQL service                                                 |
+  |   - MariaDB service                                                    |
   |   - Shared volumes                                                     |
   |   - Network configuration                                              |
   |                                                                        |
@@ -168,7 +168,7 @@
       environment:
         - WAB_ADMIN_PASSWORD=${WAB_ADMIN_PASSWORD}
         - WAB_DB_HOST=wallix-db
-        - WAB_DB_PORT=5432
+        - WAB_DB_PORT=3306
         - WAB_DB_NAME=wallix
         - WAB_DB_USER=wallix
         - WAB_DB_PASSWORD=${WAB_DB_PASSWORD}
@@ -186,15 +186,15 @@
         retries: 3
 
     wallix-db:
-      image: postgres:15-alpine
+      image: mariadb:10.11
       container_name: wallix-db
       restart: unless-stopped
       volumes:
-        - wallix-db-data:/var/lib/postgresql/data
+        - wallix-db-data:/var/lib/mysql/data
       environment:
-        - POSTGRES_DB=wallix
-        - POSTGRES_USER=wallix
-        - POSTGRES_PASSWORD=${WAB_DB_PASSWORD}
+        - MARIADB_DATABASE=wallix
+        - MARIADB_USER=wallix
+        - MARIADB_PASSWORD=${WAB_DB_PASSWORD}
       networks:
         - wallix-network
       healthcheck:
@@ -261,15 +261,15 @@
   # Create network
   docker network create wallix-net
 
-  # Start PostgreSQL
+  # Start MariaDB
   docker run -d \
     --name wallix-db \
     --network wallix-net \
-    -e POSTGRES_DB=wallix \
-    -e POSTGRES_USER=wallix \
-    -e POSTGRES_PASSWORD=SecurePassword \
-    -v wallix-db:/var/lib/postgresql/data \
-    postgres:15-alpine
+    -e MARIADB_DATABASE=wallix \
+    -e MARIADB_USER=wallix \
+    -e MARIADB_PASSWORD=SecurePassword \
+    -v wallix-db:/var/lib/mysql/data \
+    mariadb:10.11
 
   # Start WALLIX Bastion
   docker run -d \
@@ -279,7 +279,7 @@
     -p 22:22 \
     -p 3389:3389 \
     -e WAB_DB_HOST=wallix-db \
-    -e WAB_DB_PORT=5432 \
+    -e WAB_DB_PORT=3306 \
     -e WAB_DB_NAME=wallix \
     -e WAB_DB_USER=wallix \
     -e WAB_DB_PASSWORD=SecurePassword \
@@ -301,8 +301,8 @@
     -p 443:443 \
     -p 22:22 \
     -p 3389:3389 \
-    -e WAB_DB_HOST=external-postgres.company.com \
-    -e WAB_DB_PORT=5432 \
+    -e WAB_DB_HOST=external-mariadb.company.com \
+    -e WAB_DB_PORT=3306 \
     -e WAB_DB_NAME=wallix \
     -e WAB_DB_USER=wallix \
     -e WAB_DB_PASSWORD_FILE=/run/secrets/db_password \
@@ -419,7 +419,7 @@
     namespace: wallix
   data:
     WAB_DB_HOST: "wallix-db-svc"
-    WAB_DB_PORT: "5432"
+    WAB_DB_PORT: "3306"
     WAB_DB_NAME: "wallix"
     WAB_DB_USER: "wallix"
     TZ: "UTC"
@@ -601,8 +601,8 @@
 
   --------------------------------------------------------------------------
 
-  postgresql-statefulset.yaml
-  ===========================
+  mariadb-statefulset.yaml
+  ========================
 
   apiVersion: apps/v1
   kind: StatefulSet
@@ -621,23 +621,23 @@
           app: wallix-db
       spec:
         containers:
-        - name: postgres
-          image: postgres:15-alpine
+        - name: mariadb
+          image: mariadb:10.11
           ports:
-          - containerPort: 5432
+          - containerPort: 3306
           env:
-          - name: POSTGRES_DB
+          - name: MARIADB_DATABASE
             value: "wallix"
-          - name: POSTGRES_USER
+          - name: MARIADB_USER
             value: "wallix"
-          - name: POSTGRES_PASSWORD
+          - name: MARIADB_PASSWORD
             valueFrom:
               secretKeyRef:
                 name: wallix-secrets
                 key: db-password
           volumeMounts:
           - name: db-data
-            mountPath: /var/lib/postgresql/data
+            mountPath: /var/lib/mysql
           resources:
             requests:
               memory: "1Gi"
@@ -665,8 +665,8 @@
     selector:
       app: wallix-db
     ports:
-    - port: 5432
-      targetPort: 5432
+    - port: 3306
+      targetPort: 3306
     clusterIP: None  # Headless service
 
 +===============================================================================+
@@ -690,7 +690,7 @@
   kubectl apply -f secrets.yaml
   kubectl apply -f configmap.yaml
   kubectl apply -f pvc.yaml
-  kubectl apply -f postgresql-statefulset.yaml
+  kubectl apply -f mariadb-statefulset.yaml
   kubectl apply -f deployment.yaml
   kubectl apply -f service.yaml
   kubectl apply -f ingress.yaml
@@ -772,11 +772,11 @@
   |   +-- deployment.yaml
   |   +-- service.yaml
   |   +-- ingress.yaml
-  |   +-- postgresql.yaml
+  |   +-- mariadb.yaml
   |   +-- hpa.yaml
   |   +-- NOTES.txt
   +-- charts/
-  |   +-- postgresql/        # Dependency chart
+  |   +-- mariadb/           # Dependency chart
   +-- README.md
 
 +===============================================================================+
@@ -834,8 +834,8 @@
         hosts:
           - wallix.company.com
 
-  # PostgreSQL configuration
-  postgresql:
+  # MariaDB configuration
+  mariadb:
     enabled: true
     auth:
       username: wallix
@@ -845,10 +845,10 @@
       persistence:
         size: 100Gi
 
-  # External database (if postgresql.enabled=false)
+  # External database (if mariadb.enabled=false)
   externalDatabase:
     host: ""
-    port: 5432
+    port: 3306
     database: wallix
     username: wallix
     password: ""
@@ -928,7 +928,7 @@
     --values custom-values.yaml \
     --set wallix.adminPassword=SecurePassword \
     --set wallix.licenseKey=XXXX-XXXX-XXXX \
-    --set postgresql.auth.password=DbPassword
+    --set mariadb.auth.password=DbPassword
 
   # Install from local chart
   helm install wallix-bastion ./wallix-bastion \
@@ -1158,7 +1158,7 @@
                 app: wallix-db
         ports:
           - protocol: TCP
-            port: 5432
+            port: 3306
       - to:
           - ipBlock:
               cidr: 10.0.0.0/8  # Target systems

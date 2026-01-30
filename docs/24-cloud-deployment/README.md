@@ -125,7 +125,7 @@
 | Feature | IaaS (Self-Managed) | Marketplace | Hybrid | SaaS |
 |---------|---------------------|-------------|--------|------|
 | **Infrastructure** | You manage | You manage | You manage | WALLIX manages |
-| **Database HA** | You configure PostgreSQL streaming | You configure | You configure | Included |
+| **Database HA** | You configure MariaDB streaming | You configure | You configure | Included |
 | **Backups** | Your responsibility | Your responsibility | Your responsibility | Included |
 | **Updates** | You schedule | You schedule | You schedule | Automatic |
 | **Scaling** | Manual | Manual | Manual | Automatic |
@@ -209,7 +209,7 @@
 |  |  |  Bastion Cluster (HA)    |    |  Bastion Cluster (DR)    |          |  |
 |  |  |                          |    |                          |          |  |
 |  |  |  +--------------------+  |    |  +--------------------+  |          |  |
-|  |  |  | PostgreSQL Cluster |<======>| PostgreSQL Cluster |  |          |  |
+|  |  |  | MariaDB Cluster    |<======>| MariaDB Cluster    |  |          |  |
 |  |  |  | (Primary)          |  |Sync|  | (Standby)          |  |          |  |
 |  |  |  +--------------------+  |    |  +--------------------+  |          |  |
 |  |  |                          |    |                          |          |  |
@@ -280,7 +280,7 @@
 
 | Aspect | Self-Hosted | SaaS |
 |--------|-------------|------|
-| **Replication Type** | PostgreSQL Streaming (you configure) | Managed by WALLIX |
+| **Replication Type** | MariaDB Streaming (you configure) | Managed by WALLIX |
 | **Failover** | Pacemaker + manual setup | Automatic |
 | **Backup** | Your scripts/tools | Included (daily) |
 | **Recovery Point (RPO)** | Depends on your config | Near-zero |
@@ -288,7 +288,7 @@
 | **Geo-redundancy** | Your responsibility | Included |
 | **Monitoring** | Your tools | 24/7 WALLIX NOC |
 
-> **Note**: For self-hosted PostgreSQL streaming replication setup, see [10-postgresql-streaming-replication.md](../install/10-postgresql-streaming-replication.md) in the install guide.
+> **Note**: For self-hosted MariaDB streaming replication setup, see [10-mariadb-streaming-replication.md](../install/10-mariadb-streaming-replication.md) in the install guide.
 
 ---
 
@@ -349,7 +349,7 @@
   |  |  |                     SHARED SERVICES                    |  |  |
   |  |  |                                                        |  |  |
   |  |  |  +----------------+  +----------------+  +----------+  |  |  |
-  |  |  |  | RDS PostgreSQL |  | EFS (Shared    |  | Secrets  |  |  |  |
+  |  |  |  | RDS MariaDB    |  | EFS (Shared    |  | Secrets  |  |  |  |
   |  |  |  | (Multi-AZ)     |  |  Recordings)   |  | Manager  |  |  |  |
   |  |  |  +----------------+  +----------------+  +----------+  |  |  |
   |  |  |                                                        |  |  |
@@ -433,7 +433,7 @@
   | 443      | TCP      | 0.0.0.0/0       | HTTPS (Web UI, API)            |
   | 22       | TCP      | User IPs        | SSH Proxy                      |
   | 3389     | TCP      | User IPs        | RDP Proxy                      |
-  | 5432     | TCP      | Bastion SG      | PostgreSQL (HA sync)           |
+  | 3306     | TCP      | Bastion SG      | MariaDB (HA sync)              |
   | 2049     | TCP      | Bastion SG      | EFS (shared storage)           |
   +----------+----------+-----------------+--------------------------------+
 
@@ -445,7 +445,7 @@
   | 3389     | TCP      | Target subnets  | RDP to targets                 |
   | 443      | TCP      | 0.0.0.0/0       | HTTPS (updates, integrations)  |
   | 636      | TCP      | AD servers      | LDAPS                          |
-  | 5432     | TCP      | RDS endpoint    | Database                       |
+  | 3306     | TCP      | RDS endpoint    | Database                       |
   +----------+----------+-----------------+--------------------------------+
 
   --------------------------------------------------------------------------
@@ -515,7 +515,7 @@
 
   # Configure external database
   sudo wab-admin config-db --host wallix-db.xxx.rds.amazonaws.com \
-    --port 5432 --user wallix --password <password>
+    --port 3306 --user wallix --password <password>
 
   # Initialize WALLIX
   sudo wab-admin init
@@ -630,7 +630,7 @@
   |  |  |  |                   |   |                   |        |  |  |
   |  |  |  | +---------------+ |   | +---------------+ |        |  |  |
   |  |  |  | | Azure DB for  | |   | | Azure Files   | |        |  |  |
-  |  |  |  | | PostgreSQL    | |   | | (Recordings)  | |        |  |  |
+  |  |  |  | | MariaDB       | |   | | (Recordings)  | |        |  |  |
   |  |  |  | +---------------+ |   | +---------------+ |        |  |  |
   |  |  |  |                   |   |                   |        |  |  |
   |  |  |  | +---------------+ |   | +---------------+ |        |  |  |
@@ -759,9 +759,9 @@
         }
       },
       {
-        "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+        "type": "Microsoft.DBforMariaDB/flexibleServers",
         "apiVersion": "2021-06-01",
-        "name": "psql-wallix",
+        "name": "mariadb-wallix",
         "location": "[resourceGroup().location]",
         "sku": {
           "name": "Standard_D2s_v3",
@@ -828,7 +828,7 @@
   |  |  |                                                       |  |  |
   |  |  |  +------------------+    +------------------+         |  |  |
   |  |  |  | Cloud SQL        |    | Filestore        |         |  |  |
-  |  |  |  | (PostgreSQL)     |    | (Recordings)     |         |  |  |
+  |  |  |  | (MariaDB)        |    | (Recordings)     |         |  |  |
   |  |  |  | HA Configuration |    | Premium Tier     |         |  |  |
   |  |  |  +------------------+    +------------------+         |  |  |
   |  |  |                                                       |  |  |
@@ -1045,7 +1045,7 @@ resource "google_compute_instance" "wallix_primary" {
   }
 }
 
-# Cloud SQL PostgreSQL
+# Cloud SQL MariaDB
 resource "google_sql_database_instance" "wallix_db" {
   name             = "wallix-db"
   database_version = "POSTGRES_15"

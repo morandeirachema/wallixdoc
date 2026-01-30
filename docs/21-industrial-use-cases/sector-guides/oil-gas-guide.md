@@ -93,7 +93,7 @@
   +------------------------------------------------------------------------+
   | WALLIX Primary Cluster (Active-Active)                                 |
   | - 2 nodes, high availability                                           |
-  | - PostgreSQL streaming replication                                     |
+  | - MariaDB streaming replication                                        |
   | - Shared VIP for load balancing                                        |
   | - Central policy management                                            |
   | - Integration with corporate LDAP/AD                                   |
