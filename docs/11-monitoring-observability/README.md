@@ -52,7 +52,7 @@
 |-------|-----------------|-------|
 | **Infrastructure** | CPU, memory, disk, network | Prometheus node_exporter |
 | **Application** | Service status, sessions, auth | PAM4OT metrics exporter |
-| **Database** | Connections, replication, queries | PostgreSQL exporter |
+| **Database** | Connections, replication, queries | MariaDB exporter |
 | **Cluster** | Node status, resources, failover | Pacemaker metrics |
 | **Security** | Auth failures, anomalies, threats | SIEM integration |
 
@@ -115,7 +115,7 @@ systemctl is-active wallix-bastion && echo "Service: OK" || echo "Service: FAILE
 
 # Database connectivity
 echo "--- Database ---"
-sudo -u postgres psql -c "SELECT 1;" > /dev/null 2>&1 && echo "PostgreSQL: OK" || echo "PostgreSQL: FAILED"
+sudo mysql -e "SELECT 1;" > /dev/null 2>&1 && echo "MariaDB: OK" || echo "MariaDB: FAILED"
 
 # Web interface
 echo "--- Web Interface ---"
@@ -183,12 +183,12 @@ scrape_configs:
           - 'pam4ot-node1.company.com:9100'
           - 'pam4ot-node2.company.com:9100'
 
-  # PostgreSQL exporter
-  - job_name: 'postgresql'
+  # MariaDB exporter
+  - job_name: 'mariadb'
     static_configs:
       - targets:
-          - 'pam4ot-node1.company.com:9187'
-          - 'pam4ot-node2.company.com:9187'
+          - 'pam4ot-node1.company.com:9104'
+          - 'pam4ot-node2.company.com:9104'
 ```
 
 ### Key Metrics
@@ -220,7 +220,7 @@ import json
 sessions_active = Gauge('pam_sessions_active', 'Active sessions')
 auth_failures = Counter('pam_auth_failures_total', 'Authentication failures')
 disk_usage = Gauge('pam_disk_usage_percent', 'Disk usage percentage', ['mount'])
-replication_lag = Gauge('pam_replication_lag_bytes', 'PostgreSQL replication lag')
+replication_lag = Gauge('pam_replication_lag_bytes', 'MariaDB replication lag')
 
 def collect_metrics():
     # Active sessions
@@ -235,8 +235,8 @@ def collect_metrics():
     # Replication lag (if replica)
     try:
         result = subprocess.run([
-            'sudo', '-u', 'postgres', 'psql', '-t', '-c',
-            "SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) FROM pg_stat_replication;"
+            'sudo', 'mysql', '-N', '-e',
+            "SHOW SLAVE STATUS\\G"
         ], capture_output=True, text=True)
         lag = int(result.stdout.strip() or 0)
         replication_lag.set(lag)
@@ -471,7 +471,7 @@ groups:
         labels:
           severity: warning
         annotations:
-          summary: "PostgreSQL replication lag high"
+          summary: "MariaDB replication lag high"
           description: "Replication lag is {{ $value | humanize1024 }}B"
 
       - alert: PAM4OTLicenseWarning
@@ -599,8 +599,8 @@ wabadmin license-info | grep -i session
 
 # Database performance
 echo "--- Database Performance ---"
-sudo -u postgres psql -c "SELECT count(*) as connections FROM pg_stat_activity;"
-sudo -u postgres psql -c "SELECT pg_size_pretty(pg_database_size('wabdb')) as db_size;"
+sudo mysql -e "SELECT COUNT(*) as connections FROM information_schema.processlist;"
+sudo mysql -e "SELECT ROUND(SUM(data_length + index_length) / 1024 / 1024, 2) AS 'DB Size (MB)' FROM information_schema.tables WHERE table_schema = 'wabdb';"
 
 # System resources
 echo "--- System Resources ---"
@@ -622,7 +622,7 @@ MONITORING SETUP CHECKLIST
 Infrastructure Monitoring:
 [ ] Prometheus installed and configured
 [ ] Node exporter on all PAM4OT nodes
-[ ] PostgreSQL exporter configured
+[ ] MariaDB exporter configured
 [ ] Scrape targets verified
 
 Application Monitoring:

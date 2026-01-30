@@ -1488,8 +1488,8 @@ check_disk() {
 }
 
 check_database() {
-    if ! sudo -u postgres psql -c "SELECT 1;" > /dev/null 2>&1; then
-        alert "Database Error on $HOSTNAME" "Cannot connect to PostgreSQL!"
+    if ! sudo mysql -e "SELECT 1;" > /dev/null 2>&1; then
+        alert "Database Error on $HOSTNAME" "Cannot connect to MariaDB!"
         return 1
     fi
     log "Database: OK"

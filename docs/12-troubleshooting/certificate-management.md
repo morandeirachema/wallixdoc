@@ -45,7 +45,7 @@ This guide covers certificate management, renewal procedures, and troubleshootin
 | Web Server | HTTPS UI/API | /etc/ssl/wab/server.crt | 1-2 years |
 | SSH Host | SSH Proxy | /etc/ssh/ssh_host_*_key | Permanent |
 | LDAPS Client | AD Communication | /etc/ssl/wab/ldap-client.crt | 1-2 years |
-| PostgreSQL | DB Encryption | /etc/postgresql/15/main/server.crt | 1-2 years |
+| MariaDB | DB Encryption | /etc/mysql/mariadb.conf.d/server.crt | 1-2 years |
 | Cluster TLS | Node Communication | /etc/corosync/authkey | Generated |
 | SIEM Client | Log Encryption | /etc/ssl/wab/syslog-client.crt | 1-2 years |
 
@@ -75,10 +75,10 @@ else
 fi
 echo ""
 
-# PostgreSQL certificate
-echo "PostgreSQL Certificate:"
-if [ -f /etc/postgresql/15/main/server.crt ]; then
-    openssl x509 -in /etc/postgresql/15/main/server.crt -noout -subject -dates
+# MariaDB certificate
+echo "MariaDB Certificate:"
+if [ -f /etc/mysql/mariadb.conf.d/server.crt ]; then
+    openssl x509 -in /etc/mysql/mariadb.conf.d/server.crt -noout -subject -dates
 else
     echo "NOT FOUND"
 fi
@@ -224,34 +224,33 @@ systemctl start wallix-bastion
 curl -v https://pam4ot.company.com/ 2>&1 | grep "SSL certificate"
 ```
 
-### Install PostgreSQL Certificate
+### Install MariaDB Certificate
 
 ```bash
-# Stop PostgreSQL
-systemctl stop postgresql
+# Stop MariaDB
+systemctl stop mariadb
 
 # Install certificates
-cp server.crt /etc/postgresql/15/main/server.crt
-cp server.key /etc/postgresql/15/main/server.key
-cp ca.crt /etc/postgresql/15/main/root.crt
+cp server.crt /etc/mysql/mariadb.conf.d/server.crt
+cp server.key /etc/mysql/mariadb.conf.d/server.key
+cp ca.crt /etc/mysql/mariadb.conf.d/ca.crt
 
 # Set permissions
-chmod 600 /etc/postgresql/15/main/server.key
-chown postgres:postgres /etc/postgresql/15/main/server.*
-chown postgres:postgres /etc/postgresql/15/main/root.crt
+chmod 600 /etc/mysql/mariadb.conf.d/server.key
+chown mysql:mysql /etc/mysql/mariadb.conf.d/server.*
+chown mysql:mysql /etc/mysql/mariadb.conf.d/ca.crt
 
-# Configure PostgreSQL
-# In postgresql.conf:
-# ssl = on
-# ssl_cert_file = '/etc/postgresql/15/main/server.crt'
-# ssl_key_file = '/etc/postgresql/15/main/server.key'
-# ssl_ca_file = '/etc/postgresql/15/main/root.crt'
+# Configure MariaDB
+# In /etc/mysql/mariadb.conf.d/50-server.cnf under [mysqld]:
+# ssl-cert = /etc/mysql/mariadb.conf.d/server.crt
+# ssl-key = /etc/mysql/mariadb.conf.d/server.key
+# ssl-ca = /etc/mysql/mariadb.conf.d/ca.crt
 
-# Start PostgreSQL
-systemctl start postgresql
+# Start MariaDB
+systemctl start mariadb
 
 # Verify SSL
-sudo -u postgres psql -c "SHOW ssl;"
+sudo mysql -e "SHOW VARIABLES LIKE '%ssl%';"
 ```
 
 ---

@@ -43,7 +43,7 @@
 |  | Component              | HA Method                                       ||
 |  +------------------------+---------------------------------------------+|
 |  | Bastion Application    | Cluster (Active/Passive or Active/Active)      ||
-|  | PostgreSQL Database    | Streaming replication + automatic failover     ||
+|  | MariaDB Database       | Streaming replication + automatic failover     ||
 |  | Session Recordings     | Shared storage (NAS/SAN) or replication        ||
 |  | Configuration Data     | Synchronized across cluster nodes              ||
 |  | Encryption Keys        | Replicated with cluster                        ||
@@ -58,7 +58,7 @@
 
 | Feature | CyberArk | WALLIX |
 |---------|----------|--------|
-| Vault HA | Primary/DR Vault | PostgreSQL replication |
+| Vault HA | Primary/DR Vault | MariaDB replication |
 | Session HA | PSM farm with LB | Active/Active cluster |
 | Web HA | PVWA behind LB | Access Manager cluster |
 | Failover Time | Minutes (DR activation) | Seconds (automatic) |
@@ -66,7 +66,7 @@
 | Geo-redundancy | DR Vault in remote site | Multi-site with sync |
 
 **Key Differences:**
-- WALLIX uses standard PostgreSQL clustering (proven, well-documented)
+- WALLIX uses standard MariaDB clustering (proven, well-documented)
 - CyberArk DR requires manual Vault activation; WALLIX is automatic
 - WALLIX Active/Active allows read/write on all nodes simultaneously
 - Session continuity: Active sessions can continue on failover with WALLIX
@@ -160,7 +160,7 @@
 |  |  +-------------------------+  | |  +-------------------------+  |        |
 |  |                               | |                               |        |
 |  |  +-------------------------+  | |  +-------------------------+  |        |
-|  |  | PostgreSQL              |  | |  | PostgreSQL              |  |        |
+|  |  | MariaDB                 |  | |  | MariaDB                 |  |        |
 |  |  | (Primary)               |<-+-+->| (Replica)               |  |        |
 |  |  +-------------------------+  | |  +-------------------------+  |        |
 |  |                               | |     Streaming Replication     |        |
@@ -207,7 +207,7 @@
 |                                                                               |
 |  3. DATABASE PROMOTION                                                        |
 |     ----------------------                                                    |
-|     * Promote PostgreSQL replica to primary                                  |
+|     * Promote MariaDB replica to primary                                     |
 |     * Ensure data consistency                                                |
 |     * Update connection strings                                              |
 |                                                                               |
@@ -320,7 +320,7 @@ mount_point = /var/wab/recorded
 |                    |                           |                             |
 |                    v                           v                             |
 |         +------------------+       +----------------------+                  |
-|         |   PostgreSQL     |       |   Shared Storage     |                  |
+|         |   MariaDB        |       |   Shared Storage     |                  |
 |         |   Cluster        |       |   (NAS/SAN)          |                  |
 |         |                  |       |                      |                  |
 |         |  Primary + 2     |       |  /var/wab/recorded   |                  |
@@ -400,11 +400,11 @@ mount_point = /var/wab/recorded
 
 ## Database High Availability
 
-### PostgreSQL Replication
+### MariaDB Replication
 
 ```
 +===============================================================================+
-|                    POSTGRESQL HA CONFIGURATION                                |
+|                    MARIADB HA CONFIGURATION                                   |
 +===============================================================================+
 |                                                                               |
 |  STREAMING REPLICATION                                                        |
@@ -412,7 +412,7 @@ mount_point = /var/wab/recorded
 |                                                                               |
 |         +---------------------+                                              |
 |         |   PRIMARY           |                                              |
-|         |   PostgreSQL        |                                              |
+|         |   MariaDB           |                                              |
 |         |                     |                                              |
 |         |   Writes + Reads    |                                              |
 |         +----------+----------+                                              |
@@ -430,16 +430,16 @@ mount_point = /var/wab/recorded
 |                                                                               |
 |  --------------------------------------------------------------------------- |
 |                                                                               |
-|  PATRONI CLUSTER MANAGEMENT                                                   |
-|  ==========================                                                   |
+|  MAXSCALE/GALERA CLUSTER MANAGEMENT                                           |
+|  ==================================                                           |
 |                                                                               |
-|  Patroni provides:                                                            |
+|  MaxScale/Galera provides:                                                    |
 |  * Automatic leader election                                                 |
 |  * Automatic failover                                                        |
 |  * REST API for management                                                   |
 |  * Integration with etcd/Consul/ZooKeeper                                    |
 |                                                                               |
-|  # patroni.yml                                                               |
+|  # maxscale.cnf                                                              |
 |  scope: wallix-cluster                                                        |
 |  name: node1                                                                  |
 |                                                                               |
@@ -456,7 +456,7 @@ mount_point = /var/wab/recorded
 |  bootstrap:                                                                   |
 |    dcs:                                                                       |
 |      synchronous_mode: true                                                  |
-|      postgresql:                                                              |
+|      mariadb:                                                                 |
 |        parameters:                                                            |
 |          max_connections: 200                                                |
 |          synchronous_commit: on                                              |
@@ -488,7 +488,7 @@ mount_point = /var/wab/recorded
 |  |  +---------+----------+  |     |  +---------+----------+  |              |
 |  |            |             |     |            |             |              |
 |  |  +---------+----------+  |     |  +---------+----------+  |              |
-|  |  |  PostgreSQL        |<-+-----+->|  PostgreSQL        |  |              |
+|  |  |  MariaDB           |<-+-----+->|  MariaDB           |  |              |
 |  |  |  (Primary)         |  |     |  |  (Replica)         |  |              |
 |  |  +--------------------+  |     |  +--------------------+  |              |
 |  |                          |     |      Async Replication   |              |
@@ -547,8 +547,8 @@ mount_point = /var/wab/recorded
 |  STEP 3: PROMOTE DR SITE                                                      |
 |  ======================                                                       |
 |                                                                               |
-|  [ ] Promote PostgreSQL replica to primary                                     |
-|     $ patronictl failover wallix-cluster                                     |
+|  [ ] Promote MariaDB replica to primary                                        |
+|     $ mariadb-admin failover wallix-cluster                                  |
 |                                                                               |
 |  [ ] Start WALLIX Bastion services                                             |
 |     $ systemctl start wabengine                                              |
@@ -598,7 +598,7 @@ mount_point = /var/wab/recorded
 |  +---------------------+-----------------+-----------------+---------------+|
 |  | Component           | Method          | Frequency       | Retention     ||
 |  +---------------------+-----------------+-----------------+---------------+|
-|  | PostgreSQL Database | pg_dump/basebackup | Daily        | 30 days       ||
+|  | MariaDB Database    | mysqldump/mariabackup | Daily     | 30 days       ||
 |  | Configuration Files | File backup     | Daily + changes | 90 days       ||
 |  | Encryption Keys     | Secure export   | On change       | Indefinite    ||
 |  | Session Recordings  | Rsync/snapshot  | Continuous      | Per policy    ||
@@ -617,7 +617,7 @@ mount_point = /var/wab/recorded
 |  mkdir -p $BACKUP_DIR                                                         |
 |                                                                               |
 |  # Database backup                                                            |
-|  pg_dump -U wabadmin wabdb > $BACKUP_DIR/database.sql                        |
+|  mysqldump -u wabadmin wabdb > $BACKUP_DIR/database.sql                      |
 |                                                                               |
 |  # Configuration backup                                                       |
 |  tar -czf $BACKUP_DIR/config.tar.gz /etc/opt/wab/                            |
@@ -651,7 +651,7 @@ mount_point = /var/wab/recorded
 |     $ systemctl stop wab*                                                    |
 |                                                                               |
 |  3. Restore database                                                          |
-|     $ psql -U wabadmin wabdb < /backup/database.sql                          |
+|     $ mysql -u wabadmin wabdb < /backup/database.sql                         |
 |                                                                               |
 |  4. Restore configuration                                                     |
 |     $ tar -xzf /backup/config.tar.gz -C /                                    |

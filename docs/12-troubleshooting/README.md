@@ -434,7 +434,7 @@
 |     * Target connection                                                      |
 |                                                                               |
 |  2. Check database performance:                                               |
-|     $ psql -U wabadmin -c "SELECT * FROM pg_stat_activity"                   |
+|     $ mysql -u wabadmin -e "SHOW PROCESSLIST"                                |
 |                                                                               |
 |  3. Check system resources:                                                   |
 |     $ top -b -n 1 | head -20                                                 |
@@ -510,7 +510,7 @@
 |                                                                               |
 |  /var/log/syslog             # System messages                               |
 |  /var/log/auth.log           # Authentication (PAM)                          |
-|  /var/log/postgresql/        # Database logs                                 |
+|  /var/lib/mysql/             # Database logs                                 |
 |                                                                               |
 |  --------------------------------------------------------------------------- |
 |                                                                               |
@@ -588,16 +588,16 @@
 |  ====================                                                         |
 |                                                                               |
 |  # Check database connectivity                                                |
-|  $ psql -U wabadmin -c "SELECT version();"                                   |
+|  $ mysql -u wabadmin -e "SELECT VERSION();"                                  |
 |                                                                               |
 |  # Check active connections                                                   |
-|  $ psql -U wabadmin -c "SELECT count(*) FROM pg_stat_activity;"              |
+|  $ mysql -u wabadmin -e "SELECT COUNT(*) FROM information_schema.processlist;"|
 |                                                                               |
 |  # Check database size                                                        |
-|  $ psql -U wabadmin -c "SELECT pg_size_pretty(pg_database_size('wabdb'));"   |
+|  $ mysql -u wabadmin -e "SELECT table_schema, ROUND(SUM(data_length+index_length)/1024/1024,2) AS 'Size (MB)' FROM information_schema.tables WHERE table_schema='wabdb';" |
 |                                                                               |
 |  # Check replication status (if HA)                                           |
-|  $ psql -U wabadmin -c "SELECT * FROM pg_stat_replication;"                  |
+|  $ mysql -u wabadmin -e "SHOW SLAVE STATUS\G"                                |
 |                                                                               |
 +===============================================================================+
 ```
@@ -606,44 +606,42 @@
 
 ## Database Tuning
 
-### PostgreSQL Tuning Guide
+### MariaDB Tuning Guide
 
 ```
 +===============================================================================+
-|                   POSTGRESQL TUNING FOR WALLIX                               |
+|                   MARIADB TUNING FOR WALLIX                                  |
 +===============================================================================+
 
   MEMORY CONFIGURATION
   ====================
 
-  Edit /etc/postgresql/15/main/postgresql.conf:
+  Edit /etc/mysql/mariadb.conf.d/50-server.cnf:
 
   +------------------------------------------------------------------------+
   | # Connection Settings                                                  |
   | max_connections = 200            # Adjust based on concurrent users    |
   |                                                                        |
   | # Memory Settings (for 16GB RAM system)                                |
-  | shared_buffers = 4GB             # 25% of total RAM                    |
-  | effective_cache_size = 12GB      # 75% of total RAM                    |
-  | work_mem = 64MB                  # Per-operation memory                |
-  | maintenance_work_mem = 1GB       # For VACUUM, CREATE INDEX            |
+  | innodb_buffer_pool_size = 4GB    # 25% of total RAM                    |
+  | innodb_log_file_size = 1GB       # Redo log size                       |
+  | key_buffer_size = 256MB          # For MyISAM indexes                  |
+  | query_cache_size = 0             # Disabled in MariaDB 10.1.7+         |
   |                                                                        |
-  | # WAL Settings                                                         |
-  | wal_buffers = 64MB               # 3% of shared_buffers                |
-  | min_wal_size = 1GB                                                     |
-  | max_wal_size = 4GB                                                     |
-  | checkpoint_completion_target = 0.9                                     |
+  | # InnoDB Settings                                                      |
+  | innodb_log_buffer_size = 64MB    # Log buffer                          |
+  | innodb_flush_log_at_trx_commit = 1                                     |
+  | innodb_file_per_table = 1                                              |
   |                                                                        |
-  | # Query Planner                                                        |
-  | random_page_cost = 1.1           # For SSD storage                     |
-  | effective_io_concurrency = 200   # For SSD storage                     |
+  | # Performance Settings                                                 |
+  | innodb_io_capacity = 200         # For SSD storage                     |
+  | innodb_io_capacity_max = 2000    # For SSD storage                     |
   |                                                                        |
   | # Logging                                                              |
-  | log_min_duration_statement = 1000  # Log queries > 1 second            |
-  | log_checkpoints = on                                                   |
-  | log_connections = on                                                   |
-  | log_disconnections = on                                                |
-  | log_lock_waits = on                                                    |
+  | slow_query_log = 1                                                     |
+  | long_query_time = 1              # Log queries > 1 second              |
+  | log_queries_not_using_indexes = 1                                      |
+  | general_log = 0                  # Enable for debugging only           |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -652,12 +650,12 @@
   =================
 
   +------------------------------------------------------------------------+
-  | System RAM | shared_buffers | effective_cache | work_mem | Connections |
+  | System RAM | buffer_pool    | log_file_size   | key_buf  | Connections |
   +------------+----------------+-----------------+----------+-------------+
-  | 8 GB       | 2 GB           | 6 GB            | 32 MB    | 100         |
-  | 16 GB      | 4 GB           | 12 GB           | 64 MB    | 200         |
-  | 32 GB      | 8 GB           | 24 GB           | 128 MB   | 400         |
-  | 64 GB      | 16 GB          | 48 GB           | 256 MB   | 500         |
+  | 8 GB       | 2 GB           | 512 MB          | 128 MB   | 100         |
+  | 16 GB      | 4 GB           | 1 GB            | 256 MB   | 200         |
+  | 32 GB      | 8 GB           | 2 GB            | 512 MB   | 400         |
+  | 64 GB      | 16 GB          | 4 GB            | 1 GB     | 500         |
   +------------+----------------+-----------------+----------+-------------+
 
   --------------------------------------------------------------------------
@@ -665,38 +663,39 @@
   REPLICATION TUNING
   ==================
 
-  For HA clusters with streaming replication:
+  For HA clusters with MariaDB replication:
 
   +------------------------------------------------------------------------+
   | # Primary server settings                                              |
-  | wal_level = replica                                                    |
-  | max_wal_senders = 5                                                    |
-  | max_replication_slots = 5                                              |
-  | synchronous_commit = on          # or 'remote_apply' for strong        |
-  | synchronous_standby_names = '*'  # All standbys are synchronous        |
+  | server-id = 1                                                          |
+  | log_bin = /var/log/mysql/mariadb-bin                                   |
+  | binlog_format = ROW                                                    |
+  | sync_binlog = 1                  # Durability setting                  |
+  | gtid_strict_mode = 1             # Enable strict GTID mode             |
   |                                                                        |
-  | # Standby server settings                                              |
-  | hot_standby = on                                                       |
-  | hot_standby_feedback = on                                              |
-  | max_standby_streaming_delay = 30s                                      |
+  | # Replica server settings                                              |
+  | server-id = 2                                                          |
+  | relay_log = /var/log/mysql/relay-bin                                   |
+  | read_only = 1                                                          |
+  | log_slave_updates = 1                                                  |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
 
-  AUTOVACUUM TUNING
-  =================
+  INNODB OPTIMIZATION
+  ====================
 
   +------------------------------------------------------------------------+
-  | # Autovacuum settings for high-transaction workloads                   |
-  | autovacuum = on                                                        |
-  | autovacuum_max_workers = 4                                             |
-  | autovacuum_naptime = 30s         # Check more frequently               |
-  | autovacuum_vacuum_threshold = 50                                       |
-  | autovacuum_analyze_threshold = 50                                      |
-  | autovacuum_vacuum_scale_factor = 0.05   # 5% of table                  |
-  | autovacuum_analyze_scale_factor = 0.025 # 2.5% of table                |
-  | autovacuum_vacuum_cost_delay = 2ms      # Reduce vacuum impact         |
-  | autovacuum_vacuum_cost_limit = 1000                                    |
+  | # InnoDB settings for high-transaction workloads                       |
+  | innodb_flush_method = O_DIRECT                                         |
+  | innodb_doublewrite = 1                                                 |
+  | innodb_thread_concurrency = 0    # Auto-detect                         |
+  | innodb_read_io_threads = 4                                             |
+  | innodb_write_io_threads = 4                                            |
+  | innodb_autoinc_lock_mode = 2     # Interleaved mode                    |
+  | innodb_buffer_pool_instances = 8 # For large buffer pools              |
+  | innodb_purge_threads = 4                                               |
+  | innodb_stats_on_metadata = 0     # Disable for performance             |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -704,29 +703,31 @@
   CONNECTION POOLING
   ==================
 
-  For high-concurrency environments, consider PgBouncer:
+  For high-concurrency environments, consider ProxySQL:
 
-  /etc/pgbouncer/pgbouncer.ini:
+  /etc/proxysql.cnf:
   +------------------------------------------------------------------------+
-  | [databases]                                                            |
-  | wallix = host=127.0.0.1 port=5432 dbname=wallix                        |
+  | datadir="/var/lib/proxysql"                                            |
   |                                                                        |
-  | [pgbouncer]                                                            |
-  | listen_port = 6432                                                     |
-  | listen_addr = 127.0.0.1                                                |
-  | auth_type = md5                                                        |
-  | auth_file = /etc/pgbouncer/userlist.txt                                |
+  | admin_variables=                                                       |
+  | {                                                                      |
+  |     admin_credentials="admin:admin"                                    |
+  |     mysql_ifaces="127.0.0.1:6032"                                      |
+  | }                                                                      |
   |                                                                        |
-  | # Pool settings                                                        |
-  | pool_mode = transaction          # Transaction pooling                 |
-  | max_client_conn = 1000           # Max client connections              |
-  | default_pool_size = 50           # Connections per pool                |
-  | min_pool_size = 10               # Minimum connections                 |
-  | reserve_pool_size = 10           # Emergency connections               |
+  | mysql_variables=                                                       |
+  | {                                                                      |
+  |     threads=4                                                          |
+  |     max_connections=2048                                               |
+  |     default_query_delay=0                                              |
+  |     interfaces="0.0.0.0:6033"                                          |
+  |     server_version="10.6.12-MariaDB"                                   |
+  | }                                                                      |
   |                                                                        |
-  | # Timeouts                                                             |
-  | server_idle_timeout = 600        # Close idle server connections       |
-  | client_idle_timeout = 0          # No client timeout                   |
+  | mysql_servers=                                                         |
+  | (                                                                      |
+  |     { address="127.0.0.1", port=3306, hostgroup=0 }                    |
+  | )                                                                      |
   +------------------------------------------------------------------------+
 
 +===============================================================================+
@@ -745,14 +746,14 @@
   +------------------------------------------------------------------------+
   | Metric                    | Warning      | Critical     | Query        |
   +---------------------------+--------------+--------------+--------------+
-  | Active connections        | > 80%        | > 95%        | pg_stat_act. |
-  | Connection wait time      | > 100ms      | > 500ms      | pg_stat_act. |
-  | Cache hit ratio           | < 95%        | < 90%        | pg_stat_db   |
-  | Transaction rate          | Trend        | Trend        | pg_stat_db   |
-  | Replication lag           | > 1 MB       | > 10 MB      | pg_stat_rep  |
-  | Dead tuples ratio         | > 10%        | > 20%        | pg_stat_ut   |
+  | Active connections        | > 80%        | > 95%        | PROCESSLIST  |
+  | Connection wait time      | > 100ms      | > 500ms      | PROCESSLIST  |
+  | Buffer pool hit ratio     | < 95%        | < 90%        | GLOBAL_STAT  |
+  | Transaction rate          | Trend        | Trend        | GLOBAL_STAT  |
+  | Replication lag           | > 1 MB       | > 10 MB      | SLAVE STATUS |
+  | Table fragmentation       | > 10%        | > 20%        | TABLE_STAT   |
   | Table bloat               | > 20%        | > 40%        | Custom       |
-  | Long-running queries      | > 5 min      | > 15 min     | pg_stat_act. |
+  | Long-running queries      | > 5 min      | > 15 min     | PROCESSLIST  |
   +---------------------------+--------------+--------------+--------------+
 
   --------------------------------------------------------------------------
@@ -760,52 +761,52 @@
   MONITORING QUERIES
   ==================
 
-  Cache Hit Ratio:
+  Buffer Pool Hit Ratio:
   +------------------------------------------------------------------------+
   | SELECT                                                                 |
-  |   sum(heap_blks_hit) / (sum(heap_blks_hit) + sum(heap_blks_read)) * 100|
-  |   AS cache_hit_ratio                                                   |
-  | FROM pg_statio_user_tables;                                            |
-  |                                                                        |
+  |   (1 - (Innodb_buffer_pool_reads / Innodb_buffer_pool_read_requests))  |
+  |   * 100 AS buffer_pool_hit_ratio                                       |
+  | FROM (SELECT VARIABLE_VALUE AS Innodb_buffer_pool_reads                |
+  |       FROM information_schema.GLOBAL_STATUS                            |
+  |       WHERE VARIABLE_NAME = 'Innodb_buffer_pool_reads') r,             |
+  |      (SELECT VARIABLE_VALUE AS Innodb_buffer_pool_read_requests        |
+  |       FROM information_schema.GLOBAL_STATUS                            |
+  |       WHERE VARIABLE_NAME = 'Innodb_buffer_pool_read_requests') rr;    |
   | -- Should be > 95% for good performance                                |
   +------------------------------------------------------------------------+
 
   Connection Statistics:
   +------------------------------------------------------------------------+
   | SELECT                                                                 |
-  |   state,                                                               |
-  |   count(*) as connections,                                             |
-  |   max(now() - state_change) as longest_duration                        |
-  | FROM pg_stat_activity                                                  |
-  | GROUP BY state;                                                        |
+  |   command AS state,                                                    |
+  |   COUNT(*) as connections,                                             |
+  |   MAX(time) as longest_duration_sec                                    |
+  | FROM information_schema.processlist                                    |
+  | GROUP BY command;                                                      |
   +------------------------------------------------------------------------+
 
-  Table Bloat Estimation:
+  Table Fragmentation:
   +------------------------------------------------------------------------+
   | SELECT                                                                 |
-  |   schemaname, relname,                                                 |
-  |   n_dead_tup,                                                          |
-  |   n_live_tup,                                                          |
-  |   round(n_dead_tup * 100.0 / nullif(n_live_tup + n_dead_tup, 0), 2)    |
-  |     AS dead_ratio                                                      |
-  | FROM pg_stat_user_tables                                               |
-  | WHERE n_dead_tup > 1000                                                |
-  | ORDER BY dead_ratio DESC                                               |
+  |   table_schema, table_name,                                            |
+  |   data_free,                                                           |
+  |   data_length,                                                         |
+  |   ROUND(data_free * 100.0 / NULLIF(data_length + data_free, 0), 2)     |
+  |     AS fragmentation_ratio                                             |
+  | FROM information_schema.tables                                         |
+  | WHERE data_free > 1000000                                              |
+  | ORDER BY fragmentation_ratio DESC                                      |
   | LIMIT 20;                                                              |
   +------------------------------------------------------------------------+
 
   Slow Query Log Analysis:
   +------------------------------------------------------------------------+
-  | SELECT                                                                 |
-  |   calls,                                                               |
-  |   round(total_exec_time::numeric, 2) as total_time_ms,                 |
-  |   round(mean_exec_time::numeric, 2) as mean_time_ms,                   |
-  |   round((100 * total_exec_time /                                       |
-  |     sum(total_exec_time) OVER ())::numeric, 2) AS percent,             |
-  |   substring(query, 1, 60) as query_preview                             |
-  | FROM pg_stat_statements                                                |
-  | ORDER BY total_exec_time DESC                                          |
-  | LIMIT 20;                                                              |
+  | -- Enable slow query log first:                                        |
+  | -- SET GLOBAL slow_query_log = 1;                                      |
+  | -- SET GLOBAL long_query_time = 1;                                     |
+  |                                                                        |
+  | -- Then analyze with mysqldumpslow:                                    |
+  | -- mysqldumpslow -s t /var/log/mysql/mariadb-slow.log                  |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -815,30 +816,33 @@
 
   Find Missing Indexes:
   +------------------------------------------------------------------------+
-  | SELECT                                                                 |
-  |   schemaname, relname,                                                 |
-  |   seq_scan, seq_tup_read,                                              |
-  |   idx_scan, idx_tup_fetch,                                             |
-  |   seq_tup_read / NULLIF(seq_scan, 0) AS avg_seq_tup_read               |
-  | FROM pg_stat_user_tables                                               |
-  | WHERE seq_scan > 100                                                   |
-  |   AND seq_tup_read / NULLIF(seq_scan, 0) > 1000                        |
-  | ORDER BY seq_tup_read DESC                                             |
-  | LIMIT 20;                                                              |
+  | -- Use EXPLAIN to identify full table scans                            |
+  | EXPLAIN SELECT * FROM your_table WHERE column = 'value';               |
   |                                                                        |
-  | -- High seq_scan with high avg_seq_tup_read = potential missing index  |
+  | -- Check for tables with no indexes (except PRIMARY)                   |
+  | SELECT table_schema, table_name                                        |
+  | FROM information_schema.tables t                                       |
+  | WHERE table_type = 'BASE TABLE'                                        |
+  |   AND NOT EXISTS (                                                     |
+  |     SELECT 1 FROM information_schema.statistics s                      |
+  |     WHERE s.table_schema = t.table_schema                              |
+  |       AND s.table_name = t.table_name                                  |
+  |       AND s.index_name != 'PRIMARY'                                    |
+  |   );                                                                   |
   +------------------------------------------------------------------------+
 
   Unused Indexes:
   +------------------------------------------------------------------------+
+  | -- Enable userstat for index usage tracking                            |
+  | -- SET GLOBAL userstat = 1;                                            |
+  |                                                                        |
   | SELECT                                                                 |
-  |   schemaname, relname, indexrelname,                                   |
-  |   idx_scan,                                                            |
-  |   pg_size_pretty(pg_relation_size(indexrelid)) AS index_size           |
-  | FROM pg_stat_user_indexes                                              |
-  | WHERE idx_scan = 0                                                     |
-  |   AND indexrelname NOT LIKE '%_pkey'                                   |
-  | ORDER BY pg_relation_size(indexrelid) DESC;                            |
+  |   table_schema, table_name, index_name,                                |
+  |   rows_read                                                            |
+  | FROM information_schema.index_statistics                               |
+  | WHERE rows_read = 0                                                    |
+  |   AND index_name != 'PRIMARY'                                          |
+  | ORDER BY table_schema, table_name;                                     |
   |                                                                        |
   | -- Consider dropping unused indexes to improve write performance       |
   +------------------------------------------------------------------------+
@@ -869,7 +873,7 @@
   | ps aux --sort=-%mem | head -15                                         |
   |                                                                        |
   | # WALLIX-specific processes                                            |
-  | ps aux | grep -E "(wab|wallix|postgres)" | sort -k4 -rn                |
+  | ps aux | grep -E "(wab|wallix|mysql|mariadb)" | sort -k4 -rn           |
   |                                                                        |
   | # Process tree for WALLIX services                                     |
   | pstree -p $(pgrep -f wallix-bastion)                                   |
@@ -1255,8 +1259,8 @@
   | journalctl -u wallix-bastion --since "1 hour ago" > "$DIAG_DIR/jrnl.log"
   |                                                                        |
   | # Database (if accessible)                                             |
-  | sudo -u postgres psql -c "SELECT version();" > "$DIAG_DIR/db.txt" 2>&1 |
-  | sudo -u postgres psql -c "SELECT * FROM pg_stat_activity;" \           |
+  | sudo mysql -e "SELECT VERSION();" > "$DIAG_DIR/db.txt" 2>&1            |
+  | sudo mysql -e "SHOW PROCESSLIST;" \                                    |
   |   >> "$DIAG_DIR/db.txt" 2>&1                                           |
   |                                                                        |
   | # Cluster (if applicable)                                              |
