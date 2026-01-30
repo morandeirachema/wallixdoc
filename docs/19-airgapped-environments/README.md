@@ -170,7 +170,7 @@
   +-------------------------+------------------------------------------------+
   | Service                 | Air-Gapped Solution                            |
   +-------------------------+------------------------------------------------+
-  | User Directory          | Local PostgreSQL user database                 |
+  | User Directory          | Local MariaDB user database                    |
   |                         | Manual user provisioning                       |
   |                         | CSV import for bulk operations                 |
   +-------------------------+------------------------------------------------+
@@ -308,7 +308,7 @@
      - Signed/encrypted archives
 
   3. DATABASE REPLICATION
-     - One-way PostgreSQL replication
+     - One-way MariaDB replication
      - Read replica on external side
      - Requires diode protocol support
 

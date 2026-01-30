@@ -19,7 +19,7 @@ This guide covers backup strategies, procedures, and disaster recovery for WALLI
   +----------------+------------------+------------------+------------------+
   | Component      | Location         | Frequency        | Retention        |
   +----------------+------------------+------------------+------------------+
-  | Database       | PostgreSQL       | Daily            | 30 days          |
+  | Database       | MariaDB          | Daily            | 30 days          |
   | Configuration  | /etc/opt/wab/    | Daily + changes  | 30 days          |
   | Encryption Keys| /var/opt/wab/keys| Weekly           | Permanent        |
   | Certificates   | /etc/opt/wab/ssl | Monthly          | Until expiry     |
@@ -65,7 +65,7 @@ mkdir -p "${BACKUP_DIR}"
 
 # Create compressed database backup
 echo "[$(date)] Starting database backup..."
-sudo -u postgres pg_dump wabdb | gzip > "${BACKUP_DIR}/${BACKUP_FILE}"
+sudo mysqldump wabdb | gzip > "${BACKUP_DIR}/${BACKUP_FILE}"
 
 # Verify backup was created
 if [ -s "${BACKUP_DIR}/${BACKUP_FILE}" ]; then
@@ -195,7 +195,7 @@ systemctl stop wabengine
 tar -czf "${BACKUP_DIR}/${BACKUP_FILE}" \
     /etc/opt/wab/ \
     /var/opt/wab/ \
-    /var/lib/postgresql/ \
+    /var/lib/mysql/ \
     /var/log/wabengine/ \
     /var/log/wabaudit/ \
     --exclude="/var/wab/recorded/*" \
@@ -231,7 +231,7 @@ echo "[$(date)] Full backup complete"
 
   DAILY (2:00 AM)
   ===============
-  - Database backup (pg_dump)
+  - Database backup (mysqldump)
   - Configuration backup
   - Audit log rotation
 
@@ -271,17 +271,17 @@ echo "[$(date)] Full backup complete"
 # 1. Stop WALLIX services
 systemctl stop wabengine
 
-# 2. Stop PostgreSQL
-systemctl stop postgresql
+# 2. Stop MariaDB
+systemctl stop mariadb
 
 # 3. Backup corrupted database (for analysis)
-mv /var/lib/postgresql/15/main /var/lib/postgresql/15/main.corrupted
+mv /var/lib/mysql/wabdb /var/lib/mysql/wabdb.corrupted
 
 # 4. Reinitialize database
-sudo -u postgres pg_ctl init -D /var/lib/postgresql/15/main
+sudo mysql_install_db --user=mysql --datadir=/var/lib/mysql
 
-# 5. Start PostgreSQL
-systemctl start postgresql
+# 5. Start MariaDB
+systemctl start mariadb
 
 # 6. Restore from backup
 # Find latest backup
@@ -289,10 +289,10 @@ LATEST=$(ls -t /var/backup/wallix/database/wallix_db_*.sql.gz | head -1)
 echo "Restoring from: ${LATEST}"
 
 # Create database
-sudo -u postgres createdb wabdb
+sudo mysql -e "CREATE DATABASE wabdb"
 
 # Restore
-zcat "${LATEST}" | sudo -u postgres psql wabdb
+zcat "${LATEST}" | sudo mysql wabdb
 
 # 7. Start WALLIX
 systemctl start wabengine
@@ -317,15 +317,15 @@ dpkg -i wallix-pam4ot_*.deb
 
 # 3. Stop services
 systemctl stop wabengine
-systemctl stop postgresql
+systemctl stop mariadb
 
 # 4. Restore configuration
 tar -xzf /path/to/wallix_config_TIMESTAMP.tar.gz -C /
 
 # 5. Restore database
-# Initialize PostgreSQL first if needed
-sudo -u postgres createdb wabdb
-zcat /path/to/wallix_db_TIMESTAMP.sql.gz | sudo -u postgres psql wabdb
+# Initialize MariaDB first if needed
+sudo mysql -e "CREATE DATABASE wabdb"
+zcat /path/to/wallix_db_TIMESTAMP.sql.gz | sudo mysql wabdb
 
 # 6. Restore encryption keys (CRITICAL)
 # Keys must match what was used to encrypt credentials
@@ -338,7 +338,7 @@ tar -xzf /path/to/wallix_config_*.tar.gz -C / var/opt/wab/keys/
 # System > License > Upload
 
 # 9. Start services
-systemctl start postgresql
+systemctl start mariadb
 systemctl start wabengine
 
 # 10. Verify
@@ -591,16 +591,16 @@ ls -lt /var/backup/wallix/database/ | head -5
 
 # Quick database restore
 systemctl stop wabengine
-sudo -u postgres dropdb wabdb
-sudo -u postgres createdb wabdb
-zcat /var/backup/wallix/database/wallix_db_LATEST.sql.gz | sudo -u postgres psql wabdb
+sudo mysql -e "DROP DATABASE wabdb"
+sudo mysql -e "CREATE DATABASE wabdb"
+zcat /var/backup/wallix/database/wallix_db_LATEST.sql.gz | sudo mysql wabdb
 systemctl start wabengine
 
 # Verify service health
 waservices status
 
 # Check database connectivity
-sudo -u postgres psql wabdb -c "SELECT count(*) FROM devices;"
+sudo mysql wabdb -e "SELECT count(*) FROM devices;"
 ```
 
 ---

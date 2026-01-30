@@ -15,7 +15,7 @@ This guide covers proactive monitoring of WALLIX PAM4OT to ensure high availabil
 
   CRITICAL (Alert immediately)
   ============================
-  - Service status (wabengine, PostgreSQL)
+  - Service status (wabengine, MariaDB)
   - Disk space (< 10% free)
   - Database connectivity
   - Certificate expiration (< 14 days)
@@ -89,7 +89,7 @@ check_disk() {
 }
 
 check_db() {
-    if sudo -u postgres psql -c "SELECT 1" wabdb >/dev/null 2>&1; then
+    if sudo mysql -e "SELECT 1" wabdb >/dev/null 2>&1; then
         echo "\"database\": \"ok\""
     else
         echo "\"database\": \"failed\""
@@ -103,7 +103,7 @@ cat > "$OUTPUT_FILE" << EOF
   "timestamp": "$(date -Iseconds)",
   "services": {
     $(check_service wabengine),
-    $(check_service postgresql)
+    $(check_service mariadb)
   },
   "ports": {
     $(check_port 443 "HTTPS"),
@@ -207,7 +207,7 @@ from prometheus_client import start_http_server, Gauge, Counter
 import subprocess
 import time
 import psutil
-import psycopg2
+import mysql.connector
 
 # Define metrics
 ACTIVE_SESSIONS = Gauge('wallix_active_sessions', 'Number of active sessions')
@@ -223,7 +223,7 @@ RECORDINGS_SIZE = Gauge('wallix_recordings_size_bytes', 'Total size of recording
 def get_db_metric(query):
     """Execute query against WALLIX database"""
     try:
-        conn = psycopg2.connect(database="wabdb", user="wabadmin")
+        conn = mysql.connector.connect(database="wabdb", user="wabadmin")
         cur = conn.cursor()
         cur.execute(query)
         result = cur.fetchone()[0]
@@ -261,7 +261,7 @@ def collect_metrics():
             pass
 
     # Service status
-    for service in ['wabengine', 'postgresql']:
+    for service in ['wabengine', 'mariadb']:
         result = subprocess.run(['systemctl', 'is-active', service],
                               capture_output=True, text=True)
         status = 1 if result.stdout.strip() == 'active' else 0
@@ -388,13 +388,13 @@ groups:
           description: "Service has been down for more than 1 minute"
 
       - alert: WallixDatabaseDown
-        expr: wallix_service_up{service="postgresql"} == 0
+        expr: wallix_service_up{service="mariadb"} == 0
         for: 30s
         labels:
           severity: critical
         annotations:
           summary: "WALLIX database is down"
-          description: "PostgreSQL service is not running"
+          description: "MariaDB service is not running"
 
       - alert: WallixDiskCritical
         expr: wallix_disk_usage_percent{mount="/var"} > 95

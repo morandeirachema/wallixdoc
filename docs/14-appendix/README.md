@@ -51,9 +51,9 @@
 |  DATABASE                                                                     |
 |  ========                                                                     |
 |                                                                               |
-|  Connect:                   psql -U wabadmin wabdb                           |
-|  Backup:                    pg_dump -U wabadmin wabdb > backup.sql           |
-|  Check size:                du -sh /var/lib/postgresql/                      |
+|  Connect:                   mysql -u wabadmin wabdb                          |
+|  Backup:                    mysqldump -u wabadmin wabdb > backup.sql         |
+|  Check size:                du -sh /var/lib/mysql/                           |
 |                                                                               |
 |  --------------------------------------------------------------------------- |
 |                                                                               |
@@ -264,7 +264,7 @@
 |                                                                               |
 |  Port    Protocol   Purpose                                                  |
 |  ----    --------   -------                                                  |
-|  5432    TCP        PostgreSQL replication                                   |
+|  3306    TCP        MariaDB replication                                      |
 |  Various TCP        Cluster communication                                    |
 |                                                                               |
 +===============================================================================+
@@ -299,7 +299,7 @@
 |  /var/log/wabengine/                 Application logs                        |
 |  /var/log/wabaudit/                  Audit logs                              |
 |  /var/log/wabsessions/               Session logs                            |
-|  /var/log/postgresql/                Database logs                           |
+|  /var/lib/mysql/                     Database logs                           |
 |                                                                               |
 |  --------------------------------------------------------------------------- |
 |                                                                               |
@@ -307,7 +307,7 @@
 |  ====                                                                         |
 |                                                                               |
 |  /var/wab/recorded/                  Session recordings                      |
-|  /var/lib/postgresql/                Database data                           |
+|  /var/lib/mysql/                     Database data                           |
 |  /var/opt/wab/                       Variable application data               |
 |  /var/opt/wab/keys/                  Encryption keys                         |
 |                                                                               |

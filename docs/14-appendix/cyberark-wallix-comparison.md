@@ -87,7 +87,7 @@ WALLIX consolidates all PAM functions into a single appliance:
 |  |  |  | Session        |  | Password       |  | Credential     |   |  |   |
 |  |  |  | Manager        |  | Manager        |  | Vault          |   |  |   |
 |  |  |  |                |  |                |  |                |   |  |   |
-|  |  |  | * Protocol     |  | * Rotation     |  | * PostgreSQL   |   |  |   |
+|  |  |  | * Protocol     |  | * Rotation     |  | * MariaDB      |   |  |   |
 |  |  |  |   proxy        |  |   engine       |  | * AES-256-GCM  |   |  |   |
 |  |  |  | * Recording    |  | * Connectors   |  | * Argon2ID     |   |  |   |
 |  |  |  | * Monitoring   |  | * Verification |  | * HSM optional |   |  |   |
@@ -120,7 +120,7 @@ WALLIX consolidates all PAM functions into a single appliance:
 | **Deployment model** | Multiple specialized servers | Single unified appliance |
 | **Typical server count** | 5-10+ servers | 1-2 appliances |
 | **Operating system** | Windows Server required | Linux (Debian) based |
-| **Vault technology** | Proprietary filesystem | PostgreSQL + AES-256-GCM |
+| **Vault technology** | Proprietary filesystem | MariaDB + AES-256-GCM |
 | **Component communication** | Inter-server protocols | Internal (same appliance) |
 | **Scaling approach** | Add more component servers | Cluster appliances |
 
@@ -141,7 +141,7 @@ WALLIX consolidates all PAM functions into a single appliance:
 |  |                        |                       |                       | |
 |  | Digital Vault          | Credential Vault      | Stores encrypted      | |
 |  |                        |                       | credentials           | |
-|  | * Proprietary format   | * PostgreSQL backend  |                       | |
+|  | * Proprietary format   | * MariaDB backend     |                       | |
 |  | * Hardened OS          | * AES-256-GCM encrypt |                       | |
 |  | * Safes organize data  | * Domains organize    |                       | |
 |  |                        |                       |                       | |
@@ -326,7 +326,7 @@ WALLIX consolidates all PAM functions into a single appliance:
 |  |  |  +--------------------+    | +----------------------+ |       |  |   |
 |  |  |  | Credential Vault   |    | | Database Connectors  | |       |  |   |
 |  |  |  |                    |    | +----------------------+ |       |  |   |
-|  |  |  | * PostgreSQL       |    | | Network Devices      | |       |  |   |
+|  |  |  | * MariaDB          |    | | Network Devices      | |       |  |   |
 |  |  |  | * AES-256-GCM      |    | +----------------------+ |       |  |   |
 |  |  |  | * Argon2ID KDF     |    | | Custom Scripts       | |       |  |   |
 |  |  |  +--------------------+    | | (Bash, Python)       | |       |  |   |
@@ -623,7 +623,7 @@ WALLIX consolidates all PAM functions into a single appliance:
 |  +--------------------------------+------------------+------------------+  |
 |  | Feature                        | CyberArk         | WALLIX           |  |
 |  +--------------------------------+------------------+------------------+  |
-|  | Encrypted vault                | Proprietary      | PostgreSQL+AES   |  |
+|  | Encrypted vault                | Proprietary      | MariaDB+AES      |  |
 |  | Automatic rotation             | Yes              | Yes              |  |
 |  | Scheduled rotation             | Yes              | Yes              |  |
 |  | Post-session rotation          | Yes              | Yes              |  |
