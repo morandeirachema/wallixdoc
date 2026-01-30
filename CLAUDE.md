@@ -66,7 +66,7 @@ wallix/
     ├── 07-security-hardening.md        # Security configuration
     ├── 08-validation-testing.md        # Testing and go-live
     ├── 09-architecture-diagrams.md     # Visual diagrams and ports
-    └── 10-postgresql-streaming-replication.md  # Database HA
+    └── 10-mariadb-replication.md  # Database HA
 ```
 
 ## Technical Stack
@@ -74,7 +74,7 @@ wallix/
 | Component | Technology |
 |-----------|------------|
 | **Operating System** | Debian 12 (Bookworm) |
-| **Database** | PostgreSQL 15+ with streaming replication |
+| **Database** | MariaDB with HA Database Replication (ports 3306/3307) |
 | **Clustering** | Pacemaker/Corosync |
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS disk encryption |
 | **Key Derivation** | Argon2ID |
@@ -245,8 +245,8 @@ crm_mon -1
 # View audit logs
 wabadmin audit --last 20
 
-# PostgreSQL replication status
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+# MariaDB replication status
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
 # Check synchronization status
 wabadmin sync-status

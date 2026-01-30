@@ -137,7 +137,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   Module 5: High Availability (2 hours)
   +------------------------------------------------------------------------+
   | [_] Read: 10-high-availability/README.md                               |
-  | [_] Read: install/10-postgresql-streaming-replication.md               |
+  | [_] Read: install/10-mariadb-replication.md                            |
   | [_] Practice: Understand cluster status commands                       |
   | [_] Practice: Simulate failover in test environment                    |
   +------------------------------------------------------------------------+

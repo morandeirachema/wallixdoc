@@ -362,7 +362,7 @@ systemctl status wallix-pam4ot
 journalctl -u wallix-pam4ot --since "10 min ago" | tail -50
 
 # 3. Check database
-sudo -u postgres psql -c "SELECT 1;"
+sudo mysql -e "SELECT 1;"
 
 # 4. Try restart
 systemctl restart wallix-pam4ot
@@ -460,7 +460,7 @@ wabadmin audit --export --output /tmp/audit-export.json
   443   - Web UI / API (HTTPS)
   22    - SSH proxy
   3389  - RDP proxy
-  5432  - PostgreSQL (internal)
+  3306  - MariaDB (internal)
   5404-5406 - Cluster sync (UDP)
 
   --------------------------------------------------------------------------

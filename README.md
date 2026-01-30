@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/PAM4OT-12.1.x-0066cc?style=flat-square" alt="Version"/>
   <img src="https://img.shields.io/badge/Debian-12-a80030?style=flat-square" alt="Debian"/>
-  <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=flat-square" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/MariaDB-10.6+-003545?style=flat-square" alt="MariaDB"/>
   <img src="https://img.shields.io/badge/IEC_62443-Compliant-228b22?style=flat-square" alt="IEC 62443"/>
   <img src="https://img.shields.io/badge/NIST_800--82-Compliant-228b22?style=flat-square" alt="NIST"/>
 </p>
@@ -92,7 +92,7 @@ wallix/
 | **Session Management** | Video recording, real-time monitoring, keystroke logging, session sharing |
 | **Password Management** | AES-256 encrypted vault, automatic rotation, SSH key management, credential checkout |
 | **Industrial Protocols** | Modbus TCP, DNP3, OPC UA, EtherNet/IP, S7comm, IEC 61850 |
-| **High Availability** | Active-Active clustering, PostgreSQL streaming replication, automatic failover |
+| **High Availability** | Active-Active clustering, MariaDB HA replication, automatic failover |
 
 ---
 
@@ -114,7 +114,7 @@ See [Compliance & Audit Guide](./docs/33-compliance-audit/README.md) for detaile
 | Component | Specification |
 |-----------|---------------|
 | **Operating System** | Debian 12 (Bookworm) |
-| **Database** | PostgreSQL 15+ with streaming replication |
+| **Database** | MariaDB 10.6+ with HA replication (ports 3306/3307) |
 | **Clustering** | Pacemaker/Corosync |
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS disk encryption |
 | **Key Derivation** | Argon2ID |
@@ -138,7 +138,7 @@ crm status
 pcs status
 
 # Database Replication
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
 # License & Audit
 wabadmin license-info
@@ -151,7 +151,7 @@ wabadmin audit --last 20
 |------|---------|------|---------|
 | 443 | HTTPS/Web UI | 22 | SSH Proxy |
 | 636 | LDAPS | 88 | Kerberos |
-| 1812 | RADIUS (MFA) | 5432 | PostgreSQL |
+| 1812 | RADIUS (MFA) | 3306 | MariaDB |
 | 514/6514 | Syslog | 502 | Modbus |
 
 ---

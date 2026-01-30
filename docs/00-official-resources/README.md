@@ -149,7 +149,7 @@ This document provides curated links to official WALLIX documentation, tools, an
 |-----------|---------|-------|
 | WALLIX Bastion | 12.1.x | Current release |
 | Operating System | Debian 12 (Bookworm) | Required for new installs |
-| Database | PostgreSQL 15+ | Required |
+| Database | MariaDB 10.5+ | Required |
 | Terraform Provider | 0.14.x | API v3.12 support |
 | Access Manager | 5.2.x | Compatible |
 
