@@ -89,7 +89,7 @@ Before installation, document these decisions:
   2. DATABASE STRATEGY
   ====================
 
-  Decision: PostgreSQL 15 with streaming replication
+  Decision: MariaDB 15 with streaming replication
 
   Configuration per site:
   - Site A: Primary + Synchronous Standby (zero data loss)
@@ -992,11 +992,11 @@ systemctl restart wabengine
 systemctl restart nginx
 ```
 
-#### Step 2.5: Configure PostgreSQL for Replication
+#### Step 2.5: Configure MariaDB for Replication
 
 ```bash
-# Edit PostgreSQL configuration
-cat >> /etc/postgresql/15/main/postgresql.conf << 'EOF'
+# Edit MariaDB configuration
+cat >> /etc/mariadb/15/main/mariadb.conf << 'EOF'
 
 # =============================================================================
 # WALLIX HA Replication Configuration
@@ -1004,7 +1004,7 @@ cat >> /etc/postgresql/15/main/postgresql.conf << 'EOF'
 
 # Connection Settings
 listen_addresses = '*'
-port = 5432
+port = 3306
 max_connections = 500
 
 # Replication
@@ -1035,7 +1035,7 @@ max_parallel_workers = 8
 log_destination = 'stderr'
 logging_collector = on
 log_directory = 'log'
-log_filename = 'postgresql-%Y-%m-%d.log'
+log_filename = 'mariadb-%Y-%m-%d.log'
 log_rotation_age = 1d
 log_rotation_size = 100MB
 log_min_duration_statement = 1000
@@ -1047,7 +1047,7 @@ log_temp_files = 0
 EOF
 
 # Configure replication authentication
-cat >> /etc/postgresql/15/main/pg_hba.conf << 'EOF'
+cat >> /etc/mariadb/15/main/pg_hba.conf << 'EOF'
 
 # WALLIX HA Replication
 host    replication     replicator      10.100.254.2/32         scram-sha-256
@@ -1057,16 +1057,16 @@ host    all             all             10.100.254.0/30         scram-sha-256
 EOF
 
 # Create replication user
-sudo -u postgres psql << 'SQL'
+sudo mysql << 'SQL'
 CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'ReplicaSecurePass2026!';
 ALTER ROLE replicator SET synchronous_commit = on;
 SQL
 
-# Restart PostgreSQL
-systemctl restart postgresql
+# Restart MariaDB
+systemctl restart mariadb
 
 # Verify
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
 ```
 
 ### Day 2: Node 2 - Installation and Replication
@@ -1099,49 +1099,49 @@ wab-admin ssl-install \
     --chain /etc/opt/wab/ssl/ca-chain.crt
 ```
 
-#### Step 2.7: Configure PostgreSQL as Standby
+#### Step 2.7: Configure MariaDB as Standby
 
 ```bash
 # On wallix-a2
 
-# Stop PostgreSQL
-systemctl stop postgresql
+# Stop MariaDB
+systemctl stop mariadb
 
 # Clear existing data
-rm -rf /var/lib/postgresql/15/main/*
+rm -rf /var/lib/mariadb/15/main/*
 
 # Take base backup from primary
-sudo -u postgres pg_basebackup \
+mariabackup \
     -h 10.100.254.1 \
     -U replicator \
-    -D /var/lib/postgresql/15/main \
+    -D /var/lib/mariadb/15/main \
     -P -R -X stream -S wallix_a2_slot
 
 # The -R flag creates standby.signal and configures primary_conninfo
 
 # Verify standby configuration
-cat /var/lib/postgresql/15/main/postgresql.auto.conf
-# Should contain: primary_conninfo = 'host=10.100.254.1 port=5432 user=replicator ...'
+cat /var/lib/mariadb/15/main/mariadb.auto.conf
+# Should contain: primary_conninfo = 'host=10.100.254.1 port=3306 user=replicator ...'
 
 # Add standby settings
-cat >> /etc/postgresql/15/main/postgresql.conf << 'EOF'
+cat >> /etc/mariadb/15/main/mariadb.conf << 'EOF'
 
 # Standby Settings
 hot_standby = on
 hot_standby_feedback = on
-primary_conninfo = 'host=10.100.254.1 port=5432 user=replicator password=ReplicaSecurePass2026! application_name=wallix_a2'
+primary_conninfo = 'host=10.100.254.1 port=3306 user=replicator password=ReplicaSecurePass2026! application_name=wallix_a2'
 primary_slot_name = 'wallix_a2_slot'
 EOF
 
-# Start PostgreSQL
-systemctl start postgresql
+# Start MariaDB
+systemctl start mariadb
 
 # Verify replication
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+sudo mysql -c "SELECT pg_is_in_recovery();"
 # Should return: t (true, meaning it's a standby)
 
 # On Node 1, verify replication status
-sudo -u postgres psql -c "SELECT client_addr, state, sync_state, sent_lsn, replay_lsn FROM pg_stat_replication;"
+sudo mysql -c "SELECT client_addr, state, sync_state, sent_lsn, replay_lsn FROM SHOW SLAVE STATUS;"
 ```
 
 ### Day 3: HA Cluster Setup
@@ -1203,15 +1203,15 @@ pcs resource create wallix-vip ocf:heartbeat:IPaddr2 \
     op start timeout=20s \
     op stop timeout=20s
 
-# Create PostgreSQL resource
+# Create MariaDB resource
 pcs resource create pgsql ocf:heartbeat:pgsql \
-    pgctl="/usr/lib/postgresql/15/bin/pg_ctl" \
-    pgdata="/var/lib/postgresql/15/main" \
-    config="/etc/postgresql/15/main/postgresql.conf" \
-    logfile="/var/log/postgresql/postgresql-15-main.log" \
+    pgctl="/usr/lib/mariadb/15/bin/pg_ctl" \
+    pgdata="/var/lib/mariadb/15/main" \
+    config="/etc/mariadb/15/main/mariadb.conf" \
+    logfile="/var/log/mariadb/mariadb-15-main.log" \
     rep_mode="sync" \
     node_list="wallix-a1-hb wallix-a2-hb" \
-    restore_command="cp /var/lib/postgresql/15/archive/%f %p" \
+    restore_command="cp /var/lib/mariadb/15/archive/%f %p" \
     primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
     master_ip="10.100.1.100" \
     restart_on_promote="true" \
@@ -1240,13 +1240,13 @@ pcs resource create wallix-web systemd:wab-webui \
 pcs resource group add wallix-services wallix-engine wallix-web
 
 # Set constraints
-# VIP must be on PostgreSQL master
+# VIP must be on MariaDB master
 pcs constraint colocation add wallix-vip with pgsql-clone INFINITY with-rsc-role=Master
 
 # WALLIX services must be with VIP
 pcs constraint colocation add wallix-services with wallix-vip INFINITY
 
-# Order: PostgreSQL -> VIP -> WALLIX services
+# Order: MariaDB -> VIP -> WALLIX services
 pcs constraint order promote pgsql-clone then start wallix-vip
 pcs constraint order wallix-vip then wallix-services
 
@@ -1644,7 +1644,7 @@ wab-admin user-list --inactive-days 30
 | Issue | Symptoms | Solution |
 |-------|----------|----------|
 | Service won't start | wabengine fails | Check `journalctl -u wabengine` |
-| Database connection | "Cannot connect to database" | Verify PostgreSQL: `systemctl status postgresql` |
+| Database connection | "Cannot connect to database" | Verify MariaDB: `systemctl status mariadb` |
 | Cluster split-brain | Both nodes think they're primary | Stop one node, verify data, restart cluster |
 | Sync failures | "Connection refused to primary" | Check firewall, VPN, API key |
 | Recording missing | Sessions not recorded | Check `/var/wab/recorded` permissions, disk space |

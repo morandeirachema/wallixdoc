@@ -71,7 +71,7 @@
 | [07-security-hardening.md](./07-security-hardening.md) | Hardening |
 | [08-validation-testing.md](./08-validation-testing.md) | Go-live checklist |
 | [09-architecture-diagrams.md](./09-architecture-diagrams.md) | Diagrams & ports |
-| [10-postgresql-streaming-replication.md](./10-postgresql-streaming-replication.md) | DB HA |
+| [10-mariadb-replication.md](./10-mariadb-replication.md) | DB HA |
 
 ---
 
@@ -105,7 +105,7 @@ PLANNING        SITE A + B      SITE C + SYNC   HARDENING
 |-----------|---------|
 | WALLIX Bastion | 12.1.x |
 | Debian | 12 (Bookworm) |
-| PostgreSQL | 15+ |
+| MariaDB | 10.6+ |
 
 ### Network Ports
 
@@ -114,7 +114,7 @@ PLANNING        SITE A + B      SITE C + SYNC   HARDENING
 | 22 | TCP | SSH access |
 | 443 | TCP | Web UI / API |
 | 3389 | TCP | RDP proxy |
-| 5432 | TCP | PostgreSQL |
+| 3306 | TCP | MariaDB |
 | 5404-5406 | UDP | Cluster sync |
 
 ---
@@ -149,7 +149,7 @@ crm status
 wabadmin license-info
 
 # Database
-sudo -u postgres psql -c "SELECT version();"
+sudo mysql -e "SELECT VERSION();"
 
 # Recent audit
 wabadmin audit --last 10

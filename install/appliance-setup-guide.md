@@ -333,7 +333,7 @@ echo "Password: [configured during installation]"
 |                                                                            |
 |  Components:                                                               |
 |  * Pacemaker/Corosync: Cluster management                                  |
-|  * PostgreSQL: Streaming replication                                       |
+|  * MariaDB: Streaming replication                                       |
 |  * Shared Storage: Session recordings                                      |
 |                                                                            |
 +============================================================================+
@@ -397,11 +397,11 @@ apt update
 apt install -y wallix-bastion
 ```
 
-#### Step 3: Configure PostgreSQL for Replication (Primary)
+#### Step 3: Configure MariaDB for Replication (Primary)
 
 ```bash
-# Edit PostgreSQL configuration
-cat >> /etc/postgresql/16/main/postgresql.conf << 'EOF'
+# Edit MariaDB configuration
+cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
 
 # Replication settings (Primary)
 wal_level = replica
@@ -413,7 +413,7 @@ synchronous_standby_names = 'wallix_standby'
 EOF
 
 # Configure replication access
-cat >> /etc/postgresql/16/main/pg_hba.conf << 'EOF'
+cat >> /etc/mariadb/16/main/pg_hba.conf << 'EOF'
 
 # Replication from Node 2
 host    replication     replicator      10.100.254.2/32         scram-sha-256
@@ -421,12 +421,12 @@ host    replication     replicator      10.100.1.11/32          scram-sha-256
 EOF
 
 # Create replication user
-sudo -u postgres psql << 'EOF'
+sudo mysql << 'EOF'
 CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'ReplicaSecurePass2026!';
 EOF
 
-# Restart PostgreSQL
-systemctl restart postgresql
+# Restart MariaDB
+systemctl restart mariadb
 ```
 
 #### Step 4: Configure Shared Storage
@@ -494,37 +494,37 @@ EOF
 systemctl restart networking
 ```
 
-#### Step 2: Install WALLIX and Configure PostgreSQL Standby
+#### Step 2: Install WALLIX and Configure MariaDB Standby
 
 ```bash
 # Install WALLIX Bastion
 apt update
 apt install -y wallix-bastion
 
-# Stop PostgreSQL to configure as standby
-systemctl stop postgresql
+# Stop MariaDB to configure as standby
+systemctl stop mariadb
 
 # Remove existing data directory
-rm -rf /var/lib/postgresql/16/main/*
+rm -rf /var/lib/mariadb/16/main/*
 
 # Create base backup from primary
-sudo -u postgres pg_basebackup -h 10.100.254.1 -U replicator -D /var/lib/postgresql/16/main -Fp -Xs -P -R
+mariabackup -h 10.100.254.1 -U replicator -D /var/lib/mariadb/16/main -Fp -Xs -P -R
 
 # The -R flag creates standby.signal and configures replication
 
 # Configure standby settings
-cat >> /etc/postgresql/16/main/postgresql.conf << 'EOF'
+cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
 
 # Standby configuration
 hot_standby = on
-primary_conninfo = 'host=10.100.254.1 port=5432 user=replicator password=ReplicaSecurePass2026! application_name=wallix_standby'
+primary_conninfo = 'host=10.100.254.1 port=3306 user=replicator password=ReplicaSecurePass2026! application_name=wallix_standby'
 EOF
 
-# Start PostgreSQL
-systemctl start postgresql
+# Start MariaDB
+systemctl start mariadb
 
 # Verify replication status (on Node 1)
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
 ```
 
 ### Cluster Configuration (Both Nodes)
@@ -743,8 +743,8 @@ DATE=$(date +%Y%m%d_%H%M%S)
 # Create backup directory
 mkdir -p $BACKUP_DIR
 
-# Backup PostgreSQL
-sudo -u postgres pg_dump wab > $BACKUP_DIR/wab_db_$DATE.sql
+# Backup MariaDB
+mysqldump wab > $BACKUP_DIR/wab_db_$DATE.sql
 
 # Backup configuration
 tar -czf $BACKUP_DIR/config_$DATE.tar.gz /etc/opt/wab/
@@ -778,8 +778,8 @@ wabadmin status
 wabadmin license-info
 
 # Check database status
-sudo -u postgres psql -c "SELECT version();"
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+sudo mysql -c "SELECT version();"
+sudo mysql -c "SELECT pg_is_in_recovery();"
 ```
 
 ### HA Cluster Status
@@ -797,11 +797,11 @@ corosync-cfgtool -s
 # Check quorum
 corosync-quorumtool
 
-# Check PostgreSQL replication (on primary)
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+# Check MariaDB replication (on primary)
+sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
 
-# Check PostgreSQL standby status (on standby)
-sudo -u postgres psql -c "SELECT pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn();"
+# Check MariaDB standby status (on standby)
+sudo mysql -c "SELECT pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn();"
 ```
 
 ### Connectivity Tests
@@ -872,10 +872,10 @@ nc -zv localhost 3389
 |  ================================                                          |
 |                                                                            |
 |  Check replication status:                                                 |
-|  sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"             |
+|  sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"             |
 |                                                                            |
 |  Check standby lag:                                                        |
-|  sudo -u postgres psql -c "SELECT now() - pg_last_xact_replay_timestamp()" |
+|  sudo mysql -c "SELECT now() - pg_last_xact_replay_timestamp()" |
 |                                                                            |
 |  Common causes:                                                            |
 |  * Network latency                                                         |
@@ -890,7 +890,7 @@ nc -zv localhost 3389
 | Log | Path | Purpose |
 |-----|------|---------|
 | WALLIX service | /var/log/wab/*.log | Main application logs |
-| PostgreSQL | /var/log/postgresql/*.log | Database logs |
+| MariaDB | /var/log/mariadb/*.log | Database logs |
 | Cluster | /var/log/cluster/*.log | Pacemaker/Corosync |
 | System | /var/log/syslog | System messages |
 | Authentication | /var/log/auth.log | Login attempts |
@@ -1240,7 +1240,7 @@ wabadmin device-test "HMI-Station-01"
 - [02-site-a-primary.md](./02-site-a-primary.md) - Primary site setup
 - [07-security-hardening.md](./07-security-hardening.md) - Security configuration
 - [08-validation-testing.md](./08-validation-testing.md) - Testing procedures
-- [10-postgresql-streaming-replication.md](./10-postgresql-streaming-replication.md) - Database HA
+- [10-mariadb-streaming-replication.md](./10-mariadb-streaming-replication.md) - Database HA
 
 ---
 
@@ -1266,8 +1266,8 @@ pcs cluster start --all
 pcs cluster stop --all
 
 # Database commands
-sudo -u postgres psql -c "SELECT version();"
-sudo -u postgres pg_dump wab > backup.sql
+sudo mysql -c "SELECT version();"
+mysqldump wab > backup.sql
 
 # View recent audit
 wabadmin audit --last 20

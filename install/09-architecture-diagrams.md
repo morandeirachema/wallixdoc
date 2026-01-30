@@ -117,7 +117,7 @@
 |   | |         SERVICES             | |    | |         SERVICES             | |      |
 |   | +------------------------------+ |    | +------------------------------+ |      |
 |   | | wallix-bastion    (main)     | |    | | wallix-bastion    (main)     | |      |
-|   | | postgresql        (primary)  |<======>| postgresql        (replica)  | |      |
+|   | | mariadb        (primary)  |<======>| mariadb        (replica)  | |      |
 |   | | nginx             (web)      | | PG | | nginx             (web)      | |      |
 |   | | sshd              (access)   | |Stream| sshd              (access)   | |      |
 |   | | wabproxy          (sessions) | |    | | wabproxy          (sessions) | |      |
@@ -139,7 +139,7 @@
 |   |   Node 1 (192.168.100.10)  <========================>  Node 2 (192.168.100.11)||
 |   |                                                                                ||
 |   |   Corosync:   UDP 5404-5406  (Cluster communication, heartbeat)               ||
-|   |   PostgreSQL: TCP 5432       (Database streaming replication)                 ||
+|   |   MariaDB: TCP 3306       (Database streaming replication)                 ||
 |   |                                                                                ||
 |   +--------------------------------------------------------------------------------+|
 +=====================================================================================+
@@ -200,8 +200,8 @@
 |  |                            DATA LAYER                                 | |
 |  |                                                                       | |
 |  |  +---------------+  +---------------+  +---------------+              | |
-|  |  | PostgreSQL    |  | Credential    |  | Session       |              | |
-|  |  | Port: 5432    |  | Vault         |  | Storage       |              | |
+|  |  | MariaDB    |  | Credential    |  | Session       |              | |
+|  |  | Port: 3306    |  | Vault         |  | Storage       |              | |
 |  |  | (Metadata)    |  | (AES-256-GCM) |  | (Recordings)  |              | |
 |  |  +---------------+  +---------------+  +---------------+              | |
 |  +-----------------------------------------------------------------------+ |
@@ -210,8 +210,8 @@
 |  |                      HA CLUSTER LAYER (HA nodes only)                 | |
 |  |                                                                       | |
 |  |  +---------------+  +---------------+  +---------------+              | |
-|  |  | Pacemaker     |  | Corosync      |  | PostgreSQL    |              | |
-|  |  | (Resource Mgr)|  | UDP 5404-5406 |  | TCP 5432      |              | |
+|  |  | Pacemaker     |  | Corosync      |  | MariaDB    |              | |
+|  |  | (Resource Mgr)|  | UDP 5404-5406 |  | TCP 3306      |              | |
 |  |  +---------------+  +---------------+  +---------------+              | |
 |  +-----------------------------------------------------------------------+ |
 +===========================================================================+
@@ -254,7 +254,7 @@
 |   | |    SERVICES (RUNNING)        | |    | |    SERVICES (STANDBY)        | |
 |   | +------------------------------+ |    | +------------------------------+ |
 |   | | wallix-bastion  [*] ACTIVE   | |    | | wallix-bastion  [ ] STOPPED  | |
-|   | | postgresql      [*] PRIMARY  |<======>| postgresql      [*] STANDBY  | |
+|   | | mariadb      [*] PRIMARY  |<======>| mariadb      [*] STANDBY  | |
 |   | | nginx           [*] RUNNING  | | PG | | nginx           [ ] STOPPED  | |
 |   | | wabproxy        [*] RUNNING  | |Stream| wabproxy        [ ] STOPPED  | |
 |   | | pacemaker       [*] RUNNING  | |    | | pacemaker       [*] RUNNING  | |
@@ -306,7 +306,7 @@
 |   |                       |  |  SERVICES   |  |                            |
 |   |                       |  +-------------+  |                            |
 |   |                       |  |wallix-bastion| |                            |
-|   |                       |  |postgresql    | |                            |
+|   |                       |  |mariadb    | |                            |
 |   |                       |  |nginx         | |                            |
 |   |                       |  |wabproxy      | |                            |
 |   |                       |  |sshd          | |                            |
@@ -455,7 +455,7 @@
 |   |                  |<=================================>|                  |
 |   |   NODE 1         |           every 1 second          |   NODE 2         |
 |   |   ** ACTIVE **   |                                   |   STANDBY        |
-|   |                  |      PG Streaming (TCP 5432)      |                  |
+|   |                  |      PG Streaming (TCP 3306)      |                  |
 |   |   VIP: 10.0.1.20 |<=================================>|                  |
 |   |                  |           continuous              |                  |
 |   +--------+---------+                                   +------------------+
@@ -481,7 +481,7 @@
 |                                                                             |
 |   T+3s:   Failure confirmed (3 missed heartbeats)                           |
 |   T+5s:   STONITH executed (if configured)                                  |
-|   T+10s:  PostgreSQL promoted to Primary on Node 2                          |
+|   T+10s:  MariaDB promoted to Primary on Node 2                          |
 |   T+15s:  Services starting on Node 2                                       |
 |   T+25s:  VIP migrated to Node 2                                            |
 |   T+30s:  Node 2 fully active                                               |
@@ -549,15 +549,15 @@
 |                                         | depends on                       |
 |                                         v                                  |
 |   LEVEL 2      +-------------+    +-------------+                          |
-|   (Infra)      |   NGINX     |    | PostgreSQL  |                          |
-|                |   :443/:80  |    |   :5432     |                          |
+|   (Infra)      |   NGINX     |    | MariaDB  |                          |
+|                |   :443/:80  |    |   :3306     |                          |
 |                +------+------+    +------+------+                          |
 |                       |                  |                                 |
 |                       |                  | depends on (HA only)            |
 |                       |                  v                                 |
 |   LEVEL 1             |           +-------------+  +-------------+         |
 |   (HA/Cluster)        |           | PG Streaming|  |  Pacemaker  |         |
-|                       |           |   :5432     |  |  /Corosync  |         |
+|                       |           |   :3306     |  |  /Corosync  |         |
 |                       |           +------+------+  +------+------+         |
 |                       |                  |                |                |
 |                       +------------------+----------------+                |
@@ -638,7 +638,7 @@
 |   5404    UDP        Corosync         Bidirect     Cluster multicast       |
 |   5405    UDP        Corosync         Bidirect     Cluster unicast         |
 |   5406    UDP        Corosync         Bidirect     Cluster communication   |
-|   5432    TCP        PostgreSQL       Bidirect     DB streaming replic.    |
+|   3306    TCP        MariaDB       Bidirect     DB streaming replic.    |
 |                                                                            |
 +===========================================================================+
 
@@ -686,7 +686,7 @@
 |   | USER ACCESS     | ADMIN ACCESS    | AUTHENTICATION  | CLUSTER (HA)   |
 |   +-----------------+-----------------+-----------------+-----------------+
 |   | 443/tcp (HTTPS) | 22/tcp (SSH)    | 389/tcp (LDAP)  | 5404-5406/udp  |
-|   | 22/tcp (SSH)    |                 | 636/tcp (LDAPS) | 5432/tcp (PG)  |
+|   | 22/tcp (SSH)    |                 | 636/tcp (LDAPS) | 3306/tcp (PG)  |
 |   | 3389/tcp (RDP)  |                 | 88/tcp (Kerb)   | 2224/tcp (PCS) |
 |   +-----------------+-----------------+-----------------+-----------------+
 |                                                                            |
@@ -729,7 +729,7 @@
 
 # Cluster Communication (from peer node only)
 -A INPUT -s 192.168.100.11 -p udp --dport 5404:5406 -j ACCEPT  # Corosync
--A INPUT -s 192.168.100.11 -p tcp --dport 5432 -j ACCEPT       # PostgreSQL streaming
+-A INPUT -s 192.168.100.11 -p tcp --dport 3306 -j ACCEPT       # MariaDB streaming
 -A INPUT -s 192.168.100.11 -p tcp --dport 2224 -j ACCEPT       # PCSD
 
 # Multi-site Sync (from Site B and Site C)
@@ -875,20 +875,20 @@
 
 ```bash
 # Check all WALLIX services
-systemctl status wallix-bastion wallix-* nginx postgresql
+systemctl status wallix-bastion wallix-* nginx mariadb
 
 # Check cluster status (HA nodes)
 crm status
 pcs status
 
-# Check PostgreSQL replication (on primary)
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+# Check MariaDB replication (on primary)
+sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
 
-# Check PostgreSQL recovery status (on standby)
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+# Check MariaDB recovery status (on standby)
+sudo mysql -c "SELECT SHOW SLAVE STATUS();"
 
 # Check listening ports
-ss -tlnp | grep -E '(22|443|3389|5432|5900)'
+ss -tlnp | grep -E '(22|443|3389|3306|5900)'
 
 # Check firewall rules
 iptables -L -n -v
