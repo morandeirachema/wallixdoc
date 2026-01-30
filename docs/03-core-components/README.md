@@ -20,47 +20,47 @@ The **Session Manager** is the heart of WALLIX Bastion, responsible for all priv
 ### Architecture
 
 ```
-+=============================================================================+
-|                           SESSION MANAGER                                    |
-+=============================================================================+
-|                                                                              |
-|   +---------------------------------------------------------------------+  |
-|   |                      PROTOCOL HANDLERS                               |  |
-|   |                                                                      |  |
-|   |  +---------+ +---------+ +---------+ +---------+ +---------+       |   |
-|   |  |   SSH   | |   RDP   | |  HTTPS  | |   VNC   | | TELNET  |       |   |
-|   |  | Handler | | Handler | | Handler | | Handler | | Handler |       |   |
-|   |  |         | |         | |         | |         | |         |       |   |
-|   |  | * SCP   | | * NLA   | | * Web   | | * Auth  | | * Plain |       |   |
-|   |  | * SFTP  | | * TLS   | |   Apps  | | * VNC   | | * SSL   |       |   |
-|   |  | * X11   | | * RD GW | | * REST  | |   Auth  | |         |       |   |
-|   |  +---------+ +---------+ +---------+ +---------+ +---------+       |   |
-|   |                                                                      |  |
-|   |  +---------+ +---------+ +---------+                               |   |
-|   |  | RLOGIN  | | CUSTOM  | | RAW TCP |                               |   |
-|   |  | Handler | | Plugins | | Tunnel  |                               |   |
-|   |  +---------+ +---------+ +---------+                               |   |
-|   +---------------------------------------------------------------------+  |
-|                                                                              |
-|   +-----------------------+  +-----------------------+                     |
-|   |   SESSION BROKER      |  |   RECORDING ENGINE    |                     |
-|   |                       |  |                       |                     |
-|   | * Connection routing  |  | * Video capture       |                     |
-|   | * Load balancing      |  | * Keystroke logging   |                     |
-|   | * Session tracking    |  | * OCR processing      |                     |
-|   | * Failover handling   |  | * Metadata extraction |                     |
-|   +-----------------------+  +-----------------------+                     |
-|                                                                              |
-|   +-----------------------+  +-----------------------+                     |
-|   |   MONITORING ENGINE   |  |   AUDIT LOGGER        |                     |
-|   |                       |  |                       |                     |
-|   | * Real-time view      |  | * Action logging      |                     |
-|   | * Session sharing     |  | * Compliance reports  |                     |
-|   | * Kill capability     |  | * Alert generation    |                     |
-|   | * Alert triggers      |  | * SIEM integration    |                     |
-|   +-----------------------+  +-----------------------+                     |
-|                                                                              |
-+=============================================================================+
++===============================================================================+
+|                            SESSION MANAGER                                    |
++===============================================================================+
+|                                                                               |
+|  +-------------------------------------------------------------------------+  |
+|  |                       PROTOCOL HANDLERS                                 |  |
+|  |                                                                         |  |
+|  |  +----------+ +----------+ +----------+ +----------+ +----------+       |  |
+|  |  |   SSH    | |   RDP    | |  HTTPS   | |   VNC    | |  TELNET  |       |  |
+|  |  |  Handler | |  Handler | |  Handler | |  Handler | |  Handler |       |  |
+|  |  |          | |          | |          | |          | |          |       |  |
+|  |  | * SCP    | | * NLA    | | * Web    | | * Auth   | | * Plain  |       |  |
+|  |  | * SFTP   | | * TLS    | |   Apps   | | * VNC    | | * SSL    |       |  |
+|  |  | * X11    | | * RD GW  | | * REST   | |   Auth   | |          |       |  |
+|  |  +----------+ +----------+ +----------+ +----------+ +----------+       |  |
+|  |                                                                         |  |
+|  |  +----------+ +----------+ +----------+                                 |  |
+|  |  |  RLOGIN  | |  CUSTOM  | | RAW TCP  |                                 |  |
+|  |  |  Handler | |  Plugins | |  Tunnel  |                                 |  |
+|  |  +----------+ +----------+ +----------+                                 |  |
+|  +-------------------------------------------------------------------------+  |
+|                                                                               |
+|  +---------------------------+     +---------------------------+              |
+|  |   SESSION BROKER          |     |   RECORDING ENGINE        |              |
+|  |                           |     |                           |              |
+|  | * Connection routing      |     | * Video capture           |              |
+|  | * Load balancing          |     | * Keystroke logging       |              |
+|  | * Session tracking        |     | * OCR processing          |              |
+|  | * Failover handling       |     | * Metadata extraction     |              |
+|  +---------------------------+     +---------------------------+              |
+|                                                                               |
+|  +---------------------------+     +---------------------------+              |
+|  |   MONITORING ENGINE       |     |   AUDIT LOGGER            |              |
+|  |                           |     |                           |              |
+|  | * Real-time view          |     | * Action logging          |              |
+|  | * Session sharing         |     | * Compliance reports      |              |
+|  | * Kill capability         |     | * Alert generation        |              |
+|  | * Alert triggers          |     | * SIEM integration        |              |
+|  +---------------------------+     +---------------------------+              |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Supported Protocols
@@ -68,38 +68,35 @@ The **Session Manager** is the heart of WALLIX Bastion, responsible for all priv
 #### SSH Protocol Handler
 
 ```
-SSH PROTOCOL CAPABILITIES
-=========================
-
-+=============================================================+
-|                      SSH HANDLER                             |
-+=============================================================+
-|                                                              |
-|  Main Protocols:                                            |
-|  +-- SSH (Interactive shell)                                |
-|  +-- SCP (Secure copy)                                      |
-|  +-- SFTP (File transfer)                                   |
-|  +-- SSH Tunneling (Port forwarding)                        |
-|                                                              |
-|  Authentication Methods:                                     |
-|  +-- Password                                               |
-|  +-- SSH Key (RSA, ECDSA, Ed25519)                         |
-|  +-- Keyboard-Interactive                                   |
-|  +-- Certificate-based                                      |
-|                                                              |
-|  Subprotocol Control:                                       |
-|  +-- Allow/deny shell access                                |
-|  +-- Allow/deny SCP                                         |
-|  +-- Allow/deny SFTP                                        |
-|  +-- Allow/deny X11 forwarding                              |
-|  +-- Allow/deny port forwarding                             |
-|                                                              |
-|  Recording:                                                  |
-|  +-- Full session recording                                 |
-|  +-- Command logging                                        |
-|  +-- File transfer logging                                  |
-|                                                              |
-+=============================================================+
++===============================================================================+
+|                            SSH HANDLER                                        |
++===============================================================================+
+|                                                                               |
+|  Main Protocols:                                                              |
+|  +-- SSH (Interactive shell)                                                  |
+|  +-- SCP (Secure copy)                                                        |
+|  +-- SFTP (File transfer)                                                     |
+|  +-- SSH Tunneling (Port forwarding)                                          |
+|                                                                               |
+|  Authentication Methods:                                                      |
+|  +-- Password                                                                 |
+|  +-- SSH Key (RSA, ECDSA, Ed25519)                                            |
+|  +-- Keyboard-Interactive                                                     |
+|  +-- Certificate-based                                                        |
+|                                                                               |
+|  Subprotocol Control:                                                         |
+|  +-- Allow/deny shell access                                                  |
+|  +-- Allow/deny SCP                                                           |
+|  +-- Allow/deny SFTP                                                          |
+|  +-- Allow/deny X11 forwarding                                                |
+|  +-- Allow/deny port forwarding                                               |
+|                                                                               |
+|  Recording:                                                                   |
+|  +-- Full session recording                                                   |
+|  +-- Command logging                                                          |
+|  +-- File transfer logging                                                    |
+|                                                                               |
++===============================================================================+
 ```
 
 **SSH Configuration Options:**
@@ -118,45 +115,42 @@ SSH PROTOCOL CAPABILITIES
 #### RDP Protocol Handler
 
 ```
-RDP PROTOCOL CAPABILITIES
-=========================
-
-+=============================================================+
-|                      RDP HANDLER                             |
-+=============================================================+
-|                                                              |
-|  Connection Methods:                                        |
-|  +-- Standard RDP                                           |
-|  +-- RDP over TLS (recommended)                             |
-|  +-- Network Level Authentication (NLA)                     |
-|  +-- RD Gateway integration                                 |
-|                                                              |
-|  Security Modes:                                            |
-|  +-- RDP Security Layer                                     |
-|  +-- TLS Security Layer                                     |
-|  +-- CredSSP (NLA)                                          |
-|  +-- Hybrid mode                                            |
-|                                                              |
-|  Subprotocol Control:                                       |
-|  +-- Clipboard redirection (allow/deny)                     |
-|  +-- Drive redirection (allow/deny)                         |
-|  +-- Printer redirection (allow/deny)                       |
-|  +-- Smart card redirection (allow/deny)                    |
-|  +-- Audio redirection (allow/deny)                         |
-|                                                              |
-|  Recording Features:                                        |
-|  +-- Video recording (screen capture)                       |
-|  +-- OCR processing (searchable content)                    |
-|  +-- Keystroke logging                                      |
-|  +-- Clipboard content logging                              |
-|  +-- File transfer logging                                  |
-|                                                              |
-|  Performance Options:                                       |
-|  +-- Color depth control                                    |
-|  +-- Compression settings                                   |
-|  +-- Bandwidth optimization                                 |
-|                                                              |
-+=============================================================+
++===============================================================================+
+|                            RDP HANDLER                                        |
++===============================================================================+
+|                                                                               |
+|  Connection Methods:                                                          |
+|  +-- Standard RDP                                                             |
+|  +-- RDP over TLS (recommended)                                               |
+|  +-- Network Level Authentication (NLA)                                       |
+|  +-- RD Gateway integration                                                   |
+|                                                                               |
+|  Security Modes:                                                              |
+|  +-- RDP Security Layer                                                       |
+|  +-- TLS Security Layer                                                       |
+|  +-- CredSSP (NLA)                                                            |
+|  +-- Hybrid mode                                                              |
+|                                                                               |
+|  Subprotocol Control:                                                         |
+|  +-- Clipboard redirection (allow/deny)                                       |
+|  +-- Drive redirection (allow/deny)                                           |
+|  +-- Printer redirection (allow/deny)                                         |
+|  +-- Smart card redirection (allow/deny)                                      |
+|  +-- Audio redirection (allow/deny)                                           |
+|                                                                               |
+|  Recording Features:                                                          |
+|  +-- Video recording (screen capture)                                         |
+|  +-- OCR processing (searchable content)                                      |
+|  +-- Keystroke logging                                                        |
+|  +-- Clipboard content logging                                                |
+|  +-- File transfer logging                                                    |
+|                                                                               |
+|  Performance Options:                                                         |
+|  +-- Color depth control                                                      |
+|  +-- Compression settings                                                     |
+|  +-- Bandwidth optimization                                                   |
+|                                                                               |
++===============================================================================+
 ```
 
 **RDP Security Levels:**
@@ -173,28 +167,25 @@ RDP PROTOCOL CAPABILITIES
 #### VNC Protocol Handler
 
 ```
-VNC PROTOCOL CAPABILITIES
-=========================
-
-+=============================================================+
-|                      VNC HANDLER                             |
-+=============================================================+
-|                                                              |
-|  Supported Versions:                                        |
-|  +-- RFB Protocol 3.3, 3.7, 3.8                            |
-|  +-- TightVNC extensions                                    |
-|  +-- UltraVNC extensions                                    |
-|                                                              |
-|  Authentication:                                            |
-|  +-- VNC Password                                           |
-|  +-- No authentication (if target allows)                   |
-|  +-- Certificate-based (UltraVNC)                          |
-|                                                              |
-|  Recording:                                                  |
-|  +-- Video recording                                        |
-|  +-- Input event logging                                    |
-|                                                              |
-+=============================================================+
++===============================================================================+
+|                            VNC HANDLER                                        |
++===============================================================================+
+|                                                                               |
+|  Supported Versions:                                                          |
+|  +-- RFB Protocol 3.3, 3.7, 3.8                                               |
+|  +-- TightVNC extensions                                                      |
+|  +-- UltraVNC extensions                                                      |
+|                                                                               |
+|  Authentication:                                                              |
+|  +-- VNC Password                                                             |
+|  +-- No authentication (if target allows)                                     |
+|  +-- Certificate-based (UltraVNC)                                             |
+|                                                                               |
+|  Recording:                                                                   |
+|  +-- Video recording                                                          |
+|  +-- Input event logging                                                      |
+|                                                                               |
++===============================================================================+
 ```
 
 ---
@@ -202,31 +193,28 @@ VNC PROTOCOL CAPABILITIES
 #### HTTP/HTTPS Protocol Handler
 
 ```
-HTTP/HTTPS PROTOCOL CAPABILITIES
-================================
-
-+=============================================================+
-|                    HTTP/HTTPS HANDLER                        |
-+=============================================================+
-|                                                              |
-|  Use Cases:                                                  |
-|  +-- Web application access                                 |
-|  +-- REST API management interfaces                         |
-|  +-- Network device web consoles                            |
-|  +-- Cloud management consoles                              |
-|                                                              |
-|  Features:                                                   |
-|  +-- URL filtering                                          |
-|  +-- Request/response logging                               |
-|  +-- Credential injection (form-based)                      |
-|  +-- Session recording (screenshots)                        |
-|                                                              |
-|  Authentication:                                            |
-|  +-- Basic authentication                                   |
-|  +-- Form-based authentication                              |
-|  +-- Certificate-based authentication                       |
-|                                                              |
-+=============================================================+
++===============================================================================+
+|                         HTTP/HTTPS HANDLER                                    |
++===============================================================================+
+|                                                                               |
+|  Use Cases:                                                                   |
+|  +-- Web application access                                                   |
+|  +-- REST API management interfaces                                           |
+|  +-- Network device web consoles                                              |
+|  +-- Cloud management consoles                                                |
+|                                                                               |
+|  Features:                                                                    |
+|  +-- URL filtering                                                            |
+|  +-- Request/response logging                                                 |
+|  +-- Credential injection (form-based)                                        |
+|  +-- Session recording (screenshots)                                          |
+|                                                                               |
+|  Authentication:                                                              |
+|  +-- Basic authentication                                                     |
+|  +-- Form-based authentication                                                |
+|  +-- Certificate-based authentication                                         |
+|                                                                               |
++===============================================================================+
 ```
 
 ---
@@ -236,48 +224,44 @@ HTTP/HTTPS PROTOCOL CAPABILITIES
 #### Recording Architecture
 
 ```
-+=========================================================================+
-|                      SESSION RECORDING FLOW                              |
-+=========================================================================+
-|                                                                          |
-|   User Session                                                          |
-|       |                                                                  |
-|       v                                                                  |
-|   +-------------------------------------------------------------------+    |
-|   |                   RECORDING ENGINE                             |    |
-|   |                                                                |    |
-|   |   +-------------+  +-------------+  +-------------+          |    |
-|   |   |   Screen    |  |  Keystroke  |  |  Metadata   |          |    |
-|   |   |   Capture   |  |  Logger     |  |  Extractor  |          |    |
-|   |   |             |  |             |  |             |          |    |
-|   |   | * Video     |  | * Commands  |  | * User      |          |    |
-|   |   |   frames    |  | * Inputs    |  | * Target    |          |    |
-|   |   | * Delta     |  | * Clipboard |  | * Time      |          |    |
-|   |   |   encoding  |  |             |  | * Actions   |          |    |
-|   |   +------+------+  +------+------+  +------+------+          |    |
-|   |          |                |                |                  |    |
-|   |          +----------------+----------------+                  |    |
-|   |                           |                                   |    |
-|   |                           v                                   |    |
-|   |            +-----------------------------+                   |    |
-|   |            |      Recording File          |                   |    |
-|   |            |      (.wab format)           |                   |    |
-|   |            +--------------+--------------+                   |    |
-|   |                           |                                   |    |
-|   +---------------------------+-----------------------------------+    |
-|                               |                                         |
-|                               v                                         |
-|   +-------------------------------------------------------------------+    |
-|   |                    POST-PROCESSING                             |    |
-|   |                                                                |    |
-|   |   +-------------+  +-------------+  +-------------+          |    |
-|   |   |     OCR     |  |   Index     |  |   Archive   |          |    |
-|   |   |  Processing |  |  Creation   |  |   Storage   |          |    |
-|   |   |  (RDP only) |  |             |  |             |          |    |
-|   |   +-------------+  +-------------+  +-------------+          |    |
-|   +-------------------------------------------------------------------+    |
-|                                                                          |
-+=========================================================================+
++===============================================================================+
+|                       SESSION RECORDING FLOW                                  |
++===============================================================================+
+|                                                                               |
+|  User Session                                                                 |
+|      |                                                                        |
+|      v                                                                        |
+|  +-----------------------------------------------------------------------+    |
+|  |                      RECORDING ENGINE                                 |    |
+|  |                                                                       |    |
+|  |  +-----------------+  +-----------------+  +-----------------+        |    |
+|  |  |  Screen Capture |  | Keystroke Logger|  | Metadata Extract|        |    |
+|  |  |                 |  |                 |  |                 |        |    |
+|  |  | * Video frames  |  | * Commands      |  | * User info     |        |    |
+|  |  | * Delta encoding|  | * Inputs        |  | * Target info   |        |    |
+|  |  |                 |  | * Clipboard     |  | * Timestamps    |        |    |
+|  |  +--------+--------+  +--------+--------+  +--------+--------+        |    |
+|  |           |                    |                    |                 |    |
+|  |           +--------------------+--------------------+                 |    |
+|  |                                |                                      |    |
+|  |                                v                                      |    |
+|  |                   +------------------------+                          |    |
+|  |                   |    Recording File      |                          |    |
+|  |                   |    (.wab format)       |                          |    |
+|  |                   +-----------+------------+                          |    |
+|  +-----------------------------|-----------------------------------------+    |
+|                                |                                              |
+|                                v                                              |
+|  +-----------------------------------------------------------------------+    |
+|  |                      POST-PROCESSING                                  |    |
+|  |                                                                       |    |
+|  |  +-----------------+  +-----------------+  +-----------------+        |    |
+|  |  | OCR Processing  |  | Index Creation  |  | Archive Storage |        |    |
+|  |  |   (RDP only)    |  |                 |  |                 |        |    |
+|  |  +-----------------+  +-----------------+  +-----------------+        |    |
+|  +-----------------------------------------------------------------------+    |
+|                                                                               |
++===============================================================================+
 ```
 
 #### Recording Types by Protocol
@@ -322,40 +306,37 @@ Recording File Structure
 #### Monitoring Capabilities
 
 ```
-+=========================================================================+
-|                    REAL-TIME MONITORING                                  |
-+=========================================================================+
-|                                                                          |
-|  +---------------------------------------------------------------------+   |
-|  |                    ACTIVE SESSIONS VIEW                          |   |
-|  |                                                                  |   |
-|  |  Session ID    User        Target           Protocol  Duration  |   |
-|  |  ----------    ----        ------           --------  --------  |   |
-|  |  SES-001       jsmith      srv-prod-01      SSH       00:45:12  |   |
-|  |  SES-002       admin       dc01.corp        RDP       01:23:45  |   |
-|  |  SES-003       dbadmin     oracle-prd       SQL*Plus  00:12:30  |   |
-|  |                                                                  |   |
-|  |  [View] [Share] [Message] [Kill]                                |   |
-|  |                                                                  |   |
-|  +---------------------------------------------------------------------+   |
-|                                                                          |
-|  Monitoring Actions:                                                    |
-|  ---------------------                                                  |
-|                                                                          |
-|  VIEW      Watch session in real-time (shadow mode)                    |
-|  SHARE     Join session (4-eyes / dual control)                        |
-|  MESSAGE   Send message to session user                                 |
-|  KILL      Terminate session immediately                                |
-|                                                                          |
-|  Alerting:                                                              |
-|  ---------                                                              |
-|                                                                          |
-|  * Command-based alerts (detect "rm -rf", "drop table", etc.)          |
-|  * Keyword detection in sessions                                        |
-|  * Unusual activity patterns                                            |
-|  * Session duration alerts                                              |
-|                                                                          |
-+=========================================================================+
++===============================================================================+
+|                          REAL-TIME MONITORING                                 |
++===============================================================================+
+|                                                                               |
+|  +------------------------------------------------------------------------+   |
+|  |                      ACTIVE SESSIONS VIEW                              |   |
+|  |                                                                        |   |
+|  |  Session ID    User        Target           Protocol  Duration        |   |
+|  |  ----------    ----        ------           --------  --------        |   |
+|  |  SES-001       jsmith      srv-prod-01      SSH       00:45:12        |   |
+|  |  SES-002       admin       dc01.corp        RDP       01:23:45        |   |
+|  |  SES-003       dbadmin     oracle-prd       SQL*Plus  00:12:30        |   |
+|  |                                                                        |   |
+|  |  [View] [Share] [Message] [Kill]                                      |   |
+|  +------------------------------------------------------------------------+   |
+|                                                                               |
+|  Monitoring Actions:                                                          |
+|  -------------------                                                          |
+|  VIEW      Watch session in real-time (shadow mode)                           |
+|  SHARE     Join session (4-eyes / dual control)                               |
+|  MESSAGE   Send message to session user                                       |
+|  KILL      Terminate session immediately                                      |
+|                                                                               |
+|  Alerting:                                                                    |
+|  ---------                                                                    |
+|  * Command-based alerts (detect "rm -rf", "drop table", etc.)                 |
+|  * Keyword detection in sessions                                              |
+|  * Unusual activity patterns                                                  |
+|  * Session duration alerts                                                    |
+|                                                                               |
++===============================================================================+
 ```
 
 #### 4-Eyes Principle (Session Sharing)
@@ -400,51 +381,47 @@ The **Password Manager** provides secure credential storage, automatic rotation,
 ### Architecture
 
 ```
-+=============================================================================+
-|                          PASSWORD MANAGER                                    |
-+=============================================================================+
-|                                                                              |
-|   +---------------------------------------------------------------------+  |
-|   |                     CREDENTIAL VAULT                                 |  |
-|   |                                                                      |  |
-|   |   +-------------+  +-------------+  +-------------+                |   |
-|   |   |  Passwords  |  |  SSH Keys   |  | Certificates|                |   |
-|   |   |             |  |             |  |             |                |   |
-|   |   | * Local     |  | * Private   |  | * X.509     |                |   |
-|   |   | * Domain    |  |   keys      |  | * Client    |                |   |
-|   |   | * Service   |  | * Key pairs |  |   certs     |                |   |
-|   |   | * Database  |  | * Passphr.  |  | * CA certs  |                |   |
-|   |   +-------------+  +-------------+  +-------------+                |   |
-|   |                                                                      |  |
-|   |   Encryption: AES-256-GCM                                           |  |
-|   |   Key Management: Master key + optional HSM                         |  |
-|   |                                                                      |  |
-|   +---------------------------------------------------------------------+  |
-|                                                                              |
-|   +-------------------------+  +-------------------------+                 |
-|   |   ROTATION ENGINE       |  |   INJECTION ENGINE      |                 |
-|   |                         |  |                         |                 |
-|   | * Scheduled rotation    |  | * Protocol-aware        |                 |
-|   | * On-demand rotation    |  | * Transparent to user   |                 |
-|   | * Post-session rotation |  | * Just-in-time          |                 |
-|   | * Verification          |  |                         |                 |
-|   | * Reconciliation        |  |                         |                 |
-|   +-------------------------+  +-------------------------+                 |
-|                                                                              |
-|   +---------------------------------------------------------------------+  |
-|   |                     TARGET CONNECTORS                                |  |
-|   |                                                                      |  |
-|   |  +---------+ +---------+ +---------+ +---------+ +---------+       |   |
-|   |  | Windows | |  Linux  | | Network | |Database | |  LDAP   |       |   |
-|   |  |         | |  Unix   | | Devices | |         | |         |       |   |
-|   |  | * Local | |         | |         | | * Oracle| | * AD    |       |   |
-|   |  | * Domain| | * Local | | * Cisco | | * MSSQL | | * OpenLDAP      |   |
-|   |  |         | | * sudo  | | * Junip | | * MySQL | |         |       |   |
-|   |  +---------+ +---------+ +---------+ +---------+ +---------+       |   |
-|   |                                                                      |  |
-|   +---------------------------------------------------------------------+  |
-|                                                                              |
-+=============================================================================+
++===============================================================================+
+|                           PASSWORD MANAGER                                    |
++===============================================================================+
+|                                                                               |
+|  +-----------------------------------------------------------------------+    |
+|  |                      CREDENTIAL VAULT                                 |    |
+|  |                                                                       |    |
+|  |  +---------------+  +---------------+  +---------------+              |    |
+|  |  |  Passwords    |  |  SSH Keys     |  | Certificates  |              |    |
+|  |  |               |  |               |  |               |              |    |
+|  |  | * Local       |  | * Private keys|  | * X.509       |              |    |
+|  |  | * Domain      |  | * Key pairs   |  | * Client certs|              |    |
+|  |  | * Service     |  | * Passphrases |  | * CA certs    |              |    |
+|  |  | * Database    |  |               |  |               |              |    |
+|  |  +---------------+  +---------------+  +---------------+              |    |
+|  |                                                                       |    |
+|  |  Encryption: AES-256-GCM    Key Management: Master key + optional HSM |    |
+|  +-----------------------------------------------------------------------+    |
+|                                                                               |
+|  +-------------------------------+  +-------------------------------+         |
+|  |   ROTATION ENGINE             |  |   INJECTION ENGINE            |         |
+|  |                               |  |                               |         |
+|  | * Scheduled rotation          |  | * Protocol-aware              |         |
+|  | * On-demand rotation          |  | * Transparent to user         |         |
+|  | * Post-session rotation       |  | * Just-in-time delivery       |         |
+|  | * Verification                |  |                               |         |
+|  | * Reconciliation              |  |                               |         |
+|  +-------------------------------+  +-------------------------------+         |
+|                                                                               |
+|  +-----------------------------------------------------------------------+    |
+|  |                      TARGET CONNECTORS                                |    |
+|  |                                                                       |    |
+|  |  +-----------+ +-----------+ +-----------+ +-----------+ +----------+ |    |
+|  |  |  Windows  | |   Linux   | |  Network  | | Database  | |   LDAP   | |    |
+|  |  |           | |   Unix    | |  Devices  | |           | |          | |    |
+|  |  | * Local   | | * Local   | | * Cisco   | | * Oracle  | | * AD     | |    |
+|  |  | * Domain  | | * sudo    | | * Juniper | | * MSSQL   | | * OpenLDAP |    |
+|  |  +-----------+ +-----------+ +-----------+ +-----------+ +----------+ |    |
+|  +-----------------------------------------------------------------------+    |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Credential Types
@@ -462,57 +439,52 @@ The **Password Manager** provides secure credential storage, automatic rotation,
 #### Rotation Workflow
 
 ```
-PASSWORD ROTATION WORKFLOW
-==========================
-
-+============================================================================+
-|                                                                            |
-|   1. TRIGGER                                                             |
-|   ---------                                                              |
-|   +-------------+  +-------------+  +-------------+                     |
-|   |  Scheduled  |  |  On-Demand  |  |Post-Session |                     |
-|   |  (cron)     |  |  (manual)   |  | (automatic) |                     |
-|   +------+------+  +------+------+  +------+------+                     |
-|          |                |                |                             |
-|          +----------------+----------------+                             |
-|                           |                                              |
-|                           v                                              |
-|   2. CONNECT TO TARGET                                                   |
-|   ------------------------                                               |
-|   * Use current credentials or reconciliation account                    |
-|   * SSH/WinRM/API connection                                            |
-|                           |                                              |
-|                           v                                              |
-|   3. GENERATE NEW PASSWORD                                               |
-|   ----------------------------                                           |
-|   * Apply password policy                                                |
-|   * Character requirements                                               |
-|   * Length requirements                                                  |
-|   * Exclusion list                                                       |
-|                           |                                              |
-|                           v                                              |
-|   4. CHANGE PASSWORD ON TARGET                                           |
-|   ----------------------------                                           |
-|   * Execute change command/API                                           |
-|   * Platform-specific method                                             |
-|                           |                                              |
-|                           v                                              |
-|   5. VERIFY NEW PASSWORD                                                 |
-|   --------------------------                                             |
-|   * Attempt login with new credentials                                   |
-|   * Confirm successful authentication                                    |
-|                           |                                              |
-|          +----------------+----------------+                             |
-|          |                |                |                             |
-|          v                v                v                             |
-|   +-------------+  +-------------+  +-------------+                     |
-|   |   SUCCESS   |  |   FAILURE   |  |   RETRY     |                     |
-|   |             |  |             |  |             |                     |
-|   | Update vault|  | Keep old    |  | Reconcile   |                     |
-|   | Log success |  | Alert admin |  | Try again   |                     |
-|   +-------------+  +-------------+  +-------------+                     |
-|                                                                            |
-+============================================================================+
++===============================================================================+
+|                      PASSWORD ROTATION WORKFLOW                               |
++===============================================================================+
+|                                                                               |
+|  1. TRIGGER                                                                   |
+|  ----------                                                                   |
+|  +----------------+   +----------------+   +----------------+                 |
+|  |   Scheduled    |   |   On-Demand    |   |  Post-Session  |                 |
+|  |    (cron)      |   |   (manual)     |   |  (automatic)   |                 |
+|  +-------+--------+   +-------+--------+   +-------+--------+                 |
+|          |                    |                    |                          |
+|          +--------------------+--------------------+                          |
+|                               |                                               |
+|                               v                                               |
+|  2. CONNECT TO TARGET                                                         |
+|  --------------------                                                         |
+|  * Use current credentials or reconciliation account                          |
+|  * SSH/WinRM/API connection                                                   |
+|                               |                                               |
+|                               v                                               |
+|  3. GENERATE NEW PASSWORD                                                     |
+|  ------------------------                                                     |
+|  * Apply password policy     * Character requirements                         |
+|  * Length requirements       * Exclusion list                                 |
+|                               |                                               |
+|                               v                                               |
+|  4. CHANGE PASSWORD ON TARGET                                                 |
+|  ----------------------------                                                 |
+|  * Execute change command/API   * Platform-specific method                    |
+|                               |                                               |
+|                               v                                               |
+|  5. VERIFY NEW PASSWORD                                                       |
+|  ----------------------                                                       |
+|  * Attempt login with new credentials                                         |
+|  * Confirm successful authentication                                          |
+|                               |                                               |
+|          +--------------------+--------------------+                          |
+|          v                    v                    v                          |
+|  +----------------+   +----------------+   +----------------+                 |
+|  |    SUCCESS     |   |    FAILURE     |   |     RETRY      |                 |
+|  |                |   |                |   |                |                 |
+|  | Update vault   |   | Keep old pass  |   | Reconcile      |                 |
+|  | Log success    |   | Alert admin    |   | Try again      |                 |
+|  +----------------+   +----------------+   +----------------+                 |
+|                                                                               |
++===============================================================================+
 ```
 
 #### Rotation Policies
@@ -609,62 +581,49 @@ password_policy:
 ### Architecture
 
 ```
-+=============================================================================+
-|                          ACCESS MANAGER                                      |
-+=============================================================================+
-|                                                                              |
-|   +---------------------------------------------------------------------+  |
-|   |                      WEB INTERFACE                                   |  |
-|   |                                                                      |  |
-|   |  +-------------------------------------------------------------+   |   |
-|   |  |                    USER PORTAL                               |   |  |
-|   |  |                                                              |   |  |
-|   |  |  +-----------+  +-----------+  +-----------+               |   |  |
-|   |  |  |  Target   |  |  Session  |  |  Self-    |               |   |  |
-|   |  |  |  Browser  |  |  Launcher |  |  Service  |               |   |  |
-|   |  |  |           |  |           |  |           |               |   |  |
-|   |  |  | * Search  |  | * HTML5   |  | * Password|               |   |  |
-|   |  |  | * Filter  |  | * RDP     |  |   change  |               |   |  |
-|   |  |  | * Favorit |  | * SSH     |  | * Profile |               |   |  |
-|   |  |  | * Recent  |  | * VNC     |  | * Prefs   |               |   |  |
-|   |  |  +-----------+  +-----------+  +-----------+               |   |  |
-|   |  |                                                              |   |  |
-|   |  +-------------------------------------------------------------+   |   |
-|   |                                                                      |  |
-|   |  +-------------------------------------------------------------+   |   |
-|   |  |                   ADMIN INTERFACE                            |   |  |
-|   |  |                                                              |   |  |
-|   |  |  * Configuration management                                  |   |  |
-|   |  |  * User/group administration                                 |   |  |
-|   |  |  * Target management                                         |   |  |
-|   |  |  * Policy configuration                                      |   |  |
-|   |  |  * Reporting and audit                                       |   |  |
-|   |  |                                                              |   |  |
-|   |  +-------------------------------------------------------------+   |   |
-|   |                                                                      |  |
-|   +---------------------------------------------------------------------+  |
-|                                                                              |
-|   +---------------------------------------------------------------------+  |
-|   |                      HTML5 SESSION CLIENT                            |  |
-|   |                                                                      |  |
-|   |   Technology: Apache Guacamole-based                                |  |
-|   |                                                                      |  |
-|   |   Supported Protocols:                                              |  |
-|   |   +-- RDP (full Windows desktop)                                    |  |
-|   |   +-- SSH (terminal emulator)                                       |  |
-|   |   +-- VNC (remote desktop)                                          |  |
-|   |   +-- Telnet (terminal)                                             |  |
-|   |                                                                      |  |
-|   |   Features:                                                         |  |
-|   |   +-- Clipboard support (text)                                      |  |
-|   |   +-- File transfer (upload/download)                               |  |
-|   |   +-- Audio redirection (optional)                                  |  |
-|   |   +-- Keyboard mapping                                              |  |
-|   |   +-- Multi-monitor support                                         |  |
-|   |                                                                      |  |
-|   +---------------------------------------------------------------------+  |
-|                                                                              |
-+=============================================================================+
++===============================================================================+
+|                            ACCESS MANAGER                                     |
++===============================================================================+
+|                                                                               |
+|  +------------------------------------------------------------------------+   |
+|  |                        WEB INTERFACE                                   |   |
+|  |                                                                        |   |
+|  |  +------------------------------------------------------------------+  |   |
+|  |  |                      USER PORTAL                                 |  |   |
+|  |  |                                                                  |  |   |
+|  |  |  +-------------+   +-------------+   +-------------+             |  |   |
+|  |  |  |   Target    |   |   Session   |   |    Self-    |             |  |   |
+|  |  |  |   Browser   |   |   Launcher  |   |   Service   |             |  |   |
+|  |  |  |             |   |             |   |             |             |  |   |
+|  |  |  | * Search    |   | * HTML5     |   | * Password  |             |  |   |
+|  |  |  | * Filter    |   | * RDP       |   |   change    |             |  |   |
+|  |  |  | * Favorites |   | * SSH       |   | * Profile   |             |  |   |
+|  |  |  | * Recent    |   | * VNC       |   | * Prefs     |             |  |   |
+|  |  |  +-------------+   +-------------+   +-------------+             |  |   |
+|  |  +------------------------------------------------------------------+  |   |
+|  |                                                                        |   |
+|  |  +------------------------------------------------------------------+  |   |
+|  |  |                     ADMIN INTERFACE                              |  |   |
+|  |  |                                                                  |  |   |
+|  |  |  * Configuration management    * User/group administration      |  |   |
+|  |  |  * Target management           * Policy configuration           |  |   |
+|  |  |  * Reporting and audit                                          |  |   |
+|  |  +------------------------------------------------------------------+  |   |
+|  +------------------------------------------------------------------------+   |
+|                                                                               |
+|  +------------------------------------------------------------------------+   |
+|  |                     HTML5 SESSION CLIENT                               |   |
+|  |                                                                        |   |
+|  |  Technology: Apache Guacamole-based                                    |   |
+|  |                                                                        |   |
+|  |  Supported Protocols:                      Features:                   |   |
+|  |  +-- RDP (full Windows desktop)            +-- Clipboard support       |   |
+|  |  +-- SSH (terminal emulator)               +-- File transfer           |   |
+|  |  +-- VNC (remote desktop)                  +-- Audio redirection       |   |
+|  |  +-- Telnet (terminal)                     +-- Multi-monitor support   |   |
+|  +------------------------------------------------------------------------+   |
+|                                                                               |
++===============================================================================+
 ```
 
 ### User Interface Components
@@ -672,41 +631,40 @@ password_policy:
 #### Target Browser
 
 ```
-TARGET BROWSER INTERFACE
-========================
-
-+=========================================================================+
-|  [Search: ____________]  [Filter v]  [View: Grid | List]               |
-+=========================================================================+
-|                                                                          |
-|  FAVORITES                                                              |
-|  ----------                                                             |
-|  +-------------+  +-------------+  +-------------+                     |
-|  | srv-prod    |  | db-oracle   |  | fw-main     |                     |
-|  |   SSH       |  |   SQL*Plus  |  |   SSH       |                     |
-|  |   [Connect] |  |   [Connect] |  |   [Connect] |                     |
-|  +-------------+  +-------------+  +-------------+                     |
-|                                                                          |
-|  RECENT                                                                 |
-|  ------                                                                 |
-|  * srv-web-01 / root (SSH) - 2 hours ago                               |
-|  * dc01.corp / Administrator (RDP) - 5 hours ago                       |
-|  * switch-core / admin (SSH) - Yesterday                               |
-|                                                                          |
-|  ALL TARGETS                                                            |
-|  -----------                                                            |
-|  Production Servers                                                     |
-|     +-- srv-prod-01 (SSH, RDP)                                         |
-|     +-- srv-prod-02 (SSH, RDP)                                         |
-|     +-- srv-prod-03 (SSH)                                              |
-|  Network Devices                                                        |
-|     +-- fw-main (SSH)                                                  |
-|     +-- switch-core (SSH)                                              |
-|  Databases                                                              |
-|     +-- db-oracle (SQL*Plus)                                           |
-|     +-- db-mysql (MySQL)                                               |
-|                                                                          |
-+=========================================================================+
++===============================================================================+
+|                        TARGET BROWSER INTERFACE                               |
++===============================================================================+
+|  [Search: ____________]  [Filter v]  [View: Grid | List]                      |
++===============================================================================+
+|                                                                               |
+|  FAVORITES                                                                    |
+|  ---------                                                                    |
+|  +---------------+   +---------------+   +---------------+                    |
+|  | srv-prod      |   | db-oracle     |   | fw-main       |                    |
+|  |   SSH         |   |   SQL*Plus    |   |   SSH         |                    |
+|  |   [Connect]   |   |   [Connect]   |   |   [Connect]   |                    |
+|  +---------------+   +---------------+   +---------------+                    |
+|                                                                               |
+|  RECENT                                                                       |
+|  ------                                                                       |
+|  * srv-web-01 / root (SSH) - 2 hours ago                                      |
+|  * dc01.corp / Administrator (RDP) - 5 hours ago                              |
+|  * switch-core / admin (SSH) - Yesterday                                      |
+|                                                                               |
+|  ALL TARGETS                                                                  |
+|  -----------                                                                  |
+|  Production Servers                                                           |
+|     +-- srv-prod-01 (SSH, RDP)                                                |
+|     +-- srv-prod-02 (SSH, RDP)                                                |
+|     +-- srv-prod-03 (SSH)                                                     |
+|  Network Devices                                                              |
+|     +-- fw-main (SSH)                                                         |
+|     +-- switch-core (SSH)                                                     |
+|  Databases                                                                    |
+|     +-- db-oracle (SQL*Plus)                                                  |
+|     +-- db-mysql (MySQL)                                                      |
+|                                                                               |
++===============================================================================+
 ```
 
 #### HTML5 Session Features
@@ -737,44 +695,41 @@ Access Manager provides responsive design for mobile devices:
 ### Internal Communication
 
 ```
-+=============================================================================+
-|                      COMPONENT INTERACTION                                   |
-+=============================================================================+
-|                                                                              |
-|                        +-----------------+                                  |
-|                        |  Access Manager |                                  |
-|                        |    (Web UI)     |                                  |
-|                        +--------+--------+                                  |
-|                                 |                                           |
-|                                 | REST API                                  |
-|                                 | (HTTPS)                                   |
-|                                 v                                           |
-|   +---------------------------------------------------------------------+  |
-|   |                       WALLIX BASTION CORE                            |  |
-|   |                                                                      |  |
-|   |  +-------------------+         +-------------------+               |   |
-|   |  |  Session Manager  |<------->|  Password Manager |               |   |
-|   |  |                   |         |                   |               |   |
-|   |  |  * Auth requests  |  Cred   |  * Credential     |               |   |
-|   |  |  * Session broker |  Fetch  |    retrieval      |               |   |
-|   |  |  * Monitoring     |         |  * Injection      |               |   |
-|   |  +---------+---------+         +---------+---------+               |   |
-|   |            |                             |                          |  |
-|   |            |         +-------------------+                          |  |
-|   |            |         |                                              |  |
-|   |            v         v                                              |  |
-|   |  +-------------------------------------------------------------+   |   |
-|   |  |                      MariaDB Database                        |   |  |
-|   |  |                                                              |   |  |
-|   |  |  * Configuration data      * Session metadata               |   |   |
-|   |  |  * User/group definitions  * Audit logs                     |   |   |
-|   |  |  * Encrypted credentials   * Authorization policies         |   |   |
-|   |  |                                                              |   |  |
-|   |  +-------------------------------------------------------------+   |   |
-|   |                                                                      |  |
-|   +---------------------------------------------------------------------+  |
-|                                                                              |
-+=============================================================================+
++===============================================================================+
+|                         COMPONENT INTERACTION                                 |
++===============================================================================+
+|                                                                               |
+|                          +-------------------+                                |
+|                          |   Access Manager  |                                |
+|                          |     (Web UI)      |                                |
+|                          +---------+---------+                                |
+|                                    |                                          |
+|                                    | REST API (HTTPS)                         |
+|                                    v                                          |
+|  +------------------------------------------------------------------------+   |
+|  |                        WALLIX BASTION CORE                             |   |
+|  |                                                                        |   |
+|  |  +------------------------+       +------------------------+           |   |
+|  |  |    Session Manager     |<----->|   Password Manager     |           |   |
+|  |  |                        | Cred  |                        |           |   |
+|  |  |  * Auth requests       | Fetch |  * Credential retrieval|           |   |
+|  |  |  * Session broker      |       |  * Injection           |           |   |
+|  |  |  * Monitoring          |       |                        |           |   |
+|  |  +-----------+------------+       +-----------+------------+           |   |
+|  |              |                                |                        |   |
+|  |              +----------------+---------------+                        |   |
+|  |                               |                                        |   |
+|  |                               v                                        |   |
+|  |  +--------------------------------------------------------------------+|   |
+|  |  |                      MariaDB Database                              ||   |
+|  |  |                                                                    ||   |
+|  |  |  * Configuration data      * Session metadata                      ||   |
+|  |  |  * User/group definitions  * Audit logs                            ||   |
+|  |  |  * Encrypted credentials   * Authorization policies                ||   |
+|  |  +--------------------------------------------------------------------+|   |
+|  +------------------------------------------------------------------------+   |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Session Establishment Flow
