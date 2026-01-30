@@ -120,28 +120,38 @@ apt install -y wallix-bastion
 ### Step 3: Configure MariaDB for Replication
 
 ```bash
-# Edit MariaDB configuration for primary role
-cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
+# Configure MariaDB for replication (primary role)
+# Note: WALLIX Bastion uses `bastion-replication` for automated setup
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+# Server identification (unique per node)
+server-id = 1
 
-# Replication settings (Primary)
-wal_level = replica
-max_wal_senders = 5
-wal_keep_size = 1GB
-hot_standby = on
-synchronous_commit = on
-EOF
+# Binary logging for replication
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
+max_binlog_size = 100M
 
-# Configure replication access
-cat >> /etc/mariadb/16/main/pg_hba.conf << 'EOF'
+# Enable GTID for easier failover
+gtid_strict_mode = ON
+log_slave_updates = ON
 
-# Replication
-host    replication     replicator      10.100.254.2/32         scram-sha-256
-host    replication     replicator      10.100.1.11/32          scram-sha-256
+# Connection settings
+bind-address = 0.0.0.0
+
+# For Galera synchronous replication (optional):
+# wsrep_on = ON
+# wsrep_cluster_address = "gcomm://10.100.1.10,10.100.1.11"
 EOF
 
 # Create replication user
 sudo mysql << 'EOF'
-CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'ReplicaSecurePass2026!';
+CREATE USER 'replicator'@'10.100.254.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.100.254.%';
+CREATE USER 'replicator'@'10.100.1.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.100.1.%';
+FLUSH PRIVILEGES;
 EOF
 
 # Restart MariaDB
@@ -247,24 +257,51 @@ apt install -y wallix-bastion
 systemctl stop mariadb
 
 # Remove existing data
-rm -rf /var/lib/mariadb/16/main/*
+rm -rf /var/lib/mysql/*
 
 # Perform base backup from primary
-mariabackup --backup --target-dir=/tmp/backup --host=10.100.254.1 --user=replicator --password=ReplicaSecurePass2026!
+mariabackup --backup --target-dir=/tmp/backup \
+    --host=10.100.254.1 \
+    --user=replicator \
+    --password=ReplicaSecurePass2026!
 
-# Configure standby
-cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
+# Prepare and restore backup
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
 
-# Standby settings
-hot_standby = on
-primary_conninfo = 'host=10.100.254.1 port=3306 user=replicator password=ReplicaSecurePass2026!'
+# Configure replica settings
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+# Server identification (must be unique)
+server-id = 2
+
+# Binary logging
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
+
+# GTID and replica settings
+gtid_strict_mode = ON
+log_slave_updates = ON
+read_only = ON
 EOF
 
-# Start MariaDB in standby mode
+# Start MariaDB
 systemctl start mariadb
 
+# Configure replication to primary
+sudo mysql << 'SQL'
+CHANGE MASTER TO
+    MASTER_HOST='10.100.254.1',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='ReplicaSecurePass2026!',
+    MASTER_USE_GTID=slave_pos;
+START SLAVE;
+SQL
+
 # Verify replication status
-sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 ```
 
 ### Step 4: Configure Shared Storage
@@ -346,25 +383,16 @@ pcs resource create wallix-service systemd:wabengine \
     op start timeout=60s \
     op stop timeout=60s
 
-# Create MariaDB promotion resource
-pcs resource create pgsql-primary ocf:heartbeat:pgsql \
-    pgctl="/usr/lib/mariadb/16/bin/pg_ctl" \
-    pgdata="/var/lib/mariadb/16/main" \
-    config="/etc/mariadb/16/main/mariadb.conf" \
-    rep_mode="sync" \
-    node_list="wallix-a1-hb wallix-a2-hb" \
-    primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
-    master_ip="10.100.1.100" \
+# Create MariaDB resource (using systemd for simplicity)
+# For advanced MariaDB HA, consider Galera cluster or external replication management
+pcs resource create mariadb-primary systemd:mariadb \
     op start timeout=60s \
     op stop timeout=60s \
-    op promote timeout=60s \
-    op demote timeout=60s \
-    op monitor interval=10s role=Master \
-    op monitor interval=30s role=Slave
+    op monitor interval=30s
 
 # Configure resource colocation and ordering
 pcs constraint colocation add wallix-service with wallix-vip INFINITY
-pcs constraint colocation add wallix-vip with pgsql-primary INFINITY with-rsc-role=Master
+pcs constraint colocation add wallix-vip with mariadb-primary INFINITY
 pcs constraint order wallix-vip then wallix-service
 
 # Verify configuration
@@ -561,15 +589,15 @@ pcs status
 # Full List of Resources:
 #   * wallix-vip    (ocf:heartbeat:IPaddr2):     Started wallix-a1-hb
 #   * wallix-service (systemd:wabengine):        Started wallix-a1-hb
-#   * pgsql-primary (ocf:heartbeat:pgsql):       Master wallix-a1-hb
+#   * mariadb-primary (systemd:mariadb):         Started wallix-a1-hb
 
 # Check MariaDB replication
-sudo mysql -c "SELECT client_addr, state, sync_state FROM SHOW SLAVE STATUS;"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
-# Expected output:
-#  client_addr   |   state   | sync_state
-# ---------------+-----------+------------
-#  10.100.254.2  | streaming | sync
+# Expected output should show:
+# Slave_IO_Running: Yes
+# Slave_SQL_Running: Yes
+# Seconds_Behind_Master: 0
 ```
 
 ### Service Health Checks

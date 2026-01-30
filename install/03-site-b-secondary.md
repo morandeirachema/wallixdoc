@@ -98,25 +98,33 @@ apt update
 apt install -y wallix-bastion
 
 # Configure MariaDB for replication (primary)
-cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
+# Note: WALLIX Bastion uses `bastion-replication` for automated setup
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+# Server identification (unique per node)
+server-id = 1
 
-# Replication settings (Primary)
-wal_level = replica
-max_wal_senders = 5
-wal_keep_size = 1GB
-hot_standby = on
-synchronous_commit = on
+# Binary logging for replication
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
+max_binlog_size = 100M
+
+# Enable GTID for easier failover
+gtid_strict_mode = ON
+log_slave_updates = ON
+
+# Connection settings
+bind-address = 0.0.0.0
 EOF
 
-cat >> /etc/mariadb/16/main/pg_hba.conf << 'EOF'
-
-# Replication
-host    replication     replicator      10.200.254.2/32         scram-sha-256
-host    replication     replicator      10.200.1.11/32          scram-sha-256
-EOF
-
+# Create replication user
 sudo mysql << 'EOF'
-CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'ReplicaSecurePass2026!';
+CREATE USER 'replicator'@'10.200.254.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.200.254.%';
+CREATE USER 'replicator'@'10.200.1.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.200.1.%';
+FLUSH PRIVILEGES;
 EOF
 
 systemctl restart mariadb
@@ -183,20 +191,43 @@ EOF
 apt update
 apt install -y wallix-bastion
 
-# Configure MariaDB as standby
+# Configure MariaDB as replica
 systemctl stop mariadb
-rm -rf /var/lib/mariadb/16/main/*
+rm -rf /var/lib/mysql/*
 
-mariabackup --backup --target-dir=/tmp/backup --host=10.200.254.1 --user=replicator --password=ReplicaSecurePass2026!
+# Backup from primary
+mariabackup --backup --target-dir=/tmp/backup \
+    --host=10.200.254.1 \
+    --user=replicator \
+    --password=ReplicaSecurePass2026!
 
-cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
+# Prepare and restore
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
 
-# Standby settings
-hot_standby = on
-primary_conninfo = 'host=10.200.254.1 port=3306 user=replicator password=ReplicaSecurePass2026!'
+# Configure replica settings
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+server-id = 2
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+gtid_strict_mode = ON
+log_slave_updates = ON
+read_only = ON
 EOF
 
 systemctl start mariadb
+
+# Configure replication
+sudo mysql << 'SQL'
+CHANGE MASTER TO
+    MASTER_HOST='10.200.254.1',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='ReplicaSecurePass2026!',
+    MASTER_USE_GTID=slave_pos;
+START SLAVE;
+SQL
 
 # Configure shared storage
 apt install -y nfs-common

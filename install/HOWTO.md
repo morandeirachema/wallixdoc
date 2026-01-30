@@ -995,78 +995,63 @@ systemctl restart nginx
 #### Step 2.5: Configure MariaDB for Replication
 
 ```bash
-# Edit MariaDB configuration
-cat >> /etc/mariadb/15/main/mariadb.conf << 'EOF'
+# Configure MariaDB for replication
+# Note: WALLIX Bastion uses `bastion-replication` command for most replication setup
+# Manual configuration shown for reference
 
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
 # =============================================================================
 # WALLIX HA Replication Configuration
 # =============================================================================
 
-# Connection Settings
-listen_addresses = '*'
-port = 3306
+[mysqld]
+# Server identification (unique per node)
+server-id = 1
+
+# Binary logging for replication
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
+max_binlog_size = 100M
+
+# Enable GTID for easier failover
+gtid_strict_mode = ON
+log_slave_updates = ON
+
+# Connection settings
+bind-address = 0.0.0.0
 max_connections = 500
 
-# Replication
-wal_level = replica
-max_wal_senders = 10
-wal_keep_size = 1GB
-hot_standby = on
-synchronous_commit = on
-synchronous_standby_names = 'wallix_a2'
+# Performance tuning
+innodb_buffer_pool_size = 8G
+innodb_log_file_size = 1G
+innodb_flush_log_at_trx_commit = 1
+sync_binlog = 1
 
-# Performance
-shared_buffers = 8GB
-effective_cache_size = 24GB
-maintenance_work_mem = 2GB
-checkpoint_completion_target = 0.9
-wal_buffers = 64MB
-default_statistics_target = 100
-random_page_cost = 1.1
-effective_io_concurrency = 200
-work_mem = 256MB
-min_wal_size = 1GB
-max_wal_size = 4GB
-max_worker_processes = 8
-max_parallel_workers_per_gather = 4
-max_parallel_workers = 8
-
-# Logging
-log_destination = 'stderr'
-logging_collector = on
-log_directory = 'log'
-log_filename = 'mariadb-%Y-%m-%d.log'
-log_rotation_age = 1d
-log_rotation_size = 100MB
-log_min_duration_statement = 1000
-log_checkpoints = on
-log_connections = on
-log_disconnections = on
-log_lock_waits = on
-log_temp_files = 0
-EOF
-
-# Configure replication authentication
-cat >> /etc/mariadb/15/main/pg_hba.conf << 'EOF'
-
-# WALLIX HA Replication
-host    replication     replicator      10.100.254.2/32         scram-sha-256
-host    replication     replicator      10.100.1.11/32          scram-sha-256
-host    all             all             10.100.1.0/24           scram-sha-256
-host    all             all             10.100.254.0/30         scram-sha-256
+# For synchronous replication (Galera-style), uncomment:
+# wsrep_on = ON
+# wsrep_provider = /usr/lib/galera/libgalera_smm.so
+# wsrep_cluster_address = "gcomm://10.100.1.10,10.100.1.11"
+# wsrep_cluster_name = "wallix_cluster"
+# wsrep_node_address = "10.100.1.10"
+# wsrep_node_name = "wallix-a1"
+# wsrep_sst_method = mariabackup
 EOF
 
 # Create replication user
 sudo mysql << 'SQL'
-CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'ReplicaSecurePass2026!';
-ALTER ROLE replicator SET synchronous_commit = on;
+CREATE USER 'replicator'@'10.100.254.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.100.254.%';
+CREATE USER 'replicator'@'10.100.1.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.100.1.%';
+FLUSH PRIVILEGES;
 SQL
 
 # Restart MariaDB
 systemctl restart mariadb
 
-# Verify
-sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
+# Verify replication status
+sudo mysql -e "SHOW MASTER STATUS\G"
 ```
 
 ### Day 2: Node 2 - Installation and Replication
@@ -1108,40 +1093,66 @@ wab-admin ssl-install \
 systemctl stop mariadb
 
 # Clear existing data
-rm -rf /var/lib/mariadb/15/main/*
+rm -rf /var/lib/mysql/*
 
-# Take base backup from primary
-mariabackup \
-    -h 10.100.254.1 \
-    -U replicator \
-    -D /var/lib/mariadb/15/main \
-    -P -R -X stream -S wallix_a2_slot
+# Take base backup from primary using mariabackup
+mariabackup --backup --target-dir=/tmp/backup \
+    --host=10.100.254.1 \
+    --user=replicator \
+    --password=ReplicaSecurePass2026!
 
-# The -R flag creates standby.signal and configures primary_conninfo
+# Prepare the backup
+mariabackup --prepare --target-dir=/tmp/backup
 
-# Verify standby configuration
-cat /var/lib/mariadb/15/main/mariadb.auto.conf
-# Should contain: primary_conninfo = 'host=10.100.254.1 port=3306 user=replicator ...'
+# Restore the backup
+mariabackup --copy-back --target-dir=/tmp/backup
 
-# Add standby settings
-cat >> /etc/mariadb/15/main/mariadb.conf << 'EOF'
+# Fix permissions
+chown -R mysql:mysql /var/lib/mysql
 
-# Standby Settings
-hot_standby = on
-hot_standby_feedback = on
-primary_conninfo = 'host=10.100.254.1 port=3306 user=replicator password=ReplicaSecurePass2026! application_name=wallix_a2'
-primary_slot_name = 'wallix_a2_slot'
+# Configure as replica
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+# Server identification (must be unique - different from primary)
+server-id = 2
+
+# Binary logging for replication
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
+max_binlog_size = 100M
+
+# Enable GTID
+gtid_strict_mode = ON
+log_slave_updates = ON
+
+# Replica settings
+read_only = ON
+
+# Connection settings
+bind-address = 0.0.0.0
+max_connections = 500
 EOF
 
 # Start MariaDB
 systemctl start mariadb
 
-# Verify replication
-sudo mysql -c "SELECT pg_is_in_recovery();"
-# Should return: t (true, meaning it's a standby)
+# Configure replication to primary
+sudo mysql << 'SQL'
+CHANGE MASTER TO
+    MASTER_HOST='10.100.254.1',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='ReplicaSecurePass2026!',
+    MASTER_USE_GTID=slave_pos;
+START SLAVE;
+SQL
 
-# On Node 1, verify replication status
-sudo mysql -c "SELECT client_addr, state, sync_state, sent_lsn, replay_lsn FROM SHOW SLAVE STATUS;"
+# Verify replication status
+sudo mysql -e "SHOW SLAVE STATUS\G"
+# Check: Slave_IO_Running: Yes, Slave_SQL_Running: Yes
+
+# On Node 1, verify replication from primary perspective
+sudo mysql -e "SHOW SLAVE HOSTS\G"
 ```
 
 ### Day 3: HA Cluster Setup
@@ -1203,26 +1214,12 @@ pcs resource create wallix-vip ocf:heartbeat:IPaddr2 \
     op start timeout=20s \
     op stop timeout=20s
 
-# Create MariaDB resource
-pcs resource create pgsql ocf:heartbeat:pgsql \
-    pgctl="/usr/lib/mariadb/15/bin/pg_ctl" \
-    pgdata="/var/lib/mariadb/15/main" \
-    config="/etc/mariadb/15/main/mariadb.conf" \
-    logfile="/var/log/mariadb/mariadb-15-main.log" \
-    rep_mode="sync" \
-    node_list="wallix-a1-hb wallix-a2-hb" \
-    restore_command="cp /var/lib/mariadb/15/archive/%f %p" \
-    primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
-    master_ip="10.100.1.100" \
-    restart_on_promote="true" \
+# Create MariaDB resource (using systemd for simplicity)
+# For advanced MariaDB HA, consider Galera cluster or external replication management
+pcs resource create mariadb systemd:mariadb \
     op start timeout=60s \
     op stop timeout=60s \
-    op promote timeout=30s \
-    op demote timeout=120s \
-    op monitor interval=15s timeout=10s \
-    op monitor interval=10s role=Master timeout=10s \
-    op notify timeout=60s \
-    promotable promoted-max=1 promoted-node-max=1 clone-max=2 clone-node-max=1 notify=true
+    op monitor interval=30s
 
 # Create WALLIX engine resource
 pcs resource create wallix-engine systemd:wabengine \
@@ -1237,17 +1234,13 @@ pcs resource create wallix-web systemd:wab-webui \
     op stop timeout=60s
 
 # Group WALLIX services
-pcs resource group add wallix-services wallix-engine wallix-web
+pcs resource group add wallix-services mariadb wallix-engine wallix-web
 
 # Set constraints
-# VIP must be on MariaDB master
-pcs constraint colocation add wallix-vip with pgsql-clone INFINITY with-rsc-role=Master
-
 # WALLIX services must be with VIP
 pcs constraint colocation add wallix-services with wallix-vip INFINITY
 
-# Order: MariaDB -> VIP -> WALLIX services
-pcs constraint order promote pgsql-clone then start wallix-vip
+# Order: VIP -> WALLIX services (includes MariaDB)
 pcs constraint order wallix-vip then wallix-services
 
 # Verify configuration

@@ -111,29 +111,36 @@ ssh root@pam4ot-node1.lab.local hostname
 ### On Node 1 (Primary)
 
 ```bash
-# Edit MariaDB configuration
-cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
+# Configure MariaDB for replication
+# Note: WALLIX Bastion uses `bastion-replication` for automated setup
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+# Server identification (unique per node)
+server-id = 1
 
-# Replication Settings
-wal_level = replica
-max_wal_senders = 5
-wal_keep_size = 1GB
-hot_standby = on
-synchronous_commit = on
-synchronous_standby_names = 'pam4ot_node2'
-EOF
+# Binary logging for replication
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
+max_binlog_size = 100M
 
-# Configure replication access
-cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
+# Enable GTID for easier failover
+gtid_strict_mode = ON
+log_slave_updates = ON
 
-# Replication connections
-host    replication     replicator      10.10.1.12/32      scram-sha-256
-host    wabdb           wabadmin        10.10.1.12/32      scram-sha-256
+# Connection settings
+bind-address = 0.0.0.0
+
+# For synchronous replication (Galera-style), uncomment:
+# wsrep_on = ON
+# wsrep_cluster_address = "gcomm://10.10.1.11,10.10.1.12"
 EOF
 
 # Create replication user
 sudo mysql << 'EOF'
-CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'ReplicatorPass123!';
+CREATE USER 'replicator'@'10.10.1.%' IDENTIFIED BY 'ReplicatorPass123!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.10.1.%';
+FLUSH PRIVILEGES;
 EOF
 
 # Restart MariaDB
@@ -149,40 +156,64 @@ systemctl stop mariadb
 # Remove existing data
 rm -rf /var/lib/mysql/*
 
-# Clone from primary
-mariabackup -h pam4ot-node1.lab.local -D /var/lib/mysql -U replicator -P -Xs -R
+# Clone from primary using mariabackup
+mariabackup --backup --target-dir=/tmp/backup \
+    --host=pam4ot-node1.lab.local \
+    --user=replicator \
+    --password=ReplicatorPass123!
 
-# When prompted, enter: ReplicatorPass123!
+# Prepare and restore backup
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
 
-# Configure as standby
-cat > /var/lib/mysql/mariadb.auto.cnf << 'EOF'
-primary_conninfo = 'host=pam4ot-node1.lab.local port=3306 user=replicator password=ReplicatorPass123! application_name=pam4ot_node2'
-EOF
+# Configure replica settings
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+# Server identification (must be unique)
+server-id = 2
 
-# Edit mariadb.cnf for hot standby
-cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
+# Binary logging
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
 
-# Hot Standby Settings
-hot_standby = on
-hot_standby_feedback = on
+# GTID and replica settings
+gtid_strict_mode = ON
+log_slave_updates = ON
+read_only = ON
 EOF
 
 # Start MariaDB
 systemctl start mariadb
+
+# Configure replication to primary
+sudo mysql << 'SQL'
+CHANGE MASTER TO
+    MASTER_HOST='pam4ot-node1.lab.local',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='ReplicatorPass123!',
+    MASTER_USE_GTID=slave_pos;
+START SLAVE;
+SQL
 ```
 
 ### Verify Replication
 
 ```bash
 # On Node 1 (Primary):
-sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
+sudo mysql -e "SHOW MASTER STATUS\G"
+sudo mysql -e "SHOW SLAVE HOSTS\G"
 
 # Expected output should show node2 connected
 
 # On Node 2 (Replica):
 sudo mysql -e "SHOW SLAVE STATUS\G"
 
-# Should show replication slave is running
+# Should show:
+# Slave_IO_Running: Yes
+# Slave_SQL_Running: Yes
+# Seconds_Behind_Master: 0
 ```
 
 ---
@@ -434,7 +465,7 @@ pcs resource show
 # Node status
 pcs node status
 
-# Check replication lag
+# Check replication lag (on replica)
 sudo mysql -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master
 
 # Cluster properties
@@ -496,11 +527,32 @@ sudo mysql -e "SHOW SLAVE STATUS\G"
 # Check replication connection
 sudo mysql -e "SHOW SLAVE STATUS\G" | grep -E "(Slave_IO_Running|Slave_SQL_Running)"
 
-# Re-sync from primary (destructive)
+# Re-sync from primary (destructive - data loss on replica)
 systemctl stop mariadb
 rm -rf /var/lib/mysql/*
-mariabackup -h pam4ot-node1.lab.local -D /var/lib/mysql -U replicator -P -Xs -R
+
+# Backup from primary
+mariabackup --backup --target-dir=/tmp/backup \
+    --host=pam4ot-node1.lab.local \
+    --user=replicator \
+    --password=ReplicatorPass123!
+
+# Prepare and restore
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
+
 systemctl start mariadb
+
+# Re-configure replication
+sudo mysql << 'SQL'
+CHANGE MASTER TO
+    MASTER_HOST='pam4ot-node1.lab.local',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='ReplicatorPass123!',
+    MASTER_USE_GTID=slave_pos;
+START SLAVE;
+SQL
 ```
 
 ---

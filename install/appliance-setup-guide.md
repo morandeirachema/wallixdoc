@@ -400,29 +400,38 @@ apt install -y wallix-bastion
 #### Step 3: Configure MariaDB for Replication (Primary)
 
 ```bash
-# Edit MariaDB configuration
-cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
+# Configure MariaDB for replication
+# Note: WALLIX Bastion uses `bastion-replication` for automated setup
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+# Server identification (unique per node)
+server-id = 1
 
-# Replication settings (Primary)
-wal_level = replica
-max_wal_senders = 5
-wal_keep_size = 1GB
-hot_standby = on
-synchronous_commit = on
-synchronous_standby_names = 'wallix_standby'
-EOF
+# Binary logging for replication
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
+max_binlog_size = 100M
 
-# Configure replication access
-cat >> /etc/mariadb/16/main/pg_hba.conf << 'EOF'
+# Enable GTID for easier failover
+gtid_strict_mode = ON
+log_slave_updates = ON
 
-# Replication from Node 2
-host    replication     replicator      10.100.254.2/32         scram-sha-256
-host    replication     replicator      10.100.1.11/32          scram-sha-256
+# Connection settings
+bind-address = 0.0.0.0
+
+# For synchronous replication (Galera-style), uncomment:
+# wsrep_on = ON
+# wsrep_cluster_address = "gcomm://10.100.1.10,10.100.1.11"
 EOF
 
 # Create replication user
 sudo mysql << 'EOF'
-CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'ReplicaSecurePass2026!';
+CREATE USER 'replicator'@'10.100.254.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.100.254.%';
+CREATE USER 'replicator'@'10.100.1.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
+GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.100.1.%';
+FLUSH PRIVILEGES;
 EOF
 
 # Restart MariaDB
@@ -494,37 +503,62 @@ EOF
 systemctl restart networking
 ```
 
-#### Step 2: Install WALLIX and Configure MariaDB Standby
+#### Step 2: Install WALLIX and Configure MariaDB Replica
 
 ```bash
 # Install WALLIX Bastion
 apt update
 apt install -y wallix-bastion
 
-# Stop MariaDB to configure as standby
+# Stop MariaDB to configure as replica
 systemctl stop mariadb
 
 # Remove existing data directory
-rm -rf /var/lib/mariadb/16/main/*
+rm -rf /var/lib/mysql/*
 
 # Create base backup from primary
-mariabackup -h 10.100.254.1 -U replicator -D /var/lib/mariadb/16/main -Fp -Xs -P -R
+mariabackup --backup --target-dir=/tmp/backup \
+    --host=10.100.254.1 \
+    --user=replicator \
+    --password=ReplicaSecurePass2026!
 
-# The -R flag creates standby.signal and configures replication
+# Prepare and restore backup
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
 
-# Configure standby settings
-cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
+# Configure replica settings
+cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
+[mysqld]
+# Server identification (must be unique)
+server-id = 2
 
-# Standby configuration
-hot_standby = on
-primary_conninfo = 'host=10.100.254.1 port=3306 user=replicator password=ReplicaSecurePass2026! application_name=wallix_standby'
+# Binary logging
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 7
+
+# GTID and replica settings
+gtid_strict_mode = ON
+log_slave_updates = ON
+read_only = ON
 EOF
 
 # Start MariaDB
 systemctl start mariadb
 
-# Verify replication status (on Node 1)
-sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
+# Configure replication to primary
+sudo mysql << 'SQL'
+CHANGE MASTER TO
+    MASTER_HOST='10.100.254.1',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='ReplicaSecurePass2026!',
+    MASTER_USE_GTID=slave_pos;
+START SLAVE;
+SQL
+
+# Verify replication status
+sudo mysql -e "SHOW SLAVE STATUS\G"
 ```
 
 ### Cluster Configuration (Both Nodes)
@@ -778,8 +812,8 @@ wabadmin status
 wabadmin license-info
 
 # Check database status
-sudo mysql -c "SELECT version();"
-sudo mysql -c "SELECT pg_is_in_recovery();"
+sudo mysql -e "SELECT version();"
+sudo mysql -e "SHOW MASTER STATUS\G"
 ```
 
 ### HA Cluster Status
@@ -797,11 +831,12 @@ corosync-cfgtool -s
 # Check quorum
 corosync-quorumtool
 
-# Check MariaDB replication (on primary)
-sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
+# Check MariaDB replication (on replica)
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
-# Check MariaDB standby status (on standby)
-sudo mysql -c "SELECT pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn();"
+# Check MariaDB primary status (on primary)
+sudo mysql -e "SHOW MASTER STATUS\G"
+sudo mysql -e "SHOW SLAVE HOSTS\G"
 ```
 
 ### Connectivity Tests
@@ -872,14 +907,14 @@ nc -zv localhost 3389
 |  ================================                                          |
 |                                                                            |
 |  Check replication status:                                                 |
-|  sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"             |
+|  sudo mysql -e "SHOW SLAVE STATUS\G"                                       |
 |                                                                            |
-|  Check standby lag:                                                        |
-|  sudo mysql -c "SELECT now() - pg_last_xact_replay_timestamp()" |
+|  Check replica lag:                                                        |
+|  sudo mysql -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master          |
 |                                                                            |
 |  Common causes:                                                            |
 |  * Network latency                                                         |
-|  * Disk I/O bottleneck on standby                                          |
+|  * Disk I/O bottleneck on replica                                          |
 |  * High write load on primary                                              |
 |                                                                            |
 +============================================================================+
