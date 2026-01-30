@@ -28,39 +28,39 @@ CyberArk uses a distributed architecture with multiple specialized servers:
 |                          MANAGEMENT LAYER                                  |
 |  +----------------------------------------------------------------------+  |
 |  |                                                                      |  |
-|  |  +-------------+    +-------------+    +-------------+              |   |
-|  |  |    PVWA     |    |   Mobile    |    |  Reports    |              |   |
-|  |  | Web Console |    |    App      |    |             |              |   |
-|  |  +------+------+    +------+------+    +------+------+              |   |
+|  |  +-------------+    +-------------+    +-------------+               |  |
+|  |  |    PVWA     |    |   Mobile    |    |  Reports    |               |  |
+|  |  | Web Console |    |    App      |    |             |               |  |
+|  |  +------+------+    +------+------+    +------+------+               |  |
 |  |         |                 |                  |                       |  |
-|  +---------|-----------------|------------------|------------------------+  |
-|            |                 |                  |                           |
-|            +-----------------+------------------+                           |
-|                              |                                              |
+|  +---------|-----------------|------------------|-----------------------+  |
+|            |                 |                  |                          |
+|            +-----------------+------------------+                          |
+|                              |                                             |
 |                          CORE LAYER                                        |
 |  +----------------------------------------------------------------------+  |
 |  |                              |                                       |  |
-|  |  +========================================================+         |   |
-|  |  |                    DIGITAL VAULT                       |         |   |
-|  |  |                                                        |         |   |
-|  |  |  * Proprietary encrypted filesystem                   |         |  |
-|  |  |  * Hardened Windows Server                            |         |  |
-|  |  |  * Master Policy (system defaults)                    |         |  |
-|  |  |  * Safes (logical credential containers)              |         |  |
-|  |  +========================================================+         |   |
+|  |  +========================================================+          |  |
+|  |  |                    DIGITAL VAULT                       |          |  |
+|  |  |                                                        |          |  |
+|  |  |  * Proprietary encrypted filesystem                    |          |  |
+|  |  |  * Hardened Windows Server                             |          |  |
+|  |  |  * Master Policy (system defaults)                     |          |  |
+|  |  |  * Safes (logical credential containers)               |          |  |
+|  |  +========================================================+          |  |
 |  |                              |                                       |  |
 |  +------------------------------|---------------------------------------+  |
 |                                 |                                          |
 |                        OPERATIONAL LAYER                                   |
 |  +----------------------------------------------------------------------+  |
 |  |                              |                                       |  |
-|  |  +-------------+    +-------------+    +-------------+              |   |
-|  |  |     CPM     |    |     PSM     |    |     PTA     |              |   |
-|  |  |             |    |             |    |             |              |   |
-|  |  | Password    |    | Session     |    | Threat      |              |   |
-|  |  | rotation    |    | recording   |    | analytics   |              |   |
-|  |  | (Windows)   |    | (Windows)   |    | (ML/AI)     |              |   |
-|  |  +-------------+    +-------------+    +-------------+              |   |
+|  |  +-------------+    +-------------+    +-------------+               |  |
+|  |  |     CPM     |    |     PSM     |    |     PTA     |               |  |
+|  |  |             |    |             |    |             |               |  |
+|  |  | Password    |    | Session     |    | Threat      |               |  |
+|  |  | rotation    |    | recording   |    | analytics   |               |  |
+|  |  | (Windows)   |    | (Windows)   |    | (ML/AI)     |               |  |
+|  |  +-------------+    +-------------+    +-------------+               |  |
 |  |                                                                      |  |
 |  +----------------------------------------------------------------------+  |
 |                                                                            |
@@ -83,15 +83,15 @@ WALLIX consolidates all PAM functions into a single appliance:
 |  |  +================================================================+  |  |
 |  |  |                  WALLIX BASTION APPLIANCE                      |  |  |
 |  |  |                                                                |  |  |
-|  |  |  +----------------+  +----------------+  +----------------+   |  |   |
-|  |  |  | Session        |  | Password       |  | Credential     |   |  |   |
-|  |  |  | Manager        |  | Manager        |  | Vault          |   |  |   |
-|  |  |  |                |  |                |  |                |   |  |   |
-|  |  |  | * Protocol     |  | * Rotation     |  | * MariaDB      |   |  |   |
-|  |  |  |   proxy        |  |   engine       |  | * AES-256-GCM  |   |  |   |
-|  |  |  | * Recording    |  | * Connectors   |  | * Argon2ID     |   |  |   |
-|  |  |  | * Monitoring   |  | * Verification |  | * HSM optional |   |  |   |
-|  |  |  +----------------+  +----------------+  +----------------+   |  |   |
+|  |  |  +----------------+  +----------------+  +----------------+    |  |  |
+|  |  |  | Session        |  | Password       |  | Credential     |    |  |  |
+|  |  |  | Manager        |  | Manager        |  | Vault          |    |  |  |
+|  |  |  |                |  |                |  |                |    |  |  |
+|  |  |  | * Protocol     |  | * Rotation     |  | * MariaDB      |    |  |  |
+|  |  |  |   proxy        |  |   engine       |  | * AES-256-GCM  |    |  |  |
+|  |  |  | * Recording    |  | * Connectors   |  | * Argon2ID     |    |  |  |
+|  |  |  | * Monitoring   |  | * Verification |  | * HSM optional |    |  |  |
+|  |  |  +----------------+  +----------------+  +----------------+    |  |  |
 |  |  |                                                                |  |  |
 |  |  |  +----------------------------------------------------------+  |  |  |
 |  |  |  |                   Web Admin Console                      |  |  |  |
@@ -135,61 +135,61 @@ WALLIX consolidates all PAM functions into a single appliance:
 |                          COMPONENT MAPPING                                 |
 +============================================================================+
 |                                                                            |
-|  +------------------------+-----------------------+-----------------------+ |
-|  | CyberArk               | WALLIX                | How It Works          | |
-|  +------------------------+-----------------------+-----------------------+ |
-|  |                        |                       |                       | |
-|  | Digital Vault          | Credential Vault      | Stores encrypted      | |
-|  |                        |                       | credentials           | |
-|  | * Proprietary format   | * MariaDB backend     |                       | |
-|  | * Hardened OS          | * AES-256-GCM encrypt |                       | |
-|  | * Safes organize data  | * Domains organize    |                       | |
-|  |                        |                       |                       | |
-|  +------------------------+-----------------------+-----------------------+ |
-|  |                        |                       |                       | |
-|  | CPM                    | Password Manager      | Rotates passwords     | |
-|  | (Central Policy Mgr)   | (Integrated)          | on target systems     | |
-|  |                        |                       |                       | |
-|  | * Separate Windows srv | * Built into appliance|                       | |
-|  | * CPM Plugins          | * Target Connectors   |                       | |
-|  | * Platform definitions | * Custom scripts      |                       | |
-|  |                        |                       |                       | |
-|  +------------------------+-----------------------+-----------------------+ |
-|  |                        |                       |                       | |
-|  | PSM                    | Session Manager       | Records and controls  | |
-|  | (Privileged Session)   | (Proxy-based)         | privileged sessions   | |
-|  |                        |                       |                       | |
-|  | * Agent on jump server | * Protocol proxy      |                       | |
-|  | * Windows RDP Gateway  | * No agent required   |                       | |
-|  | * Proprietary recording| * Native protocol     |                       | |
-|  |                        |                       |                       | |
-|  +------------------------+-----------------------+-----------------------+ |
-|  |                        |                       |                       | |
-|  | PVWA                   | Web Admin Console     | Management interface  | |
-|  | (Password Vault Web)   |                       |                       | |
-|  |                        |                       |                       | |
-|  | * Web management UI    | * Web management UI   |                       | |
-|  | * User self-service    | * User self-service   |                       | |
-|  | * Request workflows    | * Request workflows   |                       | |
-|  |                        |                       |                       | |
-|  +------------------------+-----------------------+-----------------------+ |
-|  |                        |                       |                       | |
-|  | CCP/AAM                | AAPM                  | Application           | |
-|  | (App Access Manager)   | (App-to-App Password) | credentials           | |
-|  |                        |                       |                       | |
-|  | * Agent-based          | * REST API based      |                       | |
-|  | * SDK available        | * No agent required   |                       | |
-|  |                        |                       |                       | |
-|  +------------------------+-----------------------+-----------------------+ |
-|  |                        |                       |                       | |
-|  | PTA                    | Session Analytics +   | Threat detection      | |
-|  | (Privileged Threat     | SIEM Integration      |                       | |
-|  | Analytics)             |                       |                       | |
-|  |                        |                       |                       | |
-|  | * Behavioral ML/AI     | * OCR on recordings   |                       | |
-|  | * Dedicated server     | * Export to SIEM      |                       | |
-|  |                        |                       |                       | |
-|  +------------------------+-----------------------+-----------------------+ |
+|  +------------------------+-----------------------+----------------------+ |
+|  | CyberArk               | WALLIX                | How It Works         | |
+|  +------------------------+-----------------------+----------------------+ |
+|  |                        |                       |                      | |
+|  | Digital Vault          | Credential Vault      | Stores encrypted     | |
+|  |                        |                       | credentials          | |
+|  | * Proprietary format   | * MariaDB backend     |                      | |
+|  | * Hardened OS          | * AES-256-GCM encrypt |                      | |
+|  | * Safes organize data  | * Domains organize    |                      | |
+|  |                        |                       |                      | |
+|  +------------------------+-----------------------+----------------------+ |
+|  |                        |                       |                      | |
+|  | CPM                    | Password Manager      | Rotates passwords    | |
+|  | (Central Policy Mgr)   | (Integrated)          | on target systems    | |
+|  |                        |                       |                      | |
+|  | * Separate Windows srv | * Built into appliance|                      | |
+|  | * CPM Plugins          | * Target Connectors   |                      | |
+|  | * Platform definitions | * Custom scripts      |                      | |
+|  |                        |                       |                      | |
+|  +------------------------+-----------------------+----------------------+ |
+|  |                        |                       |                      | |
+|  | PSM                    | Session Manager       | Records and controls | |
+|  | (Privileged Session)   | (Proxy-based)         | privileged sessions  | |
+|  |                        |                       |                      | |
+|  | * Agent on jump server | * Protocol proxy      |                      | |
+|  | * Windows RDP Gateway  | * No agent required   |                      | |
+|  | * Proprietary recording| * Native protocol     |                      | |
+|  |                        |                       |                      | |
+|  +------------------------+-----------------------+----------------------+ |
+|  |                        |                       |                      | |
+|  | PVWA                   | Web Admin Console     | Management interface | |
+|  | (Password Vault Web)   |                       |                      | |
+|  |                        |                       |                      | |
+|  | * Web management UI    | * Web management UI   |                      | |
+|  | * User self-service    | * User self-service   |                      | |
+|  | * Request workflows    | * Request workflows   |                      | |
+|  |                        |                       |                      | |
+|  +------------------------+-----------------------+----------------------+ |
+|  |                        |                       |                      | |
+|  | CCP/AAM                | AAPM                  | Application          | |
+|  | (App Access Manager)   | (App-to-App Password) | credentials          | |
+|  |                        |                       |                      | |
+|  | * Agent-based          | * REST API based      |                      | |
+|  | * SDK available        | * No agent required   |                      | |
+|  |                        |                       |                      | |
+|  +------------------------+-----------------------+----------------------+ |
+|  |                        |                       |                      | |
+|  | PTA                    | Session Analytics +   | Threat detection     | |
+|  | (Privileged Threat     | SIEM Integration      |                      | |
+|  | Analytics)             |                       |                      | |
+|  |                        |                       |                      | |
+|  | * Behavioral ML/AI     | * OCR on recordings   |                      | |
+|  | * Dedicated server     | * Export to SIEM      |                      | |
+|  |                        |                       |                      | |
+|  +------------------------+-----------------------+----------------------+ |
 |                                                                            |
 +============================================================================+
 ```
@@ -267,23 +267,23 @@ WALLIX consolidates all PAM functions into a single appliance:
 |  +----------------------------------------------------------------------+  |
 |  |                       CPM SERVER (Windows)                           |  |
 |  |                                                                      |  |
-|  |  +-----------------------+    +--------------------------+          |   |
-|  |  |    CPM Service        |    |    Plugin Framework      |          |   |
-|  |  |                       |    |                          |          |   |
-|  |  | * Task scheduling     |    | +----------------------+ |          |   |
-|  |  | * Queue management    |    | |  Windows Plugin      | |          |   |
-|  |  | * Retry logic         |    | +----------------------+ |          |   |
-|  |  +-----------------------+    | |  Unix/SSH Plugin     | |          |   |
-|  |                               | +----------------------+ |          |   |
-|  |  +-----------------------+    | |  Database Plugins    | |          |   |
-|  |  |  Vault Connection     |    | +----------------------+ |          |   |
-|  |  |                       |    | |  Network Plugins     | |          |   |
-|  |  | * Get credentials     |    | +----------------------+ |          |   |
-|  |  | * Update passwords    |    | |  Cloud Plugins       | |          |   |
-|  |  +-----------------------+    | +----------------------+ |          |   |
-|  |                               | |  Custom Plugins      | |          |   |
-|  |                               | +----------------------+ |          |   |
-|  |                               +--------------------------+          |   |
+|  |  +-----------------------+    +--------------------------+           |  |
+|  |  |    CPM Service        |    |    Plugin Framework      |           |  |
+|  |  |                       |    |                          |           |  |
+|  |  | * Task scheduling     |    | +----------------------+ |           |  |
+|  |  | * Queue management    |    | |  Windows Plugin      | |           |  |
+|  |  | * Retry logic         |    | +----------------------+ |           |  |
+|  |  +-----------------------+    | |  Unix/SSH Plugin     | |           |  |
+|  |                               | +----------------------+ |           |  |
+|  |  +-----------------------+    | |  Database Plugins    | |           |  |
+|  |  |  Vault Connection     |    | +----------------------+ |           |  |
+|  |  |                       |    | |  Network Plugins     | |           |  |
+|  |  | * Get credentials     |    | +----------------------+ |           |  |
+|  |  | * Update passwords    |    | |  Cloud Plugins       | |           |  |
+|  |  +-----------------------+    | +----------------------+ |           |  |
+|  |                               | |  Custom Plugins      | |           |  |
+|  |                               | +----------------------+ |           |  |
+|  |                               +--------------------------+           |  |
 |  +----------------------------------------------------------------------+  |
 |                                                                            |
 |  CHARACTERISTICS                                                           |
@@ -314,24 +314,24 @@ WALLIX consolidates all PAM functions into a single appliance:
 |  |  +================================================================+  |  |
 |  |  |                    PASSWORD MANAGER                            |  |  |
 |  |  |                                                                |  |  |
-|  |  |  +--------------------+    +--------------------------+       |  |   |
-|  |  |  |  Rotation Engine   |    |   Target Connectors      |       |  |   |
-|  |  |  |                    |    |                          |       |  |   |
-|  |  |  | * Scheduled jobs   |    | +----------------------+ |       |  |   |
-|  |  |  | * On-demand        |    | | SSH (Unix/Linux)     | |       |  |   |
-|  |  |  | * Post-session     |    | +----------------------+ |       |  |   |
-|  |  |  | * Event triggers   |    | | WinRM (Windows)      | |       |  |   |
-|  |  |  +--------------------+    | +----------------------+ |       |  |   |
-|  |  |                            | | LDAP (AD)            | |       |  |   |
-|  |  |  +--------------------+    | +----------------------+ |       |  |   |
-|  |  |  | Credential Vault   |    | | Database Connectors  | |       |  |   |
-|  |  |  |                    |    | +----------------------+ |       |  |   |
-|  |  |  | * MariaDB          |    | | Network Devices      | |       |  |   |
-|  |  |  | * AES-256-GCM      |    | +----------------------+ |       |  |   |
-|  |  |  | * Argon2ID KDF     |    | | Custom Scripts       | |       |  |   |
-|  |  |  +--------------------+    | | (Bash, Python)       | |       |  |   |
-|  |  |                            | +----------------------+ |       |  |   |
-|  |  |                            +--------------------------+       |  |   |
+|  |  |  +--------------------+    +--------------------------+        |  |  |
+|  |  |  |  Rotation Engine   |    |   Target Connectors      |        |  |  |
+|  |  |  |                    |    |                          |        |  |  |
+|  |  |  | * Scheduled jobs   |    | +----------------------+ |        |  |  |
+|  |  |  | * On-demand        |    | | SSH (Unix/Linux)     | |        |  |  |
+|  |  |  | * Post-session     |    | +----------------------+ |        |  |  |
+|  |  |  | * Event triggers   |    | | WinRM (Windows)      | |        |  |  |
+|  |  |  +--------------------+    | +----------------------+ |        |  |  |
+|  |  |                            | | LDAP (AD)            | |        |  |  |
+|  |  |  +--------------------+    | +----------------------+ |        |  |  |
+|  |  |  | Credential Vault   |    | | Database Connectors  | |        |  |  |
+|  |  |  |                    |    | +----------------------+ |        |  |  |
+|  |  |  | * MariaDB          |    | | Network Devices      | |        |  |  |
+|  |  |  | * AES-256-GCM      |    | +----------------------+ |        |  |  |
+|  |  |  | * Argon2ID KDF     |    | | Custom Scripts       | |        |  |  |
+|  |  |  +--------------------+    | | (Bash, Python)       | |        |  |  |
+|  |  |                            | +----------------------+ |        |  |  |
+|  |  |                            +--------------------------+        |  |  |
 |  |  +================================================================+  |  |
 |  +----------------------------------------------------------------------+  |
 |                                                                            |
