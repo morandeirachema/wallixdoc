@@ -241,17 +241,17 @@ echo "=== Replication Status Test ==="
 # On Node 1 (Primary)
 ssh root@pam4ot-node1.lab.local << 'EOF'
 echo "Replication Status (from primary):"
-sudo -u postgres psql -c "SELECT client_addr, state, sent_lsn, write_lsn, replay_lsn FROM pg_stat_replication;"
+sudo mysql -c "SELECT client_addr, state, sent_lsn, write_lsn, replay_lsn FROM SHOW SLAVE STATUS;"
 
 echo ""
 echo "Replication Lag:"
-sudo -u postgres psql -c "SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS lag_bytes FROM pg_stat_replication;"
+sudo mysql -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master
 EOF
 
 # On Node 2 (Replica)
 ssh root@pam4ot-node2.lab.local << 'EOF'
 echo "Recovery Status (from replica):"
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 EOF
 ```
 
@@ -541,7 +541,7 @@ echo "=== Database Performance Test ==="
 ssh root@pam4ot-node1.lab.local << 'EOF'
 # Simple query timing
 echo "Query performance:"
-sudo -u postgres psql wabdb -c "EXPLAIN ANALYZE SELECT count(*) FROM sessions WHERE created > NOW() - interval '1 day';"
+sudo mysql wabdb -c "EXPLAIN ANALYZE SELECT count(*) FROM sessions WHERE created > NOW() - interval '1 day';"
 EOF
 ```
 

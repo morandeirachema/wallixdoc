@@ -96,13 +96,13 @@ This guide provides team-specific documentation for handoffs to Networking, SIEM
 | pam4ot-node1/2 | dc-lab | 88 | TCP/UDP | Kerberos |
 | pam4ot-node1/2 | dc-lab | 389 | TCP | LDAP |
 | pam4ot-node1/2 | dc-lab | 53 | TCP/UDP | DNS |
-| pam4ot-node1 | pam4ot-node2 | 5432 | TCP | PostgreSQL replication |
+| pam4ot-node1 | pam4ot-node2 | 3306/3307 | TCP | MariaDB replication |
 | pam4ot-node1 | pam4ot-node2 | 2224 | TCP | Pacemaker |
 | pam4ot-node1 | pam4ot-node2 | 5405 | UDP | Corosync |
 | pam4ot-node1/2 | siem-lab | 514 | TCP | Syslog |
 | pam4ot-node1/2 | siem-lab | 6514 | TCP | Syslog TLS |
 | monitoring-lab | pam4ot-node1/2 | 9100 | TCP | Node exporter |
-| monitoring-lab | pam4ot-node1/2 | 9187 | TCP | PostgreSQL exporter |
+| monitoring-lab | pam4ot-node1/2 | 9104 | TCP | MariaDB exporter |
 | pam4ot-node1/2 | 10.10.2.0/24 | 22 | TCP | SSH to targets |
 | pam4ot-node1/2 | 10.10.2.0/24 | 3389 | TCP | RDP to targets |
 | pam4ot-node1/2 | 10.10.3.0/24 | 22 | TCP | SSH to OT targets |
@@ -306,16 +306,16 @@ index=pam4ot "configuration changed" earliest=-24h
 | CPU Usage | `100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)` | > 80% | Investigate |
 | Memory | `(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100` | > 85% | Investigate |
 | Disk /var/wab | `(1 - node_filesystem_avail_bytes{mountpoint="/var/wab"} / node_filesystem_size_bytes) * 100` | > 80% | Clean recordings |
-| PostgreSQL Up | `pg_up` | 0 | Page on-call |
-| Replication Lag | `pg_replication_lag` | > 60s | Investigate |
-| Connections | `pg_stat_activity_count` | > 80 | Investigate |
+| MariaDB Up | `mysql_up` | 0 | Page on-call |
+| Replication Lag | `mysql_slave_status_seconds_behind_master` | > 60s | Investigate |
+| Connections | `mysql_global_status_threads_connected` | > 80 | Investigate |
 
 ### Grafana Dashboard IDs
 
 | Dashboard | ID | Purpose |
 |-----------|---|---------|
 | PAM4OT Overview | 1001 | System health overview |
-| PostgreSQL | 1002 | Database performance |
+| MariaDB | 1002 | Database performance |
 | HA Cluster | 1003 | Cluster status |
 | Session Metrics | 1004 | Session activity |
 
@@ -334,8 +334,8 @@ groups:
         annotations:
           summary: "PAM4OT node down"
 
-      - alert: PostgreSQLDown
-        expr: pg_up == 0
+      - alert: MariaDBDown
+        expr: mysql_up == 0
         for: 1m
         labels:
           severity: critical
@@ -360,7 +360,7 @@ groups:
 | Alert | Runbook |
 |-------|---------|
 | PAM4OTNodeDown | See "HA Failover Procedure" |
-| PostgreSQLDown | See "Database Recovery" |
+| MariaDBDown | See "Database Recovery" |
 | HighCPU | Identify top processes, check for stuck sessions |
 | HighMemory | Clear session cache, check for memory leaks |
 | DiskSpaceLow | Archive old recordings, clean temp files |
