@@ -335,7 +335,7 @@ Authorization Settings:
 device_name,host,domain,description,services,accounts
 srv-web-01,10.1.10.10,Linux-Production,Web server 1,SSH:22,root
 srv-web-02,10.1.10.11,Linux-Production,Web server 2,SSH:22,root
-srv-db-01,10.1.10.20,Linux-Production,Database server,SSH:22,root:postgres
+srv-db-01,10.1.10.20,Linux-Production,Database server,SSH:22,root:mysql
 srv-app-01,10.1.10.30,Linux-Production,App server 1,SSH:22,root:appuser
 srv-app-02,10.1.10.31,Linux-Production,App server 2,SSH:22,root:appuser
 win-srv-01,10.1.20.10,Windows-Production,Windows server,RDP:3389,administrator

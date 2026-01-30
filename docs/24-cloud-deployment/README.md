@@ -450,14 +450,14 @@
 
   --------------------------------------------------------------------------
 
-  STEP 3: RDS POSTGRESQL (for HA)
-  ===============================
+  STEP 3: RDS MARIADB (for HA)
+  ============================
 
   aws rds create-db-instance \
     --db-instance-identifier wallix-db \
     --db-instance-class db.m5.large \
-    --engine postgres \
-    --engine-version 14 \
+    --engine mariadb \
+    --engine-version 10.6 \
     --master-username wallix \
     --master-user-password <secure-password> \
     --allocated-storage 200 \
@@ -898,7 +898,7 @@
 
   # Create Cloud SQL instance
   gcloud sql instances create wallix-db \
-    --database-version=POSTGRES_15 \
+    --database-version=MYSQL_8_0 \
     --tier=db-custom-2-8192 \
     --region=us-central1 \
     --availability-type=REGIONAL \
@@ -1048,7 +1048,7 @@ resource "google_compute_instance" "wallix_primary" {
 # Cloud SQL MariaDB
 resource "google_sql_database_instance" "wallix_db" {
   name             = "wallix-db"
-  database_version = "POSTGRES_15"
+  database_version = "MYSQL_8_0"
   region           = var.region
 
   settings {

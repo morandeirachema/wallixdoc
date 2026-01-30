@@ -126,11 +126,11 @@ scrape_configs:
           environment: 'lab'
 
   # PAM4OT MariaDB
-  - job_name: 'pam4ot-postgres'
+  - job_name: 'pam4ot-mariadb'
     static_configs:
       - targets:
-        - 'pam4ot-node1.lab.local:9187'
-        - 'pam4ot-node2.lab.local:9187'
+        - 'pam4ot-node1.lab.local:9104'
+        - 'pam4ot-node2.lab.local:9104'
         labels:
           service: 'mariadb'
 

@@ -293,9 +293,9 @@ index=pam4ot "configuration changed" earliest=-24h
 | Target | Endpoint | Port | Exporter |
 |--------|----------|------|----------|
 | pam4ot-node1 | /metrics | 9100 | node_exporter |
-| pam4ot-node1 | /metrics | 9187 | postgres_exporter |
+| pam4ot-node1 | /metrics | 9104 | mysqld_exporter |
 | pam4ot-node2 | /metrics | 9100 | node_exporter |
-| pam4ot-node2 | /metrics | 9187 | postgres_exporter |
+| pam4ot-node2 | /metrics | 9104 | mysqld_exporter |
 | dc-lab | /metrics | 9182 | windows_exporter |
 
 ### Key Metrics to Monitor

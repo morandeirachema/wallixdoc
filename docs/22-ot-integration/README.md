@@ -1025,7 +1025,7 @@
   |           "measurement": ["cpu_usage", "memory_rss"]                   |
   |         },                                                             |
   |         {                                                              |
-  |           "pattern": "postgres",                                       |
+  |           "pattern": "mysql",                                          |
   |           "measurement": ["cpu_usage", "memory_rss"]                   |
   |         }                                                              |
   |       ]                                                                |
