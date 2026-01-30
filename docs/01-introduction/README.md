@@ -62,7 +62,7 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 |  |  * Comprehensive audit  |       |  * Policy enforcement   |                |
 |  +-------------------------+       +-------------------------+                |
 |                                                                               |
-|  Protocols: RDP | SSH | HTTPS | VNC | Telnet | Custom                        |
+|  Protocols: RDP | SSH | HTTPS | VNC | Telnet | Custom                         |
 |                                                                               |
 +===============================================================================+
 ```
@@ -87,19 +87,19 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 +===============================================================================+
 |                                                                               |
 |  +----------------------------------+  +----------------------------------+   |
-|  | SECURE REMOTE ACCESS            |  | JUST-IN-TIME ACCESS              |   |
+|  | SECURE REMOTE ACCESS            |  | JUST-IN-TIME ACCESS               |   |
 |  |                                  |  |                                  |   |
-|  | * VPN-less access               |  | * Approval workflows             |   |
-|  | * Vendor access management      |  | * Time-limited privileges        |   |
-|  | * Browser-based sessions        |  | * On-demand access               |   |
+|  | * VPN-less access               |  | * Approval workflows              |   |
+|  | * Vendor access management      |  | * Time-limited privileges         |   |
+|  | * Browser-based sessions        |  | * On-demand access                |   |
 |  +----------------------------------+  +----------------------------------+   |
 |                                                                               |
 |  +----------------------------------+  +----------------------------------+   |
-|  | SESSION RECORDING               |  | PASSWORD MANAGEMENT              |   |
+|  | SESSION RECORDING               |  | PASSWORD MANAGEMENT               |   |
 |  |                                  |  |                                  |   |
-|  | * Full audit trail              |  | * Credential vault               |   |
-|  | * Compliance evidence           |  | * Automatic rotation             |   |
-|  | * Forensic analysis             |  | * Least privilege                |   |
+|  | * Full audit trail              |  | * Credential vault                |   |
+|  | * Compliance evidence           |  | * Automatic rotation              |   |
+|  | * Forensic analysis             |  | * Least privilege                 |   |
 |  +----------------------------------+  +----------------------------------+   |
 |                                                                               |
 |  Industrial Protocols: Modbus | OPC UA | S7comm | DNP3                        |
@@ -210,8 +210,8 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 |  +-----------------------------------------------------------------------+    |
 |  |                     Unified Security Platform                         |    |
 |  |                                                                       |    |
-|  |  * Single pane of glass          * Consistent policy enforcement     |    |
-|  |  * End-to-end audit trail        * Centralized management            |    |
+|  |  * Single pane of glass          * Consistent policy enforcement      |    |
+|  |  * End-to-end audit trail        * Centralized management             |    |
 |  +-----------------------------------------------------------------------+    |
 |                                                                               |
 +===============================================================================+
