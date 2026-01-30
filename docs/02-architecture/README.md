@@ -58,7 +58,7 @@
 |  +--------------------------------------------------------------------+  |
 |  |                        DATA LAYER                                   |   |
 |  |   +--------------+  +--------------+  +-----------------------+   |  |
-|  |   |  PostgreSQL  |  |  File System |  |  Configuration Store  |   |  |
+|  |   |   MariaDB    |  |  File System |  |  Configuration Store  |   |  |
 |  |   |  (Metadata)  |  |  (Recordings)|  |  (Settings)           |   |  |
 |  |   +--------------+  +--------------+  +-----------------------+   |  |
 |  +--------------------------------------------------------------------+  |
@@ -319,8 +319,8 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ```
 +-----------------+     +-----------------+     +-----------------+
-|  Access Manager |     |  Bastion Core   |     |  External DB    |
-|  (Web Portal)   |---->|  (Session +     |---->|  (PostgreSQL)   |
+|  Access Manager |     |  Bastion Core   |     |  External DB     |
+|  (Web Portal)   |---->|  (Session +     |---->|  (MariaDB)      |
 |                 |     |   Password Mgr) |     |                 |
 +-----------------+     +-----------------+     +-----------------+
                                 |
@@ -361,7 +361,7 @@ This is the **most significant architectural difference** between WALLIX and Cyb
                              v
               +-----------------------------+
               |    Shared Storage           |
-              |  * PostgreSQL (HA)          |
+              |  * MariaDB (HA)             |
               |  * Recording Storage (NAS)  |
               +-----------------------------+
 ```
@@ -481,7 +481,7 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 |                                                                   |
 |  RULE 5: Cluster Communication                                   |
 |  --------------------------------                               |
-|  Allow: TCP 5432 (DB), TCP cluster ports between nodes          |
+|  Allow: TCP 3306/3307 (DB), TCP cluster ports between nodes     |
 |                                                                   |
 |  DENY: All other traffic                                        |
 |                                                                   |
@@ -565,7 +565,7 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 +=========================================================================+
 |                                                                          |
 |  +----------------------------------------------------------------+    |
-|  |                    PostgreSQL Database                         |    |
+|  |                      MariaDB Database                          |    |
 |  |                                                                 |    |
 |  |   * Configuration data                                         |    |
 |  |   * User and group definitions                                 |    |
@@ -574,7 +574,7 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 |  |   * Audit logs                                                 |    |
 |  |   * Session metadata                                           |    |
 |  |                                                                 |    |
-|  |   Location: /var/lib/postgresql/                              |    |
+|  |   Location: /var/lib/mysql/                                   |    |
 |  |   Encryption: At-rest encryption supported                     |    |
 |  +----------------------------------------------------------------+    |
 |                                                                          |

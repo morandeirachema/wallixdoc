@@ -594,7 +594,7 @@ password_policy:
 | Oracle | SQL*Plus | Database users |
 | MS SQL | T-SQL | SQL logins |
 | MySQL/MariaDB | MySQL client | MySQL users |
-| PostgreSQL | psql | PostgreSQL roles |
+| MariaDB | mysql | MariaDB users |
 
 ---
 
@@ -764,7 +764,7 @@ Access Manager provides responsive design for mobile devices:
 |   |            |         |                                              |  |
 |   |            v         v                                              |  |
 |   |  +-------------------------------------------------------------+   |   |
-|   |  |                    PostgreSQL Database                       |   |  |
+|   |  |                      MariaDB Database                        |   |  |
 |   |  |                                                              |   |  |
 |   |  |  * Configuration data      * Session metadata               |   |   |
 |   |  |  * User/group definitions  * Audit logs                     |   |   |

@@ -137,7 +137,7 @@ This guide walks through both the Administrator and User interfaces with detaile
 |  Status | Name            | Host           | Domain        | Services         |
 |  -------|-----------------|----------------|---------------|----------------- |
 |  [OK]   | srv-web-01      | 10.1.10.10     | IT-Production | SSH, HTTPS       |
-|  [OK]   | srv-db-01       | 10.1.10.20     | IT-Production | SSH, PostgreSQL  |
+|  [OK]   | srv-db-01       | 10.1.10.20     | IT-Production | SSH, MariaDB     |
 |  [!]    | srv-app-03      | 10.1.10.33     | IT-Production | SSH, RDP         |
 |  [OK]   | hmi-line1       | 192.168.100.10 | OT-Level2     | RDP, VNC         |
 |  [OK]   | plc-pump-01     | 192.168.50.10  | OT-Level1     | SSH Tunnel       |
@@ -470,7 +470,7 @@ When you click the eye icon to shadow:
 |  Session Manager      | [OK]    | 15%   | 2.1 GB | [Restart] [Logs]           |
 |  Password Manager     | [OK]    | 2%    | 0.5 GB | [Restart] [Logs]           |
 |  Access Manager       | [OK]    | 8%    | 1.2 GB | [Restart] [Logs]           |
-|  PostgreSQL           | [OK]    | 5%    | 1.8 GB | [Restart] [Logs]           |
+|  MariaDB              | [OK]    | 5%    | 1.8 GB | [Restart] [Logs]           |
 |  Web Server           | [OK]    | 3%    | 0.3 GB | [Restart] [Logs]           |
 |                                                                               |
 |  -------------------------------------------------------------------------    |
@@ -492,7 +492,7 @@ When you click the eye icon to shadow:
 |  -------------------|--------|-------|-------|------------------------------  |
 |  / (root)           | 50 GB  | 12 GB | 38 GB | [====          ] 24%           |
 |  /var/wab/recorded  | 500 GB | 230GB | 270GB | [=========     ] 46%           |
-|  /var/lib/postgres  | 100 GB | 45 GB | 55 GB | [========      ] 45%           |
+|  /var/lib/mysql     | 100 GB | 45 GB | 55 GB | [========      ] 45%           |
 |                                                                               |
 +===============================================================================+
 ```
