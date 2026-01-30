@@ -71,7 +71,7 @@ ping -M do -s 1472 target-server
   | Users           | 3389       | TCP      | RDP proxy                     |
   | Users           | 5900       | TCP      | VNC proxy                     |
   | Admin hosts     | 22         | TCP      | SSH admin access              |
-  | Cluster peer    | 5432       | TCP      | PostgreSQL replication        |
+  | Cluster peer    | 3306       | TCP      | MariaDB replication        |
   | Cluster peer    | 5404-5406  | UDP      | Corosync cluster sync         |
   +-----------------+------------+----------+-------------------------------+
 
@@ -571,7 +571,7 @@ fi
 
 # Check ports
 echo "[7/10] Port Availability..."
-for port in 443 22 3389 5432; do
+for port in 443 22 3389 3306; do
     if ! ss -tuln | grep -q ":$port "; then
         echo "  [PASS] Port $port available"
     else

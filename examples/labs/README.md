@@ -69,17 +69,18 @@ services:
     networks:
       - lab-network
     depends_on:
-      - postgres
+      - mariadb
 
-  postgres:
-    image: postgres:15
+  mariadb:
+    image: mariadb:10.11
     container_name: wallix-db
     environment:
-      - POSTGRES_DB=wallix
-      - POSTGRES_USER=wallix
-      - POSTGRES_PASSWORD=DbPassword123!
+      - MYSQL_DATABASE=wallix
+      - MYSQL_USER=wallix
+      - MYSQL_PASSWORD=DbPassword123!
+      - MYSQL_ROOT_PASSWORD=DbPassword123!
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - mariadb-data:/var/lib/mysql
     networks:
       - lab-network
 
@@ -114,7 +115,7 @@ services:
 volumes:
   wallix-data:
   wallix-logs:
-  postgres-data:
+  mariadb-data:
 
 networks:
   lab-network:

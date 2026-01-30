@@ -189,10 +189,10 @@ wabadmin policy diff --baseline /baseline/policies.json
 wabadmin audit search --type group --last 7d
 
 # Step 9: Check for direct database modifications
-sudo -u postgres psql wabdb -c "
+sudo mysql wabdb -e "
 SELECT * FROM audit_log
 WHERE table_name IN ('users', 'groups', 'permissions')
-AND timestamp > NOW() - INTERVAL '7 days'
+AND timestamp > NOW() - INTERVAL 7 DAY
 ORDER BY timestamp DESC;"
 ```
 

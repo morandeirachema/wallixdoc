@@ -73,7 +73,7 @@ resource "wallix-bastion_device_service" "switch_ssh" {
 # -----------------------------------------------------------------------------
 resource "wallix-bastion_device" "database_server" {
   device_name = "db-prod-01"
-  description = "Production PostgreSQL Database"
+  description = "Production MariaDB Database"
   host        = "192.168.1.50"
 }
 

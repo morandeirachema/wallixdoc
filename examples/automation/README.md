@@ -76,8 +76,8 @@ all:
         accounts:
           - name: root
             password: "{{ vault_srv_db_01_root_pass }}"
-          - name: postgres
-            password: "{{ vault_srv_db_01_postgres_pass }}"
+          - name: mysql
+            password: "{{ vault_srv_db_01_mysql_pass }}"
 
   tasks:
     - name: Authenticate to WALLIX API
