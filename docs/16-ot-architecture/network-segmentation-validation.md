@@ -20,7 +20,7 @@ This guide provides procedures for validating network segmentation around PAM4OT
                       └─────────┬─────────┘
                                 │
   ┌─────────────────────────────┼─────────────────────────────────┐
-  │                     CORPORATE ZONE (Zone 4)                    │
+  │                     CORPORATE ZONE (Zone 4)                   │
   │  ┌───────────────┐    ┌───────────────┐    ┌───────────────┐  │
   │  │ User Stations │    │   AD / LDAP   │    │     SIEM      │  │
   │  │  10.1.0.0/24  │    │  10.1.1.0/24  │    │  10.1.2.0/24  │  │
@@ -32,7 +32,7 @@ This guide provides procedures for validating network segmentation around PAM4OT
                       └─────────┬─────────┘
                                 │
   ┌─────────────────────────────┼─────────────────────────────────┐
-  │                   PAM MANAGEMENT ZONE (Zone 3.5)               │
+  │                   PAM MANAGEMENT ZONE (Zone 3.5)              │
   │  ┌───────────────┐    ┌───────────────┐    ┌───────────────┐  │
   │  │  PAM4OT VIP   │    │  PAM4OT Node1 │    │  PAM4OT Node2 │  │
   │  │  10.10.1.100  │    │  10.10.1.101  │    │  10.10.1.102  │  │
@@ -44,7 +44,7 @@ This guide provides procedures for validating network segmentation around PAM4OT
                       └─────────┬─────────┘
                                 │
   ┌─────────────────────────────┼─────────────────────────────────┐
-  │                    OT ZONE (Zone 2)                            │
+  │                    OT ZONE (Zone 2)                           │
   │  ┌───────────────┐    ┌───────────────┐    ┌───────────────┐  │
   │  │      HMI      │    │    SCADA      │    │   Historian   │  │
   │  │  10.20.1.0/24 │    │  10.20.2.0/24 │    │  10.20.3.0/24 │  │
@@ -52,7 +52,7 @@ This guide provides procedures for validating network segmentation around PAM4OT
   └─────────────────────────────┼─────────────────────────────────┘
                                 │
   ┌─────────────────────────────┼─────────────────────────────────┐
-  │                    PROCESS ZONE (Zone 1)                       │
+  │                    PROCESS ZONE (Zone 1)                      │
   │  ┌───────────────┐    ┌───────────────┐    ┌───────────────┐  │
   │  │      PLC      │    │      RTU      │    │      DCS      │  │
   │  │  10.30.1.0/24 │    │  10.30.2.0/24 │    │  10.30.3.0/24 │  │
