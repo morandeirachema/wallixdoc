@@ -8,7 +8,7 @@ This guide covers provisioning all VMs for the lab environment.
 
 ## Prerequisites
 
-- Hypervisor: VMware vSphere, Proxmox, Hyper-V, or cloud (AWS/Azure/GCP)
+- Hypervisor: VMware vSphere, Proxmox, Hyper-V, or KVM
 - Network: 3 VLANs configured (Management, IT Test, OT Test)
 - ISO images ready:
   - Debian 12 (Bookworm)

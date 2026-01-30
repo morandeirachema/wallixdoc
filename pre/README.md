@@ -90,8 +90,9 @@ This guide covers setting up a pre-production environment with:
 | 8 | [Observability Stack](./08-observability.md) | 2 hours |
 | 9 | [Validation & Testing](./09-validation-testing.md) | 2 hours |
 | 10 | [Team Handoff Guides](./10-team-handoffs.md) | - |
+| 11 | [Battery Tests (Client Demos)](./11-battery-tests.md) | 3.5 hours |
 
-**Total Estimated Time**: ~15 hours
+**Total Estimated Time**: ~18.5 hours
 
 ---
 
@@ -192,6 +193,7 @@ pre/
 ├── 08-observability.md            # Prometheus/Grafana
 ├── 09-validation-testing.md       # Test procedures
 ├── 10-team-handoffs.md            # Team documentation
+├── 11-battery-tests.md            # Client demo test suite
 └── scripts/                       # Automation scripts
     ├── provision-vms.sh
     ├── setup-ad.ps1

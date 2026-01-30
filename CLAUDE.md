@@ -9,6 +9,7 @@ This file provides context for AI assistants (Claude, Copilot, etc.) working wit
 | **Purpose** | WALLIX Bastion 12.x technical documentation |
 | **Type** | Documentation repository (no source code) |
 | **Focus** | Privileged Access Management (PAM) for IT and OT environments |
+| **Deployment** | On-premises only (bare metal and VMs, no cloud/SaaS) |
 | **Version** | WALLIX Bastion 12.1.x |
 | **Content** | ~33,700 lines across 44 markdown files |
 
@@ -43,8 +44,8 @@ wallix/
 │   ├── 21-industrial-use-cases/ # Power, Oil & Gas, Manufacturing
 │   ├── 22-ot-integration/       # SIEM, CMDB, monitoring
 │   ├── 23-industrial-best-practices/ # OT security design
-│   ├── 24-cloud-deployment/     # AWS, Azure, GCP, Terraform
-│   ├── 25-container-deployment/ # Docker, Kubernetes, Helm
+│   ├── 24-cloud-deployment/     # [DEPRECATED - On-prem only]
+│   ├── 25-container-deployment/ # [DEPRECATED - On-prem only]
 │   ├── 26-api-reference/        # REST API documentation
 │   ├── 27-error-reference/      # Error codes and remediation
 │   ├── 28-system-requirements/  # Hardware, sizing, performance
@@ -76,6 +77,7 @@ wallix/
 | **Operating System** | Debian 12 (Bookworm) |
 | **Database** | MariaDB with HA Database Replication (ports 3306/3307) |
 | **Clustering** | Pacemaker/Corosync |
+| **Load Balancer** | HAProxy (2x in HA) |
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS disk encryption |
 | **Key Derivation** | Argon2ID |
 | **Protocols** | SSH, RDP, VNC, HTTP, Modbus, DNP3, OPC UA |
@@ -99,8 +101,9 @@ wallix/
 ### Deployment Models
 - Multi-site (3-site): Primary HQ + Secondary Plant + Remote Field
 - High Availability: Active-Active and Active-Passive clustering
-- Cloud: AWS, Azure, GCP with Terraform IaC
-- Containers: Docker, Kubernetes, OpenShift
+- Infrastructure: On-premises only (bare metal servers and VMs)
+- Load Balancing: HAProxy in HA configuration
+- **Note**: No cloud/SaaS, no Docker/Kubernetes - all deployments are on-prem
 
 ## Official WALLIX Resources
 
@@ -190,7 +193,7 @@ Use these authoritative sources when verifying or extending documentation:
 | `install/README.md` | Architecture overview and 30-day timeline | 788 |
 | `install/09-architecture-diagrams.md` | Network diagrams and port reference | 913 |
 | `docs/26-api-reference/README.md` | REST API documentation | 1386 |
-| `docs/24-cloud-deployment/README.md` | Cloud deployment patterns | 1289 |
+| `pre/11-battery-tests.md` | Client demo test suite | 1200+ |
 
 ## Common Editing Tasks
 
