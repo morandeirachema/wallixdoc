@@ -310,31 +310,31 @@ Recording File Structure
 |                          REAL-TIME MONITORING                                 |
 +===============================================================================+
 |                                                                               |
-|  +------------------------------------------------------------------------+   |
-|  |                      ACTIVE SESSIONS VIEW                              |   |
-|  |                                                                        |   |
-|  |  Session ID    User        Target           Protocol  Duration        |   |
-|  |  ----------    ----        ------           --------  --------        |   |
-|  |  SES-001       jsmith      srv-prod-01      SSH       00:45:12        |   |
-|  |  SES-002       admin       dc01.corp        RDP       01:23:45        |   |
-|  |  SES-003       dbadmin     oracle-prd       SQL*Plus  00:12:30        |   |
-|  |                                                                        |   |
-|  |  [View] [Share] [Message] [Kill]                                      |   |
-|  +------------------------------------------------------------------------+   |
+|   +----------------------------------------------------------------------+    |
+|   |                     ACTIVE SESSIONS VIEW                             |    |
+|   |                                                                      |    |
+|   |  Session ID    User        Target           Protocol  Duration      |    |
+|   |  ----------    ----        ------           --------  --------      |    |
+|   |  SES-001       jsmith      srv-prod-01      SSH       00:45:12      |    |
+|   |  SES-002       admin       dc01.corp        RDP       01:23:45      |    |
+|   |  SES-003       dbadmin     oracle-prd       SQL*Plus  00:12:30      |    |
+|   |                                                                      |    |
+|   |  [View] [Share] [Message] [Kill]                                    |    |
+|   +----------------------------------------------------------------------+    |
 |                                                                               |
-|  Monitoring Actions:                                                          |
-|  -------------------                                                          |
-|  VIEW      Watch session in real-time (shadow mode)                           |
-|  SHARE     Join session (4-eyes / dual control)                               |
-|  MESSAGE   Send message to session user                                       |
-|  KILL      Terminate session immediately                                      |
+|   Monitoring Actions:                                                         |
+|   -------------------                                                         |
+|   VIEW      Watch session in real-time (shadow mode)                          |
+|   SHARE     Join session (4-eyes / dual control)                              |
+|   MESSAGE   Send message to session user                                      |
+|   KILL      Terminate session immediately                                     |
 |                                                                               |
-|  Alerting:                                                                    |
-|  ---------                                                                    |
-|  * Command-based alerts (detect "rm -rf", "drop table", etc.)                 |
-|  * Keyword detection in sessions                                              |
-|  * Unusual activity patterns                                                  |
-|  * Session duration alerts                                                    |
+|   Alerting:                                                                   |
+|   ---------                                                                   |
+|   * Command-based alerts (detect "rm -rf", "drop table", etc.)                |
+|   * Keyword detection in sessions                                             |
+|   * Unusual activity patterns                                                 |
+|   * Session duration alerts                                                   |
 |                                                                               |
 +===============================================================================+
 ```
