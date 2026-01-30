@@ -23,7 +23,7 @@ This document provides comprehensive procedures for testing PAM4OT cluster failo
   3. NETWORK FAILOVER                   4. APPLICATION FAILOVER
   ===================                   =======================
   - Load balancer failover              - PAM4OT service restart
-  - VIP failover (Pacemaker)            - PostgreSQL failover
+  - VIP failover (Pacemaker)            - MariaDB failover
   - DNS failover                        - Session continuity
   - Multi-site failover                 - Authentication continuity
 
@@ -212,7 +212,7 @@ pcs status
 
 ---
 
-## Test 3: PostgreSQL Failover
+## Test 3: MariaDB Failover
 
 ### Objective
 Verify database replication and failover functionality.
@@ -221,53 +221,58 @@ Verify database replication and failover functionality.
 
 ```bash
 # Check replication status on primary
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -e "SHOW MASTER STATUS;"
 
 # Check if replica is in sync
-sudo -u postgres psql -c "SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS lag_bytes FROM pg_stat_replication;"
-# Should be < 1MB
+sudo mysql -e "SHOW SLAVE STATUS\G" | grep -E "(Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master)"
+# Seconds_Behind_Master should be 0 or very low
 ```
 
 ### Procedure
 
 ```bash
 # Step 1: Insert test data
-sudo -u postgres psql wabdb -c "CREATE TABLE failover_test (id serial, ts timestamp default now());"
-sudo -u postgres psql wabdb -c "INSERT INTO failover_test DEFAULT VALUES;"
+sudo mysql wabdb -e "CREATE TABLE failover_test (id INT AUTO_INCREMENT PRIMARY KEY, ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP);"
+sudo mysql wabdb -e "INSERT INTO failover_test () VALUES ();"
 
 # Step 2: Verify data replicated
 # On replica:
-sudo -u postgres psql wabdb -c "SELECT * FROM failover_test;"
+sudo mysql wabdb -e "SELECT * FROM failover_test;"
 
 # Step 3: Simulate primary failure
-# Stop PostgreSQL on primary
-ssh pam4ot-node1 "systemctl stop postgresql"
+# Stop MariaDB on primary
+ssh pam4ot-node1 "systemctl stop mariadb"
 
 # Step 4: Promote replica (if not automatic)
 # On node2:
-sudo -u postgres pg_ctl promote -D /var/lib/postgresql/15/main
+sudo mysql -e "STOP SLAVE; RESET SLAVE ALL;"
 
 # Step 5: Verify new primary is operational
-sudo -u postgres psql wabdb -c "INSERT INTO failover_test DEFAULT VALUES;"
-sudo -u postgres psql wabdb -c "SELECT * FROM failover_test;"
+sudo mysql wabdb -e "INSERT INTO failover_test () VALUES ();"
+sudo mysql wabdb -e "SELECT * FROM failover_test;"
 
 # Step 6: Reconfigure old primary as replica
 # On node1:
 # 1. Remove old data
-rm -rf /var/lib/postgresql/15/main/*
+rm -rf /var/lib/mysql/*
 
-# 2. Base backup from new primary
-sudo -u postgres pg_basebackup -h pam4ot-node2 -D /var/lib/postgresql/15/main -U replicator -P -Xs -R
+# 2. Backup from new primary
+mariabackup --backup --target-dir=/tmp/backup --host=pam4ot-node2 --user=replicator --password=xxx
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
 
-# 3. Start PostgreSQL
-systemctl start postgresql
+# 3. Start MariaDB and configure replication
+systemctl start mariadb
+sudo mysql -e "CHANGE MASTER TO MASTER_HOST='pam4ot-node2', MASTER_USER='replicator', MASTER_PASSWORD='xxx', MASTER_AUTO_POSITION=1;"
+sudo mysql -e "START SLAVE;"
 
 # Step 7: Verify replication restored
 # On new primary (node2):
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -e "SHOW SLAVE HOSTS;"
 
 # Step 8: Clean up test data
-sudo -u postgres psql wabdb -c "DROP TABLE failover_test;"
+sudo mysql wabdb -e "DROP TABLE failover_test;"
 ```
 
 ---
@@ -391,7 +396,7 @@ QUARTERLY FAILOVER TEST SCHEDULE
 
 Q1 - January
   [ ] Week 2: Planned VIP failover (Test 1)
-  [ ] Week 3: PostgreSQL failover (Test 3)
+  [ ] Week 3: MariaDB failover (Test 3)
 
 Q2 - April
   [ ] Week 2: Unplanned node failure (Test 2)
@@ -420,15 +425,15 @@ pcs resource move vip-pam4ot pam4ot-node1
 pcs resource clear vip-pam4ot
 ```
 
-### PostgreSQL Split-Brain
+### MariaDB Split-Brain
 
 ```bash
 # If both nodes think they're primary:
-# 1. Stop PostgreSQL on both
-systemctl stop postgresql
+# 1. Stop MariaDB on both
+systemctl stop mariadb
 
 # 2. Determine which has more recent data
-# Check pg_wal on both nodes
+# Check binary log positions on both nodes
 
 # 3. Designate correct primary
 # 4. Rebuild replica from primary
@@ -465,8 +470,8 @@ pcs property list
 # Recent cluster events
 pcs status --full
 
-# PostgreSQL replication
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+# MariaDB replication
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
 # VIP location
 ip addr show | grep 10.10.1.100

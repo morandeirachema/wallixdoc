@@ -241,8 +241,8 @@ du -sh /var/wab/* | sort -h
 # Clear space as needed
 
 # If database issue:
-systemctl status postgresql
-sudo -u postgres psql -c "SELECT 1"
+systemctl status mariadb
+sudo mysql -e "SELECT 1"
 
 # Step 6: Verify recovery
 curl -sk https://localhost/

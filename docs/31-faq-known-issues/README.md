@@ -380,7 +380,7 @@ crm node online node-a
 **Q: What happens if both HA nodes fail?**
 
 A: Recovery procedure:
-1. Identify node with latest data (check PostgreSQL WAL position)
+1. Identify node with latest data (check MariaDB binary log position)
 2. Bring that node up first as standalone
 3. Restore second node from first or from backup
 4. Re-establish replication
@@ -650,7 +650,7 @@ A: Behavior depends on license type:
 
 | Aspect | Limitation |
 |--------|------------|
-| PostgreSQL version | 15+ required (14 deprecated) |
+| MariaDB version | 10.6+ required (10.5 deprecated) |
 | Maximum database size | Limited by storage |
 | Replication lag | Should stay < 10 MB |
 | Connection pool | 100 default (configurable) |

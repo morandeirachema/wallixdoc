@@ -29,7 +29,7 @@ df -h
 free -h
 
 # 5. Check database connectivity
-sudo -u postgres psql -c "SELECT 1;"
+sudo mysql -e "SELECT 1;"
 ```
 
 ### Decision Tree
@@ -138,17 +138,17 @@ systemctl restart wallix-pam4ot
 ### Immediate Actions
 
 ```bash
-# 1. Check PostgreSQL status
-systemctl status postgresql
+# 1. Check MariaDB status
+systemctl status mariadb
 
-# 2. Check PostgreSQL logs
-tail -100 /var/log/postgresql/postgresql-15-main.log
+# 2. Check MariaDB logs
+tail -100 /var/log/mysql/error.log
 
 # 3. Test database connectivity
-sudo -u postgres psql -c "SELECT 1;"
+sudo mysql -e "SELECT 1;"
 
 # 4. Check database connections
-sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity;"
+sudo mysql -e "SHOW STATUS LIKE 'Threads_connected';"
 ```
 
 ### Decision Tree
@@ -158,34 +158,34 @@ sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity;"
 |                   DATABASE ISSUE DECISION TREE                               |
 +===============================================================================+
 
-  PostgreSQL status?
+  MariaDB status?
   |
   +-- "Active (running)"
   |   |
-  |   +-- Can connect with psql?
+  |   +-- Can connect with mysql?
   |       |
   |       +-- Yes --> Check WALLIX DB user permissions
   |       |           Check max_connections limit
   |       |           Check disk space for DB
   |       |
-  |       +-- No --> Check pg_hba.conf authentication
-  |                  Check PostgreSQL logs for errors
+  |       +-- No --> Check mysql authentication
+  |                  Check MariaDB logs for errors
   |
   +-- "Failed" or "Inactive"
   |   |
-  |   +-- Check logs: journalctl -u postgresql
+  |   +-- Check logs: journalctl -u mariadb
   |   |
   |   +-- Common errors:
   |       |
   |       +-- "No space left on device"
   |       |   --> Free disk space
-  |       |   --> Move WAL files if necessary
+  |       |   --> Move binary log files if necessary
   |       |
   |       +-- "Could not open file"
   |       |   --> Check permissions
   |       |   --> Check for corruption
   |       |
-  |       +-- "Recovery mode"
+  |       +-- "InnoDB recovery mode"
   |       |   --> Database crashed, check consistency
   |       |   --> May need to restore from backup
 
@@ -197,36 +197,36 @@ sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity;"
 **If too many connections:**
 ```bash
 # Check current connections
-sudo -u postgres psql -c "
-SELECT usename, count(*)
-FROM pg_stat_activity
-GROUP BY usename
-ORDER BY count DESC;"
+sudo mysql -e "
+SELECT user, count(*)
+FROM information_schema.processlist
+GROUP BY user
+ORDER BY count(*) DESC;"
 
 # Kill idle connections
-sudo -u postgres psql -c "
-SELECT pg_terminate_backend(pid)
-FROM pg_stat_activity
-WHERE state = 'idle'
-AND query_start < now() - interval '1 hour';"
+sudo mysql -e "
+SELECT CONCAT('KILL ', id, ';')
+FROM information_schema.processlist
+WHERE command = 'Sleep'
+AND time > 3600;"
 
 # Increase max_connections if needed (requires restart)
-# Edit postgresql.conf: max_connections = 200
+# Edit /etc/mysql/mariadb.conf.d/50-server.cnf: max_connections = 200
 ```
 
 **If database won't start:**
 ```bash
 # Check for lock files
-ls -la /var/lib/postgresql/15/main/postmaster.pid
+ls -la /var/lib/mysql/*.pid
 
-# Remove stale lock file (ONLY if PostgreSQL truly not running)
-rm /var/lib/postgresql/15/main/postmaster.pid
+# Remove stale lock file (ONLY if MariaDB truly not running)
+rm /var/lib/mysql/*.pid
 
-# Start PostgreSQL
-systemctl start postgresql
+# Start MariaDB
+systemctl start mariadb
 
 # If corruption suspected, try recovery
-sudo -u postgres pg_resetwal /var/lib/postgresql/15/main/
+sudo mysql_upgrade --force
 ```
 
 **If data corruption:**
@@ -235,13 +235,13 @@ sudo -u postgres pg_resetwal /var/lib/postgresql/15/main/
 systemctl stop wallix-pam4ot
 
 # Check database consistency
-sudo -u postgres pg_dump wallix > /dev/null
+mysqldump wallix > /dev/null
 # If fails, database is corrupted
 
 # Restore from backup
-systemctl stop postgresql
-sudo -u postgres pg_restore -d wallix /var/backup/wallix/database.dump
-systemctl start postgresql
+systemctl stop mariadb
+sudo mysql wallix < /var/backup/wallix/database.sql
+systemctl start mariadb
 systemctl start wallix-pam4ot
 ```
 
@@ -552,7 +552,7 @@ crm configure show <resource>
 # CRITICAL: This can cause data corruption!
 
 # 1. Identify which node has latest data
-# Check PostgreSQL WAL position on both nodes
+# Check MariaDB binary log position on both nodes
 
 # 2. Stop cluster on one node
 crm node standby node2
@@ -864,7 +864,7 @@ ss -s
 wabadmin sessions --status active --count
 
 # 4. Check database performance
-sudo -u postgres psql -c "SELECT count(*) FROM pg_stat_activity;"
+sudo mysql -e "SHOW STATUS LIKE 'Threads_connected';"
 ```
 
 ### Resolution Steps
@@ -883,22 +883,22 @@ wabadmin sessions --status active --count
 **If database slow:**
 ```bash
 # Check slow queries
-sudo -u postgres psql -c "
-SELECT pid, now() - pg_stat_activity.query_start AS duration, query
-FROM pg_stat_activity
-WHERE state != 'idle'
-ORDER BY duration DESC
+sudo mysql -e "
+SELECT id, user, host, db, time, state, info
+FROM information_schema.processlist
+WHERE command != 'Sleep'
+ORDER BY time DESC
 LIMIT 10;"
 
-# Check if vacuum needed
-sudo -u postgres psql -c "
-SELECT schemaname, relname, n_dead_tup
-FROM pg_stat_user_tables
-WHERE n_dead_tup > 10000
-ORDER BY n_dead_tup DESC;"
+# Check if optimization needed
+sudo mysql wallix -e "
+SELECT table_name, data_free
+FROM information_schema.tables
+WHERE table_schema = 'wallix' AND data_free > 10000000
+ORDER BY data_free DESC;"
 
-# Run vacuum if needed
-sudo -u postgres vacuumdb --all --analyze
+# Run optimization if needed
+sudo mysql wallix -e "OPTIMIZE TABLE users, sessions, audit_log;"
 ```
 
 ---

@@ -312,7 +312,7 @@ wabadmin health-check
 
 # Check for signs of encryption
 ls -la /var/lib/wallix/
-ls -la /var/lib/postgresql/
+ls -la /var/lib/mysql/
 find /var/lib/wallix -name "*.encrypted" -o -name "*.locked"
 ```
 
@@ -535,8 +535,8 @@ ping -c 3 localhost
 netstat -tlnp | grep -E "(443|22)"
 
 # Check database
-systemctl status postgresql
-sudo -u postgres psql -c "SELECT 1;"
+systemctl status mariadb
+sudo mysql -e "SELECT 1;"
 ```
 
 ### Recovery Procedures
@@ -558,17 +558,15 @@ wabadmin restore --config-only --input /var/backup/wallix/daily/latest.tar.gz
 
 **Scenario 2: Database Issues**
 ```bash
-# Check PostgreSQL status
-systemctl status postgresql
-sudo -u postgres pg_isready
+# Check MariaDB status
+systemctl status mariadb
+sudo mysql -e "SELECT 1;"
 
 # Check for corrupt tables
-sudo -u postgres psql -d wallix -c "
-SELECT relname FROM pg_class
-WHERE relkind = 'r' AND relpages = 0 AND reltuples > 0;"
+sudo mysql wallix -e "CHECK TABLE users, sessions, audit_log;"
 
 # Repair if needed
-sudo -u postgres psql -d wallix -c "REINDEX DATABASE wallix;"
+sudo mysql wallix -e "REPAIR TABLE users, sessions, audit_log;"
 ```
 
 **Scenario 3: HA Failover Not Working**
@@ -617,10 +615,10 @@ crm resource clear wallix-bastion
 **Step 2: Identify Node with Latest Data**
 ```bash
 # On each node (if accessible):
-sudo -u postgres psql -c "SELECT pg_last_wal_receive_lsn();"
+sudo mysql -e "SHOW MASTER STATUS;"
 
-# Compare LSN positions
-# Node with higher LSN has more recent data
+# Compare binary log positions
+# Node with higher position has more recent data
 ```
 
 **Step 3: Recover Primary Node**
@@ -633,7 +631,7 @@ systemctl stop pacemaker
 systemctl stop corosync
 
 # Start WALLIX standalone
-systemctl start postgresql
+systemctl start mariadb
 systemctl start wallix-bastion
 
 # Verify functionality
@@ -645,17 +643,22 @@ wabadmin health-check
 ```bash
 # On secondary node:
 # Clean existing data
-systemctl stop postgresql
-rm -rf /var/lib/postgresql/15/main/*
+systemctl stop mariadb
+rm -rf /var/lib/mysql/*
 
 # Re-initialize from primary
-pg_basebackup -h primary-node -D /var/lib/postgresql/15/main -U replicator -P
+mariabackup --backup --target-dir=/tmp/backup --host=primary-node --user=replicator --password=xxx
+mariabackup --prepare --target-dir=/tmp/backup
+mariabackup --copy-back --target-dir=/tmp/backup
+chown -R mysql:mysql /var/lib/mysql
 
-# Start PostgreSQL in standby mode
-systemctl start postgresql
+# Start MariaDB in replica mode
+systemctl start mariadb
+sudo mysql -e "CHANGE MASTER TO MASTER_HOST='primary-node', MASTER_USER='replicator', MASTER_PASSWORD='xxx', MASTER_AUTO_POSITION=1;"
+sudo mysql -e "START SLAVE;"
 
 # Verify replication
-sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 ```
 
 **Step 5: Restore Cluster**
@@ -678,7 +681,7 @@ crm node online node-b
 
 ## Database Corruption Recovery
 
-### Playbook: PostgreSQL Database Corruption
+### Playbook: MariaDB Database Corruption
 
 **Severity:** P1 - Critical
 **Trigger:** Database errors, missing data, or integrity failures
@@ -686,21 +689,18 @@ crm node online node-b
 ### Assessment
 
 ```bash
-# Check PostgreSQL status
-systemctl status postgresql
+# Check MariaDB status
+systemctl status mariadb
 
 # Check for errors
-sudo -u postgres psql -c "SELECT * FROM pg_stat_database WHERE datname = 'wallix';"
+sudo mysql -e "SHOW STATUS LIKE 'Com_%';"
 
 # Check for corruption
-sudo -u postgres pg_dump wallix > /dev/null
+mysqldump wallix > /dev/null
 # If this fails, corruption is likely
 
 # Identify corrupt tables
-sudo -u postgres psql -d wallix -c "
-SELECT schemaname, tablename
-FROM pg_tables
-WHERE schemaname = 'public';"
+sudo mysql wallix -e "CHECK TABLE users, sessions, audit_log, devices, accounts;"
 ```
 
 ### Recovery Options
@@ -711,8 +711,8 @@ WHERE schemaname = 'public';"
 systemctl stop wallix-bastion
 
 # Attempt repair
-sudo -u postgres psql -d wallix -c "REINDEX DATABASE wallix;"
-sudo -u postgres psql -d wallix -c "VACUUM FULL ANALYZE;"
+sudo mysql wallix -e "REPAIR TABLE users, sessions, audit_log;"
+sudo mysql wallix -e "OPTIMIZE TABLE users, sessions, audit_log;"
 
 # Restart and verify
 systemctl start wallix-bastion
@@ -723,20 +723,20 @@ wabadmin verify --database
 ```bash
 # Stop all services
 systemctl stop wallix-bastion
-systemctl stop postgresql
+systemctl stop mariadb
 
 # Backup current (corrupt) database for analysis
-sudo -u postgres pg_dump wallix > /tmp/corrupt-db-backup.sql 2>&1
+mysqldump wallix > /tmp/corrupt-db-backup.sql 2>&1
 
 # Drop and recreate
-sudo -u postgres dropdb wallix
-sudo -u postgres createdb wallix
+sudo mysql -e "DROP DATABASE wallix;"
+sudo mysql -e "CREATE DATABASE wallix;"
 
 # Restore from backup
-sudo -u postgres pg_restore -d wallix /var/backup/wallix/database-latest.dump
+sudo mysql wallix < /var/backup/wallix/database-latest.sql
 
 # Restart services
-systemctl start postgresql
+systemctl start mariadb
 systemctl start wallix-bastion
 
 # Verify
@@ -746,19 +746,17 @@ wabadmin health-check
 
 **Option 3: Point-in-Time Recovery**
 ```bash
-# If WAL archiving enabled:
+# If binary logging enabled:
 # Restore base backup
-sudo -u postgres pg_restore /path/to/base_backup
+mariabackup --copy-back --target-dir=/path/to/base_backup
+chown -R mysql:mysql /var/lib/mysql
 
-# Configure recovery
-cat > /var/lib/postgresql/15/main/recovery.signal << EOF
-restore_command = 'cp /path/to/wal_archive/%f %p'
-recovery_target_time = '2024-01-15 14:30:00'
-recovery_target_action = 'promote'
-EOF
+# Apply binary logs up to specific point
+mysqlbinlog --stop-datetime='2024-01-15 14:30:00' \
+  /path/to/binlog_archive/mariadb-bin.* | mysql
 
-# Start PostgreSQL
-systemctl start postgresql
+# Start MariaDB
+systemctl start mariadb
 
 # After recovery completes, verify data
 ```
