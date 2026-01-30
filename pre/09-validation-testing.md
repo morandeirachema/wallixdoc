@@ -241,10 +241,11 @@ echo "=== Replication Status Test ==="
 # On Node 1 (Primary)
 ssh root@pam4ot-node1.lab.local << 'EOF'
 echo "Replication Status (from primary):"
-sudo mysql -c "SELECT client_addr, state, sent_lsn, write_lsn, replay_lsn FROM SHOW SLAVE STATUS;"
+sudo mysql -e "SHOW MASTER STATUS\G"
+sudo mysql -e "SHOW SLAVE HOSTS;"
 
 echo ""
-echo "Replication Lag:"
+echo "Replication Lag (if slave):"
 sudo mysql -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master
 EOF
 

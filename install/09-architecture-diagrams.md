@@ -882,10 +882,11 @@ crm status
 pcs status
 
 # Check MariaDB replication (on primary)
-sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
+sudo mysql -e "SHOW MASTER STATUS\G"
+sudo mysql -e "SHOW SLAVE HOSTS;"
 
 # Check MariaDB recovery status (on standby)
-sudo mysql -c "SELECT SHOW SLAVE STATUS();"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
 # Check listening ports
 ss -tlnp | grep -E '(22|443|3389|3306|5900)'

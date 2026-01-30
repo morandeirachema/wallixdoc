@@ -1301,7 +1301,7 @@ pcs cluster start --all
 pcs cluster stop --all
 
 # Database commands
-sudo mysql -c "SELECT version();"
+sudo mysql -e "SELECT version();"
 mysqldump wab > backup.sql
 
 # View recent audit
