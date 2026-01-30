@@ -49,23 +49,22 @@
 The **flagship PAM platform** providing comprehensive privileged access management.
 
 ```
-+=============================================================+
-|                     WALLIX BASTION                          |
-+=============================================================+
-|                                                             |
-|  +-----------------+    +-----------------+                |
-|  |  SESSION        |    |  PASSWORD       |                |
-|  |  MANAGER        |    |  MANAGER        |                |
-|  |                 |    |                 |                |
-|  |  * Proxy-based  |    |  * Credential   |                |
-|  |  * Recording    |    |    Vault        |                |
-|  |  * Monitoring   |    |  * Rotation     |                |
-|  |  * Audit        |    |  * Injection    |                |
-|  +-----------------+    +-----------------+                |
-|                                                             |
-|  Protocols: RDP | SSH | HTTPS | VNC | Telnet | Custom      |
-|                                                             |
-+=============================================================+
++===============================================================================+
+|                            WALLIX BASTION                                     |
++===============================================================================+
+|                                                                               |
+|  +-------------------------+       +-------------------------+                |
+|  |  SESSION MANAGER        |       |  PASSWORD MANAGER       |                |
+|  |                         |       |                         |                |
+|  |  * Proxy-based access   |       |  * Credential Vault     |                |
+|  |  * Session recording    |       |  * Auto-rotation        |                |
+|  |  * Real-time monitoring |       |  * Credential injection |                |
+|  |  * Comprehensive audit  |       |  * Policy enforcement   |                |
+|  +-------------------------+       +-------------------------+                |
+|                                                                               |
+|  Protocols: RDP | SSH | HTTPS | VNC | Telnet | Custom                        |
+|                                                                               |
++===============================================================================+
 ```
 
 **Key Capabilities:**
@@ -82,33 +81,31 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 **Privileged Access Management for Operational Technology** — WALLIX's unified PAM solution specifically designed for OT/industrial environments.
 
 ```
-+=============================================================+
-|                      WALLIX PAM4OT                          |
-|              (Built on WALLIX Bastion Technology)           |
-+=============================================================+
-|                                                             |
-|  +-------------------+    +-------------------+             |
-|  | SECURE REMOTE     |    | JUST-IN-TIME      |             |
-|  | ACCESS            |    | ACCESS            |             |
-|  |                   |    |                   |             |
-|  | * VPN-less access |    | * Approval        |             |
-|  | * Vendor access   |    |   workflows       |             |
-|  | * Browser-based   |    | * Time-limited    |             |
-|  +-------------------+    +-------------------+             |
-|                                                             |
-|  +-------------------+    +-------------------+             |
-|  | SESSION           |    | PASSWORD          |             |
-|  | RECORDING         |    | MANAGEMENT        |             |
-|  |                   |    |                   |             |
-|  | * Full audit      |    | * Credential      |             |
-|  | * Compliance      |    |   vault           |             |
-|  | * Forensics       |    | * Least privilege |             |
-|  +-------------------+    +-------------------+             |
-|                                                             |
-|  Industrial Protocols: Modbus | OPC UA | S7comm | DNP3      |
-|  Standard Protocols:   RDP | SSH | VNC | HTTPS | Telnet     |
-|                                                             |
-+=============================================================+
++===============================================================================+
+|                            WALLIX PAM4OT                                      |
+|                  (Built on WALLIX Bastion Technology)                         |
++===============================================================================+
+|                                                                               |
+|  +----------------------------------+  +----------------------------------+   |
+|  | SECURE REMOTE ACCESS            |  | JUST-IN-TIME ACCESS              |   |
+|  |                                  |  |                                  |   |
+|  | * VPN-less access               |  | * Approval workflows             |   |
+|  | * Vendor access management      |  | * Time-limited privileges        |   |
+|  | * Browser-based sessions        |  | * On-demand access               |   |
+|  +----------------------------------+  +----------------------------------+   |
+|                                                                               |
+|  +----------------------------------+  +----------------------------------+   |
+|  | SESSION RECORDING               |  | PASSWORD MANAGEMENT              |   |
+|  |                                  |  |                                  |   |
+|  | * Full audit trail              |  | * Credential vault               |   |
+|  | * Compliance evidence           |  | * Automatic rotation             |   |
+|  | * Forensic analysis             |  | * Least privilege                |   |
+|  +----------------------------------+  +----------------------------------+   |
+|                                                                               |
+|  Industrial Protocols: Modbus | OPC UA | S7comm | DNP3                        |
+|  Standard Protocols:   RDP | SSH | VNC | HTTPS | Telnet                       |
+|                                                                               |
++===============================================================================+
 ```
 
 **Key Features:**
@@ -200,21 +197,24 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 ### Product Integration Matrix
 
 ```
-+--------------+     +--------------+     +--------------+
-|   WALLIX     |     |   WALLIX     |     |   WALLIX     |
-|  Trustelem   |---->|   Bastion    |---->|    PEDM      |
-|   (IDaaS)    |     |    (PAM)     |     |  (Endpoint)  |
-+--------------+     +--------------+     +--------------+
-       |                    |                    |
-       |                    |                    |
-       v                    v                    v
-   +-------------------------------------------------+
-   |              Unified Security Platform          |
-   |                                                 |
-   |  * Single pane of glass                        |
-   |  * Consistent policy enforcement               |
-   |  * End-to-end audit trail                      |
-   +-------------------------------------------------+
++===============================================================================+
+|                       PRODUCT INTEGRATION MATRIX                              |
++===============================================================================+
+|                                                                               |
+|  +---------------------+   +---------------------+   +---------------------+  |
+|  |  WALLIX Trustelem   |   |   WALLIX Bastion    |   |    WALLIX PEDM      |  |
+|  |       (IDaaS)       |-->|       (PAM)         |-->|    (Endpoint)       |  |
+|  +---------------------+   +---------------------+   +---------------------+  |
+|            |                         |                         |              |
+|            v                         v                         v              |
+|  +-----------------------------------------------------------------------+    |
+|  |                     Unified Security Platform                         |    |
+|  |                                                                       |    |
+|  |  * Single pane of glass          * Consistent policy enforcement     |    |
+|  |  * End-to-end audit trail        * Centralized management            |    |
+|  +-----------------------------------------------------------------------+    |
+|                                                                               |
++===============================================================================+
 ```
 
 ---
@@ -304,21 +304,21 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 WALLIX uses a **modular licensing** approach:
 
 ```
-+=============================================================+
-|                    LICENSING MODEL                          |
-+=============================================================+
-|                                                             |
-|  BASE LICENSE (Required)                                    |
-|  +-- Session Manager                                        |
-|  +-- Based on: Named Users OR Concurrent Sessions           |
-|                                                             |
-|  OPTIONAL MODULES                                           |
-|  +-- Password Manager (credential vaulting & rotation)      |
-|  +-- Access Manager (HTML5 web portal)                      |
-|  +-- PEDM (endpoint privilege management)                   |
-|  +-- High Availability                                      |
-|                                                             |
-+=============================================================+
++===============================================================================+
+|                            LICENSING MODEL                                    |
++===============================================================================+
+|                                                                               |
+|  BASE LICENSE (Required)                                                      |
+|  +-- Session Manager                                                          |
+|  +-- Based on: Named Users OR Concurrent Sessions                             |
+|                                                                               |
+|  OPTIONAL MODULES                                                             |
+|  +-- Password Manager (credential vaulting & rotation)                        |
+|  +-- Access Manager (HTML5 web portal)                                        |
+|  +-- PEDM (endpoint privilege management)                                     |
+|  +-- High Availability                                                        |
+|                                                                               |
++===============================================================================+
 ```
 
 ### License Metrics
