@@ -19,8 +19,8 @@
 
 ```
                             +-------------------------------------+
-                            |           USERS                      |
-                            |  (Administrators, Operators, Apps)   |
+                            |           USERS                     |
+                            |  (Administrators, Operators, Apps)  |
                             +--------------+----------------------+
                                            |
                     +----------------------+----------------------+
@@ -36,33 +36,33 @@
                                         |
                                         v
 +===========================================================================+
-|                           WALLIX BASTION                                   |
-|                                                                            |
-|  +--------------------------------------------------------------------+  |
-|  |                        PROXY LAYER                                  |   |
-|  |   +----------+ +----------+ +----------+ +----------+ +---------+ |  |
-|  |   |   SSH    | |   RDP    | |  HTTPS   | |   VNC    | | Telnet  | |  |
-|  |   |  Proxy   | |  Proxy   | |  Proxy   | |  Proxy   | | Proxy   | |  |
-|  |   +----------+ +----------+ +----------+ +----------+ +---------+ |  |
-|  +--------------------------------------------------------------------+  |
-|                                                                            |
-|  +---------------------+  +---------------------+  +------------------+  |
-|  |   SESSION MANAGER   |  |   PASSWORD MANAGER  |  |   AUDIT ENGINE   |  |
-|  |                     |  |                     |  |                  |  |
-|  |  * Authentication   |  |  * Credential Vault |  |  * Logging       |  |
-|  |  * Authorization    |  |  * Rotation Engine  |  |  * Recording     |  |
-|  |  * Session Broker   |  |  * Checkout/Checkin |  |  * Reporting     |  |
-|  |  * Monitoring       |  |  * Injection        |  |  * Alerting      |  |
-|  +---------------------+  +---------------------+  +------------------+  |
-|                                                                            |
-|  +--------------------------------------------------------------------+  |
-|  |                        DATA LAYER                                   |   |
-|  |   +--------------+  +--------------+  +-----------------------+   |  |
-|  |   |   MariaDB    |  |  File System |  |  Configuration Store  |   |  |
-|  |   |  (Metadata)  |  |  (Recordings)|  |  (Settings)           |   |  |
-|  |   +--------------+  +--------------+  +-----------------------+   |  |
-|  +--------------------------------------------------------------------+  |
-|                                                                            |
+|                           WALLIX BASTION                                  |
+|                                                                           |
+|  +--------------------------------------------------------------------+   |
+|  |                        PROXY LAYER                                 |   |
+|  |   +----------+ +----------+ +----------+ +----------+ +---------+  |   |
+|  |   |   SSH    | |   RDP    | |  HTTPS   | |   VNC    | | Telnet  |  |   |
+|  |   |  Proxy   | |  Proxy   | |  Proxy   | |  Proxy   | | Proxy   |  |   |
+|  |   +----------+ +----------+ +----------+ +----------+ +---------+  |   |
+|  +--------------------------------------------------------------------+   |
+|                                                                           |
+|  +---------------------+  +---------------------+  +------------------+   |
+|  |   SESSION MANAGER   |  |   PASSWORD MANAGER  |  |   AUDIT ENGINE   |   |
+|  |                     |  |                     |  |                  |   |
+|  |  * Authentication   |  |  * Credential Vault |  |  * Logging       |   |
+|  |  * Authorization    |  |  * Rotation Engine  |  |  * Recording     |   |
+|  |  * Session Broker   |  |  * Checkout/Checkin |  |  * Reporting     |   |
+|  |  * Monitoring       |  |  * Injection        |  |  * Alerting      |   |
+|  +---------------------+  +---------------------+  +------------------+   |
+|                                                                           |
+|  +--------------------------------------------------------------------+   |
+|  |                        DATA LAYER                                  |   |
+|  |   +--------------+  +--------------+  +-----------------------+    |   |
+|  |   |   MariaDB    |  |  File System |  |  Configuration Store  |    |   |
+|  |   |  (Metadata)  |  |  (Recordings)|  |  (Settings)           |    |   |
+|  |   +--------------+  +--------------+  +-----------------------+    |   |
+|  +--------------------------------------------------------------------+   |
+|                                                                           |
 +===========================================================================+
                                         |
                                         v
@@ -166,31 +166,31 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ```
 +=================================================================+
-|                      SESSION MANAGER                             |
+|                      SESSION MANAGER                            |
 +=================================================================+
-|                                                                  |
-|  +-----------------+     +-----------------+                   |
-|  |  AUTHENTICATION |     |  AUTHORIZATION  |                   |
-|  |                 |     |                 |                   |
-|  |  * Local        |     |  * Policy       |                   |
-|  |  * LDAP/AD      |     |    evaluation   |                   |
-|  |  * RADIUS       |     |  * Time-based   |                   |
-|  |  * SAML         |     |  * Approval     |                   |
-|  |  * Kerberos     |     |    workflow     |                   |
-|  |  * X.509        |     |                 |                   |
-|  +-----------------+     +-----------------+                   |
-|                                                                  |
-|  +-----------------+     +-----------------+                   |
-|  |  PROXY ENGINE   |     |  SESSION        |                   |
-|  |                 |     |  MONITORING     |                   |
-|  |  * Protocol     |     |                 |                   |
-|  |    handlers     |     |  * Real-time    |                   |
-|  |  * Data         |     |    view         |                   |
-|  |    inspection   |     |  * 4-eyes       |                   |
-|  |  * Recording    |     |  * Kill session |                   |
-|  |    hooks        |     |  * Alerting     |                   |
-|  +-----------------+     +-----------------+                   |
-|                                                                  |
+|                                                                 |
+|  +-----------------+     +-----------------+                    |
+|  |  AUTHENTICATION |     |  AUTHORIZATION  |                    |
+|  |                 |     |                 |                    |
+|  |  * Local        |     |  * Policy       |                    |
+|  |  * LDAP/AD      |     |    evaluation   |                    |
+|  |  * RADIUS       |     |  * Time-based   |                    |
+|  |  * SAML         |     |  * Approval     |                    |
+|  |  * Kerberos     |     |    workflow     |                    |
+|  |  * X.509        |     |                 |                    |
+|  +-----------------+     +-----------------+                    |
+|                                                                 |
+|  +-----------------+     +-----------------+                    |
+|  |  PROXY ENGINE   |     |  SESSION        |                    |
+|  |                 |     |  MONITORING     |                    |
+|  |  * Protocol     |     |                 |                    |
+|  |    handlers     |     |  * Real-time    |                    |
+|  |  * Data         |     |    view         |                    |
+|  |    inspection   |     |  * 4-eyes       |                    |
+|  |  * Recording    |     |  * Kill session |                    |
+|  |    hooks        |     |  * Alerting     |                    |
+|  +-----------------+     +-----------------+                    |
+|                                                                 |
 +=================================================================+
 ```
 
@@ -205,40 +205,40 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ```
 +=================================================================+
-|                      PASSWORD MANAGER                            |
+|                      PASSWORD MANAGER                           |
 +=================================================================+
-|                                                                  |
-|  +---------------------------------------------------------+   |
-|  |                  CREDENTIAL VAULT                        |   |
-|  |                                                          |   |
-|  |    +----------+  +----------+  +----------+            |   |
-|  |    | Accounts |  |   Keys   |  |  Secrets |            |   |
-|  |    |          |  |          |  |          |            |   |
-|  |    | user/pass|  | SSH Keys |  | API Keys |            |   |
-|  |    |          |  | Certs    |  | Tokens   |            |   |
-|  |    +----------+  +----------+  +----------+            |   |
-|  |                                                          |   |
-|  |    Encryption: AES-256 | Key Management: HSM optional   |   |
-|  +---------------------------------------------------------+   |
-|                                                                  |
-|  +-----------------+     +-----------------+                   |
-|  |  ROTATION       |     |  CHECKOUT       |                   |
-|  |  ENGINE         |     |  WORKFLOW       |                   |
-|  |                 |     |                 |                   |
-|  |  * Scheduled    |     |  * Request      |                   |
-|  |  * On-demand    |     |  * Approval     |                   |
-|  |  * Post-session |     |  * Time-limited |                   |
-|  |  * Verification |     |  * Audit trail  |                   |
-|  +-----------------+     +-----------------+                   |
-|                                                                  |
-|  +---------------------------------------------------------+   |
-|  |                  INJECTION ENGINE                        |   |
-|  |                                                          |   |
-|  |  * Transparent credential injection into sessions       |   |
-|  |  * User never sees actual password                      |   |
-|  |  * Protocol-aware injection                             |   |
-|  +---------------------------------------------------------+   |
-|                                                                  |
+|                                                                 |
+|  +---------------------------------------------------------+    |
+|  |                  CREDENTIAL VAULT                       |    |
+|  |                                                         |    |
+|  |    +----------+  +----------+  +----------+             |    |
+|  |    | Accounts |  |   Keys   |  |  Secrets |             |    |
+|  |    |          |  |          |  |          |             |    |
+|  |    | user/pass|  | SSH Keys |  | API Keys |             |    |
+|  |    |          |  | Certs    |  | Tokens   |             |    |
+|  |    +----------+  +----------+  +----------+             |    |
+|  |                                                         |    |
+|  |    Encryption: AES-256 | Key Management: HSM optional   |    |
+|  +---------------------------------------------------------+    |
+|                                                                 |
+|  +-----------------+     +-----------------+                    |
+|  |  ROTATION       |     |  CHECKOUT       |                    |
+|  |  ENGINE         |     |  WORKFLOW       |                    |
+|  |                 |     |                 |                    |
+|  |  * Scheduled    |     |  * Request      |                    |
+|  |  * On-demand    |     |  * Approval     |                    |
+|  |  * Post-session |     |  * Time-limited |                    |
+|  |  * Verification |     |  * Audit trail  |                    |
+|  +-----------------+     +-----------------+                    |
+|                                                                 |
+|  +---------------------------------------------------------+    |
+|  |                  INJECTION ENGINE                       |    |
+|  |                                                         |    |
+|  |  * Transparent credential injection into sessions       |    |
+|  |  * User never sees actual password                      |    |
+|  |  * Protocol-aware injection                             |    |
+|  +---------------------------------------------------------+    |
+|                                                                 |
 +=================================================================+
 ```
 
@@ -253,32 +253,32 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ```
 +=================================================================+
-|                      ACCESS MANAGER                              |
+|                      ACCESS MANAGER                             |
 +=================================================================+
-|                                                                  |
-|  +---------------------------------------------------------+   |
-|  |                    WEB PORTAL                            |   |
-|  |                                                          |   |
-|  |    +----------------------------------------------+     |   |
-|  |    |            HTML5 Session Client              |     |   |
-|  |    |                                              |     |   |
-|  |    |   * RDP via Guacamole/HTML5                 |     |   |
-|  |    |   * SSH via WebSocket terminal              |     |   |
-|  |    |   * VNC via HTML5 canvas                    |     |   |
-|  |    |   * File transfer via web                   |     |   |
-|  |    +----------------------------------------------+     |   |
-|  |                                                          |   |
-|  |    +----------------------------------------------+     |   |
-|  |    |            Target Browser                    |     |   |
-|  |    |                                              |     |   |
-|  |    |   * Search and filter targets               |     |   |
-|  |    |   * Favorites and recent                    |     |   |
-|  |    |   * Quick connect                           |     |   |
-|  |    +----------------------------------------------+     |   |
-|  +---------------------------------------------------------+   |
-|                                                                  |
-|  Features: SSO | MFA | Responsive | Mobile-Ready               |
-|                                                                  |
+|                                                                 |
+|  +---------------------------------------------------------+    |
+|  |                    WEB PORTAL                           |    |
+|  |                                                         |    |
+|  |    +----------------------------------------------+     |    |
+|  |    |            HTML5 Session Client              |     |    |
+|  |    |                                              |     |    |
+|  |    |   * RDP via Guacamole/HTML5                  |     |    |
+|  |    |   * SSH via WebSocket terminal               |     |    |
+|  |    |   * VNC via HTML5 canvas                     |     |    |
+|  |    |   * File transfer via web                    |     |    |
+|  |    +----------------------------------------------+     |    |
+|  |                                                         |    |
+|  |    +----------------------------------------------+     |    |
+|  |    |            Target Browser                    |     |    |
+|  |    |                                              |     |    |
+|  |    |   * Search and filter targets                |     |    |
+|  |    |   * Favorites and recent                     |     |    |
+|  |    |   * Quick connect                            |     |    |
+|  |    +----------------------------------------------+     |    |
+|  +---------------------------------------------------------+    |
+|                                                                 |
+|  Features: SSO | MFA | Responsive | Mobile-Ready                |
+|                                                                 |
 +=================================================================+
 ```
 
@@ -319,7 +319,7 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ```
 +-----------------+     +-----------------+     +-----------------+
-|  Access Manager |     |  Bastion Core   |     |  External DB     |
+|  Access Manager |     |  Bastion Core   |     |  External DB    |
 |  (Web Portal)   |---->|  (Session +     |---->|  (MariaDB)      |
 |                 |     |   Password Mgr) |     |                 |
 +-----------------+     +-----------------+     +-----------------+
@@ -380,15 +380,15 @@ This is the **most significant architectural difference** between WALLIX and Cyb
         SITE A (Primary)                    SITE B (DR/Secondary)
 +-----------------------------+     +-----------------------------+
 |                             |     |                             |
-|  +---------------------+   |     |   +---------------------+   |
-|  |  Bastion Cluster    |   |     |   |  Bastion Cluster    |   |
-|  |  (Active)           |<--+-----+-->|  (Standby/Active)   |   |
-|  +---------------------+   |     |   +---------------------+   |
-|            |               |     |            |               |
-|            v               |     |            v               |
-|  +---------------------+   |     |   +---------------------+   |
-|  |  Local Database     |---+-----+-->|  Replica Database   |   |
-|  +---------------------+   |     |   +---------------------+   |
+|  +---------------------+    |     |   +---------------------+   |
+|  |  Bastion Cluster    |    |     |   |  Bastion Cluster    |   |
+|  |  (Active)           |<--+-----+--> |  (Standby/Active)   |   |
+|  +---------------------+    |     |   +---------------------+   |
+|            |                |     |            |                |
+|            v                |     |            v                |
+|  +---------------------+    |     |   +---------------------+   |
+|  |  Local Database     |---+-----+-->|  Replica Database    |   |
+|  +---------------------+    |     |   +---------------------+   |
 |                             |     |                             |
 +-----------------------------+     +-----------------------------+
               |                                   |
@@ -406,29 +406,29 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ```
 +=========================================================================+
-|                           NETWORK ARCHITECTURE                           |
+|                           NETWORK ARCHITECTURE                          |
 +=========================================================================+
-|                                                                          |
+|                                                                         |
 |   USER ZONE                        DMZ                    SECURE ZONE   |
 |   ----------                    ---------                 ------------  |
-|                                                                          |
-|   +----------+                 +----------+              +----------+  |
-|   |   User   |---HTTPS:443---->|  Access  |              |  Target  |  |
-|   | Browser  |                 |  Manager |              |  Servers |  |
-|   +----------+                 +----+-----+              +----^-----+  |
-|                                     |                         |        |
-|   +----------+                      |                         |        |
-|   |  Native  |                      v                         |        |
-|   |  Client  |               +-------------+                  |        |
-|   |  (SSH/   |--SSH:22------>|   WALLIX    |--SSH/RDP/etc-----+        |
-|   |   RDP)   |--RDP:3389---->|   Bastion   |                          |
-|   +----------+               +------+------+                          |
-|                                     |                                  |
-|   +----------+                      |              +--------------+   |
-|   |   API    |---HTTPS:443----------+              |  Directory   |   |
-|   |  Client  |                                     |  (LDAP/AD)   |   |
-|   +----------+                                     +--------------+   |
-|                                                                          |
+|                                                                         |
+|   +----------+                 +----------+              +----------+   |
+|   |   User   |---HTTPS:443---->|  Access  |              |  Target  |   |
+|   | Browser  |                 |  Manager |              |  Servers |   |
+|   +----------+                 +----+-----+              +----^-----+   |
+|                                     |                         |         |
+|   +----------+                      |                         |         |
+|   |  Native  |                      v                         |         |
+|   |  Client  |               +-------------+                  |         |
+|   |  (SSH/   |--SSH:22------>|   WALLIX    |--SSH/RDP/etc-----+         |
+|   |   RDP)   |--RDP:3389---->|   Bastion   |                            |
+|   +----------+               +------+------+                            |
+|                                     |                                   |
+|   +----------+                      |              +--------------+     |
+|   |   API    |---HTTPS:443----------+              |  Directory   |     |
+|   |  Client  |                                     |  (LDAP/AD)   |     |
+|   +----------+                                     +--------------+     |
+|                                                                         |
 +=========================================================================+
 ```
 
@@ -462,29 +462,29 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 +==================================================================+
 |                    FIREWALL RULES SUMMARY                        |
 +==================================================================+
-|                                                                   |
+|                                                                  |
 |  RULE 1: Users -> Bastion (Session Protocols)                    |
-|  ---------------------------------------------                  |
-|  Allow: TCP 22, 3389, 5900, 443                                 |
-|                                                                   |
+|  ---------------------------------------------                   |
+|  Allow: TCP 22, 3389, 5900, 443                                  |
+|                                                                  |
 |  RULE 2: Bastion -> Targets (Session Protocols)                  |
-|  -------------------------------------------------              |
-|  Allow: TCP 22, 3389, 5900, 23, 1521, 3306, etc.               |
-|                                                                   |
+|  -------------------------------------------------               |
+|  Allow: TCP 22, 3389, 5900, 23, 1521, 3306, etc.                 |
+|                                                                  |
 |  RULE 3: Bastion -> Directory Services                           |
-|  -----------------------------------------                      |
-|  Allow: TCP 389, 636, 88, 464                                   |
-|                                                                   |
+|  -----------------------------------------                       |
+|  Allow: TCP 389, 636, 88, 464                                    |
+|                                                                  |
 |  RULE 4: Bastion -> SIEM/Syslog                                  |
-|  --------------------------------                               |
-|  Allow: TCP/UDP 514, TCP 6514                                   |
-|                                                                   |
+|  --------------------------------                                |
+|  Allow: TCP/UDP 514, TCP 6514                                    |
+|                                                                  |
 |  RULE 5: Cluster Communication                                   |
-|  --------------------------------                               |
-|  Allow: TCP 3306/3307 (DB), TCP cluster ports between nodes     |
-|                                                                   |
-|  DENY: All other traffic                                        |
-|                                                                   |
+|  --------------------------------                                |
+|  Allow: TCP 3306/3307 (DB), TCP cluster ports between nodes      |
+|                                                                  |
+|  DENY: All other traffic                                         |
+|                                                                  |
 +==================================================================+
 ```
 
@@ -495,19 +495,19 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 ### Session Data Flow (Detailed)
 
 ```
-+-----+                +---------------------------------------------+                +--------+
++-----+                +-------------------------------------------------+                +--------+
 |User |                |                WALLIX BASTION                   |                | Target |
 +--+--+                +--------------------+----------------------------+                +---+----+
    |                                        |                                                 |
    |  1. Connection Request (SSH/RDP)       |                                                 |
    |--------------------------------------->|                                                 |
    |                                        |                                                 |
-   |                          +-------------+-------------+                                  |
-   |                          | 2. Authentication          |                                  |
-   |                          |    - Validate credentials  |                                  |
-   |                          |    - Check MFA             |                                  |
-   |                          |    - Query LDAP/Local      |                                  |
-   |                          +-------------+-------------+                                  |
+   |                          +-------------+-------------+                                   |
+   |                          | 2. Authentication         |                                   |
+   |                          |    - Validate credentials |                                   |
+   |                          |    - Check MFA            |                                   |
+   |                          |    - Query LDAP/Local     |                                   |
+   |                          +-------------+-------------+                                   |
    |                                        |                                                 |
    |  3. Auth Challenge/Success             |                                                 |
    |<---------------------------------------|                                                 |
@@ -515,41 +515,41 @@ This is the **most significant architectural difference** between WALLIX and Cyb
    |  4. Target Selection                   |                                                 |
    |--------------------------------------->|                                                 |
    |                                        |                                                 |
-   |                          +-------------+-------------+                                  |
+   |                          +-------------+--------------+                                  |
    |                          | 5. Authorization           |                                  |
    |                          |    - Check policies        |                                  |
    |                          |    - Validate time window  |                                  |
    |                          |    - Check approval status |                                  |
-   |                          +-------------+-------------+                                  |
+   |                          +-------------+--------------+                                  |
    |                                        |                                                 |
-   |                          +-------------+-------------+                                  |
+   |                          +-------------+--------------+                                  |
    |                          | 6. Credential Retrieval    |                                  |
    |                          |    - Fetch from vault      |                                  |
    |                          |    - Decrypt               |                                  |
-   |                          +-------------+-------------+                                  |
+   |                          +-------------+--------------+                                  |
    |                                        |                                                 |
-   |                                        |  7. Connect to Target                          |
+   |                                        |  7. Connect to Target                           |
    |                                        |------------------------------------------------>
    |                                        |                                                 |
-   |                                        |  8. Authenticate with Target Credentials       |
+   |                                        |  8. Authenticate with Target Credentials        |
    |                                        |<------------------------------------------------|
    |                                        |                                                 |
    |  9. Session Established                |                                                 |
    |<---------------------------------------|                                                 |
    |                                        |                                                 |
-   |  ======================================|============================================== |
-   |            PROXIED SESSION             |                  RECORDED                      |
-   |  ======================================|============================================== |
+   |  ======================================|==============================================   |
+   |            PROXIED SESSION             |                  RECORDED                       |
+   |  ======================================|==============================================   |
    |                                        |                                                 |
-   |  10. Session Data (bidirectional)      |  11. Session Data (bidirectional)              |
-   |<-------------------------------------->|<---------------------------------------------- |
+   |  10. Session Data (bidirectional)      |  11. Session Data (bidirectional)               |
+   |<-------------------------------------->|<----------------------------------------------  |
    |                                        |                                                 |
-   |                          +-------------+-------------+                                  |
+   |                          +-------------+-------------+                                   |
    |                          | 12. Recording & Audit      |                                  |
    |                          |     - Write to storage     |                                  |
    |                          |     - Extract metadata     |                                  |
    |                          |     - OCR (RDP)            |                                  |
-   |                          +---------------------------+                                  |
+   |                          +---------------------------+                                   |
    |                                        |                                                 |
 ```
 
@@ -561,45 +561,45 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ```
 +=========================================================================+
-|                        STORAGE ARCHITECTURE                              |
+|                        STORAGE ARCHITECTURE                             |
 +=========================================================================+
-|                                                                          |
-|  +----------------------------------------------------------------+    |
-|  |                      MariaDB Database                          |    |
-|  |                                                                 |    |
-|  |   * Configuration data                                         |    |
-|  |   * User and group definitions                                 |    |
-|  |   * Device, account, authorization metadata                    |    |
-|  |   * Encrypted credentials (AES-256)                           |    |
-|  |   * Audit logs                                                 |    |
-|  |   * Session metadata                                           |    |
-|  |                                                                 |    |
-|  |   Location: /var/lib/mysql/                                   |    |
-|  |   Encryption: At-rest encryption supported                     |    |
-|  +----------------------------------------------------------------+    |
-|                                                                          |
-|  +----------------------------------------------------------------+    |
-|  |                    Session Recordings                          |    |
-|  |                                                                 |    |
-|  |   * Video recordings (proprietary format)                      |    |
-|  |   * Session metadata files                                     |    |
-|  |   * OCR index data (searchable text)                          |    |
-|  |   * Keystroke logs                                             |    |
-|  |                                                                 |    |
-|  |   Location: /var/wab/recorded/                                |    |
-|  |   External: NAS/SAN mount supported                           |    |
-|  |   Retention: Policy-based                                      |    |
-|  +----------------------------------------------------------------+    |
-|                                                                          |
-|  +----------------------------------------------------------------+    |
-|  |                    Configuration Files                         |    |
-|  |                                                                 |    |
-|  |   * /etc/opt/wab/                    System configuration     |    |
-|  |   * /etc/opt/wab/wabengine/          Engine settings          |    |
-|  |   * /var/opt/wab/                    Variable data            |    |
-|  |                                                                 |    |
-|  +----------------------------------------------------------------+    |
-|                                                                          |
+|                                                                         |
+|  +----------------------------------------------------------------+     |
+|  |                      MariaDB Database                          |     |
+|  |                                                                |     |
+|  |   * Configuration data                                         |     |
+|  |   * User and group definitions                                 |     |
+|  |   * Device, account, authorization metadata                    |     |
+|  |   * Encrypted credentials (AES-256)                            |     |
+|  |   * Audit logs                                                 |     |
+|  |   * Session metadata                                           |     |
+|  |                                                                |     |
+|  |   Location: /var/lib/mysql/                                    |     |
+|  |   Encryption: At-rest encryption supported                     |     |
+|  +----------------------------------------------------------------+     |
+|                                                                         |
+|  +----------------------------------------------------------------+     |
+|  |                    Session Recordings                          |     |
+|  |                                                                |     |
+|  |   * Video recordings (proprietary format)                      |     |
+|  |   * Session metadata files                                     |     |
+|  |   * OCR index data (searchable text)                           |     |
+|  |   * Keystroke logs                                             |     |
+|  |                                                                |     |
+|  |   Location: /var/wab/recorded/                                 |     |
+|  |   External: NAS/SAN mount supported                            |     |
+|  |   Retention: Policy-based                                      |     |
+|  +----------------------------------------------------------------+     |
+|                                                                         |
+|  +----------------------------------------------------------------+     |
+|  |                    Configuration Files                         |     |
+|  |                                                                |     |
+|  |   * /etc/opt/wab/                    System configuration      |     |
+|  |   * /etc/opt/wab/wabengine/          Engine settings           |     |
+|  |   * /var/opt/wab/                    Variable data             |     |
+|  |                                                                |     |
+|  +----------------------------------------------------------------+     |
+|                                                                         |
 +=========================================================================+
 ```
 
@@ -622,35 +622,35 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ```
 +=========================================================================+
-|                      INTEGRATION ARCHITECTURE                            |
+|                      INTEGRATION ARCHITECTURE                           |
 +=========================================================================+
-|                                                                          |
-|                          WALLIX BASTION                                  |
-|                               |                                          |
+|                                                                         |
+|                          WALLIX BASTION                                 |
+|                               |                                         |
 |      +------------------------+------------------------+                |
 |      |                        |                        |                |
 |      v                        v                        v                |
-|  +--------+            +------------+           +------------+         |
-|  |IDENTITY|            |   ITSM     |           |    SIEM    |         |
-|  |        |            |            |           |            |         |
-|  |* LDAP  |            |* ServiceNow|           |* Splunk    |         |
-|  |* AD    |            |* Jira      |           |* QRadar    |         |
-|  |* SAML  |            |* BMC       |           |* ArcSight  |         |
-|  |* RADIUS|            |* Custom    |           |* ELK       |         |
-|  +--------+            +------------+           +------------+         |
+|  +--------+            +------------+           +------------+          |
+|  |IDENTITY|            |   ITSM     |           |    SIEM    |          |
+|  |        |            |            |           |            |          |
+|  |* LDAP  |            |* ServiceNow|           |* Splunk    |          |
+|  |* AD    |            |* Jira      |           |* QRadar    |          |
+|  |* SAML  |            |* BMC       |           |* ArcSight  |          |
+|  |* RADIUS|            |* Custom    |           |* ELK       |          |
+|  +--------+            +------------+           +------------+          |
 |      |                        |                        |                |
-|      |  LDAP/RADIUS          |  REST API/Webhooks     |  Syslog/CEF   |
+|      |  LDAP/RADIUS           |  REST API/Webhooks     |  Syslog/CEF    |
 |      |                        |                        |                |
 |      |                        |                        |                |
 |      v                        v                        v                |
-|  +--------+            +------------+           +------------+         |
-|  |  CMDB  |            | AUTOMATION |           |  SECRETS   |         |
-|  |        |            |            |           |            |         |
-|  |* ServiceNow|        |* Ansible   |           |* HashiCorp |         |
-|  |* i-doit |           |* Terraform |           |* External  |         |
-|  |* Custom |           |* Jenkins   |           |  vaults    |         |
-|  +--------+            +------------+           +------------+         |
-|                                                                          |
+|  +-------------+        +------------+           +------------+         |
+|  |  CMDB       |        | AUTOMATION |           |  SECRETS   |         |
+|  |             |        |            |           |            |         |
+|  |* ServiceNow |        |* Ansible   |           |* HashiCorp |         |
+|  |* i-doit     |        |* Terraform |           |* External  |         |
+|  |* Custom     |        |* Jenkins   |           |  vaults    |         |
+|  +-------------+        +------------+           +------------+         |
+|                                                                         |
 +=========================================================================+
 ```
 
