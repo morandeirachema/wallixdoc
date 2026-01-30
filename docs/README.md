@@ -42,12 +42,12 @@
 | 22 | [OT Integration](./22-ot-integration/README.md) | SIEM, CMDB, monitoring platforms |
 | 23 | [Industrial Best Practices](./23-industrial-best-practices/README.md) | OT security design, incident response |
 
-### Enterprise & Cloud (24-29)
+### Enterprise Deployment (24-29)
 
 | # | Section | Description |
 |---|---------|-------------|
-| 24 | [Cloud Deployment](./24-cloud-deployment/README.md) | AWS, Azure, GCP, Terraform IaC |
-| 25 | [Container Deployment](./25-container-deployment/README.md) | Docker, Kubernetes, Helm, OpenShift |
+| 24 | [Deployment Options](./24-cloud-deployment/README.md) | On-premises VMs, bare metal, Terraform IaC |
+| 25 | [Container Deployment](./25-container-deployment/README.md) | Not recommended for OT (see VM alternatives) |
 | 26 | [API Reference](./26-api-reference/README.md) | Complete REST API documentation |
 | 27 | [Error Reference](./27-error-reference/README.md) | Error codes, causes, remediation |
 | 28 | [System Requirements](./28-system-requirements/README.md) | Hardware sizing, performance tuning |
@@ -124,7 +124,7 @@ Compliance      → 33 → 20 → 08 → 06
 |----------|----------|--------|
 | Core PAM | 01-14 | Complete |
 | Industrial/OT | 15-23 | Complete |
-| Cloud/Container | 24-25 | Complete |
+| Deployment | 24-25 | Complete |
 | API & Reference | 26-29 | Complete |
 | Operations | 30-31 | Complete |
 | Compliance | 32-33 | Complete |

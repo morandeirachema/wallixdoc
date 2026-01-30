@@ -148,7 +148,7 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 - Linux-centric infrastructure
 - Network device management
 - OT/ICS environments (minimal footprint)
-- Cloud and containerized deployments
+- Virtualized and bare metal deployments
 
 ### When Agent-Based May Be Preferred
 

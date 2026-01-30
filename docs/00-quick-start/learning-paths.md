@@ -410,8 +410,8 @@ Choose your role to get a customized learning path. Each path includes estimated
 
   Module 3: Infrastructure as Code (2 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: 24-cloud-deployment/README.md                                |
-  | [_] Read: 25-container-deployment/README.md                            |
+  | [_] Read: 24-cloud-deployment/README.md (On-premises deployment)       |
+  | [_] Note: 25-container-deployment/ (Not recommended for OT)            |
   | [_] Review: Terraform provider documentation                           |
   | [_] Practice: Deploy WALLIX resources with Terraform                   |
   | [_] Practice: Create Ansible playbook for configuration                |

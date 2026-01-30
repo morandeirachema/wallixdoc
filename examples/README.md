@@ -93,8 +93,7 @@ examples/
 │           └── configure.yml     # Configuration tasks
 │
 └── labs/                         # Test Environments
-    ├── README.md                 # Lab guide
-    └── docker-compose.yml        # Local test environment
+    └── README.md                 # Lab guide (VM-based)
 ```
 
 ---

@@ -4,142 +4,177 @@
 
 These labs provide safe environments to learn WALLIX without affecting production systems.
 
+> **Note**: These labs use virtual machines to match production deployment patterns. For the full pre-production lab environment, see [pre/README.md](../../pre/README.md).
+
 ---
 
 ## Lab Environment Overview
 
 ```
 +===============================================================================+
-|                   LAB ARCHITECTURE                                           |
+|                   LAB ARCHITECTURE                                            |
 +===============================================================================+
-
-                        +------------------+
-                        |   Your Machine   |
-                        |   (Lab Host)     |
-                        +--------+---------+
-                                 |
-                    +------------+------------+
-                    |                         |
-           +--------v--------+       +--------v--------+
-           |  Docker Network |       |  VM Network     |
-           |  (Quick Labs)   |       |  (Full Labs)    |
-           +-----------------+       +-----------------+
-                    |                         |
-      +-------------+-------------+           |
-      |             |             |           |
-+-----v-----+ +-----v-----+ +-----v-----+  +--v--+
-| WALLIX    | | Linux     | | Windows   |  | OT  |
-| Container | | Target    | | Target    |  | Sim |
-+-----------+ +-----------+ +-----------+  +-----+
-
+|                                                                               |
+|                          +------------------+                                 |
+|                          |   Your Machine   |                                 |
+|                          |   (Lab Host)     |                                 |
+|                          +--------+---------+                                 |
+|                                   |                                           |
+|                          +--------v--------+                                  |
+|                          |   Hypervisor    |                                  |
+|                          |  (VMware/Hyper-V|                                  |
+|                          |   /Proxmox/KVM) |                                  |
+|                          +-----------------+                                  |
+|                                   |                                           |
+|                    +--------------+--------------+                            |
+|                    |              |              |                            |
+|              +-----v-----+  +-----v-----+  +-----v-----+                      |
+|              |  WALLIX   |  |  Linux    |  |  Windows  |                      |
+|              |  Bastion  |  |  Target   |  |  Target   |                      |
+|              |  VM       |  |  VM       |  |  VM       |                      |
+|              +-----------+  +-----------+  +-----------+                      |
+|                                                                               |
+|  Network: 10.10.1.0/24 (Lab Network)                                          |
+|                                                                               |
 +===============================================================================+
 ```
 
 ---
 
-## Quick Start: Docker Lab (30 minutes)
+## Prerequisites
 
-### Prerequisites
+### Hardware Requirements
 
-- Docker and Docker Compose installed
-- 8GB RAM available
-- 20GB disk space
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **CPU** | 8 cores | 16+ cores |
+| **RAM** | 16 GB | 32 GB |
+| **Storage** | 100 GB SSD | 200 GB SSD |
 
-### Lab 1: Basic WALLIX Setup
+### Software Requirements
 
-**docker-compose.yml:**
-```yaml
-version: '3.8'
+- **Hypervisor**: VMware Workstation/ESXi, Hyper-V, Proxmox VE, or KVM
+- **ISO Images**: Debian 12, Windows Server 2019/2022 (optional)
+- **Network**: Ability to create isolated virtual networks
 
-services:
-  wallix:
-    image: wallix/bastion:latest  # Or use official image
-    container_name: wallix-lab
-    hostname: wallix.lab.local
-    ports:
-      - "8443:443"      # Web UI
-      - "2222:22"       # SSH proxy
-      - "33389:3389"    # RDP proxy
-    environment:
-      - WALLIX_ADMIN_PASSWORD=LabAdmin123!
-      - WALLIX_DB_PASSWORD=DbPassword123!
-    volumes:
-      - wallix-data:/var/lib/wallix
-      - wallix-logs:/var/log/wallix
-    networks:
-      - lab-network
-    depends_on:
-      - mariadb
+---
 
-  mariadb:
-    image: mariadb:10.11
-    container_name: wallix-db
-    environment:
-      - MYSQL_DATABASE=wallix
-      - MYSQL_USER=wallix
-      - MYSQL_PASSWORD=DbPassword123!
-      - MYSQL_ROOT_PASSWORD=DbPassword123!
-    volumes:
-      - mariadb-data:/var/lib/mysql
-    networks:
-      - lab-network
+## Quick Start: VM Lab Setup (60 minutes)
 
-  # Linux target for SSH labs
-  linux-target:
-    image: ubuntu:22.04
-    container_name: linux-target
-    hostname: linux-srv.lab.local
-    command: >
-      bash -c "apt-get update &&
-               apt-get install -y openssh-server &&
-               echo 'root:TargetPass123!' | chpasswd &&
-               mkdir /run/sshd &&
-               /usr/sbin/sshd -D"
-    networks:
-      - lab-network
+### Step 1: Create Lab Network
 
-  # Second Linux target
-  linux-target2:
-    image: ubuntu:22.04
-    container_name: linux-target2
-    hostname: linux-srv2.lab.local
-    command: >
-      bash -c "apt-get update &&
-               apt-get install -y openssh-server &&
-               echo 'root:TargetPass456!' | chpasswd &&
-               mkdir /run/sshd &&
-               /usr/sbin/sshd -D"
-    networks:
-      - lab-network
+Create an isolated virtual network for your lab:
 
-volumes:
-  wallix-data:
-  wallix-logs:
-  mariadb-data:
+| Setting | Value |
+|---------|-------|
+| **Network Name** | Lab-Network |
+| **Subnet** | 10.10.1.0/24 |
+| **Gateway** | 10.10.1.1 |
+| **DHCP** | Disabled |
 
-networks:
-  lab-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.28.0.0/16
+### Step 2: Create WALLIX Bastion VM
+
+**VM Configuration:**
+
+| Setting | Value |
+|---------|-------|
+| **Name** | wallix-lab |
+| **OS** | Debian 12 (Bookworm) |
+| **vCPU** | 4 |
+| **RAM** | 8 GB |
+| **Disk** | 50 GB |
+| **Network** | Lab-Network |
+| **IP Address** | 10.10.1.10 |
+
+**Installation:**
+
+```bash
+# After Debian installation, install WALLIX Bastion
+# Follow the official deployment guide:
+# https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf
+
+# Set hostname
+hostnamectl set-hostname wallix-lab.lab.local
+
+# Configure static IP
+cat > /etc/network/interfaces << 'EOF'
+auto lo
+iface lo inet loopback
+
+auto ens192
+iface ens192 inet static
+    address 10.10.1.10/24
+    gateway 10.10.1.1
+    dns-nameservers 8.8.8.8
+    dns-search lab.local
+EOF
+
+systemctl restart networking
+
+# Install WALLIX Bastion (requires valid license)
+# Contact WALLIX for evaluation licenses
 ```
 
-**Start the lab:**
+### Step 3: Create Linux Target VM
+
+**VM Configuration:**
+
+| Setting | Value |
+|---------|-------|
+| **Name** | linux-target |
+| **OS** | Debian 12 or Ubuntu 22.04 |
+| **vCPU** | 2 |
+| **RAM** | 2 GB |
+| **Disk** | 20 GB |
+| **Network** | Lab-Network |
+| **IP Address** | 10.10.1.20 |
+
+**Configuration:**
+
 ```bash
-# Start all containers
-docker-compose up -d
+# Set hostname
+hostnamectl set-hostname linux-target.lab.local
 
-# Wait for WALLIX to initialize (2-3 minutes)
-sleep 180
+# Configure static IP
+cat > /etc/network/interfaces << 'EOF'
+auto lo
+iface lo inet loopback
 
-# Check status
-docker-compose ps
+auto ens192
+iface ens192 inet static
+    address 10.10.1.20/24
+    gateway 10.10.1.1
+    dns-search lab.local
+EOF
 
-# Access WALLIX Web UI
-# https://localhost:8443
-# Username: admin
-# Password: LabAdmin123!
+systemctl restart networking
+
+# Ensure SSH is installed and running
+apt update && apt install -y openssh-server
+systemctl enable ssh
+systemctl start ssh
+
+# Create test user
+useradd -m -s /bin/bash testuser
+echo 'testuser:TestPass123!' | chpasswd
+
+# Allow root login (for lab only - not recommended for production)
+echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+echo 'root:RootPass123!' | chpasswd
+systemctl restart ssh
+```
+
+### Step 4: Update /etc/hosts
+
+On all VMs, add:
+
+```bash
+cat >> /etc/hosts << 'EOF'
+10.10.1.10  wallix-lab.lab.local wallix-lab
+10.10.1.20  linux-target.lab.local linux-target
+10.10.1.21  linux-target2.lab.local linux-target2
+10.10.1.30  win-target.lab.local win-target
+EOF
 ```
 
 ---
@@ -151,8 +186,8 @@ docker-compose ps
 **Objective**: Familiarize with WALLIX web interface
 
 **Steps**:
-1. Open https://localhost:8443 in browser
-2. Login as admin
+1. Open https://10.10.1.10 in browser
+2. Login as admin (use configured admin password)
 3. Navigate to each section:
    - Audit > Sessions
    - Audit > Logs
@@ -181,7 +216,7 @@ docker-compose ps
    ```
    Configuration > Devices > Add
    - Name: linux-srv
-   - Host: linux-target (Docker hostname)
+   - Host: 10.10.1.20
    - Domain: Lab-Servers
    - Description: Lab Linux server
    ```
@@ -198,7 +233,7 @@ docker-compose ps
    Configuration > Devices > linux-srv > Accounts > Add
    - Account: root
    - Credentials: Password
-   - Password: TargetPass123!
+   - Password: RootPass123!
    ```
 
 **Checkpoint**: Device shows green status?
@@ -309,7 +344,7 @@ Ensure Lab 1 is running and configured.
 
 2. Trigger manual rotation:
    ```bash
-   # Via CLI (if available)
+   # Via CLI on WALLIX Bastion
    wabadmin account rotate root@linux-srv
 
    # Or via Web UI
@@ -346,20 +381,63 @@ Ensure Lab 1 is running and configured.
 
 ## Lab 3: OT Protocol Simulation (60 min)
 
-### Add Modbus Simulator
+For OT protocol labs, use the pre-production lab environment which includes protocol simulators:
 
-**Update docker-compose.yml** (add this service):
-```yaml
-  modbus-sim:
-    image: oitc/modbus-server
-    container_name: modbus-plc
-    hostname: plc-sim.lab.local
-    ports:
-      - "5020:5020"
-    environment:
-      - MODBUS_SERVER_PORT=5020
-    networks:
-      - lab-network
+- **Modbus TCP Simulator** - See [pre/06-test-targets.md](../../pre/06-test-targets.md)
+- **OPC UA Server** - See [pre/06-test-targets.md](../../pre/06-test-targets.md)
+- **S7comm Simulator** - See [pre/06-test-targets.md](../../pre/06-test-targets.md)
+
+### Quick Modbus Setup (Single VM)
+
+If you want to add Modbus simulation to this basic lab:
+
+**On a new VM (OT-Simulator, 10.10.1.40):**
+
+```bash
+# Install Python and pymodbus
+apt update && apt install -y python3 python3-pip
+pip3 install pymodbus
+
+# Create Modbus server script
+cat > /opt/modbus_server.py << 'EOF'
+#!/usr/bin/env python3
+"""Simple Modbus TCP Server for Lab Testing"""
+from pymodbus.server import StartTcpServer
+from pymodbus.datastore import ModbusSequentialDataBlock, ModbusSlaveContext, ModbusServerContext
+
+# Initialize data stores
+store = ModbusSlaveContext(
+    di=ModbusSequentialDataBlock(0, [0]*100),   # Discrete Inputs
+    co=ModbusSequentialDataBlock(0, [0]*100),   # Coils
+    hr=ModbusSequentialDataBlock(0, [0]*100),   # Holding Registers
+    ir=ModbusSequentialDataBlock(0, [0]*100)    # Input Registers
+)
+context = ModbusServerContext(slaves=store, single=True)
+
+print("Starting Modbus TCP Server on port 502...")
+StartTcpServer(context=context, address=("0.0.0.0", 502))
+EOF
+
+chmod +x /opt/modbus_server.py
+
+# Create systemd service
+cat > /etc/systemd/system/modbus-sim.service << 'EOF'
+[Unit]
+Description=Modbus TCP Simulator
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /opt/modbus_server.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable modbus-sim
+systemctl start modbus-sim
 ```
 
 ### Exercise 8: Configure OT Access
@@ -378,7 +456,7 @@ Ensure Lab 1 is running and configured.
    ```
    Configuration > Devices > Add
    - Name: plc-line1
-   - Host: modbus-plc
+   - Host: 10.10.1.40
    - Domain: OT-Devices
    - Description: Production line PLC
    ```
@@ -388,7 +466,7 @@ Ensure Lab 1 is running and configured.
    Configuration > Devices > plc-line1 > Services > Add
    - Type: SSH (for tunneling)
    - Tunneling: Enabled
-   - Tunnel target: localhost:5020
+   - Tunnel target: localhost:502
    ```
 
 4. Create OT authorization:
@@ -407,28 +485,29 @@ Ensure Lab 1 is running and configured.
 
 ## Lab 4: Failure Scenarios (45 min)
 
-### Exercise 9: Database Failure Recovery
+### Exercise 9: Service Failure Recovery
 
-**Objective**: Understand recovery from DB failure
+**Objective**: Understand recovery from service failure
 
 **Steps**:
 1. Note current active sessions count
-2. Stop database container:
+2. Stop WALLIX service:
    ```bash
-   docker stop wallix-db
+   # On WALLIX Bastion VM
+   systemctl stop wallix-bastion
    ```
-3. Observe WALLIX behavior:
+3. Observe behavior:
    - Can you login to web UI?
-   - What error messages appear?
-4. Restart database:
+   - What happens to active sessions?
+4. Restart service:
    ```bash
-   docker start wallix-db
+   systemctl start wallix-bastion
    ```
 5. Verify recovery:
    - Login successful?
-   - Data intact?
+   - Service status healthy?
 
-**Checkpoint**: Understand impact of DB failure?
+**Checkpoint**: Understand impact of service failure?
 
 ---
 
@@ -437,17 +516,15 @@ Ensure Lab 1 is running and configured.
 **Objective**: Diagnose connection failures
 
 **Steps**:
-1. Stop a target:
+1. Shutdown target VM:
    ```bash
-   docker stop linux-target
+   # On linux-target VM
+   shutdown -h now
    ```
 2. Try to launch session to linux-srv
 3. Note error message
 4. Check device status in WALLIX
-5. Restart target:
-   ```bash
-   docker start linux-target
-   ```
+5. Start target VM
 6. Verify connectivity restored
 
 **Checkpoint**: Understand how to diagnose target issues?
@@ -467,7 +544,7 @@ import requests
 import urllib3
 urllib3.disable_warnings()
 
-WALLIX_URL = "https://localhost:8443"
+WALLIX_URL = "https://10.10.1.10"
 API_KEY = "your-api-key"  # Create in Web UI first
 
 headers = {
@@ -478,7 +555,7 @@ headers = {
 # Create device
 device = {
     "device_name": "api-created-server",
-    "host": "linux-target2",
+    "host": "10.10.1.21",
     "domain": "Lab-Servers",
     "description": "Created via API"
 }
@@ -516,58 +593,74 @@ print(f"Response: {response.json()}")
 ## Lab Cleanup
 
 ```bash
-# Stop all containers
-docker-compose down
+# On each VM, you can shutdown gracefully
+shutdown -h now
 
-# Remove volumes (deletes all data)
-docker-compose down -v
-
-# Remove images (optional)
-docker rmi wallix/bastion:latest
+# Or delete VMs from hypervisor
+# VMware: Right-click > Delete from Disk
+# Hyper-V: Remove-VM -Name "vm-name" -Force
+# Proxmox: qm destroy <vmid>
 ```
 
 ---
 
 ## Troubleshooting Labs
 
-### Container won't start
+### VM won't start
 
 ```bash
-# Check logs
-docker-compose logs wallix
+# Check hypervisor logs
+# VMware: /var/log/vmware/
+# Hyper-V: Get-WinEvent -LogName "Microsoft-Windows-Hyper-V*"
 
-# Check resource usage
-docker stats
-
-# Verify ports not in use
-ss -tuln | grep -E "(8443|2222|33389)"
+# Verify resources available
+free -h
+df -h
 ```
 
 ### Can't access web UI
 
 ```bash
-# Verify container running
-docker ps | grep wallix
+# On WALLIX Bastion VM
+systemctl status wallix-bastion
 
-# Check container logs
-docker logs wallix-lab
+# Check network connectivity
+ping 10.10.1.10
 
-# Try direct container IP
-docker inspect wallix-lab | grep IPAddress
+# Verify HTTPS is listening
+ss -tuln | grep 443
+
+# Check logs
+journalctl -u wallix-bastion -n 50
 ```
 
 ### Session won't connect
 
 ```bash
-# Verify target is reachable from WALLIX container
-docker exec wallix-lab ping linux-target
+# Verify target is reachable from WALLIX
+# On WALLIX Bastion VM:
+ping 10.10.1.20
 
 # Check SSH on target
-docker exec linux-target service ssh status
+# On linux-target VM:
+systemctl status ssh
+ss -tuln | grep 22
 
 # Check WALLIX proxy logs
-docker exec wallix-lab tail -f /var/log/wallix/session-proxy.log
+tail -f /var/log/wallix/session-proxy.log
 ```
+
+---
+
+## Pre-Production Lab
+
+For a complete pre-production environment matching real OT deployments, see:
+
+| Guide | Description |
+|-------|-------------|
+| [pre/README.md](../../pre/README.md) | Full architecture with 22 VMs |
+| [pre/06-test-targets.md](../../pre/06-test-targets.md) | OT protocol simulators |
+| [pre/11-battery-tests.md](../../pre/11-battery-tests.md) | 48 comprehensive tests |
 
 ---
 
@@ -578,6 +671,16 @@ After completing these labs:
 1. **Production Deployment**: [Install Guide](../../install/README.md)
 2. **Advanced Configuration**: [Configuration Guide](../../docs/04-configuration/README.md)
 3. **OT Deployment**: [OT Architecture](../../docs/16-ot-architecture/README.md)
+
+---
+
+## Official Resources
+
+| Resource | URL |
+|----------|-----|
+| **Deployment Guide** | https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf |
+| **Administration Guide** | https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf |
+| **REST API Samples** | https://github.com/wallix/wbrest_samples |
 
 ---
 
