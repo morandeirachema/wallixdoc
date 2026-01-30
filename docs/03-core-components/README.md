@@ -21,44 +21,44 @@ The **Session Manager** is the heart of WALLIX Bastion, responsible for all priv
 
 ```
 +===============================================================================+
-|                            SESSION MANAGER                                    |
+|                             SESSION MANAGER                                   |
 +===============================================================================+
 |                                                                               |
-|  +-------------------------------------------------------------------------+  |
-|  |                       PROTOCOL HANDLERS                                 |  |
-|  |                                                                         |  |
-|  |  +----------+ +----------+ +----------+ +----------+ +----------+       |  |
-|  |  |   SSH    | |   RDP    | |  HTTPS   | |   VNC    | |  TELNET  |       |  |
-|  |  |  Handler | |  Handler | |  Handler | |  Handler | |  Handler |       |  |
-|  |  |          | |          | |          | |          | |          |       |  |
-|  |  | * SCP    | | * NLA    | | * Web    | | * Auth   | | * Plain  |       |  |
-|  |  | * SFTP   | | * TLS    | |   Apps   | | * VNC    | | * SSL    |       |  |
-|  |  | * X11    | | * RD GW  | | * REST   | |   Auth   | |          |       |  |
-|  |  +----------+ +----------+ +----------+ +----------+ +----------+       |  |
-|  |                                                                         |  |
-|  |  +----------+ +----------+ +----------+                                 |  |
-|  |  |  RLOGIN  | |  CUSTOM  | | RAW TCP  |                                 |  |
-|  |  |  Handler | |  Plugins | |  Tunnel  |                                 |  |
-|  |  +----------+ +----------+ +----------+                                 |  |
-|  +-------------------------------------------------------------------------+  |
+|   +-----------------------------------------------------------------------+   |
+|   |                        PROTOCOL HANDLERS                              |   |
+|   |                                                                       |   |
+|   |   +--------+  +--------+  +--------+  +--------+  +--------+          |   |
+|   |   |  SSH   |  |  RDP   |  | HTTPS  |  |  VNC   |  | TELNET |          |   |
+|   |   | Handler|  | Handler|  | Handler|  | Handler|  | Handler|          |   |
+|   |   |        |  |        |  |        |  |        |  |        |          |   |
+|   |   | * SCP  |  | * NLA  |  | * Web  |  | * Auth |  | * Plain|          |   |
+|   |   | * SFTP |  | * TLS  |  |   Apps |  | * VNC  |  | * SSL  |          |   |
+|   |   | * X11  |  | * RDGW |  | * REST |  |   Auth |  |        |          |   |
+|   |   +--------+  +--------+  +--------+  +--------+  +--------+          |   |
+|   |                                                                       |   |
+|   |   +--------+  +--------+  +--------+                                  |   |
+|   |   | RLOGIN |  | CUSTOM |  |RAW TCP |                                  |   |
+|   |   | Handler|  | Plugins|  | Tunnel |                                  |   |
+|   |   +--------+  +--------+  +--------+                                  |   |
+|   +-----------------------------------------------------------------------+   |
 |                                                                               |
-|  +---------------------------+     +---------------------------+              |
-|  |   SESSION BROKER          |     |   RECORDING ENGINE        |              |
-|  |                           |     |                           |              |
-|  | * Connection routing      |     | * Video capture           |              |
-|  | * Load balancing          |     | * Keystroke logging       |              |
-|  | * Session tracking        |     | * OCR processing          |              |
-|  | * Failover handling       |     | * Metadata extraction     |              |
-|  +---------------------------+     +---------------------------+              |
+|   +-----------------------------+   +-----------------------------+           |
+|   |      SESSION BROKER         |   |      RECORDING ENGINE       |           |
+|   |                             |   |                             |           |
+|   |  * Connection routing       |   |  * Video capture            |           |
+|   |  * Load balancing           |   |  * Keystroke logging        |           |
+|   |  * Session tracking         |   |  * OCR processing           |           |
+|   |  * Failover handling        |   |  * Metadata extraction      |           |
+|   +-----------------------------+   +-----------------------------+           |
 |                                                                               |
-|  +---------------------------+     +---------------------------+              |
-|  |   MONITORING ENGINE       |     |   AUDIT LOGGER            |              |
-|  |                           |     |                           |              |
-|  | * Real-time view          |     | * Action logging          |              |
-|  | * Session sharing         |     | * Compliance reports      |              |
-|  | * Kill capability         |     | * Alert generation        |              |
-|  | * Alert triggers          |     | * SIEM integration        |              |
-|  +---------------------------+     +---------------------------+              |
+|   +-----------------------------+   +-----------------------------+           |
+|   |     MONITORING ENGINE       |   |       AUDIT LOGGER          |           |
+|   |                             |   |                             |           |
+|   |  * Real-time view           |   |  * Action logging           |           |
+|   |  * Session sharing          |   |  * Compliance reports       |           |
+|   |  * Kill capability          |   |  * Alert generation         |           |
+|   |  * Alert triggers           |   |  * SIEM integration         |           |
+|   +-----------------------------+   +-----------------------------+           |
 |                                                                               |
 +===============================================================================+
 ```
