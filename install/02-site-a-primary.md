@@ -37,7 +37,7 @@ Site A is the primary headquarters installation running a full High Availability
               +----------10.100.254.0/30----+
               |                             |
      +--------+--------+           +--------+--------+
-     |   PostgreSQL    |<--------->|   PostgreSQL    |
+     |   MariaDB    |<--------->|   MariaDB    |
      |   (Primary)     | Streaming |   (Standby)     |
      +-----------------+ Replication+-----------------+
               |                             |
@@ -117,11 +117,11 @@ apt install -y wallix-bastion
 # - SSL certificate (use self-signed for now, replace later)
 ```
 
-### Step 3: Configure PostgreSQL for Replication
+### Step 3: Configure MariaDB for Replication
 
 ```bash
-# Edit PostgreSQL configuration for primary role
-cat >> /etc/postgresql/16/main/postgresql.conf << 'EOF'
+# Edit MariaDB configuration for primary role
+cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
 
 # Replication settings (Primary)
 wal_level = replica
@@ -132,7 +132,7 @@ synchronous_commit = on
 EOF
 
 # Configure replication access
-cat >> /etc/postgresql/16/main/pg_hba.conf << 'EOF'
+cat >> /etc/mariadb/16/main/pg_hba.conf << 'EOF'
 
 # Replication
 host    replication     replicator      10.100.254.2/32         scram-sha-256
@@ -140,12 +140,12 @@ host    replication     replicator      10.100.1.11/32          scram-sha-256
 EOF
 
 # Create replication user
-sudo -u postgres psql << 'EOF'
+sudo mysql << 'EOF'
 CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'ReplicaSecurePass2026!';
 EOF
 
-# Restart PostgreSQL
-systemctl restart postgresql
+# Restart MariaDB
+systemctl restart mariadb
 ```
 
 ### Step 4: Configure Shared Storage
@@ -240,31 +240,31 @@ apt update
 apt install -y wallix-bastion
 ```
 
-### Step 3: Configure PostgreSQL as Standby
+### Step 3: Configure MariaDB as Standby
 
 ```bash
-# Stop PostgreSQL
-systemctl stop postgresql
+# Stop MariaDB
+systemctl stop mariadb
 
 # Remove existing data
-rm -rf /var/lib/postgresql/16/main/*
+rm -rf /var/lib/mariadb/16/main/*
 
 # Perform base backup from primary
-sudo -u postgres pg_basebackup -h 10.100.254.1 -U replicator -D /var/lib/postgresql/16/main -P -R
+mariabackup --backup --target-dir=/tmp/backup --host=10.100.254.1 --user=replicator --password=ReplicaSecurePass2026!
 
 # Configure standby
-cat >> /etc/postgresql/16/main/postgresql.conf << 'EOF'
+cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
 
 # Standby settings
 hot_standby = on
-primary_conninfo = 'host=10.100.254.1 port=5432 user=replicator password=ReplicaSecurePass2026!'
+primary_conninfo = 'host=10.100.254.1 port=3306 user=replicator password=ReplicaSecurePass2026!'
 EOF
 
-# Start PostgreSQL in standby mode
-systemctl start postgresql
+# Start MariaDB in standby mode
+systemctl start mariadb
 
 # Verify replication status
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
 ```
 
 ### Step 4: Configure Shared Storage
@@ -346,11 +346,11 @@ pcs resource create wallix-service systemd:wabengine \
     op start timeout=60s \
     op stop timeout=60s
 
-# Create PostgreSQL promotion resource
+# Create MariaDB promotion resource
 pcs resource create pgsql-primary ocf:heartbeat:pgsql \
-    pgctl="/usr/lib/postgresql/16/bin/pg_ctl" \
-    pgdata="/var/lib/postgresql/16/main" \
-    config="/etc/postgresql/16/main/postgresql.conf" \
+    pgctl="/usr/lib/mariadb/16/bin/pg_ctl" \
+    pgdata="/var/lib/mariadb/16/main" \
+    config="/etc/mariadb/16/main/mariadb.conf" \
     rep_mode="sync" \
     node_list="wallix-a1-hb wallix-a2-hb" \
     primary_conninfo_opt="keepalives_idle=60 keepalives_interval=5 keepalives_count=5" \
@@ -563,8 +563,8 @@ pcs status
 #   * wallix-service (systemd:wabengine):        Started wallix-a1-hb
 #   * pgsql-primary (ocf:heartbeat:pgsql):       Master wallix-a1-hb
 
-# Check PostgreSQL replication
-sudo -u postgres psql -c "SELECT client_addr, state, sync_state FROM pg_stat_replication;"
+# Check MariaDB replication
+sudo mysql -c "SELECT client_addr, state, sync_state FROM SHOW SLAVE STATUS;"
 
 # Expected output:
 #  client_addr   |   state   | sync_state

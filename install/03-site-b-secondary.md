@@ -29,7 +29,7 @@ Site B is the secondary plant installation running a High Availability cluster i
               +----------10.200.254.0/30----+
               |                             |
      +--------+--------+           +--------+--------+
-     |   PostgreSQL    |<--------->|   PostgreSQL    |
+     |   MariaDB    |<--------->|   MariaDB    |
      |   (Primary)     | Streaming |   (Standby)     |
      +-----------------+ Replication+-----------------+
 
@@ -97,8 +97,8 @@ EOF
 apt update
 apt install -y wallix-bastion
 
-# Configure PostgreSQL for replication (primary)
-cat >> /etc/postgresql/16/main/postgresql.conf << 'EOF'
+# Configure MariaDB for replication (primary)
+cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
 
 # Replication settings (Primary)
 wal_level = replica
@@ -108,18 +108,18 @@ hot_standby = on
 synchronous_commit = on
 EOF
 
-cat >> /etc/postgresql/16/main/pg_hba.conf << 'EOF'
+cat >> /etc/mariadb/16/main/pg_hba.conf << 'EOF'
 
 # Replication
 host    replication     replicator      10.200.254.2/32         scram-sha-256
 host    replication     replicator      10.200.1.11/32          scram-sha-256
 EOF
 
-sudo -u postgres psql << 'EOF'
+sudo mysql << 'EOF'
 CREATE ROLE replicator WITH REPLICATION LOGIN PASSWORD 'ReplicaSecurePass2026!';
 EOF
 
-systemctl restart postgresql
+systemctl restart mariadb
 
 # Configure shared storage (local NFS for Site B)
 apt install -y nfs-common
@@ -183,20 +183,20 @@ EOF
 apt update
 apt install -y wallix-bastion
 
-# Configure PostgreSQL as standby
-systemctl stop postgresql
-rm -rf /var/lib/postgresql/16/main/*
+# Configure MariaDB as standby
+systemctl stop mariadb
+rm -rf /var/lib/mariadb/16/main/*
 
-sudo -u postgres pg_basebackup -h 10.200.254.1 -U replicator -D /var/lib/postgresql/16/main -P -R
+mariabackup --backup --target-dir=/tmp/backup --host=10.200.254.1 --user=replicator --password=ReplicaSecurePass2026!
 
-cat >> /etc/postgresql/16/main/postgresql.conf << 'EOF'
+cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
 
 # Standby settings
 hot_standby = on
-primary_conninfo = 'host=10.200.254.1 port=5432 user=replicator password=ReplicaSecurePass2026!'
+primary_conninfo = 'host=10.200.254.1 port=3306 user=replicator password=ReplicaSecurePass2026!'
 EOF
 
-systemctl start postgresql
+systemctl start mariadb
 
 # Configure shared storage
 apt install -y nfs-common

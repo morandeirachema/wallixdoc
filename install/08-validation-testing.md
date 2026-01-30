@@ -40,7 +40,7 @@ ssh admin@wallix.site-c.company.com "wab-admin health-check --verbose"
   =============
   [OK] wabengine                    running (pid 1234, uptime 5d 3h)
   [OK] wab-webui                    running (pid 1235, uptime 5d 3h)
-  [OK] postgresql                   running (pid 1236, uptime 5d 3h)
+  [OK] mariadb                   running (pid 1236, uptime 5d 3h)
   [OK] nginx                        running (pid 1237, uptime 5d 3h)
 
   DATABASE

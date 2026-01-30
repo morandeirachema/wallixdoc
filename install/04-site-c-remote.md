@@ -112,10 +112,10 @@ apt install -y wallix-bastion
 ### Step 3: Configure Local Database
 
 ```bash
-# Standalone mode uses local PostgreSQL
+# Standalone mode uses local MariaDB
 # Optimize for smaller deployment
 
-cat >> /etc/postgresql/16/main/postgresql.conf << 'EOF'
+cat >> /etc/mariadb/16/main/mariadb.conf << 'EOF'
 
 # Standalone optimization
 shared_buffers = 2GB
@@ -127,7 +127,7 @@ wal_buffers = 16MB
 random_page_cost = 1.1
 EOF
 
-systemctl restart postgresql
+systemctl restart mariadb
 ```
 
 ### Step 4: Configure Local Storage

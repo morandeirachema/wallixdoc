@@ -245,7 +245,7 @@
   | Site A Bastion     | Site C      | 443     | Configuration sync         |
   | Site B Bastion     | Site A VIP  | 443     | Configuration sync         |
   | Site C Bastion     | Site A VIP  | 443     | Configuration sync         |
-  | All Sites          | All Sites   | 5432    | PostgreSQL replication     |
+  | All Sites          | All Sites   | 3306    | MariaDB replication     |
   +--------------------+-------------+---------+----------------------------+
 
   HA CLUSTER INTERNAL (per site)
@@ -254,10 +254,10 @@
   +------------------------------------------------------------------------+
   | Source             | Destination | Port    | Purpose                    |
   +--------------------+-------------+---------+----------------------------+
-  | Node 1             | Node 2      | 5432    | PostgreSQL streaming       |
+  | Node 1             | Node 2      | 3306    | MariaDB streaming       |
   | Node 1             | Node 2      | 5405    | Corosync cluster           |
   | Node 1             | Node 2      | 2224    | PCSD (cluster mgmt)        |
-  | Node 2             | Node 1      | 5432    | PostgreSQL streaming       |
+  | Node 2             | Node 1      | 3306    | MariaDB streaming       |
   | Node 2             | Node 1      | 5405    | Corosync cluster           |
   | Node 2             | Node 1      | 2224    | PCSD (cluster mgmt)        |
   +--------------------+-------------+---------+----------------------------+
@@ -377,15 +377,15 @@
 |                   DATABASE REQUIREMENTS                                      |
 +===============================================================================+
 
-  POSTGRESQL VERSION
+  MARIADB VERSION
   ==================
 
   +------------------------------------------------------------------------+
   | Version            | Status               | Notes                       |
   +--------------------+----------------------+-----------------------------+
-  | PostgreSQL 16      | Recommended          | Best performance            |
-  | PostgreSQL 15      | Supported            | Good compatibility          |
-  | PostgreSQL 14      | Minimum              | Legacy support              |
+  | MariaDB 16      | Recommended          | Best performance            |
+  | MariaDB 15      | Supported            | Good compatibility          |
+  | MariaDB 14      | Minimum              | Legacy support              |
   +--------------------+----------------------+-----------------------------+
 
   DATABASE SIZING
@@ -399,10 +399,10 @@
   | Site C (Remote)    | 50 users             | 20 GB                       |
   +--------------------+----------------------+-----------------------------+
 
-  POSTGRESQL CONFIGURATION (recommended)
+  MARIADB CONFIGURATION (recommended)
   ======================================
 
-  # /etc/postgresql/16/main/postgresql.conf
+  # /etc/mariadb/16/main/mariadb.conf
 
   max_connections = 500
   shared_buffers = 8GB              # 25% of RAM
