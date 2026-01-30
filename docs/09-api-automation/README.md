@@ -23,46 +23,46 @@
 |                                                                               |
 |  BASE URL: https://bastion.company.com/api/                                   |
 |                                                                               |
-|  +---------------------------------------------------------------------+ |
-|  |                           API STRUCTURE                                  | |
-|  |                                                                          | |
-|  |  /api/                                                                   | |
-|  |  |                                                                       | |
-|  |  +-- /auth                    # Authentication                          | |
-|  |  |   +-- POST /login          # Get session token                       | |
-|  |  |   +-- POST /logout         # Invalidate token                        | |
-|  |  |                                                                       | |
-|  |  +-- /users                   # User management                         | |
-|  |  +-- /usergroups              # User group management                   | |
-|  |  |                                                                       | |
-|  |  +-- /domains                 # Domain management                       | |
-|  |  +-- /devices                 # Device management                       | |
-|  |  +-- /services                # Service configuration                   | |
-|  |  +-- /accounts                # Account management                      | |
-|  |  |                                                                       | |
-|  |  +-- /targetgroups            # Target group management                 | |
-|  |  +-- /authorizations          # Authorization policies                  | |
-|  |  |                                                                       | |
-|  |  +-- /sessions                # Session data                            | |
-|  |  |   +-- /current             # Active sessions                         | |
-|  |  |   +-- /history             # Historical sessions                     | |
-|  |  |                                                                       | |
-|  |  +-- /recordings              # Recording management                    | |
-|  |  |                                                                       | |
-|  |  +-- /passwords               # Password operations                     | |
-|  |      +-- /checkout            # Credential checkout                     | |
-|  |      +-- /change              # Password rotation                       | |
-|  |                                                                          | |
-|  +---------------------------------------------------------------------+ |
+|  +---------------------------------------------------------------------+      |
+|  |                           API STRUCTURE                             |      |
+|  |                                                                     |      |
+|  |  /api/                                                              |      |
+|  |  |                                                                  |      |
+|  |  +-- /auth                    # Authentication                      |      |
+|  |  |   +-- POST /login          # Get session token                   |      |
+|  |  |   +-- POST /logout         # Invalidate token                    |      |
+|  |  |                                                                  |      |
+|  |  +-- /users                   # User management                     |      |
+|  |  +-- /usergroups              # User group management               |      |
+|  |  |                                                                  |      |
+|  |  +-- /domains                 # Domain management                   |      |
+|  |  +-- /devices                 # Device management                   |      |
+|  |  +-- /services                # Service configuration               |      |
+|  |  +-- /accounts                # Account management                  |      |
+|  |  |                                                                  |      |
+|  |  +-- /targetgroups            # Target group management             |      |
+|  |  +-- /authorizations          # Authorization policies              |      |
+|  |  |                                                                  |      |
+|  |  +-- /sessions                # Session data                        |      |
+|  |  |   +-- /current             # Active sessions                     |      |
+|  |  |   +-- /history             # Historical sessions                 |      | 
+|  |  |                                                                  |      |
+|  |  +-- /recordings              # Recording management                |      |
+|  |  |                                                                  |      |
+|  |  +-- /passwords               # Password operations                 |      |
+|  |      +-- /checkout            # Credential checkout                 |      |
+|  |      +-- /change              # Password rotation                   |      |
+|  |                                                                     |      |
+|  +---------------------------------------------------------------------+      |
 |                                                                               |
 |  HTTP METHODS                                                                 |
 |  ============                                                                 |
 |                                                                               |
-|  GET     - Retrieve resources                                                |
-|  POST    - Create new resources                                              |
-|  PUT     - Update existing resources (full replacement)                      |
-|  PATCH   - Partial update of resources                                       |
-|  DELETE  - Remove resources                                                  |
+|  GET     - Retrieve resources                                                 |
+|  POST    - Create new resources                                               |
+|  PUT     - Update existing resources (full replacement)                       |
+|  PATCH   - Partial update of resources                                        |
+|  DELETE  - Remove resources                                                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -108,39 +108,39 @@
 |  METHOD 1: Session Token (Cookie-based)                                       |
 |  ======================================                                       |
 |                                                                               |
-|  # Login to get session cookie                                               |
-|  curl -X POST https://bastion.company.com/api/auth/login \                   |
-|       -H "Content-Type: application/json" \                                  |
-|       -d '{"username": "admin", "password": "secret"}' \                     |
+|  # Login to get session cookie                                                |
+|  curl -X POST https://bastion.company.com/api/auth/login \                    |
+|       -H "Content-Type: application/json" \                                   |
+|       -d '{"username": "admin", "password": "secret"}' \                      |
 |       -c cookies.txt                                                          |
 |                                                                               |
-|  # Use cookie for subsequent requests                                        |
-|  curl -X GET https://bastion.company.com/api/devices \                       |
+|  # Use cookie for subsequent requests                                         |
+|  curl -X GET https://bastion.company.com/api/devices \                        |
 |       -b cookies.txt                                                          |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  -------------------------------------------------------------------------- - |
 |                                                                               |
 |  METHOD 2: API Key (Header-based)                                             |
 |  ================================                                             |
 |                                                                               |
-|  # Use API key in header                                                     |
-|  curl -X GET https://bastion.company.com/api/devices \                       |
-|       -H "X-Auth-Token: your-api-key-here"                                   |
+|  # Use API key in header                                                      |
+|  curl -X GET https://bastion.company.com/api/devices \                        |
+|       -H "X-Auth-Token: your-api-key-here"                                    |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  METHOD 3: OAuth 2.0 (Bearer Token)                                           |
 |  ==================================                                           |
 |                                                                               |
-|  # Get OAuth token                                                           |
-|  curl -X POST https://bastion.company.com/oauth/token \                      |
-|       -d "grant_type=client_credentials" \                                   |
-|       -d "client_id=your-client-id" \                                        |
-|       -d "client_secret=your-client-secret"                                  |
+|  # Get OAuth token                                                            |
+|  curl -X POST https://bastion.company.com/oauth/token \                       |
+|       -d "grant_type=client_credentials" \                                    |
+|       -d "client_id=your-client-id" \                                         |
+|       -d "client_secret=your-client-secret"                                   |
 |                                                                               |
-|  # Use bearer token                                                          |
-|  curl -X GET https://bastion.company.com/api/devices \                       |
-|       -H "Authorization: Bearer eyJhbGc..."                                  |
+|  # Use bearer token                                                           |
+|  curl -X GET https://bastion.company.com/api/devices \                        |
+|       -H "Authorization: Bearer eyJhbGc..."                                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -181,35 +181,35 @@
 |  GET /api/devices                                                             |
 |                                                                               |
 |  Query Parameters:                                                            |
-|  * q          - Search query                                                 |
-|  * domain     - Filter by domain                                             |
-|  * limit      - Results per page (default: 50)                               |
-|  * offset     - Pagination offset                                            |
+|  * q          - Search query                                                  |
+|  * domain     - Filter by domain                                              |
+|  * limit      - Results per page (default: 50)                                |
+|  * offset     - Pagination offset                                             |
 |                                                                               |
 |  Example:                                                                     |
-|  GET /api/devices?domain=Production&limit=100                                |
+|  GET /api/devices?domain=Production&limit=100                                 |
 |                                                                               |
 |  Response:                                                                    |
 |  {                                                                            |
 |      "total": 156,                                                            |
 |      "devices": [                                                             |
 |          {                                                                    |
-|              "device_name": "srv-prod-01",                                   |
-|              "host": "192.168.1.100",                                        |
+|              "device_name": "srv-prod-01",                                    |
+|              "host": "192.168.1.100",                                         |
 |              "domain": "Production",                                          |
-|              "description": "Production web server"                          |
+|              "description": "Production web server"                           |
 |          }                                                                    |
 |      ]                                                                        |
 |  }                                                                            |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  GET DEVICE                                                                   |
 |  ==========                                                                   |
 |                                                                               |
 |  GET /api/devices/{device_name}                                               |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  CREATE DEVICE                                                                |
 |  =============                                                                |
@@ -218,20 +218,20 @@
 |                                                                               |
 |  Body:                                                                        |
 |  {                                                                            |
-|      "device_name": "srv-prod-02",                                           |
-|      "host": "192.168.1.101",                                                |
+|      "device_name": "srv-prod-02",                                            |
+|      "host": "192.168.1.101",                                                 |
 |      "domain": "Production",                                                  |
-|      "description": "Production app server"                                  |
+|      "description": "Production app server"                                   |
 |  }                                                                            |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  UPDATE DEVICE                                                                |
 |  =============                                                                |
 |                                                                               |
 |  PUT /api/devices/{device_name}                                               |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  DELETE DEVICE                                                                |
 |  =============                                                                |
@@ -254,7 +254,7 @@
 |  GET /api/accounts                                                            |
 |  GET /api/devices/{device_name}/accounts                                      |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  CREATE ACCOUNT                                                               |
 |  ==============                                                               |
@@ -263,18 +263,18 @@
 |                                                                               |
 |  Body:                                                                        |
 |  {                                                                            |
-|      "account_name": "root@srv-prod-01",                                     |
+|      "account_name": "root@srv-prod-01",                                      |
 |      "login": "root",                                                         |
-|      "device": "srv-prod-01",                                                |
+|      "device": "srv-prod-01",                                                 |
 |      "credentials": {                                                         |
 |          "type": "password",                                                  |
-|          "password": "SecureP@ssw0rd!"                                       |
+|          "password": "SecureP@ssw0rd!"                                        |
 |      },                                                                       |
-|      "auto_change_password": true,                                           |
-|      "change_password_interval_days": 30                                     |
+|      "auto_change_password": true,                                            |
+|      "change_password_interval_days": 30                                      |
 |  }                                                                            |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  GET ACCOUNT PASSWORD                                                         |
 |  ====================                                                         |
@@ -283,20 +283,20 @@
 |                                                                               |
 |  Response:                                                                    |
 |  {                                                                            |
-|      "password": "CurrentP@ssw0rd!",                                         |
-|      "last_changed": "2024-01-15T10:30:00Z"                                  |
+|      "password": "CurrentP@ssw0rd!",                                          |
+|      "last_changed": "2024-01-15T10:30:00Z"                                   |
 |  }                                                                            |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  ROTATE PASSWORD                                                              |
 |  ===============                                                              |
 |                                                                               |
 |  POST /api/accounts/{account_name}/password/change                            |
 |                                                                               |
-|  Body (optional - for manual password set):                                  |
+|  Body (optional - for manual password set):                                   |
 |  {                                                                            |
-|      "new_password": "NewP@ssw0rd!"                                          |
+|      "new_password": "NewP@ssw0rd!"                                           |
 |  }                                                                            |
 |                                                                               |
 +===============================================================================+
@@ -318,18 +318,18 @@
 |  {                                                                            |
 |      "sessions": [                                                            |
 |          {                                                                    |
-|              "session_id": "SES-001",                                        |
+|              "session_id": "SES-001",                                         |
 |              "user": "jsmith",                                                |
-|              "target": "root@srv-prod-01",                                   |
+|              "target": "root@srv-prod-01",                                    |
 |              "protocol": "SSH",                                               |
-|              "start_time": "2024-01-15T09:30:00Z",                           |
+|              "start_time": "2024-01-15T09:30:00Z",                            |
 |              "duration_seconds": 3600,                                        |
-|              "is_recorded": true                                             |
+|              "is_recorded": true                                              |
 |          }                                                                    |
 |      ]                                                                        |
 |  }                                                                            |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  TERMINATE SESSION                                                            |
 |  =================                                                            |
@@ -338,10 +338,10 @@
 |                                                                               |
 |  Body:                                                                        |
 |  {                                                                            |
-|      "reason": "Security incident response"                                  |
+|      "reason": "Security incident response"                                   |
 |  }                                                                            |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  SESSION HISTORY                                                              |
 |  ===============                                                              |
@@ -349,14 +349,14 @@
 |  GET /api/sessions/history                                                    |
 |                                                                               |
 |  Query Parameters:                                                            |
-|  * from_date  - Start date (ISO 8601)                                        |
-|  * to_date    - End date (ISO 8601)                                          |
-|  * user       - Filter by user                                               |
-|  * target     - Filter by target                                             |
-|  * protocol   - Filter by protocol                                           |
+|  * from_date  - Start date (ISO 8601)                                         |
+|  * to_date    - End date (ISO 8601)                                           |
+|  * user       - Filter by user                                                |
+|  * target     - Filter by target                                              |
+|  * protocol   - Filter by protocol                                            |
 |                                                                               |
 |  Example:                                                                     |
-|  GET /api/sessions/history?from_date=2024-01-01&user=jsmith                  |
+|  GET /api/sessions/history?from_date=2024-01-01&user=jsmith                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -562,40 +562,40 @@ resource "wallix_authorization" "linux_admin_access" {
 |                        CMDB INTEGRATION PATTERN                               |
 +===============================================================================+
 |                                                                               |
-|                        +-----------------+                                   |
-|                        |      CMDB       |                                   |
-|                        |   (ServiceNow)  |                                   |
-|                        +--------+--------+                                   |
-|                                 |                                            |
-|                                 | Webhook/API                                |
-|                                 v                                            |
-|                        +-----------------+                                   |
-|                        |   Integration   |                                   |
-|                        |     Service     |                                   |
-|                        +--------+--------+                                   |
-|                                 |                                            |
-|           +---------------------+---------------------+                     |
-|           |                     |                     |                     |
-|           v                     v                     v                     |
-|  +-----------------+  +-----------------+  +-----------------+             |
-|  |  New Server     |  | Server Updated  |  | Server Retired  |             |
-|  |                 |  |                 |  |                 |             |
-|  | * Create Device |  | * Update Device |  | * Delete Device |             |
-|  | * Create Accts  |  | * Update Accts  |  | * Delete Accts  |             |
-|  | * Add to Groups |  |                 |  | * Remove Auth   |             |
-|  +-----------------+  +-----------------+  +-----------------+             |
+|                        +-----------------+                                    |
+|                        |      CMDB       |                                    |
+|                        |   (ServiceNow)  |                                    |
+|                        +--------+--------+                                    |
+|                                 |                                             |
+|                                 | Webhook/API                                 |
+|                                 v                                             |
+|                        +-----------------+                                    |
+|                        |   Integration   |                                    |
+|                        |     Service     |                                    |
+|                        +--------+--------+                                    |
+|                                 |                                             |
+|           +---------------------+---------------------+                       |
+|           |                     |                     |                       |
+|           v                     v                     v                       |
+|  +-----------------+  +-----------------+  +-----------------+                |
+|  |  New Server     |  | Server Updated  |  | Server Retired  |                |
+|  |                 |  |                 |  |                 |                |
+|  | * Create Device |  | * Update Device |  | * Delete Device |                |
+|  | * Create Accts  |  | * Update Accts  |  | * Delete Accts  |                |
+|  | * Add to Groups |  |                 |  | * Remove Auth   |                |
+|  +-----------------+  +-----------------+  +-----------------+                |
 |                                                                               |
 |  SYNC WORKFLOW                                                                |
 |  =============                                                                |
 |                                                                               |
-|  1. CMDB change detected (new server provisioned)                            |
-|  2. Webhook triggers integration service                                     |
-|  3. Integration service:                                                     |
-|     a. Validates server data                                                 |
-|     b. Creates device in WALLIX                                              |
-|     c. Creates default accounts (root, admin)                                |
-|     d. Adds to appropriate target groups                                     |
-|  4. Confirmation logged back to CMDB                                         |
+|  1. CMDB change detected (new server provisioned)                             |
+|  2. Webhook triggers integration service                                      |
+|  3. Integration service:                                                      |
+|     a. Validates server data                                                  |
+|     b. Creates device in WALLIX                                               |
+|     c. Creates default accounts (root, admin)                                 |
+|     d. Adds to appropriate target groups                                      |
+|  4. Confirmation logged back to CMDB                                          |
 |                                                                               |
 +===============================================================================+
 ```
@@ -610,38 +610,38 @@ resource "wallix_authorization" "linux_admin_access" {
 |  APPROVAL WORKFLOW                                                            |
 |  =================                                                            |
 |                                                                               |
-|  +----------+                                                                |
-|  |   User   |                                                                |
-|  +----+-----+                                                                |
+|  +----------+                                                                 |
+|  |   User   |                                                                 |
+|  +----+-----+                                                                 |
 |       |                                                                       |
-|       | 1. Request access (with ticket number)                               |
+|       | 1. Request access (with ticket number)                                |
 |       v                                                                       |
-|  +-----------------+                                                         |
-|  |  WALLIX Bastion |                                                         |
-|  +--------+--------+                                                         |
+|  +-----------------+                                                          |
+|  |  WALLIX Bastion |                                                          |
+|  +--------+--------+                                                          |
 |           |                                                                   |
-|           | 2. Validate ticket via API                                       |
+|           | 2. Validate ticket via API                                        |
 |           v                                                                   |
-|  +-----------------+                                                         |
-|  |  ITSM System    |                                                         |
-|  |  (ServiceNow)   |                                                         |
-|  +--------+--------+                                                         |
+|  +-----------------+                                                          |
+|  |  ITSM System    |                                                          |
+|  |  (ServiceNow)   |                                                          |
+|  +--------+--------+                                                          |
 |           |                                                                   |
-|           | 3. Return ticket status                                          |
-|           |    - Valid/Invalid                                               |
-|           |    - Approved/Pending                                            |
-|           |    - Authorized systems                                          |
+|           | 3. Return ticket status                                           |
+|           |    - Valid/Invalid                                                |
+|           |    - Approved/Pending                                             |
+|           |    - Authorized systems                                           |
 |           v                                                                   |
-|  +-----------------+                                                         |
-|  |  WALLIX Bastion |                                                         |
-|  +--------+--------+                                                         |
+|  +-----------------+                                                          |
+|  |  WALLIX Bastion |                                                          |
+|  +--------+--------+                                                          |
 |           |                                                                   |
-|           | 4. Grant/Deny access based on ticket                             |
+|           | 4. Grant/Deny access based on ticket                              |
 |           v                                                                   |
-|  +----------------------------------------------------------------------+   |
-|  |  Session established (or denied)                                      |   |
-|  |  Session ID linked to ticket number in audit                          |   |
-|  +----------------------------------------------------------------------+   |
+|  +----------------------------------------------------------------------+     |
+|  |  Session established (or denied)                                     |     |
+|  |  Session ID linked to ticket number in audit                         |     |
+|  +----------------------------------------------------------------------+     |
 |                                                                               |
 +===============================================================================+
 ```
@@ -654,7 +654,7 @@ resource "wallix_authorization" "linux_admin_access" {
 
 ```
 +===============================================================================+
-|                   WEBHOOK INTEGRATION                                        |
+|                   WEBHOOK INTEGRATION                                         |
 +===============================================================================+
 
   OVERVIEW
@@ -694,7 +694,7 @@ resource "wallix_authorization" "linux_admin_access" {
 
 ```
 +===============================================================================+
-|                   WEBHOOK CONFIGURATION                                      |
+|                   WEBHOOK CONFIGURATION                                       |
 +===============================================================================+
 
   API ENDPOINT: POST /api/v2/webhooks
@@ -792,7 +792,7 @@ resource "wallix_authorization" "linux_admin_access" {
 
 ```
 +===============================================================================+
-|                   WEBHOOK EVENT TYPES                                        |
+|                   WEBHOOK EVENT TYPES                                         |
 +===============================================================================+
 
   AUTHENTICATION EVENTS
@@ -817,13 +817,13 @@ resource "wallix_authorization" "linux_admin_access" {
   +------------------------------------------------------------------------+
   | Event Type            | Triggered When                                 |
   +-----------------------+------------------------------------------------+
-  | session.start         | User starts a session to target               |
+  | session.start         | User starts a session to target                |
   | session.end           | Session ends normally                          |
   | session.terminated    | Admin terminates session                       |
-  | session.idle_timeout  | Session closed due to inactivity              |
-  | session.recording.start | Session recording begins                    |
-  | session.recording.stop  | Session recording ends                      |
-  | session.command.blocked | Blocked command detected                    |
+  | session.idle_timeout  | Session closed due to inactivity               |
+  | session.recording.start | Session recording begins                     |
+  | session.recording.stop  | Session recording ends                       |
+  | session.command.blocked | Blocked command detected                     |
   +-----------------------+------------------------------------------------+
 
   APPROVAL EVENTS
@@ -832,11 +832,11 @@ resource "wallix_authorization" "linux_admin_access" {
   +------------------------------------------------------------------------+
   | Event Type            | Triggered When                                 |
   +-----------------------+------------------------------------------------+
-  | approval.requested    | User requests access requiring approval       |
-  | approval.granted      | Approver grants access                        |
-  | approval.denied       | Approver denies access                        |
-  | approval.expired      | Request expires without decision              |
-  | approval.cancelled    | User cancels request                          |
+  | approval.requested    | User requests access requiring approval        |
+  | approval.granted      | Approver grants access                         |
+  | approval.denied       | Approver denies access                         |
+  | approval.expired      | Request expires without decision               |
+  | approval.cancelled    | User cancels request                           |
   +-----------------------+------------------------------------------------+
 
   PASSWORD EVENTS
@@ -845,11 +845,11 @@ resource "wallix_authorization" "linux_admin_access" {
   +------------------------------------------------------------------------+
   | Event Type            | Triggered When                                 |
   +-----------------------+------------------------------------------------+
-  | password.checkout     | Credential checked out                        |
-  | password.checkin      | Credential checked in                         |
-  | password.rotated      | Password successfully rotated                 |
-  | password.rotation.failed | Password rotation failed                   |
-  | password.expiring     | Password approaching expiration               |
+  | password.checkout     | Credential checked out                         |
+  | password.checkin      | Credential checked in                          |
+  | password.rotated      | Password successfully rotated                  |
+  | password.rotation.failed | Password rotation failed                    |
+  | password.expiring     | Password approaching expiration                |
   +-----------------------+------------------------------------------------+
 
   CONFIGURATION EVENTS
@@ -858,16 +858,16 @@ resource "wallix_authorization" "linux_admin_access" {
   +------------------------------------------------------------------------+
   | Event Type            | Triggered When                                 |
   +-----------------------+------------------------------------------------+
-  | config.user.created   | New user created                              |
-  | config.user.modified  | User modified                                 |
-  | config.user.deleted   | User deleted                                  |
-  | config.device.created | New device added                              |
-  | config.device.modified| Device configuration changed                  |
-  | config.device.deleted | Device removed                                |
-  | config.auth.created   | Authorization created                         |
-  | config.auth.modified  | Authorization modified                        |
-  | config.auth.deleted   | Authorization deleted                         |
-  | config.system.changed | System configuration changed                  |
+  | config.user.created   | New user created                               |
+  | config.user.modified  | User modified                                  |
+  | config.user.deleted   | User deleted                                   |
+  | config.device.created | New device added                               |
+  | config.device.modified| Device configuration changed                   |
+  | config.device.deleted | Device removed                                 |
+  | config.auth.created   | Authorization created                          |
+  | config.auth.modified  | Authorization modified                         |
+  | config.auth.deleted   | Authorization deleted                          |
+  | config.system.changed | System configuration changed                   |
   +-----------------------+------------------------------------------------+
 
 +===============================================================================+
@@ -877,7 +877,7 @@ resource "wallix_authorization" "linux_admin_access" {
 
 ```
 +===============================================================================+
-|                   WEBHOOK PAYLOAD FORMAT                                     |
+|                   WEBHOOK PAYLOAD FORMAT                                      |
 +===============================================================================+
 
   STANDARD PAYLOAD STRUCTURE
@@ -989,7 +989,7 @@ resource "wallix_authorization" "linux_admin_access" {
 
 ```
 +===============================================================================+
-|                   WEBHOOK SIGNATURE VERIFICATION                             |
+|                   WEBHOOK SIGNATURE VERIFICATION                              |
 +===============================================================================+
 
   SIGNATURE HEADER
@@ -1098,7 +1098,7 @@ resource "wallix_authorization" "linux_admin_access" {
 
 ```
 +===============================================================================+
-|                   WEBHOOK INTEGRATION EXAMPLES                               |
+|                   WEBHOOK INTEGRATION EXAMPLES                                |
 +===============================================================================+
 
   SLACK INTEGRATION
@@ -1126,10 +1126,10 @@ resource "wallix_authorization" "linux_admin_access" {
   |     {                                                                  |
   |       "type": "section",                                               |
   |       "fields": [                                                      |
-  |         {"type": "mrkdwn", "text": "*User:*\njsmith"},                  |
-  |         {"type": "mrkdwn", "text": "*Target:*\nplc-line1"},             |
-  |         {"type": "mrkdwn", "text": "*Terminated By:*\nadmin"},          |
-  |         {"type": "mrkdwn", "text": "*Reason:*\nSecurity incident"}      |
+  |         {"type": "mrkdwn", "text": "*User:*\njsmith"},                 |
+  |         {"type": "mrkdwn", "text": "*Target:*\nplc-line1"},            |
+  |         {"type": "mrkdwn", "text": "*Terminated By:*\nadmin"},         |
+  |         {"type": "mrkdwn", "text": "*Reason:*\nSecurity incident"}     |
   |       ]                                                                |
   |     }                                                                  |
   |   ]                                                                    |
@@ -1161,7 +1161,7 @@ resource "wallix_authorization" "linux_admin_access" {
   |     "facts": [                                                         |
   |       {"name": "User", "value": "jsmith"},                             |
   |       {"name": "Target", "value": "plc-line1"},                        |
-  |       {"name": "Time", "value": "2024-01-27 10:30:00"}                  |
+  |       {"name": "Time", "value": "2024-01-27 10:30:00"}                 |
   |     ]                                                                  |
   |   }]                                                                   |
   | }                                                                      |
@@ -1220,26 +1220,26 @@ resource "wallix_authorization" "linux_admin_access" {
   | }                                                                      |
   |                                                                        |
   | Lambda handler:                                                        |
-  | +------------------------------------------------------------------+  |
-  | | import json                                                       |  |
-  | | import boto3                                                      |  |
-  | |                                                                   |  |
-  | | def handler(event, context):                                      |  |
-  | |     body = json.loads(event['body'])                              |  |
-  | |                                                                   |  |
-  | |     if body['event_type'] == 'session.start':                     |  |
-  | |         # Log to CloudWatch Logs Insights                         |  |
-  | |         print(json.dumps({                                        |  |
-  | |             'event': 'pam_session',                               |  |
-  | |             'user': body['actor']['username'],                    |  |
-  | |             'target': body['target']['device_name'],              |  |
-  | |             'timestamp': body['timestamp']                        |  |
-  | |         }))                                                       |  |
-  | |                                                                   |  |
-  | |         # Optionally update DynamoDB, send SNS, etc.              |  |
-  | |                                                                   |  |
-  | |     return {'statusCode': 200, 'body': 'OK'}                      |  |
-  | +------------------------------------------------------------------+  |
+  | +------------------------------------------------------------------+   |
+  | | import json                                                      |   |
+  | | import boto3                                                     |   |
+  | |                                                                  |   |
+  | | def handler(event, context):                                     |   |
+  | |     body = json.loads(event['body'])                             |   |
+  | |                                                                  |   |
+  | |     if body['event_type'] == 'session.start':                    |   |
+  | |         # Log to CloudWatch Logs Insights                        |   |
+  | |         print(json.dumps({                                       |   |
+  | |             'event': 'pam_session',                              |   |
+  | |             'user': body['actor']['username'],                   |   |
+  | |             'target': body['target']['device_name'],             |   |
+  | |             'timestamp': body['timestamp']                       |   |
+  | |         }))                                                      |   |
+  | |                                                                  |   |
+  | |         # Optionally update DynamoDB, send SNS, etc.             |   |
+  | |                                                                  |   |
+  | |     return {'statusCode': 200, 'body': 'OK'}                     |   |
+  | +------------------------------------------------------------------+   |
   +------------------------------------------------------------------------+
 
 +===============================================================================+

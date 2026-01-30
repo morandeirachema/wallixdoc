@@ -25,29 +25,29 @@
 |  AVAILABILITY TIERS                                                           |
 |  =================                                                            |
 |                                                                               |
-|  +-----------------+----------------+----------------+---------------------+|
-|  | Tier            | Configuration  | Uptime Target  | RTO/RPO             ||
-|  +-----------------+----------------+----------------+---------------------+|
-|  | Standalone      | Single node    | 99% (87 hrs/yr)| Hours/Hours         ||
-|  | Active/Passive  | 2-node cluster | 99.9% (8.7 hrs)| Minutes/Minutes     ||
-|  | Active/Active   | N-node cluster | 99.99% (52 min)| Seconds/Seconds     ||
-|  | Multi-Site      | Geo-redundant  | 99.999% (5 min)| Minutes/Near-zero   ||
-|  +-----------------+----------------+----------------+---------------------+|
+|  +-----------------+----------------+----------------+---------------------+  |
+|  | Tier            | Configuration  | Uptime Target  | RTO/RPO             |  |
+|  +-----------------+----------------+----------------+---------------------+  |
+|  | Standalone      | Single node    | 99% (87 hrs/yr)| Hours/Hours         |  |
+|  | Active/Passive  | 2-node cluster | 99.9% (8.7 hrs)| Minutes/Minutes     |  |
+|  | Active/Active   | N-node cluster | 99.99% (52 min)| Seconds/Seconds     |  |
+|  | Multi-Site      | Geo-redundant  | 99.999% (5 min)| Minutes/Near-zero   |  |
+|  +-----------------+----------------+----------------+---------------------+  |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  COMPONENTS REQUIRING HA                                                      |
 |  =======================                                                      |
 |                                                                               |
-|  +---------------------------------------------------------------------+|
-|  | Component              | HA Method                                       ||
-|  +------------------------+---------------------------------------------+|
-|  | Bastion Application    | Cluster (Active/Passive or Active/Active)      ||
-|  | MariaDB Database       | Streaming replication + automatic failover     ||
-|  | Session Recordings     | Shared storage (NAS/SAN) or replication        ||
-|  | Configuration Data     | Synchronized across cluster nodes              ||
-|  | Encryption Keys        | Replicated with cluster                        ||
-|  +------------------------+---------------------------------------------+|
+|  +---------------------------------------------------------------------+      |
+|  | Component              | HA Method                                  |      |
+|  +------------------------+--------------------------------------------+      |
+|  | Bastion Application    | Cluster (Active/Passive or Active/Active)  |      |
+|  | MariaDB Database       | Streaming replication + automatic failover |      |
+|  | Session Recordings     | Shared storage (NAS/SAN) or replication    |      |
+|  | Configuration Data     | Synchronized across cluster nodes          |      |
+|  | Encryption Keys        | Replicated with cluster                    |      |
+|  +------------------------+--------------------------------------------+      |
 |                                                                               |
 +===============================================================================+
 ```
@@ -85,46 +85,46 @@
 |  ACTIVE/PASSIVE                                                               |
 |  ==============                                                               |
 |                                                                               |
-|         +-----------------+         +-----------------+                      |
-|         |   Node 1        |         |   Node 2        |                      |
-|         |   (ACTIVE)      |<------->|   (STANDBY)     |                      |
-|         |                 |  Sync   |                 |                      |
-|         |  * Running      |         |  o Ready        |                      |
-|         |  * Serving      |         |  o Monitoring   |                      |
-|         +--------+--------+         +-----------------+                      |
+|         +-----------------+         +-----------------+                       |
+|         |   Node 1        |         |   Node 2        |                       |
+|         |   (ACTIVE)      |<------->|   (STANDBY)     |                       |
+|         |                 |  Sync   |                 |                       |
+|         |  * Running      |         |  o Ready        |                       |
+|         |  * Serving      |         |  o Monitoring   |                       |
+|         +--------+--------+         +-----------------+                       |
 |                  |                                                            |
 |            All traffic                                                        |
 |                                                                               |
-|  Pros: Simple, lower cost                                                    |
-|  Cons: Failover time, idle standby                                           |
+|  Pros: Simple, lower cost                                                     |
+|  Cons: Failover time, idle standby                                            |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  ACTIVE/ACTIVE                                                                |
 |  =============                                                                |
 |                                                                               |
-|                     +-----------------+                                      |
-|                     |  Load Balancer  |                                      |
-|                     +--------+--------+                                      |
-|                              |                                               |
-|              +---------------+---------------+                               |
-|              |               |               |                               |
-|              v               v               v                               |
-|    +-----------------+ +-----------------+ +-----------------+              |
-|    |   Node 1        | |   Node 2        | |   Node 3        |              |
-|    |   (ACTIVE)      | |   (ACTIVE)      | |   (ACTIVE)      |              |
-|    |  * Serving      | |  * Serving      | |  * Serving      |              |
-|    +-----------------+ +-----------------+ +-----------------+              |
-|              |               |               |                               |
-|              +---------------+---------------+                               |
-|                              |                                               |
-|                    +---------+---------+                                     |
-|                    |  Shared Storage   |                                     |
-|                    |  + Database       |                                     |
-|                    +-------------------+                                     |
+|                     +-----------------+                                       |
+|                     |  Load Balancer  |                                       |
+|                     +--------+--------+                                       |
+|                              |                                                |
+|              +---------------+---------------+                                |
+|              |               |               |                                |
+|              v               v               v                                |
+|    +-----------------+ +-----------------+ +-----------------+                |
+|    |   Node 1        | |   Node 2        | |   Node 3        |                |
+|    |   (ACTIVE)      | |   (ACTIVE)      | |   (ACTIVE)      |                |
+|    |  * Serving      | |  * Serving      | |  * Serving      |                |
+|    +-----------------+ +-----------------+ +-----------------+                |
+|              |               |               |                                |
+|              +---------------+---------------+                                |
+|                              |                                                |
+|                    +---------+---------+                                      |
+|                    |  Shared Storage   |                                      |
+|                    |  + Database       |                                      |
+|                    +-------------------+                                      |
 |                                                                               |
-|  Pros: No failover, load distribution, scalability                           |
-|  Cons: More complex, requires shared storage                                 |
+|  Pros: No failover, load distribution, scalability                            |
+|  Cons: More complex, requires shared storage                                  |
 |                                                                               |
 +===============================================================================+
 ```
@@ -140,39 +140,39 @@
 |                    ACTIVE/PASSIVE CLUSTER                                     |
 +===============================================================================+
 |                                                                               |
-|                          +-----------------+                                 |
-|                          |  Virtual IP     |                                 |
-|                          |  (Floating)     |                                 |
-|                          |  192.168.1.10   |                                 |
-|                          +--------+--------+                                 |
-|                                   |                                          |
-|                  +----------------+----------------+                         |
-|                  |                                 |                         |
-|                  v                                 v                         |
-|  +-------------------------------+ +-------------------------------+        |
-|  |        NODE 1 (PRIMARY)       | |       NODE 2 (STANDBY)        |        |
-|  |                               | |                               |        |
-|  |  IP: 192.168.1.11             | |  IP: 192.168.1.12             |        |
-|  |                               | |                               |        |
-|  |  +-------------------------+  | |  +-------------------------+  |        |
-|  |  | WALLIX Bastion          |  | |  | WALLIX Bastion          |  |        |
-|  |  | (Running)               |  | |  | (Standby)               |  |        |
-|  |  +-------------------------+  | |  +-------------------------+  |        |
-|  |                               | |                               |        |
-|  |  +-------------------------+  | |  +-------------------------+  |        |
-|  |  | MariaDB                 |  | |  | MariaDB                 |  |        |
-|  |  | (Primary)               |<-+-+->| (Replica)               |  |        |
-|  |  +-------------------------+  | |  +-------------------------+  |        |
-|  |                               | |     Streaming Replication     |        |
-|  +-------------------------------+ +-------------------------------+        |
-|                  |                                 |                         |
-|                  +----------------+----------------+                         |
-|                                   |                                          |
-|                          +--------+--------+                                 |
-|                          | Shared Storage  |                                 |
-|                          | (Recordings)    |                                 |
-|                          | NFS/iSCSI       |                                 |
-|                          +-----------------+                                 |
+|                          +-----------------+                                  |
+|                          |  Virtual IP     |                                  |
+|                          |  (Floating)     |                                  |
+|                          |  192.168.1.10   |                                  |
+|                          +--------+--------+                                  |
+|                                   |                                           |
+|                  +----------------+----------------+                          |
+|                  |                                 |                          |
+|                  v                                 v                          |
+|  +-------------------------------+ +-------------------------------+          |
+|  |        NODE 1 (PRIMARY)       | |       NODE 2 (STANDBY)        |          |
+|  |                               | |                               |          |
+|  |  IP: 192.168.1.11             | |  IP: 192.168.1.12             |          |
+|  |                               | |                               |          | 
+|  |  +-------------------------+  | |  +-------------------------+  |          |
+|  |  | WALLIX Bastion          |  | |  | WALLIX Bastion          |  |          |
+|  |  | (Running)               |  | |  | (Standby)               |  |          |
+|  |  +-------------------------+  | |  +-------------------------+  |          |
+|  |                               | |                               |          |
+|  |  +-------------------------+  | |  +-------------------------+  |          |
+|  |  | MariaDB                 |  | |  | MariaDB                 |  |          |
+|  |  | (Primary)               |<-+-+->| (Replica)               |  |          | 
+|  |  +-------------------------+  | |  +-------------------------+  |          |
+|  |                               | |     Streaming Replication     |          | 
+|  +-------------------------------+ +-------------------------------+          |
+|                  |                                 |                          |
+|                  +----------------+----------------+                          |
+|                                   |                                           |
+|                          +--------+--------+                                  |
+|                          | Shared Storage  |                                  |
+|                          | (Recordings)    |                                  |
+|                          | NFS/iSCSI       |                                  |
+|                          +-----------------+                                  |
 |                                                                               |
 +===============================================================================+
 ```
@@ -189,55 +189,55 @@
 |                                                                               |
 |  1. DETECTION                                                                 |
 |     -----------                                                               |
-|     * Heartbeat failure detected                                             |
-|     * Health check fails (3 consecutive)                                     |
-|     * Service unresponsive                                                   |
+|     * Heartbeat failure detected                                              |
+|     * Health check fails (3 consecutive)                                      |
+|     * Service unresponsive                                                    |
 |                                                                               |
 |                    |                                                          |
 |                    v                                                          |
 |                                                                               |
 |  2. VALIDATION                                                                |
 |     -----------                                                               |
-|     * Confirm primary is truly down (avoid split-brain)                      |
-|     * STONITH/fencing if configured                                          |
-|     * Quorum check (if 3+ nodes)                                             |
+|     * Confirm primary is truly down (avoid split-brain)                       |
+|     * STONITH/fencing if configured                                           |
+|     * Quorum check (if 3+ nodes)                                              |
 |                                                                               |
 |                    |                                                          |
 |                    v                                                          |
 |                                                                               |
 |  3. DATABASE PROMOTION                                                        |
 |     ----------------------                                                    |
-|     * Promote MariaDB replica to primary                                     |
-|     * Ensure data consistency                                                |
-|     * Update connection strings                                              |
+|     * Promote MariaDB replica to primary                                      |
+|     * Ensure data consistency                                                 |
+|     * Update connection strings                                               |
 |                                                                               |
 |                    |                                                          |
 |                    v                                                          |
 |                                                                               |
 |  4. SERVICE ACTIVATION                                                        |
 |     --------------------                                                      |
-|     * Start WALLIX services on standby                                       |
-|     * Verify service health                                                  |
+|     * Start WALLIX services on standby                                        |
+|     * Verify service health                                                   |
 |                                                                               |
 |                    |                                                          |
 |                    v                                                          |
 |                                                                               |
 |  5. VIP MIGRATION                                                             |
 |     --------------                                                            |
-|     * Move floating IP to new primary                                        |
-|     * Update ARP tables                                                      |
-|     * DNS update (if applicable)                                             |
+|     * Move floating IP to new primary                                         |
+|     * Update ARP tables                                                       |
+|     * DNS update (if applicable)                                              |
 |                                                                               |
 |                    |                                                          |
 |                    v                                                          |
 |                                                                               |
 |  6. NOTIFICATION                                                              |
 |     ------------                                                              |
-|     * Alert administrators                                                   |
-|     * Log failover event                                                     |
-|     * Update monitoring                                                      |
+|     * Alert administrators                                                    |
+|     * Log failover event                                                      |
+|     * Update monitoring                                                       |
 |                                                                               |
-|  TYPICAL FAILOVER TIME: 30-120 seconds                                       |
+|  TYPICAL FAILOVER TIME: 30-120 seconds                                        |
 |                                                                               |
 +===============================================================================+
 ```
@@ -292,40 +292,40 @@ mount_point = /var/wab/recorded
 |                      ACTIVE/ACTIVE CLUSTER                                    |
 +===============================================================================+
 |                                                                               |
-|                          +---------------------+                             |
-|                          |    Load Balancer    |                             |
-|                          |    (F5 / HAProxy)   |                             |
-|                          |                     |                             |
-|                          |  VIP: 192.168.1.10  |                             |
-|                          +----------+----------+                             |
-|                                     |                                        |
-|             +-----------------------+-----------------------+                |
-|             |                       |                       |                |
-|             v                       v                       v                |
-|  +------------------+   +------------------+   +------------------+         |
-|  |    NODE 1        |   |    NODE 2        |   |    NODE 3        |         |
-|  |                  |   |                  |   |                  |         |
-|  | IP: 192.168.1.11 |   | IP: 192.168.1.12 |   | IP: 192.168.1.13 |         |
-|  |                  |   |                  |   |                  |         |
-|  | +--------------+ |   | +--------------+ |   | +--------------+ |         |
-|  | |   WALLIX     | |   | |   WALLIX     | |   | |   WALLIX     | |         |
-|  | |   Bastion    | |   | |   Bastion    | |   | |   Bastion    | |         |
-|  | |   (Active)   | |   | |   (Active)   | |   | |   (Active)   | |         |
-|  | +--------------+ |   | +--------------+ |   | +--------------+ |         |
-|  +--------+---------+   +--------+---------+   +--------+---------+         |
-|           |                      |                      |                    |
-|           +----------------------+----------------------+                    |
-|                                  |                                           |
-|                    +-------------+-------------+                             |
-|                    |                           |                             |
-|                    v                           v                             |
-|         +------------------+       +----------------------+                  |
-|         |   MariaDB        |       |   Shared Storage     |                  |
-|         |   Cluster        |       |   (NAS/SAN)          |                  |
-|         |                  |       |                      |                  |
-|         |  Primary + 2     |       |  /var/wab/recorded   |                  |
-|         |  Replicas        |       |  /var/wab/shared     |                  |
-|         +------------------+       +----------------------+                  |
+|                          +---------------------+                              |
+|                          |    Load Balancer    |                              |
+|                          |    (F5 / HAProxy)   |                              |
+|                          |                     |                              |
+|                          |  VIP: 192.168.1.10  |                              |
+|                          +----------+----------+                              |
+|                                     |                                         |
+|             +-----------------------+-----------------------+                 |
+|             |                       |                       |                 |
+|             v                       v                       v                 |
+|  +------------------+   +------------------+   +------------------+           |
+|  |    NODE 1        |   |    NODE 2        |   |    NODE 3        |           |
+|  |                  |   |                  |   |                  |           |
+|  | IP: 192.168.1.11 |   | IP: 192.168.1.12 |   | IP: 192.168.1.13 |           |
+|  |                  |   |                  |   |                  |           |
+|  | +--------------+ |   | +--------------+ |   | +--------------+ |           |
+|  | |   WALLIX     | |   | |   WALLIX     | |   | |   WALLIX     | |           |
+|  | |   Bastion    | |   | |   Bastion    | |   | |   Bastion    | |           |
+|  | |   (Active)   | |   | |   (Active)   | |   | |   (Active)   | |           |
+|  | +--------------+ |   | +--------------+ |   | +--------------+ |           |
+|  +--------+---------+   +--------+---------+   +--------+---------+           |
+|           |                      |                      |                     |
+|           +----------------------+----------------------+                     |
+|                                  |                                            |
+|                    +-------------+-------------+                              |
+|                    |                           |                              |
+|                    v                           v                              |
+|         +------------------+       +----------------------+                   |
+|         |   MariaDB        |       |   Shared Storage     |                   |
+|         |   Cluster        |       |   (NAS/SAN)          |                   |
+|         |                  |       |                      |                   |
+|         |  Primary + 2     |       |  /var/wab/recorded   |                   |
+|         |  Replicas        |       |  /var/wab/shared     |                   |
+|         +------------------+       +----------------------+                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -340,58 +340,58 @@ mount_point = /var/wab/recorded
 |  HAProxy Example Configuration                                                |
 |  =============================                                                |
 |                                                                               |
-|  # /etc/haproxy/haproxy.cfg                                                  |
+|  # /etc/haproxy/haproxy.cfg                                                   |
 |                                                                               |
 |  frontend wallix_https                                                        |
-|      bind *:443 ssl crt /etc/ssl/wallix.pem                                  |
+|      bind *:443 ssl crt /etc/ssl/wallix.pem                                   |
 |      mode http                                                                |
-|      default_backend wallix_nodes                                            |
+|      default_backend wallix_nodes                                             |
 |                                                                               |
 |  frontend wallix_ssh                                                          |
 |      bind *:22                                                                |
 |      mode tcp                                                                 |
-|      default_backend wallix_ssh_nodes                                        |
+|      default_backend wallix_ssh_nodes                                         |
 |                                                                               |
 |  frontend wallix_rdp                                                          |
 |      bind *:3389                                                              |
 |      mode tcp                                                                 |
-|      default_backend wallix_rdp_nodes                                        |
+|      default_backend wallix_rdp_nodes                                         |
 |                                                                               |
 |  backend wallix_nodes                                                         |
 |      mode http                                                                |
 |      balance roundrobin                                                       |
-|      option httpchk GET /health                                              |
-|      cookie SERVERID insert indirect nocache                                 |
-|      server node1 192.168.1.11:443 ssl check cookie node1                    |
-|      server node2 192.168.1.12:443 ssl check cookie node2                    |
-|      server node3 192.168.1.13:443 ssl check cookie node3                    |
+|      option httpchk GET /health                                               |
+|      cookie SERVERID insert indirect nocache                                  |
+|      server node1 192.168.1.11:443 ssl check cookie node1                     |
+|      server node2 192.168.1.12:443 ssl check cookie node2                     |
+|      server node3 192.168.1.13:443 ssl check cookie node3                     |
 |                                                                               |
 |  backend wallix_ssh_nodes                                                     |
 |      mode tcp                                                                 |
 |      balance source                                                           |
 |      option tcp-check                                                         |
-|      server node1 192.168.1.11:22 check                                      |
-|      server node2 192.168.1.12:22 check                                      |
-|      server node3 192.168.1.13:22 check                                      |
+|      server node1 192.168.1.11:22 check                                       |
+|      server node2 192.168.1.12:22 check                                       |
+|      server node3 192.168.1.13:22 check                                       |
 |                                                                               |
 |  backend wallix_rdp_nodes                                                     |
 |      mode tcp                                                                 |
 |      balance source                                                           |
 |      option tcp-check                                                         |
-|      server node1 192.168.1.11:3389 check                                    |
-|      server node2 192.168.1.12:3389 check                                    |
-|      server node3 192.168.1.13:3389 check                                    |
+|      server node1 192.168.1.11:3389 check                                     |
+|      server node2 192.168.1.12:3389 check                                     |
+|      server node3 192.168.1.13:3389 check                                     |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  SESSION PERSISTENCE                                                          |
 |  ===================                                                          |
 |                                                                               |
-|  Protocol     | Persistence Method    | Reason                               |
-|  -------------+-----------------------+------------------------------------  |
-|  HTTPS (UI)   | Cookie-based          | User session state                   |
-|  SSH          | Source IP hash        | Session continuity                   |
-|  RDP          | Source IP hash        | Session continuity                   |
+|  Protocol     | Persistence Method    | Reason                                |
+|  -------------+-----------------------+------------------------------------   |
+|  HTTPS (UI)   | Cookie-based          | User session state                    |
+|  SSH          | Source IP hash        | Session continuity                    |
+|  RDP          | Source IP hash        | Session continuity                    |
 |                                                                               |
 +===============================================================================+
 ```
@@ -410,56 +410,56 @@ mount_point = /var/wab/recorded
 |  STREAMING REPLICATION                                                        |
 |  =====================                                                        |
 |                                                                               |
-|         +---------------------+                                              |
-|         |   PRIMARY           |                                              |
-|         |   MariaDB           |                                              |
-|         |                     |                                              |
-|         |   Writes + Reads    |                                              |
-|         +----------+----------+                                              |
+|         +---------------------+                                               |
+|         |   PRIMARY           |                                               |
+|         |   MariaDB           |                                               |
+|         |                     |                                               |
+|         |   Writes + Reads    |                                               |
+|         +----------+----------+                                               |
 |                    |                                                          |
-|         +----------+----------+                                              |
-|         |   WAL Streaming     |                                              |
-|         |                     |                                              |
-|         v                     v                                              |
-|  +-----------------+   +-----------------+                                   |
-|  |   REPLICA 1     |   |   REPLICA 2     |                                   |
-|  |   (Sync)        |   |   (Async)       |                                   |
-|  |                 |   |                 |                                   |
-|  |   Reads only    |   |   Reads only    |                                   |
-|  +-----------------+   +-----------------+                                   |
+|         +----------+----------+                                               |
+|         |   WAL Streaming     |                                               |
+|         |                     |                                               |
+|         v                     v                                               |
+|  +-----------------+   +-----------------+                                    |
+|  |   REPLICA 1     |   |   REPLICA 2     |                                    |
+|  |   (Sync)        |   |   (Async)       |                                    |
+|  |                 |   |                 |                                    |
+|  |   Reads only    |   |   Reads only    |                                    |
+|  +-----------------+   +-----------------+                                    |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  MAXSCALE/GALERA CLUSTER MANAGEMENT                                           |
 |  ==================================                                           |
 |                                                                               |
 |  MaxScale/Galera provides:                                                    |
-|  * Automatic leader election                                                 |
-|  * Automatic failover                                                        |
-|  * REST API for management                                                   |
-|  * Integration with etcd/Consul/ZooKeeper                                    |
+|  * Automatic leader election                                                  |
+|  * Automatic failover                                                         |
+|  * REST API for management                                                    |
+|  * Integration with etcd/Consul/ZooKeeper                                     |
 |                                                                               |
-|  # maxscale.cnf                                                              |
+|  # maxscale.cnf                                                               |
 |  scope: wallix-cluster                                                        |
 |  name: node1                                                                  |
 |                                                                               |
 |  restapi:                                                                     |
-|    listen: 0.0.0.0:8008                                                      |
-|    connect_address: 192.168.1.11:8008                                        |
+|    listen: 0.0.0.0:8008                                                       |
+|    connect_address: 192.168.1.11:8008                                         |
 |                                                                               |
 |  etcd:                                                                        |
 |    hosts:                                                                     |
-|      - 192.168.1.21:2379                                                     |
-|      - 192.168.1.22:2379                                                     |
-|      - 192.168.1.23:2379                                                     |
+|      - 192.168.1.21:2379                                                      |
+|      - 192.168.1.22:2379                                                      |
+|      - 192.168.1.23:2379                                                      |
 |                                                                               |
 |  bootstrap:                                                                   |
 |    dcs:                                                                       |
-|      synchronous_mode: true                                                  |
+|      synchronous_mode: true                                                   |
 |      mariadb:                                                                 |
 |        parameters:                                                            |
-|          max_connections: 200                                                |
-|          synchronous_commit: on                                              |
+|          max_connections: 200                                                 |
+|          synchronous_commit: on                                               |
 |                                                                               |
 +===============================================================================+
 ```
@@ -475,50 +475,50 @@ mount_point = /var/wab/recorded
 |                    MULTI-SITE DISASTER RECOVERY                               |
 +===============================================================================+
 |                                                                               |
-|     SITE A (PRIMARY)                         SITE B (DR)                     |
-|     ================                         ==========                      |
+|     SITE A (PRIMARY)                         SITE B (DR)                      |
+|     ================                         ==========                       |
 |                                                                               |
-|  +--------------------------+     +--------------------------+              |
-|  |                          |     |                          |              |
-|  |  +--------------------+  |     |  +--------------------+  |              |
-|  |  |  WALLIX Cluster    |  |     |  |  WALLIX Cluster    |  |              |
-|  |  |  (Active)          |  |     |  |  (Standby)         |  |              |
-|  |  |                    |  |     |  |                    |  |              |
-|  |  |  Node1  Node2      |  |     |  |  Node1  Node2      |  |              |
-|  |  +---------+----------+  |     |  +---------+----------+  |              |
-|  |            |             |     |            |             |              |
-|  |  +---------+----------+  |     |  +---------+----------+  |              |
-|  |  |  MariaDB           |<-+-----+->|  MariaDB           |  |              |
-|  |  |  (Primary)         |  |     |  |  (Replica)         |  |              |
-|  |  +--------------------+  |     |  +--------------------+  |              |
-|  |                          |     |      Async Replication   |              |
-|  |  +--------------------+  |     |  +--------------------+  |              |
-|  |  |  Recording Storage |<-+-----+->|  Recording Storage |  |              |
-|  |  |  (Primary)         |  |     |  |  (Replica)         |  |              |
-|  |  +--------------------+  |     |  +--------------------+  |              |
-|  |                          |     |      rsync/replication   |              |
-|  +--------------------------+     +--------------------------+              |
+|  +--------------------------+     +--------------------------+                |
+|  |                          |     |                          |                |
+|  |  +--------------------+  |     |  +--------------------+  |                |
+|  |  |  WALLIX Cluster    |  |     |  |  WALLIX Cluster    |  |                |
+|  |  |  (Active)          |  |     |  |  (Standby)         |  |                |
+|  |  |                    |  |     |  |                    |  |                |
+|  |  |  Node1  Node2      |  |     |  |  Node1  Node2      |  |                |
+|  |  +---------+----------+  |     |  +---------+----------+  |                |
+|  |            |             |     |            |             |                |
+|  |  +---------+----------+  |     |  +---------+----------+  |                |
+|  |  |  MariaDB           |<-+-----+->|  MariaDB           |  |                |
+|  |  |  (Primary)         |  |     |  |  (Replica)         |  |                |
+|  |  +--------------------+  |     |  +--------------------+  |                |
+|  |                          |     |      Async Replication   |                |
+|  |  +--------------------+  |     |  +--------------------+  |                |
+|  |  |  Recording Storage |<-+-----+->|  Recording Storage |  |                |
+|  |  |  (Primary)         |  |     |  |  (Replica)         |  |                |
+|  |  +--------------------+  |     |  +--------------------+  |                |
+|  |                          |     |      rsync/replication   |                |
+|  +--------------------------+     +--------------------------+                |
 |                                                                               |
-|                          +-----------------+                                 |
-|                          |  Global DNS /   |                                 |
-|                          |  GSLB           |                                 |
-|                          |                 |                                 |
-|                          |  bastion.co.com |                                 |
-|                          +-----------------+                                 |
+|                          +-----------------+                                  |
+|                          |  Global DNS /   |                                  |
+|                          |  GSLB           |                                  |
+|                          |                 |                                  |
+|                          |  bastion.co.com |                                  |
+|                          +-----------------+                                  |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  DR METRICS                                                                   |
 |  ==========                                                                   |
 |                                                                               |
-|  +-------------------+---------------------------------------------------+  |
-|  | Metric            | Target                                             |  |
-|  +-------------------+---------------------------------------------------+  |
-|  | RPO               | < 5 minutes (async replication lag)               |  |
-|  | RTO               | < 30 minutes (manual failover)                    |  |
-|  |                   | < 5 minutes (automated failover)                  |  |
-|  | Replication Lag   | < 1 minute under normal conditions                |  |
-|  +-------------------+---------------------------------------------------+  |
+|  +-------------------+---------------------------------------------------+    |
+|  | Metric            | Target                                            |    |
+|  +-------------------+---------------------------------------------------+    |
+|  | RPO               | < 5 minutes (async replication lag)               |    |
+|  | RTO               | < 30 minutes (manual failover)                    |    |
+|  |                   | < 5 minutes (automated failover)                  |    |
+|  | Replication Lag   | < 1 minute under normal conditions                |    |
+|  +-------------------+---------------------------------------------------+    |
 |                                                                               |
 +===============================================================================+
 ```
@@ -533,50 +533,50 @@ mount_point = /var/wab/recorded
 |  STEP 1: ASSESS SITUATION                                                     |
 |  ========================                                                     |
 |                                                                               |
-|  [ ] Confirm primary site is unavailable                                       |
-|  [ ] Estimate recovery time for primary                                        |
-|  [ ] Decision: Failover or wait?                                               |
+|  [ ] Confirm primary site is unavailable                                      |
+|  [ ] Estimate recovery time for primary                                       |
+|  [ ] Decision: Failover or wait?                                              |
 |                                                                               |
 |  STEP 2: PREPARE DR SITE                                                      |
 |  =======================                                                      |
 |                                                                               |
-|  [ ] Check replication status                                                  |
-|  [ ] Verify data consistency                                                   |
-|  [ ] Confirm DR site resources are ready                                       |
+|  [ ] Check replication status                                                 |
+|  [ ] Verify data consistency                                                  |
+|  [ ] Confirm DR site resources are ready                                      |
 |                                                                               |
 |  STEP 3: PROMOTE DR SITE                                                      |
 |  ======================                                                       |
 |                                                                               |
-|  [ ] Promote MariaDB replica to primary                                        |
-|     $ mariadb-admin failover wallix-cluster                                  |
+|  [ ] Promote MariaDB replica to primary                                       |
+|     $ mariadb-admin failover wallix-cluster                                   |
 |                                                                               |
-|  [ ] Start WALLIX Bastion services                                             |
-|     $ systemctl start wabengine                                              |
+|  [ ] Start WALLIX Bastion services                                            |
+|     $ systemctl start wabengine                                               |
 |                                                                               |
-|  [ ] Verify services are running                                               |
-|     $ systemctl status wab*                                                  |
+|  [ ] Verify services are running                                              |
+|     $ systemctl status wab*                                                   |
 |                                                                               |
 |  STEP 4: UPDATE DNS/ROUTING                                                   |
 |  ========================                                                     |
 |                                                                               |
-|  [ ] Update DNS records to point to DR site                                    |
-|  [ ] Or update GSLB health checks                                              |
-|  [ ] Clear DNS caches if needed                                                |
+|  [ ] Update DNS records to point to DR site                                   |
+|  [ ] Or update GSLB health checks                                             |
+|  [ ] Clear DNS caches if needed                                               |
 |                                                                               |
 |  STEP 5: VERIFY                                                               |
 |  =============                                                                |
 |                                                                               |
-|  [ ] Test user authentication                                                  |
-|  [ ] Test session establishment                                                |
-|  [ ] Verify recording functionality                                            |
-|  [ ] Check password rotation                                                   |
+|  [ ] Test user authentication                                                 |
+|  [ ] Test session establishment                                               |
+|  [ ] Verify recording functionality                                           |
+|  [ ] Check password rotation                                                  |
 |                                                                               |
 |  STEP 6: NOTIFY                                                               |
 |  =============                                                                |
 |                                                                               |
-|  [ ] Notify stakeholders of failover                                           |
-|  [ ] Document incident timeline                                                |
-|  [ ] Plan failback when primary recovers                                       |
+|  [ ] Notify stakeholders of failover                                          |
+|  [ ] Document incident timeline                                               |
+|  [ ] Plan failback when primary recovers                                      |
 |                                                                               |
 +===============================================================================+
 ```
@@ -595,42 +595,42 @@ mount_point = /var/wab/recorded
 |  BACKUP COMPONENTS                                                            |
 |  =================                                                            |
 |                                                                               |
-|  +---------------------+-----------------+-----------------+---------------+|
-|  | Component           | Method          | Frequency       | Retention     ||
-|  +---------------------+-----------------+-----------------+---------------+|
-|  | MariaDB Database    | mysqldump/mariabackup | Daily     | 30 days       ||
-|  | Configuration Files | File backup     | Daily + changes | 90 days       ||
-|  | Encryption Keys     | Secure export   | On change       | Indefinite    ||
-|  | Session Recordings  | Rsync/snapshot  | Continuous      | Per policy    ||
-|  | SSL Certificates    | File backup     | On change       | Indefinite    ||
-|  +---------------------+-----------------+-----------------+---------------+|
+|  +---------------------+-----------------+-----------------+---------------+  |
+|  | Component           | Method          | Frequency       | Retention     |  |
+|  +---------------------+-----------------+-----------------+---------------+  |
+|  | MariaDB Database    | mysqldump/mariabackup | Daily     | 30 days       |  |
+|  | Configuration Files | File backup     | Daily + changes | 90 days       |  |
+|  | Encryption Keys     | Secure export   | On change       | Indefinite    |  | 
+|  | Session Recordings  | Rsync/snapshot  | Continuous      | Per policy    |  |
+|  | SSL Certificates    | File backup     | On change       | Indefinite    |  |
+|  +---------------------+-----------------+-----------------+---------------+  |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  BACKUP SCRIPT EXAMPLE                                                        |
 |  =====================                                                        |
 |                                                                               |
 |  #!/bin/bash                                                                  |
-|  # WALLIX Bastion Backup Script                                              |
+|  # WALLIX Bastion Backup Script                                               |
 |                                                                               |
-|  BACKUP_DIR="/backup/wallix/$(date +%Y%m%d)"                                 |
+|  BACKUP_DIR="/backup/wallix/$(date +%Y%m%d)"                                  |
 |  mkdir -p $BACKUP_DIR                                                         |
 |                                                                               |
 |  # Database backup                                                            |
-|  mysqldump -u wabadmin wabdb > $BACKUP_DIR/database.sql                      |
+|  mysqldump -u wabadmin wabdb > $BACKUP_DIR/database.sql                       |
 |                                                                               |
 |  # Configuration backup                                                       |
-|  tar -czf $BACKUP_DIR/config.tar.gz /etc/opt/wab/                            |
+|  tar -czf $BACKUP_DIR/config.tar.gz /etc/opt/wab/                             |
 |                                                                               |
 |  # Keys backup (encrypted)                                                    |
-|  tar -czf - /var/opt/wab/keys/ | \                                           |
-|    openssl enc -aes-256-cbc -salt -out $BACKUP_DIR/keys.tar.gz.enc           |
+|  tar -czf - /var/opt/wab/keys/ | \                                            |
+|    openssl enc -aes-256-cbc -salt -out $BACKUP_DIR/keys.tar.gz.enc            |
 |                                                                               |
 |  # Certificates backup                                                        |
-|  tar -czf $BACKUP_DIR/certs.tar.gz /etc/ssl/wallix/                          |
+|  tar -czf $BACKUP_DIR/certs.tar.gz /etc/ssl/wallix/                           |
 |                                                                               |
 |  # Verify backups                                                             |
-|  sha256sum $BACKUP_DIR/* > $BACKUP_DIR/checksums.sha256                      |
+|  sha256sum $BACKUP_DIR/* > $BACKUP_DIR/checksums.sha256                       |
 |                                                                               |
 +===============================================================================+
 ```
@@ -645,32 +645,32 @@ mount_point = /var/wab/recorded
 |  FULL SYSTEM RESTORE                                                          |
 |  ===================                                                          |
 |                                                                               |
-|  1. Install fresh WALLIX Bastion                                             |
+|  1. Install fresh WALLIX Bastion                                              |
 |                                                                               |
 |  2. Stop services                                                             |
-|     $ systemctl stop wab*                                                    |
+|     $ systemctl stop wab*                                                     |
 |                                                                               |
 |  3. Restore database                                                          |
-|     $ mysql -u wabadmin wabdb < /backup/database.sql                         |
+|     $ mysql -u wabadmin wabdb < /backup/database.sql                          |
 |                                                                               |
 |  4. Restore configuration                                                     |
-|     $ tar -xzf /backup/config.tar.gz -C /                                    |
+|     $ tar -xzf /backup/config.tar.gz -C /                                     |
 |                                                                               |
 |  5. Restore encryption keys                                                   |
-|     $ openssl enc -d -aes-256-cbc -in /backup/keys.tar.gz.enc | \            |
+|     $ openssl enc -d -aes-256-cbc -in /backup/keys.tar.gz.enc | \             |
 |       tar -xzf - -C /                                                         |
 |                                                                               |
 |  6. Restore certificates                                                      |
-|     $ tar -xzf /backup/certs.tar.gz -C /                                     |
+|     $ tar -xzf /backup/certs.tar.gz -C /                                      |
 |                                                                               |
 |  7. Set permissions                                                           |
-|     $ chown -R wabadmin:wabadmin /var/opt/wab/                               |
+|     $ chown -R wabadmin:wabadmin /var/opt/wab/                                |
 |                                                                               |
 |  8. Start services                                                            |
-|     $ systemctl start wab*                                                   |
+|     $ systemctl start wab*                                                    |
 |                                                                               |
 |  9. Verify functionality                                                      |
-|     $ wabcheck --full                                                        |
+|     $ wabcheck --full                                                         |
 |                                                                               |
 +===============================================================================+
 ```
@@ -693,43 +693,43 @@ mount_point = /var/wab/recorded
 |  Response:                                                                    |
 |  {                                                                            |
 |      "status": "healthy",                                                     |
-|      "node": "bastion-node1",                                                |
-|      "cluster_role": "primary",                                              |
+|      "node": "bastion-node1",                                                 |
+|      "cluster_role": "primary",                                               |
 |      "components": {                                                          |
-|          "database": "healthy",                                              |
-|          "session_manager": "healthy",                                       |
-|          "password_manager": "healthy",                                      |
-|          "recording_storage": "healthy"                                      |
+|          "database": "healthy",                                               |
+|          "session_manager": "healthy",                                        |
+|          "password_manager": "healthy",                                       |
+|          "recording_storage": "healthy"                                       |
 |      },                                                                       |
 |      "cluster": {                                                             |
 |          "nodes": 2,                                                          |
 |          "healthy_nodes": 2,                                                  |
-|          "replication_lag_seconds": 0                                        |
+|          "replication_lag_seconds": 0                                         |
 |      }                                                                        |
 |  }                                                                            |
 |                                                                               |
-|  --------------------------------------------------------------------------- |
+|  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  MONITORING METRICS                                                           |
 |  =================                                                            |
 |                                                                               |
 |  Cluster Health:                                                              |
-|  * Node status (up/down)                                                     |
-|  * Cluster role (primary/standby)                                            |
-|  * Replication lag                                                           |
-|  * Split-brain detection                                                     |
+|  * Node status (up/down)                                                      |
+|  * Cluster role (primary/standby)                                             |
+|  * Replication lag                                                            |
+|  * Split-brain detection                                                      |
 |                                                                               |
 |  Service Health:                                                              |
-|  * Service response time                                                     |
-|  * Active sessions count                                                     |
-|  * Authentication success rate                                               |
-|  * Recording storage capacity                                                |
+|  * Service response time                                                      |
+|  * Active sessions count                                                      |
+|  * Authentication success rate                                                |
+|  * Recording storage capacity                                                 |
 |                                                                               |
 |  Database Health:                                                             |
-|  * Connection pool utilization                                               |
-|  * Query response time                                                       |
-|  * Replication status                                                        |
-|  * Disk space                                                                |
+|  * Connection pool utilization                                                |
+|  * Query response time                                                        |
+|  * Replication status                                                         |
+|  * Disk space                                                                 |
 |                                                                               |
 +===============================================================================+
 ```
