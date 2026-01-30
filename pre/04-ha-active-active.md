@@ -33,7 +33,7 @@ This guide covers setting up PAM4OT in Active-Active high availability mode wher
          |  [Active]        |            |  [Active]        |
          |                  |            |                  |
          |  +------------+  |            |  +------------+  |
-         |  | PostgreSQL |<-+-- Sync --->+->| PostgreSQL |  |
+         |  | MariaDB |<-+-- Sync --->+->| MariaDB |  |
          |  | (Primary)  |  |            |  | (Replica)  |  |
          |  +------------+  |            |  +------------+  |
          +------------------+            +------------------+
@@ -66,12 +66,12 @@ This guide covers setting up PAM4OT in Active-Active high availability mode wher
 # From Node 1:
 ping pam4ot-node2.lab.local
 nc -zv pam4ot-node2.lab.local 22
-nc -zv pam4ot-node2.lab.local 5432
+nc -zv pam4ot-node2.lab.local 3306
 
 # From Node 2:
 ping pam4ot-node1.lab.local
 nc -zv pam4ot-node1.lab.local 22
-nc -zv pam4ot-node1.lab.local 5432
+nc -zv pam4ot-node1.lab.local 3306
 ```
 
 ---
@@ -106,13 +106,13 @@ ssh root@pam4ot-node1.lab.local hostname
 
 ---
 
-## Step 2: Configure PostgreSQL Streaming Replication
+## Step 2: Configure MariaDB Streaming Replication
 
 ### On Node 1 (Primary)
 
 ```bash
-# Edit PostgreSQL configuration
-cat >> /etc/postgresql/15/main/postgresql.conf << 'EOF'
+# Edit MariaDB configuration
+cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
 
 # Replication Settings
 wal_level = replica
@@ -124,7 +124,7 @@ synchronous_standby_names = 'pam4ot_node2'
 EOF
 
 # Configure replication access
-cat >> /etc/postgresql/15/main/pg_hba.conf << 'EOF'
+cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
 
 # Replication connections
 host    replication     replicator      10.10.1.12/32      scram-sha-256
@@ -132,57 +132,57 @@ host    wabdb           wabadmin        10.10.1.12/32      scram-sha-256
 EOF
 
 # Create replication user
-sudo -u postgres psql << 'EOF'
+sudo mysql << 'EOF'
 CREATE USER replicator WITH REPLICATION ENCRYPTED PASSWORD 'ReplicatorPass123!';
 EOF
 
-# Restart PostgreSQL
-systemctl restart postgresql
+# Restart MariaDB
+systemctl restart mariadb
 ```
 
 ### On Node 2 (Replica)
 
 ```bash
-# Stop PostgreSQL
-systemctl stop postgresql
+# Stop MariaDB
+systemctl stop mariadb
 
 # Remove existing data
-rm -rf /var/lib/postgresql/15/main/*
+rm -rf /var/lib/mysql/*
 
 # Clone from primary
-sudo -u postgres pg_basebackup -h pam4ot-node1.lab.local -D /var/lib/postgresql/15/main -U replicator -P -Xs -R
+mariabackup -h pam4ot-node1.lab.local -D /var/lib/mysql -U replicator -P -Xs -R
 
 # When prompted, enter: ReplicatorPass123!
 
 # Configure as standby
-cat > /var/lib/postgresql/15/main/postgresql.auto.conf << 'EOF'
-primary_conninfo = 'host=pam4ot-node1.lab.local port=5432 user=replicator password=ReplicatorPass123! application_name=pam4ot_node2'
+cat > /var/lib/mysql/mariadb.auto.cnf << 'EOF'
+primary_conninfo = 'host=pam4ot-node1.lab.local port=3306 user=replicator password=ReplicatorPass123! application_name=pam4ot_node2'
 EOF
 
-# Edit postgresql.conf for hot standby
-cat >> /etc/postgresql/15/main/postgresql.conf << 'EOF'
+# Edit mariadb.cnf for hot standby
+cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
 
 # Hot Standby Settings
 hot_standby = on
 hot_standby_feedback = on
 EOF
 
-# Start PostgreSQL
-systemctl start postgresql
+# Start MariaDB
+systemctl start mariadb
 ```
 
 ### Verify Replication
 
 ```bash
 # On Node 1 (Primary):
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -c "SELECT * FROM SHOW SLAVE STATUS;"
 
 # Expected output should show node2 connected
 
 # On Node 2 (Replica):
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
-# Should return: t (true)
+# Should show replication slave is running
 ```
 
 ---
@@ -364,14 +364,14 @@ systemctl start wallix-bastion
 
 ```bash
 # On Node 1 (Primary), create test data
-sudo -u postgres psql wabdb -c "CREATE TABLE test_replication (id serial, data text);"
-sudo -u postgres psql wabdb -c "INSERT INTO test_replication (data) VALUES ('test from node1');"
+sudo mysql wabdb -c "CREATE TABLE test_replication (id serial, data text);"
+sudo mysql wabdb -c "INSERT INTO test_replication (data) VALUES ('test from node1');"
 
 # On Node 2 (Replica), verify data replicated
-sudo -u postgres psql wabdb -c "SELECT * FROM test_replication;"
+sudo mysql wabdb -c "SELECT * FROM test_replication;"
 
 # Clean up
-sudo -u postgres psql wabdb -c "DROP TABLE test_replication;"
+sudo mysql wabdb -c "DROP TABLE test_replication;"
 ```
 
 ---
@@ -435,7 +435,7 @@ pcs resource show
 pcs node status
 
 # Check replication lag
-sudo -u postgres psql -c "SELECT pg_wal_lsn_diff(pg_current_wal_lsn(), replay_lsn) AS lag_bytes FROM pg_stat_replication;"
+sudo mysql -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master
 
 # Cluster properties
 pcs property list
@@ -451,8 +451,8 @@ pcs property list
 | VIP assigned | `ip addr show` | VIP on one node |
 | VIP reachable | `ping 10.10.1.100` | Success |
 | Web UI via VIP | `curl -k https://10.10.1.100/` | HTML response |
-| Replication active | `pg_stat_replication` | Node2 connected |
-| Replication lag | `pg_wal_lsn_diff` | < 1MB |
+| Replication active | `SHOW SLAVE STATUS` | Node2 connected |
+| Replication lag | `Seconds_Behind_Master` | < 60s |
 | Failover works | Standby node1, check VIP | VIP moves to node2 |
 
 ---
@@ -491,16 +491,16 @@ pcs resource move vip-pam4ot pam4ot-node2
 
 ```bash
 # On replica, check status
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
 # Check replication connection
-sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
+sudo mysql -e "SHOW SLAVE STATUS\G" | grep -E "(Slave_IO_Running|Slave_SQL_Running)"
 
 # Re-sync from primary (destructive)
-systemctl stop postgresql
-rm -rf /var/lib/postgresql/15/main/*
-sudo -u postgres pg_basebackup -h pam4ot-node1.lab.local -D /var/lib/postgresql/15/main -U replicator -P -Xs -R
-systemctl start postgresql
+systemctl stop mariadb
+rm -rf /var/lib/mysql/*
+mariabackup -h pam4ot-node1.lab.local -D /var/lib/mysql -U replicator -P -Xs -R
+systemctl start mariadb
 ```
 
 ---

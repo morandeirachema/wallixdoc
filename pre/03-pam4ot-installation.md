@@ -42,7 +42,7 @@ apt install -y \
     software-properties-common \
     python3 python3-pip \
     openssl libssl-dev \
-    postgresql-client \
+    mariadb-client \
     net-tools dnsutils \
     chrony ntp
 
@@ -244,7 +244,7 @@ syslog_port = 514
 
 [database]
 host = localhost
-port = 5432
+port = 3306
 name = wabdb
 user = wabadmin
 # password managed separately
@@ -264,7 +264,7 @@ EOF
 ```bash
 # Check all services
 systemctl status wallix-bastion
-systemctl status postgresql
+systemctl status mariadb
 
 # Or use WALLIX command
 wabadmin status
@@ -384,8 +384,8 @@ hostname = pam4ot-node2.lab.local
 journalctl -u wallix-bastion -f
 
 # Check database
-systemctl status postgresql
-sudo -u postgres psql -c "SELECT 1"
+systemctl status mariadb
+sudo mysql -e "SELECT 1"
 
 # Check permissions
 ls -la /var/wab/
@@ -408,11 +408,11 @@ openssl x509 -in /etc/opt/wab/ssl/server.crt -noout -dates
 ### Database Connection Error
 
 ```bash
-# Check PostgreSQL is running
-systemctl status postgresql
+# Check MariaDB is running
+systemctl status mariadb
 
 # Check connection
-sudo -u postgres psql -c "\l"
+sudo mysql -e "SHOW DATABASES"
 
 # Reset if needed
 wabadmin db reset

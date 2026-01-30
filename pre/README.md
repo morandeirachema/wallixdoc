@@ -110,7 +110,7 @@ This guide covers setting up a pre-production environment with:
 | PAM4OT nodes    | dc-lab            | 88        | Kerberos                     |
 | PAM4OT nodes    | siem-lab          | 514/6514  | Syslog                       |
 | PAM4OT nodes    | Test targets      | 22,3389   | Session proxying             |
-| pam4ot-node1    | pam4ot-node2      | 5432      | PostgreSQL replication       |
+| pam4ot-node1    | pam4ot-node2      | 3306/3307 | MariaDB replication          |
 | pam4ot-node1    | pam4ot-node2      | 5404-5406 | Corosync cluster             |
 | monitor-lab     | PAM4OT nodes      | 9100      | Prometheus metrics           |
 +===============================================================================+
@@ -128,7 +128,7 @@ This guide covers setting up a pre-production environment with:
 | AD Domain | wallix-svc | `WallixSvc123!` | LDAP bind account |
 | PAM4OT | admin | `Pam4otAdmin123!` | Web UI admin |
 | PAM4OT | wabadmin | `WabAdmin123!` | CLI admin |
-| PostgreSQL | postgres | `PgAdmin123!` | Database |
+| MariaDB | root | `DbAdmin123!` | Database |
 | Linux Test | root | `LinuxRoot123!` | SSH target |
 | Windows Test | Administrator | `WinAdmin123!` | RDP target |
 | Splunk | admin | `SplunkAdmin123!` | SIEM admin |

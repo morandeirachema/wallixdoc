@@ -41,7 +41,7 @@ This guide covers deploying a monitoring stack for PAM4OT infrastructure visibil
   METRICS COLLECTED:
   - System: CPU, Memory, Disk, Network
   - PAM4OT: Sessions, Authentications, API calls
-  - PostgreSQL: Connections, Replication lag
+  - MariaDB: Connections, Replication lag
   - Cluster: Pacemaker status, VIP health
 
 +===============================================================================+
@@ -125,14 +125,14 @@ scrape_configs:
           service: 'pam4ot'
           environment: 'lab'
 
-  # PAM4OT PostgreSQL
+  # PAM4OT MariaDB
   - job_name: 'pam4ot-postgres'
     static_configs:
       - targets:
         - 'pam4ot-node1.lab.local:9187'
         - 'pam4ot-node2.lab.local:9187'
         labels:
-          service: 'postgresql'
+          service: 'mariadb'
 
   # PAM4OT Application Metrics
   - job_name: 'pam4ot-app'
@@ -251,47 +251,47 @@ curl http://localhost:9100/metrics | head
 
 ---
 
-## Step 3: Install PostgreSQL Exporter
+## Step 3: Install MariaDB Exporter
 
 ### On both PAM4OT nodes
 
 ```bash
 # Download
 cd /tmp
-wget https://github.com/prometheus-community/postgres_exporter/releases/download/v0.15.0/postgres_exporter-0.15.0.linux-amd64.tar.gz
-tar xzf postgres_exporter-0.15.0.linux-amd64.tar.gz
-cp postgres_exporter-0.15.0.linux-amd64/postgres_exporter /usr/local/bin/
-useradd --no-create-home --shell /bin/false postgres_exporter
+wget https://github.com/prometheus-community/mysqld_exporter/releases/download/v0.15.0/mysqld_exporter-0.15.0.linux-amd64.tar.gz
+tar xzf mysqld_exporter-0.15.0.linux-amd64.tar.gz
+cp mysqld_exporter-0.15.0.linux-amd64/mysqld_exporter /usr/local/bin/
+useradd --no-create-home --shell /bin/false mysqld_exporter
 
 # Create environment file
-cat > /etc/default/postgres_exporter << 'EOF'
-DATA_SOURCE_NAME="postgresql://wabadmin:PgAdmin123!@localhost:5432/wabdb?sslmode=disable"
+cat > /etc/default/mysqld_exporter << 'EOF'
+DATA_SOURCE_NAME="mariadb://wabadmin:PgAdmin123!@localhost:3306/wabdb?sslmode=disable"
 EOF
-chmod 600 /etc/default/postgres_exporter
+chmod 600 /etc/default/mysqld_exporter
 
 # Create service
-cat > /etc/systemd/system/postgres_exporter.service << 'EOF'
+cat > /etc/systemd/system/mysqld_exporter.service << 'EOF'
 [Unit]
-Description=Prometheus PostgreSQL Exporter
+Description=Prometheus MariaDB Exporter
 After=network.target
 
 [Service]
-User=postgres_exporter
-Group=postgres_exporter
+User=mysqld_exporter
+Group=mysqld_exporter
 Type=simple
-EnvironmentFile=/etc/default/postgres_exporter
-ExecStart=/usr/local/bin/postgres_exporter
+EnvironmentFile=/etc/default/mysqld_exporter
+ExecStart=/usr/local/bin/mysqld_exporter
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable postgres_exporter
-systemctl start postgres_exporter
+systemctl enable mysqld_exporter
+systemctl start mysqld_exporter
 
 # Verify
-curl http://localhost:9187/metrics | grep pg_up
+curl http://localhost:9104/metrics | grep mysql_up
 ```
 
 ---
@@ -508,39 +508,39 @@ groups:
           summary: "Critical disk space on {{ $labels.instance }}"
           description: "Disk space is below 10% on /var/wab."
 
-  - name: postgresql
+  - name: mariadb
     rules:
-      # PostgreSQL Down
-      - alert: PostgreSQLDown
-        expr: pg_up{job="pam4ot-postgres"} == 0
+      # MariaDB Down
+      - alert: MariaDBDown
+        expr: mysql_up{job="pam4ot-mariadb"} == 0
         for: 1m
         labels:
           severity: critical
-          service: postgresql
+          service: mariadb
         annotations:
-          summary: "PostgreSQL is down on {{ $labels.instance }}"
-          description: "PostgreSQL database is not responding."
+          summary: "MariaDB is down on {{ $labels.instance }}"
+          description: "MariaDB database is not responding."
 
       # Replication Lag
-      - alert: PostgreSQLReplicationLag
-        expr: pg_replication_lag{job="pam4ot-postgres"} > 60
+      - alert: MariaDBReplicationLag
+        expr: mysql_slave_status_seconds_behind_master{job="pam4ot-mariadb"} > 60
         for: 5m
         labels:
           severity: warning
-          service: postgresql
+          service: mariadb
         annotations:
-          summary: "PostgreSQL replication lag on {{ $labels.instance }}"
+          summary: "MariaDB replication lag on {{ $labels.instance }}"
           description: "Replication lag is {{ $value }} seconds."
 
       # Too Many Connections
-      - alert: PostgreSQLTooManyConnections
-        expr: pg_stat_activity_count{job="pam4ot-postgres"} > 80
+      - alert: MariaDBTooManyConnections
+        expr: mysql_global_status_threads_connected{job="pam4ot-mariadb"} > 80
         for: 5m
         labels:
           severity: warning
-          service: postgresql
+          service: mariadb
         annotations:
-          summary: "Too many PostgreSQL connections on {{ $labels.instance }}"
+          summary: "Too many MariaDB connections on {{ $labels.instance }}"
           description: "Current connections: {{ $value }}"
 
   - name: cluster
@@ -656,12 +656,12 @@ curl -X POST http://localhost:9090/-/reload
         ]
       },
       {
-        "title": "PostgreSQL Connections",
+        "title": "MariaDB Connections",
         "type": "graph",
         "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
         "targets": [
           {
-            "expr": "pg_stat_activity_count{job=\"pam4ot-postgres\"}",
+            "expr": "mysql_global_status_threads_connected{job=\"pam4ot-mariadb\"}",
             "legendFormat": "{{instance}}"
           }
         ]
@@ -736,7 +736,7 @@ curl -s http://admin:GrafanaAdmin123!@localhost:3000/api/health
 |-------|--------|
 | Prometheus installed | [ ] |
 | Node exporter on PAM4OT nodes | [ ] |
-| PostgreSQL exporter on PAM4OT nodes | [ ] |
+| MariaDB exporter on PAM4OT nodes | [ ] |
 | Grafana installed | [ ] |
 | Prometheus data source configured | [ ] |
 | Alertmanager installed | [ ] |

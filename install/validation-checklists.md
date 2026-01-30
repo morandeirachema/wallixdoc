@@ -95,7 +95,7 @@ Complete after WALLIX software installation.
 | 2 | Web UI accessible | `curl -k https://localhost:443` | [ ] |
 | 3 | SSH proxy listening | `ss -tuln \| grep :22` | [ ] |
 | 4 | RDP proxy listening | `ss -tuln \| grep :3389` | [ ] |
-| 5 | Database running | `systemctl status postgresql` | [ ] |
+| 5 | Database running | `systemctl status mariadb` | [ ] |
 | 6 | No errors in logs | `tail /var/log/wabengine/*.log` | [ ] |
 
 ### 2.2 Web Interface
@@ -199,7 +199,7 @@ Complete if deploying HA cluster.
 | 1 | Both nodes online | `crm status` shows 2 nodes | [ ] |
 | 2 | Resources distributed | Resources on expected nodes | [ ] |
 | 3 | VIP accessible | `ping virtual-ip` | [ ] |
-| 4 | Database replication | `pg_stat_replication` shows streaming | [ ] |
+| 4 | Database replication | `SHOW SLAVE STATUS` shows streaming | [ ] |
 | 5 | No errors in cluster logs | `journalctl -u corosync` | [ ] |
 
 ### 4.2 Failover Testing
@@ -359,10 +359,10 @@ else
     fail "WAB Engine not running"
 fi
 
-if systemctl is-active --quiet postgresql; then
-    pass "PostgreSQL running"
+if systemctl is-active --quiet mariadb; then
+    pass "MariaDB running"
 else
-    fail "PostgreSQL not running"
+    fail "MariaDB not running"
 fi
 
 # Check ports
