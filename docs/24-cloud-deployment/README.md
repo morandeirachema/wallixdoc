@@ -1,1289 +1,246 @@
-# 24 - Cloud Deployment
+# 24 - Deployment Options
 
-## Table of Contents
-
-1. [Cloud Deployment Overview](#cloud-deployment-overview)
-2. [Deployment Model Comparison](#deployment-model-comparison)
-3. [SaaS Architecture Details](#saas-architecture-details)
-4. [AWS Deployment](#aws-deployment)
-5. [Azure Deployment](#azure-deployment)
-6. [Google Cloud Platform](#google-cloud-platform)
-7. [Hybrid Cloud Architecture](#hybrid-cloud-architecture)
-8. [Cloud Security Considerations](#cloud-security-considerations)
+> **Note**: This documentation focuses on **on-premises deployment**. For cloud-specific guidance, refer to the official WALLIX documentation linked below.
 
 ---
 
-## Cloud Deployment Overview
+## Official WALLIX Documentation
 
-### Cloud Deployment Models
+For authoritative deployment guidance, always refer to the official WALLIX documentation:
+
+### Primary Resources
+
+| Document | URL | Description |
+|----------|-----|-------------|
+| **Deployment Guide** | [bastion_12.0.2_en_deployment_guide.pdf](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf) | Official deployment procedures |
+| **Administration Guide** | [bastion_en_administration_guide.pdf](https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf) | Complete administration reference |
+| **Architecture Guide** | [architecture.html](https://pam.wallix.one/documentation/deployment/getting-started/architecture.html) | Deployment architecture patterns |
+| **Documentation Portal** | [pam.wallix.one](https://pam.wallix.one/documentation) | All official documentation |
+
+### Automation Resources
+
+| Resource | URL | Description |
+|----------|-----|-------------|
+| **Terraform Provider** | [registry.terraform.io](https://registry.terraform.io/providers/wallix/wallix-bastion) | Infrastructure as Code |
+| **Terraform GitHub** | [github.com/wallix](https://github.com/wallix/terraform-provider-wallix-bastion) | Source and examples |
+| **Automation Showroom** | [github.com/wallix](https://github.com/wallix/Automation_Showroom) | Terraform, Python, Ansible examples |
+| **REST API Samples** | [github.com/wallix](https://github.com/wallix/wbrest_samples) | API integration examples |
+
+---
+
+## Deployment Overview
+
+### Supported Deployment Models
 
 ```
 +===============================================================================+
-|                   WALLIX CLOUD DEPLOYMENT OPTIONS                            |
+|                   WALLIX BASTION DEPLOYMENT OPTIONS                           |
 +===============================================================================+
 
-  DEPLOYMENT MODELS
-  =================
+  RECOMMENDED: ON-PREMISES DEPLOYMENT
+  ====================================
 
   +------------------------------------------------------------------------+
   |                                                                        |
-  | MODEL 1: CLOUD-HOSTED (IaaS)                                           |
+  | OPTION 1: BARE METAL / VIRTUAL MACHINES (Recommended)                  |
+  | =====================================================                  |
+  |                                                                        |
+  |   * Full control over infrastructure                                   |
+  |   * Maximum security and compliance                                    |
+  |   * Suitable for OT/Industrial environments                            |
+  |   * Air-gapped deployment support                                      |
+  |                                                                        |
+  |   Supported Hypervisors:                                               |
+  |   - VMware vSphere / ESXi                                              |
+  |   - Microsoft Hyper-V                                                  |
+  |   - Proxmox VE                                                         |
+  |   - KVM / QEMU                                                         |
+  |                                                                        |
+  +------------------------------------------------------------------------+
+  |                                                                        |
+  | OPTION 2: HARDWARE APPLIANCE                                           |
   | ============================                                           |
   |                                                                        |
-  |   * WALLIX Bastion runs on cloud VMs                                   |
-  |   * Customer manages the PAM infrastructure                            |
-  |   * Full control over configuration                                    |
-  |   * Supports AWS EC2, Azure VMs, GCP Compute Engine                    |
-  |                                                                        |
-  |   +----------------+     +----------------+     +----------------+      |
-  |   |    AWS EC2     |     |   Azure VM     |     |   GCP CE       |      |
-  |   |                |     |                |     |                |      |
-  |   |  +---------+   |     |  +---------+   |     |  +---------+   |      |
-  |   |  | WALLIX  |   |     |  | WALLIX  |   |     |  | WALLIX  |   |      |
-  |   |  | Bastion |   |     |  | Bastion |   |     |  | Bastion |   |      |
-  |   |  +---------+   |     |  +---------+   |     |  +---------+   |      |
-  |   |                |     |                |     |                |      |
-  |   +----------------+     +----------------+     +----------------+      |
+  |   * Pre-configured WALLIX appliance                                    |
+  |   * Optimized hardware and software                                    |
+  |   * Simplified deployment                                              |
+  |   * Enterprise support                                                 |
   |                                                                        |
   +------------------------------------------------------------------------+
-  |                                                                        |
-  | MODEL 2: MARKETPLACE IMAGE                                             |
-  | ==========================                                             |
-  |                                                                        |
-  |   * Pre-configured WALLIX image from cloud marketplace                 |
-  |   * Faster deployment, tested configuration                            |
-  |   * Subscription or BYOL licensing                                     |
-  |                                                                        |
-  |   AWS Marketplace: WALLIX Bastion Enterprise                           |
-  |   Azure Marketplace: WALLIX Bastion                                    |
-  |   GCP Marketplace: WALLIX Bastion (check availability)                 |
-  |                                                                        |
-  +------------------------------------------------------------------------+
-  |                                                                        |
-  | MODEL 3: HYBRID (On-Prem + Cloud)                                      |
-  | =================================                                      |
-  |                                                                        |
-  |   * Primary Bastion on-premises                                        |
-  |   * Cloud Bastion for cloud workloads                                  |
-  |   * Centralized management                                             |
-  |                                                                        |
-  |   +----------------+                    +----------------+             |
-  |   |  ON-PREMISES   |     VPN/          |     CLOUD      |             |
-  |   |                | Direct Connect    |                |             |
-  |   |  +---------+   |<----------------->|  +---------+   |             |
-  |   |  | WALLIX  |   |                   |  | WALLIX  |   |             |
-  |   |  | Primary |   |                   |  | Cloud   |   |             |
-  |   |  +---------+   |                   |  +---------+   |             |
-  |   |       |        |                   |       |        |             |
-  |   |  [On-prem      |                   |  [Cloud        |             |
-  |   |   targets]     |                   |   targets]     |             |
-  |   +----------------+                   +----------------+             |
-  |                                                                        |
-  +------------------------------------------------------------------------+
-  |                                                                        |
-  | MODEL 4: SaaS (WALLIX-MANAGED)                                         |
-  | ==============================                                         |
-  |                                                                        |
-  |   * Fully managed PAM solution hosted by WALLIX                        |
-  |   * No infrastructure to deploy or maintain                            |
-  |   * WALLIX handles all updates, backups, and HA                        |
-  |   * Connect via HTTPS - ready to use immediately                       |
-  |                                                                        |
-  |   +----------------------------------------------------------------+   |
-  |   |                    WALLIX CLOUD                                |   |
-  |   |   +----------------------------------------------------------+ |   |
-  |   |   |                   WALLIX-MANAGED                         | |   |
-  |   |   |                                                          | |   |
-  |   |   |  +------------+  +------------+  +------------+          | |   |
-  |   |   |  | Bastion    |  | Database   |  | Recording  |          | |   |
-  |   |   |  | Cluster    |  | Cluster    |  | Storage    |          | |   |
-  |   |   |  | (HA)       |  | (HA)       |  | (Replicated)|         | |   |
-  |   |   |  +------------+  +------------+  +------------+          | |   |
-  |   |   |                                                          | |   |
-  |   |   |  * Auto-scaling      * Geo-redundancy                    | |   |
-  |   |   |  * 24/7 monitoring   * Automatic updates                 | |   |
-  |   |   |  * SLA-backed        * Compliance certifications         | |   |
-  |   |   +----------------------------------------------------------+ |   |
-  |   +----------------------------------------------------------------+   |
-  |                              |                                         |
-  |                         HTTPS (443)                                    |
-  |                              |                                         |
-  |   +----------------------------------------------------------------+   |
-  |   |                    YOUR ENVIRONMENT                            |   |
-  |   |                                                                |   |
-  |   |   [Users]  [Admins]  -->  WALLIX SaaS  -->  [Your Targets]     |   |
-  |   |                                                                |   |
-  |   +----------------------------------------------------------------+   |
-  |                                                                        |
-  +------------------------------------------------------------------------+
-
-+===============================================================================+
-```
-
-### Deployment Model Comparison
-
-| Feature | IaaS (Self-Managed) | Marketplace | Hybrid | SaaS |
-|---------|---------------------|-------------|--------|------|
-| **Infrastructure** | You manage | You manage | You manage | WALLIX manages |
-| **Database HA** | You configure MariaDB streaming | You configure | You configure | Included |
-| **Backups** | Your responsibility | Your responsibility | Your responsibility | Included |
-| **Updates** | You schedule | You schedule | You schedule | Automatic |
-| **Scaling** | Manual | Manual | Manual | Automatic |
-| **SLA** | Depends on cloud | Depends on cloud | Depends on cloud | WALLIX SLA |
-| **Compliance** | Your responsibility | Your responsibility | Your responsibility | WALLIX certified |
-| **Initial Setup** | Days-weeks | Hours-days | Days-weeks | Minutes |
-| **Cost Model** | License + infra | License + infra | License + infra | Subscription |
-
-### When to Choose Each Model
-
-```
-+===============================================================================+
-|                    DEPLOYMENT MODEL DECISION GUIDE                           |
-+===============================================================================+
-|                                                                              |
-|  CHOOSE IaaS (SELF-MANAGED) WHEN:                                            |
-|  ================================                                            |
-|  * You need full control over infrastructure                                 |
-|  * Regulatory requirements mandate self-hosting                              |
-|  * You have existing cloud infrastructure and expertise                      |
-|  * Air-gapped or isolated networks required                                  |
-|  * Custom integration with on-premises systems needed                        |
-|                                                                              |
-|  --------------------------------------------------------------------------  |
-|                                                                              |
-|  CHOOSE MARKETPLACE IMAGE WHEN:                                              |
-|  ==============================                                              |
-|  * You want faster deployment with tested configuration                      |
-|  * You prefer pay-as-you-go or BYOL licensing                                |
-|  * You have cloud expertise but want simplified setup                        |
-|                                                                              |
-|  --------------------------------------------------------------------------  |
-|                                                                              |
-|  CHOOSE HYBRID WHEN:                                                         |
-|  ===================                                                         |
-|  * You have workloads in both on-premises and cloud                          |
-|  * You want centralized management across environments                       |
-|  * Latency to cloud targets is a concern                                     |
-|  * Gradual cloud migration is planned                                        |
-|                                                                              |
-|  --------------------------------------------------------------------------  |
-|                                                                              |
-|  CHOOSE SaaS WHEN:                                                           |
-|  =================                                                           |
-|  * You want zero infrastructure management                                   |
-|  * Fast deployment is critical (minutes, not days)                           |
-|  * You prefer predictable subscription costs                                 |
-|  * 24/7 managed operations are important                                     |
-|  * Compliance certifications (SOC 2, ISO 27001) are required                 |
-|  * Your targets are accessible via internet or VPN                           |
-|                                                                              |
-+===============================================================================+
-```
-
-### SaaS Architecture Details
-
-```
-+===============================================================================+
-|                    WALLIX SaaS ARCHITECTURE                                  |
-+===============================================================================+
-|                                                                              |
-|  WALLIX-MANAGED INFRASTRUCTURE                                               |
-|  =============================                                               |
-|                                                                              |
-|  +------------------------------------------------------------------------+  |
-|  |                         WALLIX CLOUD                                   |  |
-|  |                                                                        |  |
-|  |  REGION 1 (Primary)              REGION 2 (DR)                         |  |
-|  |  +--------------------------+    +--------------------------+          |  |
-|  |  |                          |    |                          |          |  |
-|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
-|  |  |  | Load Balancer      |  |    |  | Load Balancer      |  |          |  |
-|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
-|  |  |           |              |    |           |              |          |  |
-|  |  |  +--------+--------+     |    |  +--------+--------+     |          |  |
-|  |  |  |        |        |     |    |  |        |        |     |          |  |
-|  |  |  v        v        v     |    |  v        v        v     |          |  |
-|  |  | +--+    +--+    +--+     |    | +--+    +--+    +--+     |          |  |
-|  |  | |B1|    |B2|    |B3|     |    | |B1|    |B2|    |B3|     |          |  |
-|  |  | +--+    +--+    +--+     |    | +--+    +--+    +--+     |          |  |
-|  |  |  Bastion Cluster (HA)    |    |  Bastion Cluster (DR)    |          |  |
-|  |  |                          |    |                          |          |  |
-|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
-|  |  |  | MariaDB Cluster    |<======>| MariaDB Cluster    |  |          |  |
-|  |  |  | (Primary)          |  |Sync|  | (Standby)          |  |          |  |
-|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
-|  |  |                          |    |                          |          |  |
-|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
-|  |  |  | Object Storage     |<======>| Object Storage     |  |          |  |
-|  |  |  | (Recordings)       |  |Sync|  | (Recordings)       |  |          |  |
-|  |  |  +--------------------+  |    |  +--------------------+  |          |  |
-|  |  |                          |    |                          |          |  |
-|  |  +--------------------------+    +--------------------------+          |  |
-|  |                                                                        |  |
-|  |  MANAGED SERVICES:                                                     |  |
-|  |  * 24/7 Monitoring & Alerting    * Automatic Backups (daily)           |  |
-|  |  * Automatic Patching            * Geo-redundant Storage               |  |
-|  |  * Auto-scaling                  * DDoS Protection                     |  |
-|  |  * Incident Response             * Compliance Auditing                 |  |
-|  |                                                                        |  |
-|  +------------------------------------------------------------------------+  |
-|                                                                              |
-+===============================================================================+
-```
-
-### SaaS Connectivity Options
-
-```
-+===============================================================================+
-|                    SaaS CONNECTIVITY                                         |
-+===============================================================================+
-|                                                                              |
-|  OPTION 1: INTERNET-ACCESSIBLE TARGETS                                       |
-|  =====================================                                       |
-|                                                                              |
-|  [User] --HTTPS--> [WALLIX SaaS] --SSH/RDP--> [Cloud Targets]               |
-|                                                                              |
-|  * Targets have public IPs or are behind NAT                                 |
-|  * Firewall allows inbound from WALLIX SaaS IP ranges                        |
-|  * Simplest setup                                                            |
-|                                                                              |
-|  --------------------------------------------------------------------------  |
-|                                                                              |
-|  OPTION 2: VPN/TUNNEL TO YOUR NETWORK                                        |
-|  =====================================                                       |
-|                                                                              |
-|  [User] --HTTPS--> [WALLIX SaaS] --VPN Tunnel--> [Your Network] --> [Targets]|
-|                                                                              |
-|  * Site-to-site VPN between WALLIX SaaS and your network                     |
-|  * Access private/internal targets                                           |
-|  * Requires VPN gateway on your side                                         |
-|                                                                              |
-|  --------------------------------------------------------------------------  |
-|                                                                              |
-|  OPTION 3: WALLIX ACCESS MANAGER (GATEWAY)                                   |
-|  =========================================                                   |
-|                                                                              |
-|  [User] --HTTPS--> [WALLIX SaaS] --HTTPS--> [Access Manager] --> [Targets]  |
-|                         ^                         |                          |
-|                         |      Your Network       |                          |
-|                         +-------------------------+                          |
-|                                                                              |
-|  * Deploy Access Manager in your network                                     |
-|  * Outbound-only connection to WALLIX SaaS                                   |
-|  * No inbound firewall rules needed                                          |
-|  * Best for OT/air-gapped environments                                       |
-|                                                                              |
-+===============================================================================+
-```
-
-### SaaS vs Self-Hosted: Database Replication
-
-| Aspect | Self-Hosted | SaaS |
-|--------|-------------|------|
-| **Replication Type** | MariaDB Streaming (you configure) | Managed by WALLIX |
-| **Failover** | Pacemaker + manual setup | Automatic |
-| **Backup** | Your scripts/tools | Included (daily) |
-| **Recovery Point (RPO)** | Depends on your config | Near-zero |
-| **Recovery Time (RTO)** | Minutes (if configured) | Seconds |
-| **Geo-redundancy** | Your responsibility | Included |
-| **Monitoring** | Your tools | 24/7 WALLIX NOC |
-
-> **Note**: For self-hosted MariaDB streaming replication setup, see [10-mariadb-streaming-replication.md](../install/10-mariadb-streaming-replication.md) in the install guide.
-
----
-
-## AWS Deployment
-
-### AWS Architecture
-
-```
-+===============================================================================+
-|                   AWS DEPLOYMENT ARCHITECTURE                                |
-+===============================================================================+
-
-                          +------------------+
-                          |    INTERNET      |
-                          +--------+---------+
-                                   |
-                          +--------+---------+
-                          |   AWS Region     |
-                          |   (us-east-1)    |
-  +------------------------+--------+--------+------------------------+
-  |                                 |                                 |
-  |                        +--------+---------+                       |
-  |                        | Internet Gateway |                       |
-  |                        +--------+---------+                       |
-  |                                 |                                 |
-  |  VPC (10.0.0.0/16)              |                                 |
-  |  +------------------------------+------------------------------+  |
-  |  |                              |                              |  |
-  |  |  PUBLIC SUBNET (10.0.1.0/24) |  PUBLIC SUBNET (10.0.2.0/24) |  |
-  |  |  Availability Zone A         |  Availability Zone B         |  |
-  |  |  +------------------------+  |  +------------------------+  |  |
-  |  |  |                        |  |  |                        |  |  |
-  |  |  |  +------------------+  |  |  |  +------------------+  |  |  |
-  |  |  |  | NAT Gateway      |  |  |  |  | NAT Gateway      |  |  |  |
-  |  |  |  +------------------+  |  |  |  +------------------+  |  |  |
-  |  |  |                        |  |  |                        |  |  |
-  |  |  |  +------------------+  |  |  |  +------------------+  |  |  |
-  |  |  |  | ALB / NLB        +--+--+--+  | (if multi-AZ)    |  |  |  |
-  |  |  |  | (Load Balancer)  |  |  |  |  |                  |  |  |  |
-  |  |  |  +------------------+  |  |  |  +------------------+  |  |  |
-  |  |  |                        |  |  |                        |  |  |
-  |  |  +------------------------+  |  +------------------------+  |  |
-  |  |                              |                              |  |
-  |  |  PRIVATE SUBNET (10.0.10.0/24)  PRIVATE SUBNET (10.0.20.0/24) |
-  |  |  +------------------------+  |  +------------------------+  |  |
-  |  |  |                        |  |  |                        |  |  |
-  |  |  |  +------------------+  |  |  |  +------------------+  |  |  |
-  |  |  |  | WALLIX Bastion   |  |  |  |  | WALLIX Bastion   |  |  |  |
-  |  |  |  | Primary (EC2)    |  |  |  |  | Standby (EC2)    |  |  |  |
-  |  |  |  | m5.xlarge        |  |  |  |  | m5.xlarge        |  |  |  |
-  |  |  |  +--------+---------+  |  |  |  +--------+---------+  |  |  |
-  |  |  |           |            |  |  |           |            |  |  |
-  |  |  +------------------------+  |  +------------------------+  |  |
-  |  |              |                              |                |  |
-  |  |              +---------------+--------------+                |  |
-  |  |                              |                               |  |
-  |  |  +---------------------------+----------------------------+  |  |
-  |  |  |                     SHARED SERVICES                    |  |  |
-  |  |  |                                                        |  |  |
-  |  |  |  +----------------+  +----------------+  +----------+  |  |  |
-  |  |  |  | RDS MariaDB    |  | EFS (Shared    |  | Secrets  |  |  |  |
-  |  |  |  | (Multi-AZ)     |  |  Recordings)   |  | Manager  |  |  |  |
-  |  |  |  +----------------+  +----------------+  +----------+  |  |  |
-  |  |  |                                                        |  |  |
-  |  |  +--------------------------------------------------------+  |  |
-  |  |                                                              |  |
-  |  +--------------------------------------------------------------+  |
-  |                                                                    |
-  +--------------------------------------------------------------------+
-
-+===============================================================================+
-```
-
-### AWS EC2 Instance Sizing
-
-```
-+===============================================================================+
-|                   AWS EC2 INSTANCE RECOMMENDATIONS                           |
-+===============================================================================+
-
-  +------------+----------------+-------+--------+---------------------------+
-  | Deployment | Instance Type  | vCPU  | Memory | Use Case                  |
-  +------------+----------------+-------+--------+---------------------------+
-  | POC/Lab    | t3.large       | 2     | 8 GB   | Testing, evaluation       |
-  | Small      | m5.xlarge      | 4     | 16 GB  | < 100 concurrent sessions |
-  | Medium     | m5.2xlarge     | 8     | 32 GB  | 100-500 sessions          |
-  | Large      | m5.4xlarge     | 16    | 64 GB  | 500-1000 sessions         |
-  | Enterprise | m5.8xlarge     | 32    | 128 GB | 1000+ sessions            |
-  +------------+----------------+-------+--------+---------------------------+
-
-  STORAGE RECOMMENDATIONS
-  =======================
-
-  +------------------+------------------+-----------------------------------+
-  | Volume           | Type             | Size                              |
-  +------------------+------------------+-----------------------------------+
-  | Root (OS)        | gp3              | 100 GB minimum                    |
-  | Database         | gp3 or io2       | 200 GB+ (IOPS: 3000+)             |
-  | Recordings       | gp3 or EFS       | 500 GB+ (depends on retention)    |
-  +------------------+------------------+-----------------------------------+
-
-  * Use EFS for shared recordings storage in HA deployments
-  * Consider S3 for long-term recording archival
-
-+===============================================================================+
-```
-
-### AWS Deployment Steps
-
-```
-+===============================================================================+
-|                   AWS DEPLOYMENT PROCEDURE                                   |
-+===============================================================================+
-
-  STEP 1: NETWORK SETUP
-  =====================
-
-  # Create VPC
-  aws ec2 create-vpc --cidr-block 10.0.0.0/16 \
-    --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=wallix-vpc}]'
-
-  # Create subnets (public and private in each AZ)
-  aws ec2 create-subnet --vpc-id vpc-xxx --cidr-block 10.0.1.0/24 \
-    --availability-zone us-east-1a \
-    --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=wallix-public-1a}]'
-
-  aws ec2 create-subnet --vpc-id vpc-xxx --cidr-block 10.0.10.0/24 \
-    --availability-zone us-east-1a \
-    --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=wallix-private-1a}]'
-
-  --------------------------------------------------------------------------
-
-  STEP 2: SECURITY GROUPS
-  =======================
-
-  # WALLIX Bastion Security Group
-  +------------------------------------------------------------------------+
-  | Inbound Rules                                                          |
-  +----------+----------+-----------------+--------------------------------+
-  | Port     | Protocol | Source          | Description                    |
-  +----------+----------+-----------------+--------------------------------+
-  | 443      | TCP      | 0.0.0.0/0       | HTTPS (Web UI, API)            |
-  | 22       | TCP      | User IPs        | SSH Proxy                      |
-  | 3389     | TCP      | User IPs        | RDP Proxy                      |
-  | 3306     | TCP      | Bastion SG      | MariaDB (HA sync)              |
-  | 2049     | TCP      | Bastion SG      | EFS (shared storage)           |
-  +----------+----------+-----------------+--------------------------------+
-
-  | Outbound Rules                                                         |
-  +----------+----------+-----------------+--------------------------------+
-  | Port     | Protocol | Destination     | Description                    |
-  +----------+----------+-----------------+--------------------------------+
-  | 22       | TCP      | Target subnets  | SSH to targets                 |
-  | 3389     | TCP      | Target subnets  | RDP to targets                 |
-  | 443      | TCP      | 0.0.0.0/0       | HTTPS (updates, integrations)  |
-  | 636      | TCP      | AD servers      | LDAPS                          |
-  | 3306     | TCP      | RDS endpoint    | Database                       |
-  +----------+----------+-----------------+--------------------------------+
-
-  --------------------------------------------------------------------------
-
-  STEP 3: RDS MARIADB (for HA)
-  ============================
-
-  aws rds create-db-instance \
-    --db-instance-identifier wallix-db \
-    --db-instance-class db.m5.large \
-    --engine mariadb \
-    --engine-version 10.6 \
-    --master-username wallix \
-    --master-user-password <secure-password> \
-    --allocated-storage 200 \
-    --storage-type gp3 \
-    --multi-az \
-    --vpc-security-group-ids sg-xxx \
-    --db-subnet-group-name wallix-db-subnet
-
-  --------------------------------------------------------------------------
-
-  STEP 4: EFS FOR RECORDINGS
-  ==========================
-
-  aws efs create-file-system \
-    --performance-mode generalPurpose \
-    --throughput-mode bursting \
-    --encrypted \
-    --tags Key=Name,Value=wallix-recordings
-
-  # Create mount targets in each AZ
-  aws efs create-mount-target \
-    --file-system-id fs-xxx \
-    --subnet-id subnet-xxx \
-    --security-groups sg-xxx
-
-  --------------------------------------------------------------------------
-
-  STEP 5: LAUNCH EC2 INSTANCE
-  ===========================
-
-  # Using WALLIX AMI from Marketplace or custom AMI
-  aws ec2 run-instances \
-    --image-id ami-wallix-xxx \
-    --instance-type m5.xlarge \
-    --key-name wallix-key \
-    --security-group-ids sg-xxx \
-    --subnet-id subnet-xxx \
-    --iam-instance-profile Name=wallix-instance-profile \
-    --block-device-mappings '[
-      {"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":100,"VolumeType":"gp3"}},
-      {"DeviceName":"/dev/sdb","Ebs":{"VolumeSize":200,"VolumeType":"gp3"}}
-    ]' \
-    --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=wallix-primary}]'
-
-  --------------------------------------------------------------------------
-
-  STEP 6: POST-LAUNCH CONFIGURATION
-  =================================
-
-  # SSH to instance
-  ssh -i wallix-key.pem admin@<instance-ip>
-
-  # Mount EFS
-  sudo mount -t efs fs-xxx:/ /var/wab/recorded
-
-  # Configure external database
-  sudo wab-admin config-db --host wallix-db.xxx.rds.amazonaws.com \
-    --port 3306 --user wallix --password <password>
-
-  # Initialize WALLIX
-  sudo wab-admin init
-
-  # Access web UI at https://<instance-ip>
-
-+===============================================================================+
-```
-
-### AWS IAM Permissions
-
-```
-+===============================================================================+
-|                   AWS IAM POLICY FOR WALLIX                                  |
-+===============================================================================+
-
-  {
-    "Version": "2012-10-17",
-    "Statement": [
-      {
-        "Sid": "SecretsManagerAccess",
-        "Effect": "Allow",
-        "Action": [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:DescribeSecret"
-        ],
-        "Resource": "arn:aws:secretsmanager:*:*:secret:wallix/*"
-      },
-      {
-        "Sid": "KMSAccess",
-        "Effect": "Allow",
-        "Action": [
-          "kms:Decrypt",
-          "kms:GenerateDataKey"
-        ],
-        "Resource": "arn:aws:kms:*:*:key/wallix-key-id"  // Replace with specific KMS key ARN
-      },
-      {
-        "Sid": "CloudWatchLogs",
-        "Effect": "Allow",
-        "Action": [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents"
-        ],
-        "Resource": "arn:aws:logs:*:*:log-group:/wallix/*"
-      },
-      {
-        "Sid": "S3RecordingArchive",
-        "Effect": "Allow",
-        "Action": [
-          "s3:PutObject",
-          "s3:GetObject",
-          "s3:ListBucket"
-        ],
-        "Resource": [
-          "arn:aws:s3:::wallix-recordings-bucket",
-          "arn:aws:s3:::wallix-recordings-bucket/*"
-        ]
-      }
-    ]
-  }
 
 +===============================================================================+
 ```
 
 ---
 
-## Azure Deployment
+## On-Premises Architecture
 
-### Azure Architecture
-
-```
-+===============================================================================+
-|                   AZURE DEPLOYMENT ARCHITECTURE                              |
-+===============================================================================+
-
-                          +------------------+
-                          |    INTERNET      |
-                          +--------+---------+
-                                   |
-  +--------------------------------+----------------------------------+
-  |                        Azure Region                               |
-  |                        (East US)                                  |
-  |                                                                   |
-  |  Resource Group: rg-wallix-prod                                   |
-  |  +-------------------------------------------------------------+  |
-  |  |                                                             |  |
-  |  |  Virtual Network: vnet-wallix (10.0.0.0/16)                 |  |
-  |  |  +-------------------------------------------------------+  |  |
-  |  |  |                                                       |  |  |
-  |  |  |  +-------------------+   +-------------------+        |  |  |
-  |  |  |  | Subnet: frontend  |   | Subnet: backend   |        |  |  |
-  |  |  |  | 10.0.1.0/24       |   | 10.0.10.0/24      |        |  |  |
-  |  |  |  |                   |   |                   |        |  |  |
-  |  |  |  | +---------------+ |   | +---------------+ |        |  |  |
-  |  |  |  | | Azure LB /    | |   | | WALLIX VM 1   | |        |  |  |
-  |  |  |  | | App Gateway   | |   | | (Primary)     | |        |  |  |
-  |  |  |  | +-------+-------+ |   | | Standard_D4s  | |        |  |  |
-  |  |  |  |         |         |   | +-------+-------+ |        |  |  |
-  |  |  |  +---------+---------+   |         |         |        |  |  |
-  |  |  |            |             | +-------+-------+ |        |  |  |
-  |  |  |            +-------------+-+ WALLIX VM 2   | |        |  |  |
-  |  |  |                          | | (Standby)     | |        |  |  |
-  |  |  |                          | | Standard_D4s  | |        |  |  |
-  |  |  |                          | +---------------+ |        |  |  |
-  |  |  |                          +-------------------+        |  |  |
-  |  |  |                                                       |  |  |
-  |  |  |  +-------------------+   +-------------------+        |  |  |
-  |  |  |  | Subnet: data      |   | Subnet: services  |        |  |  |
-  |  |  |  | 10.0.20.0/24      |   | 10.0.30.0/24      |        |  |  |
-  |  |  |  |                   |   |                   |        |  |  |
-  |  |  |  | +---------------+ |   | +---------------+ |        |  |  |
-  |  |  |  | | Azure DB for  | |   | | Azure Files   | |        |  |  |
-  |  |  |  | | MariaDB       | |   | | (Recordings)  | |        |  |  |
-  |  |  |  | +---------------+ |   | +---------------+ |        |  |  |
-  |  |  |  |                   |   |                   |        |  |  |
-  |  |  |  | +---------------+ |   | +---------------+ |        |  |  |
-  |  |  |  | | Key Vault     | |   | | Log Analytics | |        |  |  |
-  |  |  |  | +---------------+ |   | +---------------+ |        |  |  |
-  |  |  |  +-------------------+   +-------------------+        |  |  |
-  |  |  |                                                       |  |  |
-  |  |  +-------------------------------------------------------+  |  |
-  |  |                                                             |  |
-  |  +-------------------------------------------------------------+  |
-  |                                                                   |
-  +-------------------------------------------------------------------+
-
-+===============================================================================+
-```
-
-### Azure VM Sizing
+### High Availability Configuration
 
 ```
 +===============================================================================+
-|                   AZURE VM RECOMMENDATIONS                                   |
+|                   ON-PREMISES HA ARCHITECTURE                                 |
 +===============================================================================+
-
-  +------------+------------------+-------+--------+-------------------------+
-  | Deployment | VM Size          | vCPU  | Memory | Use Case                |
-  +------------+------------------+-------+--------+-------------------------+
-  | POC/Lab    | Standard_D2s_v5  | 2     | 8 GB   | Testing, evaluation     |
-  | Small      | Standard_D4s_v5  | 4     | 16 GB  | < 100 sessions          |
-  | Medium     | Standard_D8s_v5  | 8     | 32 GB  | 100-500 sessions        |
-  | Large      | Standard_D16s_v5 | 16    | 64 GB  | 500-1000 sessions       |
-  | Enterprise | Standard_D32s_v5 | 32    | 128 GB | 1000+ sessions          |
-  +------------+------------------+-------+--------+-------------------------+
-
-  STORAGE RECOMMENDATIONS
-  =======================
-
-  +------------------+------------------+-----------------------------------+
-  | Disk             | Type             | Size                              |
-  +------------------+------------------+-----------------------------------+
-  | OS Disk          | Premium SSD P10  | 128 GB                            |
-  | Data Disk        | Premium SSD P20  | 512 GB (database)                 |
-  | Recordings       | Azure Files      | Premium, 1 TB+ (shared)           |
-  +------------------+------------------+-----------------------------------+
-
-+===============================================================================+
-```
-
-### Azure Deployment (ARM Template)
-
-```
-+===============================================================================+
-|                   AZURE ARM TEMPLATE (SIMPLIFIED)                            |
-+===============================================================================+
-
-  {
-    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
-    "contentVersion": "1.0.0.0",
-    "parameters": {
-      "vmSize": {
-        "type": "string",
-        "defaultValue": "Standard_D4s_v5"
-      },
-      "adminUsername": {
-        "type": "string"
-      },
-      "adminPassword": {
-        "type": "securestring"
-      }
-    },
-    "resources": [
-      {
-        "type": "Microsoft.Network/virtualNetworks",
-        "apiVersion": "2021-05-01",
-        "name": "vnet-wallix",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "addressSpace": {
-            "addressPrefixes": ["10.0.0.0/16"]
-          },
-          "subnets": [
-            {
-              "name": "backend",
-              "properties": {
-                "addressPrefix": "10.0.10.0/24"
-              }
-            }
-          ]
-        }
-      },
-      {
-        "type": "Microsoft.Compute/virtualMachines",
-        "apiVersion": "2021-07-01",
-        "name": "vm-wallix-primary",
-        "location": "[resourceGroup().location]",
-        "properties": {
-          "hardwareProfile": {
-            "vmSize": "[parameters('vmSize')]"
-          },
-          "storageProfile": {
-            "imageReference": {
-              "publisher": "wallix",
-              "offer": "wallix-bastion",
-              "sku": "enterprise",
-              "version": "latest"
-            },
-            "osDisk": {
-              "createOption": "FromImage",
-              "managedDisk": {
-                "storageAccountType": "Premium_LRS"
-              }
-            }
-          },
-          "osProfile": {
-            "computerName": "wallix-primary",
-            "adminUsername": "[parameters('adminUsername')]",
-            "adminPassword": "[parameters('adminPassword')]"
-          },
-          "networkProfile": {
-            "networkInterfaces": [
-              {
-                "id": "[resourceId('Microsoft.Network/networkInterfaces',
-                        'nic-wallix-primary')]"
-              }
-            ]
-          }
-        }
-      },
-      {
-        "type": "Microsoft.DBforMariaDB/flexibleServers",
-        "apiVersion": "2021-06-01",
-        "name": "mariadb-wallix",
-        "location": "[resourceGroup().location]",
-        "sku": {
-          "name": "Standard_D2s_v3",
-          "tier": "GeneralPurpose"
-        },
-        "properties": {
-          "version": "14",
-          "administratorLogin": "wallix",
-          "administratorLoginPassword": "[parameters('adminPassword')]",
-          "storage": {
-            "storageSizeGB": 256
-          },
-          "highAvailability": {
-            "mode": "ZoneRedundant"
-          }
-        }
-      }
-    ]
-  }
-
+|                                                                               |
+|                           USERS / OPERATORS                                   |
+|                                  |                                            |
+|                                  v                                            |
+|                      +---------------------+                                  |
+|                      |      HAProxy        |                                  |
+|                      |    Load Balancer    |                                  |
+|                      |   (Active/Standby)  |                                  |
+|                      +---------------------+                                  |
+|                           |           |                                       |
+|                     +-----+           +-----+                                 |
+|                     |                       |                                 |
+|                     v                       v                                 |
+|            +----------------+      +----------------+                         |
+|            |   WALLIX       |      |   WALLIX       |                         |
+|            |   Bastion      |<---->|   Bastion      |                         |
+|            |   Node 1       | Sync |   Node 2       |                         |
+|            +----------------+      +----------------+                         |
+|                     |                       |                                 |
+|                     +-----+           +-----+                                 |
+|                           |           |                                       |
+|                           v           v                                       |
+|                      +---------------------+                                  |
+|                      |      MariaDB        |                                  |
+|                      |    Replication      |                                  |
+|                      |   (Master/Master)   |                                  |
+|                      +---------------------+                                  |
+|                                                                               |
+|   PORTS:                                                                      |
+|   - 443:       HTTPS Web UI                                                   |
+|   - 22:        SSH Proxy                                                      |
+|   - 3389:      RDP Proxy                                                      |
+|   - 3306/3307: MariaDB Replication                                            |
+|   - 5404-5406: Corosync Cluster                                               |
+|                                                                               |
 +===============================================================================+
 ```
+
+### Multi-Site Architecture
+
+For multi-site deployments, refer to:
+- [install/README.md](../../install/README.md) - Multi-site architecture overview
+- [install/HOWTO.md](../../install/HOWTO.md) - Step-by-step deployment guide
 
 ---
 
-## Google Cloud Platform
+## System Requirements
 
-### GCP Architecture
+### Hardware Requirements
 
-```
-+===============================================================================+
-|                   GCP DEPLOYMENT ARCHITECTURE                                |
-+===============================================================================+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| **CPU** | 4 vCPU | 8+ vCPU |
+| **RAM** | 16 GB | 32 GB |
+| **Storage (OS)** | 50 GB SSD | 100 GB SSD |
+| **Storage (Data)** | 150 GB SSD | 500+ GB SSD |
+| **Network** | 1 Gbps | 10 Gbps |
 
-                          +------------------+
-                          |    INTERNET      |
-                          +--------+---------+
-                                   |
-  +--------------------------------+----------------------------------+
-  |                      GCP Project                                  |
-  |                                                                   |
-  |  VPC Network: wallix-vpc                                          |
-  |  +-------------------------------------------------------------+  |
-  |  |                                                             |  |
-  |  |  Region: us-central1                                        |  |
-  |  |  +-------------------------------------------------------+  |  |
-  |  |  |                                                       |  |  |
-  |  |  |  +------------------+    +------------------+         |  |  |
-  |  |  |  | Subnet: frontend |    | Subnet: backend  |         |  |  |
-  |  |  |  | 10.0.1.0/24      |    | 10.0.10.0/24     |         |  |  |
-  |  |  |  |                  |    |                  |         |  |  |
-  |  |  |  | +------------+   |    | +------------+   |         |  |  |
-  |  |  |  | | Cloud LB   |   |    | | WALLIX GCE |   |         |  |  |
-  |  |  |  | | (HTTPS)    |   |    | | Instance 1 |   |         |  |  |
-  |  |  |  | +------+-----+   |    | | n2-std-4   |   |         |  |  |
-  |  |  |  |        |         |    | +------+-----+   |         |  |  |
-  |  |  |  +--------+---------+    |        |         |         |  |  |
-  |  |  |           |              | +------+-----+   |         |  |  |
-  |  |  |           +--------------+-+ WALLIX GCE |   |         |  |  |
-  |  |  |                          | | Instance 2 |   |         |  |  |
-  |  |  |                          | | n2-std-4   |   |         |  |  |
-  |  |  |                          | +------------+   |         |  |  |
-  |  |  |                          +------------------+         |  |  |
-  |  |  |                                                       |  |  |
-  |  |  |  +------------------+    +------------------+         |  |  |
-  |  |  |  | Cloud SQL        |    | Filestore        |         |  |  |
-  |  |  |  | (MariaDB)        |    | (Recordings)     |         |  |  |
-  |  |  |  | HA Configuration |    | Premium Tier     |         |  |  |
-  |  |  |  +------------------+    +------------------+         |  |  |
-  |  |  |                                                       |  |  |
-  |  |  |  +------------------+    +------------------+         |  |  |
-  |  |  |  | Secret Manager   |    | Cloud Logging    |         |  |  |
-  |  |  |  +------------------+    +------------------+         |  |  |
-  |  |  |                                                       |  |  |
-  |  |  +-------------------------------------------------------+  |  |
-  |  |                                                             |  |
-  |  +-------------------------------------------------------------+  |
-  |                                                                   |
-  +-------------------------------------------------------------------+
+### Software Requirements
 
-+===============================================================================+
-```
+| Component | Version | Notes |
+|-----------|---------|-------|
+| **Operating System** | Debian 12 (Bookworm) | Required |
+| **Database** | MariaDB 10.5+ | Included |
+| **Clustering** | Pacemaker/Corosync | For HA |
+| **Load Balancer** | HAProxy 2.x | Recommended |
 
-### GCP Instance Sizing
+For detailed requirements, see [28-system-requirements/README.md](../28-system-requirements/README.md).
 
-```
-+===============================================================================+
-|                   GCP COMPUTE ENGINE RECOMMENDATIONS                         |
-+===============================================================================+
+---
 
-  +------------+------------------+-------+--------+-------------------------+
-  | Deployment | Machine Type     | vCPU  | Memory | Use Case                |
-  +------------+------------------+-------+--------+-------------------------+
-  | POC/Lab    | e2-standard-2    | 2     | 8 GB   | Testing, evaluation     |
-  | Small      | n2-standard-4    | 4     | 16 GB  | < 100 sessions          |
-  | Medium     | n2-standard-8    | 8     | 32 GB  | 100-500 sessions        |
-  | Large      | n2-standard-16   | 16    | 64 GB  | 500-1000 sessions       |
-  | Enterprise | n2-standard-32   | 32    | 128 GB | 1000+ sessions          |
-  +------------+------------------+-------+--------+-------------------------+
+## Infrastructure as Code
 
-  GCP DEPLOYMENT COMMANDS
-  =======================
+### Terraform Provider
 
-  # Create VPC
-  gcloud compute networks create wallix-vpc --subnet-mode=custom
-
-  # Create subnet
-  gcloud compute networks subnets create wallix-backend \
-    --network=wallix-vpc \
-    --region=us-central1 \
-    --range=10.0.10.0/24
-
-  # Create firewall rules
-  gcloud compute firewall-rules create wallix-allow-https \
-    --network=wallix-vpc \
-    --allow=tcp:443 \
-    --source-ranges=0.0.0.0/0
-
-  gcloud compute firewall-rules create wallix-allow-ssh-rdp \
-    --network=wallix-vpc \
-    --allow=tcp:22,tcp:3389 \
-    --source-ranges=<user-ip-ranges>
-
-  # Create instance
-  gcloud compute instances create wallix-primary \
-    --zone=us-central1-a \
-    --machine-type=n2-standard-4 \
-    --image-project=wallix-public \
-    --image-family=wallix-bastion \
-    --boot-disk-size=100GB \
-    --boot-disk-type=pd-ssd \
-    --network=wallix-vpc \
-    --subnet=wallix-backend
-
-  # Create Cloud SQL instance
-  gcloud sql instances create wallix-db \
-    --database-version=MYSQL_8_0 \
-    --tier=db-custom-2-8192 \
-    --region=us-central1 \
-    --availability-type=REGIONAL \
-    --storage-size=200GB \
-    --storage-type=SSD
-
-+===============================================================================+
-```
-
-### GCP Terraform Configuration
+WALLIX provides an official Terraform provider for automation:
 
 ```hcl
-# GCP WALLIX Bastion Terraform Configuration
-# Provider Configuration
+# Example: Configure WALLIX Bastion provider
 terraform {
   required_providers {
-    google = {
-      source  = "hashicorp/google"
-      version = "~> 5.0"
+    wallix-bastion = {
+      source  = "wallix/wallix-bastion"
+      version = "~> 0.14.0"
     }
   }
 }
 
-provider "google" {
-  project = var.project_id
-  region  = var.region
+provider "wallix-bastion" {
+  ip        = var.bastion_ip
+  user      = var.bastion_user
+  password  = var.bastion_password
+  api_version = "v3.12"
 }
 
-# Variables
-variable "project_id" {
-  description = "GCP Project ID"
-  type        = string
-}
-
-variable "region" {
-  description = "GCP Region"
-  type        = string
-  default     = "us-central1"
-}
-
-variable "zone" {
-  description = "GCP Zone"
-  type        = string
-  default     = "us-central1-a"
-}
-
-# VPC Network
-resource "google_compute_network" "wallix_vpc" {
-  name                    = "wallix-vpc"
-  auto_create_subnetworks = false
-}
-
-# Backend Subnet
-resource "google_compute_subnetwork" "wallix_backend" {
-  name          = "wallix-backend"
-  ip_cidr_range = "10.0.10.0/24"
-  region        = var.region
-  network       = google_compute_network.wallix_vpc.id
-}
-
-# Firewall Rules
-resource "google_compute_firewall" "wallix_allow_https" {
-  name    = "wallix-allow-https"
-  network = google_compute_network.wallix_vpc.name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["443"]
-  }
-
-  source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["wallix"]
-}
-
-resource "google_compute_firewall" "wallix_allow_ssh_rdp" {
-  name    = "wallix-allow-ssh-rdp"
-  network = google_compute_network.wallix_vpc.name
-
-  allow {
-    protocol = "tcp"
-    ports    = ["22", "3389"]
-  }
-
-  source_ranges = var.allowed_ip_ranges
-  target_tags   = ["wallix"]
-}
-
-variable "allowed_ip_ranges" {
-  description = "IP ranges allowed for SSH/RDP"
-  type        = list(string)
-  default     = ["10.0.0.0/8"]
-}
-
-# Service Account
-resource "google_service_account" "wallix_sa" {
-  account_id   = "wallix-bastion"
-  display_name = "WALLIX Bastion Service Account"
-}
-
-resource "google_project_iam_member" "wallix_logging" {
-  project = var.project_id
-  role    = "roles/logging.logWriter"
-  member  = "serviceAccount:${google_service_account.wallix_sa.email}"
-}
-
-resource "google_project_iam_member" "wallix_monitoring" {
-  project = var.project_id
-  role    = "roles/monitoring.metricWriter"
-  member  = "serviceAccount:${google_service_account.wallix_sa.email}"
-}
-
-# WALLIX Compute Instance
-resource "google_compute_instance" "wallix_primary" {
-  name         = "wallix-primary"
-  machine_type = "n2-standard-4"
-  zone         = var.zone
-
-  tags = ["wallix"]
-
-  boot_disk {
-    initialize_params {
-      image = "projects/wallix-public/global/images/family/wallix-bastion"
-      size  = 100
-      type  = "pd-ssd"
-    }
-  }
-
-  network_interface {
-    network    = google_compute_network.wallix_vpc.id
-    subnetwork = google_compute_subnetwork.wallix_backend.id
-
-    access_config {
-      // Ephemeral public IP
-    }
-  }
-
-  service_account {
-    email  = google_service_account.wallix_sa.email
-    scopes = ["cloud-platform"]
-  }
-
-  metadata = {
-    enable-oslogin = "TRUE"
-  }
-}
-
-# Cloud SQL MariaDB
-resource "google_sql_database_instance" "wallix_db" {
-  name             = "wallix-db"
-  database_version = "MYSQL_8_0"
-  region           = var.region
-
-  settings {
-    tier              = "db-custom-2-8192"
-    availability_type = "REGIONAL"
-    disk_size         = 200
-    disk_type         = "PD_SSD"
-
-    backup_configuration {
-      enabled                        = true
-      point_in_time_recovery_enabled = true
-      start_time                     = "03:00"
-    }
-
-    ip_configuration {
-      ipv4_enabled    = false
-      private_network = google_compute_network.wallix_vpc.id
-    }
-  }
-
-  deletion_protection = true
-}
-
-# Filestore for Recordings
-resource "google_filestore_instance" "wallix_recordings" {
-  name     = "wallix-recordings"
-  location = var.zone
-  tier     = "PREMIUM"
-
-  file_shares {
-    name        = "recordings"
-    capacity_gb = 2048
-  }
-
-  networks {
-    network = google_compute_network.wallix_vpc.name
-    modes   = ["MODE_IPV4"]
-  }
-}
-
-# Outputs
-output "wallix_instance_ip" {
-  value = google_compute_instance.wallix_primary.network_interface[0].access_config[0].nat_ip
-}
-
-output "wallix_db_connection" {
-  value = google_sql_database_instance.wallix_db.private_ip_address
-}
-
-output "filestore_ip" {
-  value = google_filestore_instance.wallix_recordings.networks[0].ip_addresses[0]
-}
+# See official documentation for resource examples:
+# https://registry.terraform.io/providers/wallix/wallix-bastion/latest/docs
 ```
 
-### GCP IAM Permissions for WALLIX
+### Official Terraform Resources
 
-```
-+===============================================================================+
-|                   GCP IAM CONFIGURATION                                      |
-+===============================================================================+
-
-  REQUIRED ROLES FOR WALLIX SERVICE ACCOUNT
-  =========================================
-
-  +----------------------------------+----------------------------------------+
-  | Role                             | Purpose                                |
-  +----------------------------------+----------------------------------------+
-  | roles/logging.logWriter          | Write application logs                 |
-  | roles/monitoring.metricWriter    | Export performance metrics             |
-  | roles/secretmanager.secretAccessor| Access secrets (if used)              |
-  | roles/cloudsql.client            | Connect to Cloud SQL                   |
-  +----------------------------------+----------------------------------------+
-
-  REQUIRED ROLES FOR DEPLOYMENT
-  =============================
-
-  +----------------------------------+----------------------------------------+
-  | Role                             | Purpose                                |
-  +----------------------------------+----------------------------------------+
-  | roles/compute.instanceAdmin.v1   | Create/manage VM instances             |
-  | roles/compute.networkAdmin       | Create/manage VPC networks             |
-  | roles/cloudsql.admin             | Create/manage Cloud SQL                |
-  | roles/file.editor                | Create/manage Filestore                |
-  | roles/iam.serviceAccountAdmin    | Create service accounts                |
-  +----------------------------------+----------------------------------------+
-
-+===============================================================================+
-```
+| Resource | URL |
+|----------|-----|
+| Provider Documentation | https://registry.terraform.io/providers/wallix/wallix-bastion/latest/docs |
+| GitHub Repository | https://github.com/wallix/terraform-provider-wallix-bastion |
+| Example Configurations | https://github.com/wallix/Automation_Showroom |
 
 ---
 
-## Hybrid Cloud Architecture
+## API Integration
 
-### Multi-Cloud / Hybrid Design
+### REST API
 
+WALLIX Bastion provides a comprehensive REST API for automation:
+
+```bash
+# Example: List devices via API
+curl -k -X GET \
+  "https://bastion.example.com/api/devices" \
+  -H "Authorization: Basic $(echo -n 'admin:password' | base64)" \
+  -H "Content-Type: application/json"
 ```
-+===============================================================================+
-|                   HYBRID CLOUD ARCHITECTURE                                  |
-+===============================================================================+
 
-  +------------------------------------------------------------------------+
-  |                                                                        |
-  |                         ENTERPRISE NETWORK                             |
-  |                                                                        |
-  |   ON-PREMISES DATA CENTER                                              |
-  |   +--------------------------------------------------------------+    |
-  |   |                                                              |    |
-  |   |   +------------------+         +------------------+          |    |
-  |   |   | WALLIX Bastion   |         | On-Prem Targets  |          |    |
-  |   |   | (Primary)        +-------->| Servers, DBs,    |          |    |
-  |   |   | Central Mgmt     |         | Network Devices  |          |    |
-  |   |   +--------+---------+         +------------------+          |    |
-  |   |            |                                                 |    |
-  |   +------------|---------------------------------------------+   |    |
-  |                |                                                 |    |
-  |                | VPN / Direct Connect / ExpressRoute             |    |
-  |                |                                                 |    |
-  |   +------------+------------------------------------------------+|    |
-  |   |            |                                                ||    |
-  |   |   +--------+--------+          +------------------+         ||    |
-  |   |   |                 |          |                  |         ||    |
-  |   v   v                 v          v                  v         ||    |
-  |                                                                  |    |
-  | +----------------+   +----------------+   +----------------+     |    |
-  | |     AWS        |   |     AZURE      |   |     GCP        |     |    |
-  | |                |   |                |   |                |     |    |
-  | | +-----------+  |   | +-----------+  |   | +-----------+  |     |    |
-  | | | WALLIX    |  |   | | WALLIX    |  |   | | WALLIX    |  |     |    |
-  | | | Satellite |  |   | | Satellite |  |   | | Satellite |  |     |    |
-  | | +-----+-----+  |   | +-----+-----+  |   | +-----+-----+  |     |    |
-  | |       |        |   |       |        |   |       |        |     |    |
-  | | +-----+-----+  |   | +-----+-----+  |   | +-----+-----+  |     |    |
-  | | | EC2       |  |   | | Azure VMs |  |   | | GCE       |  |     |    |
-  | | | RDS       |  |   | | Azure SQL |  |   | | Cloud SQL |  |     |    |
-  | | | EKS       |  |   | | AKS       |  |   | | GKE       |  |     |    |
-  | | +-----------+  |   | +-----------+  |   | +-----------+  |     |    |
-  | |                |   |                |   |                |     |    |
-  | +----------------+   +----------------+   +----------------+     |    |
-  |                                                                  |    |
-  +------------------------------------------------------------------+    |
-  |                                                                        |
-  +------------------------------------------------------------------------+
+### API Resources
 
-  HYBRID ARCHITECTURE BENEFITS
-  ============================
-
-  * Centralized policy management from on-premises
-  * Local session proxying for cloud workloads (reduced latency)
-  * Recordings can be stored locally in each cloud
-  * Audit logs aggregated centrally
-  * Single pane of glass for all environments
-
-+===============================================================================+
-```
+| Resource | URL |
+|----------|-----|
+| REST API Samples | https://github.com/wallix/wbrest_samples |
+| SCIM API (Provisioning) | https://scim.wallix.com/scim/doc/Usage.html |
 
 ---
 
-## Cloud Security Considerations
+## Related Documentation
 
-### Cloud-Specific Security
+### Internal Guides
 
-```
-+===============================================================================+
-|                   CLOUD SECURITY BEST PRACTICES                              |
-+===============================================================================+
+| Guide | Description |
+|-------|-------------|
+| [Installation Guide](../../install/README.md) | Multi-site deployment |
+| [HA Configuration](../10-high-availability/README.md) | Clustering setup |
+| [System Requirements](../28-system-requirements/README.md) | Hardware/software specs |
+| [Pre-Production Lab](../../pre/README.md) | Test environment setup |
 
-  IDENTITY & ACCESS
-  =================
+### Official WALLIX Resources
 
-  +------------------------------------------------------------------------+
-  | Practice                        | Implementation                       |
-  +---------------------------------+--------------------------------------+
-  | Use cloud IAM roles             | Assign minimal permissions to        |
-  |                                 | WALLIX service accounts              |
-  +---------------------------------+--------------------------------------+
-  | Integrate with cloud IdP        | Azure AD, AWS IAM Identity Center,   |
-  |                                 | Google Cloud Identity                |
-  +---------------------------------+--------------------------------------+
-  | Enable MFA everywhere           | Cloud console + WALLIX access        |
-  +---------------------------------+--------------------------------------+
-  | Rotate credentials              | Use cloud secrets managers           |
-  +---------------------------------+--------------------------------------+
-
-  NETWORK SECURITY
-  ================
-
-  +------------------------------------------------------------------------+
-  | Practice                        | Implementation                       |
-  +---------------------------------+--------------------------------------+
-  | Private subnets for WALLIX      | No direct internet access to Bastion |
-  +---------------------------------+--------------------------------------+
-  | Use load balancers              | ALB/NLB, Azure LB, GCP LB for HTTPS  |
-  +---------------------------------+--------------------------------------+
-  | VPC peering for targets         | Connect to target VPCs securely      |
-  +---------------------------------+--------------------------------------+
-  | Network ACLs + Security Groups  | Defense in depth                     |
-  +---------------------------------+--------------------------------------+
-  | Private Link / Endpoints        | Access cloud services privately      |
-  +---------------------------------+--------------------------------------+
-
-  DATA PROTECTION
-  ===============
-
-  +------------------------------------------------------------------------+
-  | Practice                        | Implementation                       |
-  +---------------------------------+--------------------------------------+
-  | Encrypt data at rest            | EBS/Disk encryption, RDS encryption  |
-  +---------------------------------+--------------------------------------+
-  | Encrypt data in transit         | TLS 1.2+ everywhere                  |
-  +---------------------------------+--------------------------------------+
-  | Use cloud KMS                   | AWS KMS, Azure Key Vault, GCP KMS    |
-  +---------------------------------+--------------------------------------+
-  | Secure recording storage        | Encrypted EFS/Azure Files/Filestore  |
-  +---------------------------------+--------------------------------------+
-
-  MONITORING & COMPLIANCE
-  =======================
-
-  +------------------------------------------------------------------------+
-  | Practice                        | Implementation                       |
-  +---------------------------------+--------------------------------------+
-  | Enable cloud audit logging      | CloudTrail, Azure Monitor, GCP Audit |
-  +---------------------------------+--------------------------------------+
-  | Forward WALLIX logs             | CloudWatch, Log Analytics, Stackdriver|
-  +---------------------------------+--------------------------------------+
-  | Set up alerts                   | Unusual access patterns, failures    |
-  +---------------------------------+--------------------------------------+
-  | Regular compliance scans        | AWS Config, Azure Policy, GCP SCC    |
-  +---------------------------------+--------------------------------------+
-
-+===============================================================================+
-```
+| Resource | URL |
+|----------|-----|
+| Documentation Portal | https://pam.wallix.one/documentation |
+| Support Portal | https://support.wallix.com |
+| Release Notes | https://pam.wallix.one/documentation/release-notes |
 
 ---
 
-## Next Steps
+## Support
 
-Continue to [25 - Container Deployment](../25-container-deployment/README.md) for Docker and Kubernetes configurations.
+For deployment assistance, contact WALLIX Support:
+
+- **Support Portal**: https://support.wallix.com
+- **Documentation**: https://pam.wallix.one/documentation
+
+---
+
+*For the most current deployment guidance, always refer to the official WALLIX documentation.*
