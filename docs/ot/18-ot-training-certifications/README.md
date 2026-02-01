@@ -1389,22 +1389,680 @@ TOTAL 10-YEAR INVESTMENT: $43,289 - $150,420 (with graduate degree)
 
 ### Free Resources
 
-1. **NIST Framework for Improving Critical Infrastructure Cybersecurity**
-   - https://www.nist.gov/cyberframework
+#### YouTube Channels
 
-2. **ICS-CERT Alerts and Advisories**
-   - https://us-cert.cisa.gov/ics/advisories
+**OT/ICS Security Focused:**
 
-3. **SANS ICS Security Reading Room**
-   - https://www.sans.org/white-papers/
+1. **ICS Podcast (The Industrial Cybersecurity Podcast)**
+   - URL: https://www.youtube.com/@icspodcast
+   - Content: Weekly episodes on OT security news, interviews with experts, attack analysis
+   - Hosts: Andrew Ginter, Nate Nelson
+   - Frequency: Weekly
+   - Best For: Staying current on OT threat landscape
 
-4. **Industrial Cybersecurity Podcast**
-   - https://www.youtube.com/@icspodcast
+2. **SANS ICS Security**
+   - URL: https://www.youtube.com/@SANSInstitute
+   - Content: Webinars, conference talks, training previews
+   - Playlist: Search "ICS" or "Industrial Control Systems"
+   - Frequency: Monthly
+   - Best For: Technical deep-dives, GICSP/GRID exam prep
 
-5. **Dragos Whitepaper Library**
-   - https://www.dragos.com/resources/whitepapers/
+3. **Dragos, Inc.**
+   - URL: https://www.youtube.com/@DragosInc
+   - Content: Threat intelligence, platform demos, webinars
+   - Focus: ICS/OT threat hunting, industrial malware analysis
+   - Frequency: Weekly
+   - Best For: Advanced threat intelligence
+
+4. **Dale Peterson (Digital Bond)**
+   - URL: https://www.youtube.com/@digitalbond
+   - Content: S4 Conference talks, ICS security research
+   - Focus: SCADA hacking, protocol security
+   - Frequency: Conference uploads
+   - Best For: Understanding attack techniques
+
+5. **Claroty**
+   - URL: https://www.youtube.com/@ClarotyInc
+   - Content: OT security platform demos, threat reports, webinars
+   - Focus: Asset visibility, vulnerability management
+   - Frequency: Monthly
+   - Best For: OT asset discovery and risk assessment
+
+6. **Nozomi Networks**
+   - URL: https://www.youtube.com/@NozomiNetworks
+   - Content: OT/IoT security, threat intelligence
+   - Focus: Industrial network monitoring
+   - Frequency: Monthly
+   - Best For: Network security monitoring for ICS
+
+7. **Waterfall Security Solutions**
+   - URL: https://www.youtube.com/@WaterfallSecuritySolutions
+   - Content: Unidirectional gateway technology, OT security architecture
+   - Focus: Air-gapped environments, data diodes
+   - Frequency: Monthly
+   - Best For: Understanding data diode technology
+
+8. **CISA (Cybersecurity & Infrastructure Security Agency)**
+   - URL: https://www.youtube.com/@CISAgov
+   - Content: ICS-CERT alerts, critical infrastructure security
+   - Focus: Government advisories, best practices
+   - Frequency: Weekly
+   - Best For: Official threat advisories
+
+**General Cybersecurity (OT-Relevant):**
+
+9. **Black Hat**
+   - URL: https://www.youtube.com/@BlackHatOfficialYT
+   - Content: Security conference talks, many on ICS/SCADA
+   - Search: "ICS", "SCADA", "Industrial"
+   - Best For: Cutting-edge research
+
+10. **DEF CON**
+    - URL: https://www.youtube.com/@DEFCONConference
+    - Content: DEF CON ICS Village talks
+    - Playlist: Search "ICS Village"
+    - Best For: Hands-on hacking demonstrations
+
+11. **John Hammond**
+    - URL: https://www.youtube.com/@_JohnHammond
+    - Content: Malware analysis, CTF walkthroughs
+    - Relevance: General skills applicable to ICS malware
+    - Best For: Developing analysis skills
+
+12. **LiveOverflow**
+    - URL: https://www.youtube.com/@LiveOverflow
+    - Content: Exploit development, binary analysis
+    - Relevance: Low-level skills useful for ICS security
+    - Best For: Understanding exploits
+
+**Educational/Training:**
+
+13. **Cybrary**
+    - URL: https://www.youtube.com/@Cybrary
+    - Content: Course previews, security fundamentals
+    - Free ICS courses: Available on main platform
+    - Best For: Structured learning paths
+
+14. **Professor Messer**
+    - URL: https://www.youtube.com/@professormesser
+    - Content: CompTIA Security+ training (free)
+    - Relevance: Foundational security for OT careers
+    - Best For: Security+ certification prep
+
+15. **NetworkChuck**
+    - URL: https://www.youtube.com/@NetworkChuck
+    - Content: Networking fundamentals, cybersecurity basics
+    - Relevance: Network skills essential for OT
+    - Best For: Beginners learning networking
 
 ---
+
+#### Podcasts
+
+1. **The Industrial Security Podcast**
+   - Hosts: Andrew Ginter, Nate Nelson
+   - URL: https://www.industrialsecuritypodcast.com/
+   - RSS: https://feeds.simplecast.com/W8blT_nn
+   - Frequency: Weekly
+   - Topics: OT security news, expert interviews, attack analysis
+
+2. **Unsolicited Response (Dale Peterson)**
+   - Host: Dale Peterson
+   - URL: https://dale-peterson.com/podcast/
+   - RSS: Available on Apple Podcasts, Spotify
+   - Frequency: Weekly
+   - Topics: S4 Conference updates, ICS security commentary
+
+3. **CISO Series Podcast**
+   - Hosts: David Spark, Mike Johnson
+   - URL: https://cisoseries.com/
+   - RSS: https://cisoseries.com/feed/podcast/
+   - Frequency: Multiple weekly shows
+   - Relevance: Security leadership, applicable to OT CISOs
+
+4. **Darknet Diaries**
+   - Host: Jack Rhysider
+   - URL: https://darknetdiaries.com/
+   - RSS: https://feeds.megaphone.fm/darknetdiaries
+   - Frequency: Biweekly
+   - Episodes: Search "SCADA", "Industrial" (Episodes 50, 93, 113)
+
+5. **SANS Internet Stormcenter**
+   - Host: Dr. Johannes Ullrich
+   - URL: https://isc.sans.edu/podcast.html
+   - RSS: https://isc.sans.edu/dailypodcast.xml
+   - Frequency: Daily (short format)
+   - Topics: Security news, including ICS alerts
+
+6. **Risky Business**
+   - Host: Patrick Gray
+   - URL: https://risky.biz/
+   - RSS: https://risky.biz/feeds/risky-business/
+   - Frequency: Weekly
+   - Topics: Security news with occasional OT coverage
+
+7. **Cyber Work Podcast**
+   - Host: Chris Sienko
+   - URL: https://www.infosecinstitute.com/podcast/
+   - RSS: Available on major platforms
+   - Frequency: Weekly
+   - Topics: Career advice, skills development
+
+---
+
+#### Blogs & News Sites
+
+**OT-Specific:**
+
+1. **Dragos Blog**
+   - URL: https://www.dragos.com/blog/
+   - RSS: https://www.dragos.com/feed/
+   - Focus: ICS threat intelligence, malware analysis
+   - Update Frequency: 2-3x per week
+
+2. **SANS ICS Security Blog**
+   - URL: https://www.sans.org/blog/?focus-area=industrial-control-systems
+   - Focus: ICS security research, best practices
+   - Update Frequency: Weekly
+
+3. **Claroty Blog - Team82**
+   - URL: https://claroty.com/team82/research
+   - RSS: https://claroty.com/feed
+   - Focus: ICS vulnerability research, exploits
+   - Update Frequency: Weekly
+
+4. **Nozomi Networks Blog**
+   - URL: https://www.nozominetworks.com/blog/
+   - RSS: https://www.nozominetworks.com/blog/feed/
+   - Focus: OT/IoT security, threat reports
+   - Update Frequency: 2x per week
+
+5. **Waterfall Security Blog**
+   - URL: https://waterfall-security.com/blog/
+   - Focus: OT security architecture, data diodes
+   - Update Frequency: Monthly
+
+6. **ICS-CERT (CISA) Advisories**
+   - URL: https://www.cisa.gov/news-events/cybersecurity-advisories?f%5B0%5D=advisory_type%3A94
+   - RSS: https://www.cisa.gov/cybersecurity-advisories/ics-advisories.xml
+   - Focus: Official vulnerability advisories
+   - Update Frequency: Daily when active threats
+
+7. **Control Global - Cybersecurity**
+   - URL: https://www.controlglobal.com/topics/cybersecurity/
+   - Focus: Industrial automation security news
+   - Update Frequency: Daily
+
+**General Security (OT-Relevant):**
+
+8. **Krebs on Security**
+   - URL: https://krebsonsecurity.com/
+   - RSS: https://krebsonsecurity.com/feed/
+   - Focus: Investigative security journalism
+   - Relevance: Occasional ICS breach coverage
+
+9. **Dark Reading**
+   - URL: https://www.darkreading.com/
+   - RSS: https://www.darkreading.com/rss_simple.asp
+   - Focus: Enterprise security news
+   - Search: "ICS", "SCADA", "OT"
+
+10. **The Hacker News**
+    - URL: https://thehackernews.com/
+    - RSS: https://feeds.feedburner.com/TheHackersNews
+    - Focus: Breaking security news
+    - Update Frequency: Daily
+
+---
+
+#### Newsletters
+
+1. **CISA ICS Alerts (Email)**
+   - Subscribe: https://www.cisa.gov/subscribe
+   - Frequency: As threats emerge
+   - Content: ICS-CERT advisories, alerts, updates
+   - Cost: Free
+
+2. **SANS NewsBites**
+   - Subscribe: https://www.sans.org/newsletters/newsbites/
+   - Frequency: Weekly
+   - Content: Top security stories, including ICS
+   - Cost: Free
+
+3. **Dragos WorldView Intelligence**
+   - Subscribe: https://www.dragos.com/resource/worldview-intelligence/
+   - Frequency: Quarterly
+   - Content: OT threat landscape report
+   - Cost: Free
+
+4. **ISA InTech Magazine**
+   - Subscribe: https://www.isa.org/intech-home
+   - Frequency: Bimonthly
+   - Content: Automation and control security
+   - Cost: Free for ISA members
+
+5. **Industrial Cybersecurity Pulse**
+   - Subscribe: https://www.scadahacker.com/
+   - Frequency: Weekly
+   - Content: News aggregation, articles
+   - Cost: Free
+
+6. **SCADA Hacker Newsletter**
+   - Subscribe: https://www.scadahacker.com/
+   - Frequency: Weekly
+   - Content: ICS security news, tools, techniques
+   - Cost: Free
+
+7. **tl;dr sec (General but includes ICS)**
+   - Subscribe: https://tldrsec.com/
+   - Frequency: Weekly
+   - Content: Curated security links
+   - Cost: Free
+
+---
+
+#### RSS Feeds (Aggregated List)
+
+**Copy these into your RSS reader (Feedly, Inoreader, NewsBlur):**
+
+```
+# OT Security
+https://www.dragos.com/feed/
+https://claroty.com/feed
+https://www.nozominetworks.com/blog/feed/
+https://www.cisa.gov/cybersecurity-advisories/ics-advisories.xml
+https://www.sans.org/blog/?focus-area=industrial-control-systems
+
+# General Security
+https://krebsonsecurity.com/feed/
+https://feeds.feedburner.com/TheHackersNews
+https://www.darkreading.com/rss_simple.asp
+https://isc.sans.edu/rssfeed_full.xml
+
+# Podcasts
+https://feeds.simplecast.com/W8blT_nn  # Industrial Security Podcast
+https://feeds.megaphone.fm/darknetdiaries
+https://cisoseries.com/feed/podcast/
+https://isc.sans.edu/dailypodcast.xml
+```
+
+---
+
+#### GitHub Repositories
+
+**ICS Security Tools:**
+
+1. **awesome-industrial-control-system-security**
+   - URL: https://github.com/hslatman/awesome-industrial-control-system-security
+   - Description: Curated list of ICS security resources
+   - Stars: 1,000+
+   - Best For: Discovering tools and resources
+
+2. **ICS Protocol Parsers (Scapy)**
+   - URL: https://github.com/secdev/scapy
+   - Description: Packet manipulation with ICS protocol support
+   - Use Case: Protocol analysis, traffic generation
+
+3. **Modbus Tools**
+   - URL: https://github.com/sourceperl/pyModbusTCP
+   - Description: Python Modbus library
+   - Use Case: Testing Modbus security
+
+4. **S7comm Tools**
+   - URL: https://github.com/klsecservices/s7scan
+   - Description: Siemens S7 PLC scanner
+   - Use Case: S7 security assessment
+
+5. **PLCinject**
+   - URL: https://github.com/SCADACS/PLCinject
+   - Description: Tool for testing PLC security
+   - Use Case: Research and penetration testing
+
+6. **Industrial Exploitation Framework (ISF)**
+   - URL: https://github.com/dark-lbp/isf
+   - Description: Metasploit-like framework for ICS
+   - Use Case: Security testing and research
+
+7. **GRASSMARLIN**
+   - URL: https://github.com/nsacyber/GRASSMARLIN
+   - Description: ICS network mapping (NSA)
+   - Use Case: Network discovery and visualization
+
+**Learning Resources:**
+
+8. **ICSim (ICS Simulator)**
+   - URL: https://github.com/zombieCraig/ICSim
+   - Description: Car hacking simulator (teaches CAN)
+   - Use Case: Learning embedded systems security
+
+9. **Security Onion**
+   - URL: https://github.com/Security-Onion-Solutions/securityonion
+   - Description: Network security monitoring platform
+   - Use Case: ICS network monitoring practice
+
+10. **CyberChef**
+    - URL: https://github.com/gchq/CyberChef
+    - Description: Data analysis and encoding tool
+    - Use Case: Protocol analysis, forensics
+
+---
+
+#### Twitter/X Accounts to Follow
+
+**OT Security Experts:**
+
+1. **@dotcppfile** - Dale Peterson (Digital Bond, S4)
+2. **@andrewginter** - Andrew Ginter (Waterfall Security)
+3. **@RobertMLee** - Robert M. Lee (Dragos CEO)
+4. **@lrojasf** - Luis Rojas (Fortinet, OT security)
+5. **@eireann_leverett** - Eireann Leverett (ICS researcher)
+6. **@ScadaHacker** - Scada Hacker (OT security news)
+7. **@ChrisSeigfried** - Chris Seigfried (Dragos)
+8. **@JoePescarolo** - Joe Pescarolo (Dragos)
+
+**Organizations:**
+
+9. **@Dragos_Inc** - Dragos threat intelligence
+10. **@Team82Claroty** - Claroty research team
+11. **@NozomiNetworks** - Nozomi Networks
+12. **@CISAgov** - CISA official account
+13. **@ICSCERT** - ICS-CERT updates
+14. **@ISA_Interchange** - ISA updates
+15. **@SANSInstitute** - SANS Institute
+
+**General Security (OT-Relevant):**
+
+16. **@briankrebs** - Brian Krebs (investigative journalism)
+17. **@troyhunt** - Troy Hunt (Have I Been Pwned)
+18. **@SwiftOnSecurity** - SwiftOnSecurity (security commentary)
+19. **@gcluley** - Graham Cluley (security news)
+20. **@malwareunicorn** - Amanda Rousseau (malware analysis)
+
+---
+
+#### LinkedIn Groups & Pages
+
+1. **ICS/SCADA Cyber Security**
+   - Members: 10,000+
+   - Focus: Professional networking, job postings
+
+2. **Industrial Control System Cybersecurity**
+   - Members: 5,000+
+   - Focus: Technical discussions, resources
+
+3. **ISA Global Cybersecurity Alliance (ISAGCA)**
+   - Official ISA group
+   - Focus: Standards, compliance, networking
+
+4. **OT Cybersecurity Professionals**
+   - Members: 8,000+
+   - Focus: Career development, best practices
+
+5. **Critical Infrastructure Protection**
+   - Members: 12,000+
+   - Focus: Broader infrastructure security
+
+**Pages to Follow:**
+- Dragos, Inc.
+- Claroty
+- Nozomi Networks
+- SANS Institute
+- ISA (International Society of Automation)
+
+---
+
+#### Reddit Communities
+
+1. **/r/ICS**
+   - URL: https://www.reddit.com/r/ICS/
+   - Members: 3,000+
+   - Focus: Industrial control systems security
+   - Activity: Moderate, quality discussions
+
+2. **/r/netsec**
+   - URL: https://www.reddit.com/r/netsec/
+   - Members: 1,000,000+
+   - Focus: Network security (search "SCADA", "ICS")
+   - Activity: Very active
+
+3. **/r/AskNetsec**
+   - URL: https://www.reddit.com/r/AskNetsec/
+   - Members: 200,000+
+   - Focus: Career advice, questions
+   - Activity: Very active
+
+4. **/r/blueteamsec**
+   - URL: https://www.reddit.com/r/blueteamsec/
+   - Members: 50,000+
+   - Focus: Defense-focused security
+   - Relevance: ICS defense discussions
+
+5. **/r/cybersecurity**
+   - URL: https://www.reddit.com/r/cybersecurity/
+   - Members: 800,000+
+   - Focus: General cybersecurity
+   - Activity: Very active
+
+---
+
+#### Discord & Slack Communities
+
+**Discord:**
+
+1. **ICS Village Discord**
+   - Invite: https://discord.gg/icsvillage
+   - Members: 2,000+
+   - Focus: ICS security, CTF challenges
+   - Activity: Daily
+
+2. **SANS Cyber Security**
+   - Invite: Available through SANS courses
+   - Focus: SANS students and alumni
+   - Channels: #ics-security, #gicsp
+
+3. **The Many Hats Club**
+   - Invite: https://discord.gg/infosec
+   - Members: 30,000+
+   - Channels: #industrial-security
+   - Activity: Very active
+
+**Slack:**
+
+4. **ISA Global Cybersecurity Alliance (ISAGCA)**
+   - Invite: https://gca.isa.org/ (member benefit)
+   - Focus: IEC 62443 discussions, working groups
+
+5. **Critical Infrastructure Security**
+   - Invite: Various conferences provide access
+   - Focus: Energy, water, manufacturing sectors
+
+---
+
+#### Online Labs & Practice Environments
+
+**Free:**
+
+1. **ICS Village CTF Archive**
+   - URL: https://www.icsvillage.com/
+   - Content: Past CTF challenges
+   - Cost: Free
+
+2. **TryHackMe - ICS Rooms**
+   - URL: https://tryhackme.com/
+   - Search: "ICS", "SCADA", "Industrial"
+   - Cost: Free tier available, Premium $10/month
+
+3. **HackTheBox - ICS Boxes**
+   - URL: https://www.hackthebox.com/
+   - Boxes: Search for ICS-themed machines
+   - Cost: Free tier available, VIP $14/month
+
+4. **PentesterLab**
+   - URL: https://pentesterlab.com/
+   - Content: Web security (applicable to ICS web interfaces)
+   - Cost: Pro $20/month
+
+**Open-Source Simulators:**
+
+5. **Conpot (ICS Honeypot)**
+   - URL: https://github.com/mushorg/conpot
+   - Purpose: Learn by deploying ICS honeypots
+   - Cost: Free
+
+6. **OpenPLC**
+   - URL: https://www.openplcproject.com/
+   - Purpose: Open-source PLC for learning
+   - Cost: Free
+
+7. **ScadaBR**
+   - URL: http://www.scadabr.com.br/
+   - Purpose: Open-source SCADA system
+   - Cost: Free
+
+---
+
+#### Official Documentation & Standards
+
+1. **NIST Framework for Improving Critical Infrastructure Cybersecurity**
+   - URL: https://www.nist.gov/cyberframework
+   - Cost: Free
+
+2. **NIST SP 800-82 Rev. 3 (ICS Security Guide)**
+   - URL: https://csrc.nist.gov/publications/detail/sp/800-82/rev-3/final
+   - Cost: Free
+
+3. **IEC 62443 Standards (Official)**
+   - URL: https://www.isa.org/standards-and-publications/isa-standards/isa-iec-62443-series-of-standards
+   - Cost: Paid (standards purchase)
+
+4. **NERC CIP Standards**
+   - URL: https://www.nerc.com/pa/Stand/Pages/CIPStandards.aspx
+   - Cost: Free
+
+5. **NIS2 Directive (EU)**
+   - URL: https://digital-strategy.ec.europa.eu/en/policies/nis2-directive
+   - Cost: Free
+
+6. **Purdue Model Reference**
+   - URL: https://www.isagca.org/
+   - Source: ISA-95 and ISA-99 documentation
+   - Cost: Free overview, paid for full standards
+
+---
+
+#### Recommended RSS Reader Setup
+
+**Popular RSS Readers:**
+
+1. **Feedly** (https://feedly.com/)
+   - Free tier: 100 sources
+   - Pro: $6/month (unlimited)
+   - Best For: Beginners
+
+2. **Inoreader** (https://www.inoreader.com/)
+   - Free tier: 150 feeds
+   - Pro: $5/month
+   - Best For: Power users
+
+3. **NewsBlur** (https://newsblur.com/)
+   - Free tier: 64 sites
+   - Premium: $3/month
+   - Best For: Social features
+
+4. **The Old Reader** (https://theoldreader.com/)
+   - Free tier: 100 subscriptions
+   - Best For: Simple interface
+
+**Starter Feed Collection:**
+
+Create folders:
+```
+OT Security
+├─ Blogs (Dragos, Claroty, Nozomi)
+├─ Advisories (CISA ICS-CERT)
+├─ Research (SANS ICS)
+└─ News (Control Global)
+
+General Security
+├─ News (Krebs, Dark Reading)
+├─ Research (SANS)
+└─ Threat Intel (Various)
+
+Podcasts
+├─ Industrial Security Podcast
+├─ Darknet Diaries
+└─ SANS ISC
+```
+
+---
+
+#### Mobile Apps
+
+1. **Feedly Mobile** (iOS/Android)
+   - RSS reader on-the-go
+   - Free
+
+2. **Pocket** (iOS/Android)
+   - Save articles for later
+   - Free
+
+3. **Overcast** (iOS) / **Podcast Addict** (Android)
+   - Podcast players
+   - Free
+
+4. **NewsBlur Mobile** (iOS/Android)
+   - RSS reader with offline support
+   - Premium required for mobile
+
+---
+
+#### Learning Platforms Comparison (Free Tiers)
+
+| Platform | Free Content | Paid Tier | OT Content Quality |
+|----------|--------------|-----------|-------------------|
+| **Cybrary** | ICS basics | $39/month | ⭐⭐⭐ Good intro |
+| **TryHackMe** | Limited | $10/month | ⭐⭐⭐⭐ Hands-on labs |
+| **HackTheBox** | Retired boxes | $14/month | ⭐⭐⭐ Some ICS boxes |
+| **YouTube** | Unlimited | Free | ⭐⭐⭐⭐⭐ Best value |
+| **SANS Reading Room** | All whitepapers | Free | ⭐⭐⭐⭐⭐ Research papers |
+| **ICS-CERT** | All advisories | Free | ⭐⭐⭐⭐⭐ Official intel |
+
+---
+
+#### Weekly Learning Routine (Using Free Resources)
+
+**Monday** (30 min):
+- Read CISA ICS-CERT advisories (RSS)
+- Check Dragos blog for new threat intel
+
+**Tuesday** (45 min):
+- Watch latest Industrial Security Podcast episode (YouTube)
+- Review SANS ICS blog
+
+**Wednesday** (30 min):
+- TryHackMe ICS room practice
+- GitHub: Explore new ICS security tools
+
+**Thursday** (45 min):
+- Read Claroty Team82 research
+- Follow Twitter/X for trending OT topics
+
+**Friday** (60 min):
+- Long-form content: DEF CON ICS Village talk (YouTube)
+- Contribute to /r/ICS discussion
+
+**Weekend** (optional):
+- ICS Village CTF challenge
+- Read SANS whitepaper
+- Experiment with OpenPLC or ScadaBR
+
+**Monthly**:
+- Attend free ISA webinar
+- Review Dragos WorldView quarterly report
+
+---
+
+
 
 ## Community & Networking
 
@@ -1637,6 +2295,504 @@ Best regards,
 - [IEC 62443 Compliance](../06-iec62443-compliance/README.md) - Standards framework
 - [Industrial Protocols](../03-industrial-protocols/README.md) - Protocol deep-dives
 - [OT Best Practices](../09-industrial-best-practices/README.md) - Security design
+
+---
+
+## WALLIX PAM Learning Resources
+
+> **Comprehensive guide to WALLIX Bastion training, documentation, and community resources for PAM and OT security professionals.**
+
+### Official WALLIX Documentation
+
+**Primary Resources:**
+
+1. **WALLIX Documentation Portal**
+   - URL: https://pam.wallix.one/documentation
+   - Content: Complete product documentation, admin guides, user guides
+   - Languages: English, French, German, Spanish
+   - Update Frequency: With each release
+   - Best For: Official reference material
+
+2. **WALLIX Bastion Administration Guide (PDF)**
+   - URL: https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf
+   - Pages: 600+ pages
+   - Content: Installation, configuration, troubleshooting
+   - Best For: System administrators
+
+3. **WALLIX Bastion User Guide (PDF)**
+   - URL: https://pam.wallix.one/documentation/user-doc/bastion_en_user_guide.pdf
+   - Pages: 200+ pages
+   - Content: End-user operations, session management
+   - Best For: End users and operators
+
+4. **WALLIX Release Notes**
+   - URL: https://pam.wallix.one/documentation/release-notes
+   - Content: New features, bug fixes, upgrade notes
+   - Update Frequency: With each release
+   - Best For: Planning upgrades
+
+5. **WALLIX Deployment Guides**
+   - URL: https://pam.wallix.one/documentation
+   - Guides: OT-specific deployments, cloud integration, HA setup
+   - Best For: Architects and implementers
+
+---
+
+### WALLIX Video Resources
+
+**YouTube Channel:**
+
+1. **WALLIX Official Channel**
+   - URL: https://www.youtube.com/@WALLIX_PAM
+   - Content: Product demos, webinars, customer testimonials
+   - Playlists:
+     - Bastion Product Demos
+     - OT/ICS Security Webinars
+     - Customer Success Stories
+     - Feature Highlights
+   - Update Frequency: Monthly
+   - Language: English, French
+
+**Key Video Series:**
+
+2. **WALLIX Bastion Quick Start Series** (YouTube Playlist)
+   - Duration: 5-10 min per video
+   - Topics: Initial setup, first authorization, MFA configuration
+   - Best For: New administrators
+
+3. **WALLIX OT Security Webinars** (YouTube Playlist)
+   - Duration: 45-60 min per webinar
+   - Topics: IEC 62443 compliance, industrial protocol support, air-gapped environments
+   - Best For: OT security engineers
+
+4. **WALLIX Feature Deep-Dives** (YouTube Playlist)
+   - Duration: 15-30 min per video
+   - Topics: Password vault, session recording, API automation
+   - Best For: Advanced users
+
+**Recorded Webinars:**
+
+5. **WALLIX Webinar Archive**
+   - URL: https://www.wallix.com/resources/webinars/
+   - Content: Live webinar recordings
+   - Topics:
+     - Zero Trust for OT environments
+     - PAM for critical infrastructure
+     - Securing vendor remote access
+     - IEC 62443 compliance with PAM
+   - Registration: Free (email required)
+
+---
+
+### WALLIX Training & Certification
+
+**Official Training:**
+
+1. **WALLIX Certified Administrator**
+   - Provider: WALLIX Training
+   - Duration: 3 days
+   - Cost: Contact WALLIX for pricing
+   - Content: Installation, configuration, administration
+   - Exam: Certification exam included
+   - Delivery: Virtual or on-site
+
+2. **WALLIX Certified Advanced Administrator**
+   - Provider: WALLIX Training
+   - Duration: 2 days
+   - Cost: Contact WALLIX for pricing
+   - Prerequisites: Certified Administrator or equivalent experience
+   - Content: HA clustering, API automation, advanced troubleshooting
+   - Delivery: Virtual or on-site
+
+3. **WALLIX OT Security Specialist**
+   - Provider: WALLIX Training
+   - Duration: 2 days
+   - Cost: Contact WALLIX for pricing
+   - Content: Industrial protocols, air-gapped deployments, IEC 62443
+   - Best For: OT/ICS engineers
+   - Delivery: Virtual or on-site
+
+**Free Online Training:**
+
+4. **WALLIX Academy (Free Courses)**
+   - URL: https://www.wallix.com/academy/ (check availability)
+   - Content: Self-paced online courses
+   - Topics: Bastion basics, API usage, best practices
+   - Certificates: Completion certificates
+   - Cost: Free
+
+5. **WALLIX Knowledge Base**
+   - URL: https://support.wallix.com/
+   - Content: How-to articles, troubleshooting guides, FAQs
+   - Access: Requires support account (free with product license)
+   - Searchable: Yes
+   - Best For: Quick problem-solving
+
+---
+
+### WALLIX API & Developer Resources
+
+**API Documentation:**
+
+1. **WALLIX Bastion REST API Reference**
+   - URL: https://pam.wallix.one/documentation/api-doc/
+   - Format: OpenAPI/Swagger
+   - Version: v3.12 (current)
+   - Content: Complete API endpoint documentation
+   - Interactive: Yes (try API calls in browser)
+
+2. **WALLIX REST API Samples (GitHub)**
+   - URL: https://github.com/wallix/wbrest_samples
+   - Language: Python, Shell
+   - Content: Working code examples for common tasks
+   - Examples: Device management, user provisioning, session queries
+   - License: Open source
+
+3. **WALLIX SCIM API Documentation**
+   - URL: https://scim.wallix.com/scim/doc/Usage.html
+   - Protocol: SCIM 2.0
+   - Use Case: User lifecycle management, identity federation
+   - Integration: Azure AD, Okta, OneLogin
+
+**Terraform Provider:**
+
+4. **WALLIX Bastion Terraform Provider**
+   - URL: https://registry.terraform.io/providers/wallix/wallix-bastion
+   - GitHub: https://github.com/wallix/terraform-provider-wallix-bastion
+   - Version: 0.14.0 (API v3.12)
+   - Resources: Devices, accounts, authorizations, users, groups
+   - Best For: Infrastructure as Code deployments
+
+**Ansible Integration:**
+
+5. **WALLIX Ansible Modules**
+   - URL: Check Ansible Galaxy or WALLIX GitHub
+   - Content: Ansible modules for automation
+   - Use Case: Configuration management, bulk operations
+
+---
+
+### WALLIX Community & Support
+
+**Support Portal:**
+
+1. **WALLIX Support Portal**
+   - URL: https://support.wallix.com/
+   - Access: Requires product license
+   - Content: Knowledge base, ticket submission, downloads
+   - Response Time: Based on support tier (Standard, Premium, Enterprise)
+
+2. **WALLIX Community Forums** (if available)
+   - Check: https://community.wallix.com/ or support portal
+   - Content: User discussions, tips, Q&A
+   - Moderation: WALLIX staff + community
+
+**Partner Resources:**
+
+3. **WALLIX Partner Portal**
+   - URL: Contact WALLIX for partner access
+   - Content: Sales enablement, technical training, co-marketing materials
+   - Access: WALLIX partners only
+
+4. **WALLIX Channel Partner Training**
+   - Provider: WALLIX partner program
+   - Content: Pre-sales training, technical deep-dives, certification
+   - Access: WALLIX partners and resellers
+
+---
+
+### WALLIX Blogs & News
+
+**Corporate Blog:**
+
+1. **WALLIX Blog**
+   - URL: https://www.wallix.com/blog/
+   - RSS: https://www.wallix.com/feed/
+   - Content: Product announcements, security trends, customer stories
+   - Update Frequency: Weekly
+   - Languages: English, French
+
+2. **WALLIX LinkedIn**
+   - URL: https://www.linkedin.com/company/wallix/
+   - Content: Company news, webinar announcements, job postings
+   - Followers: 20,000+
+   - Activity: Daily
+
+3. **WALLIX Twitter/X**
+   - URL: https://twitter.com/Wallix_PAM
+   - Content: News, event updates, security tips
+   - Activity: Daily
+   - Language: English, French
+
+**Industry Publications:**
+
+4. **WALLIX in Industry Media**
+   - Search: "WALLIX" on Dark Reading, Help Net Security, Infosecurity Magazine
+   - Content: Product reviews, industry analysis, case studies
+
+---
+
+### WALLIX Events & Webinars
+
+**Live Webinars:**
+
+1. **WALLIX Monthly Webinar Series**
+   - URL: https://www.wallix.com/resources/webinars/
+   - Schedule: Monthly
+   - Topics: Product updates, use cases, best practices
+   - Registration: Free
+   - Duration: 45-60 minutes
+   - Format: Live with Q&A
+
+2. **WALLIX Roadmap Webinars**
+   - Frequency: Quarterly
+   - Content: Upcoming features, product direction
+   - Audience: Customers and prospects
+   - Registration: Usually requires customer status
+
+**In-Person Events:**
+
+3. **WALLIX User Conference** (Annual)
+   - Location: Paris, France (typically)
+   - Frequency: Annual
+   - Content: Keynotes, breakout sessions, networking
+   - Audience: Customers, partners, prospects
+   - Cost: Free for customers
+
+4. **WALLIX at Industry Conferences**
+   - Events: S4, ICS Cyber Security Conference, RSA Conference, Gartner Security Summit
+   - Content: Booth demos, speaking sessions, networking
+   - Schedule: Check WALLIX events page
+
+---
+
+### WALLIX GitHub Repositories
+
+**Official Repositories:**
+
+1. **terraform-provider-wallix-bastion**
+   - URL: https://github.com/wallix/terraform-provider-wallix-bastion
+   - Stars: 50+
+   - Language: Go
+   - Purpose: Terraform provider for infrastructure as code
+
+2. **wbrest_samples**
+   - URL: https://github.com/wallix/wbrest_samples
+   - Stars: 30+
+   - Language: Python, Shell
+   - Purpose: REST API usage examples
+
+3. **WALLIX Organization**
+   - URL: https://github.com/wallix
+   - Repositories: Check for additional tools and integrations
+   - Contributions: Welcome (check individual repo guidelines)
+
+---
+
+### WALLIX Integration Guides
+
+**SIEM Integration:**
+
+1. **Splunk Integration Guide**
+   - Location: WALLIX documentation portal
+   - Content: Syslog configuration, Splunk app setup, dashboards
+   - Format: PDF
+
+2. **Wazuh Integration Guide**
+   - Location: WALLIX documentation or GitHub
+   - Content: Log forwarding, rules, alerts
+   - Format: Markdown/PDF
+
+3. **QRadar Integration Guide**
+   - Location: WALLIX documentation portal
+   - Content: DSM configuration, log parsing
+   - Format: PDF
+
+**Identity Provider Integration:**
+
+4. **Azure AD / Entra ID Integration**
+   - Location: WALLIX documentation
+   - Content: SAML/OIDC setup, SCIM provisioning
+   - Format: PDF + video
+
+5. **Okta Integration Guide**
+   - Location: WALLIX documentation
+   - Content: SSO configuration, user sync
+   - Format: PDF
+
+6. **Active Directory / LDAP Integration**
+   - Location: WALLIX admin guide
+   - Content: LDAP bind, group mapping, Kerberos SSO
+   - Format: PDF
+
+---
+
+### WALLIX Case Studies & Whitepapers
+
+**Customer Success Stories:**
+
+1. **WALLIX Case Studies**
+   - URL: https://www.wallix.com/resources/case-studies/
+   - Industries: Energy, manufacturing, utilities, government
+   - Content: Customer challenges, solution architecture, results
+   - Download: Free (email registration)
+
+2. **OT Security Case Studies**
+   - Search: WALLIX + "OT" or "IEC 62443" on website
+   - Focus: Industrial deployments, critical infrastructure
+
+**Whitepapers:**
+
+3. **WALLIX Technical Whitepapers**
+   - URL: https://www.wallix.com/resources/whitepapers/
+   - Topics:
+     - Zero Trust for OT
+     - IEC 62443 compliance with PAM
+     - Securing vendor remote access
+     - Session recording best practices
+   - Download: Free (email registration)
+
+4. **Industry Reports**
+   - Content: Gartner Magic Quadrant positioning, analyst reports
+   - Access: Via WALLIX website or directly from analysts
+
+---
+
+### WALLIX RSS Feeds
+
+**Subscribe to WALLIX Updates:**
+
+```
+# Corporate Blog
+https://www.wallix.com/feed/
+
+# Documentation Updates (if available)
+Check documentation portal for RSS/Atom feeds
+
+# GitHub Releases
+https://github.com/wallix/terraform-provider-wallix-bastion/releases.atom
+https://github.com/wallix/wbrest_samples/commits/master.atom
+```
+
+---
+
+### WALLIX Learning Path
+
+**For New Administrators:**
+
+**Week 1-2: Foundation**
+1. Read: WALLIX Bastion User Guide (overview chapters)
+2. Watch: WALLIX Quick Start video series (YouTube)
+3. Review: Architecture diagrams in admin guide
+4. Practice: Set up test environment (VM or trial license)
+
+**Week 3-4: Configuration**
+1. Read: Admin Guide configuration chapters
+2. Watch: WALLIX configuration webinars
+3. Practice: Create domains, devices, accounts, authorizations
+4. Exercise: Configure LDAP integration
+
+**Week 5-6: Advanced Features**
+1. Read: API documentation
+2. Practice: Write Python scripts using wbrest_samples
+3. Watch: Advanced feature deep-dive videos
+4. Exercise: Set up session recording and playback
+
+**Week 7-8: Operations**
+1. Read: Operational runbooks (this repo)
+2. Practice: Backup/restore procedures
+3. Watch: Troubleshooting webinars
+4. Exercise: Set up monitoring with Prometheus/Grafana
+
+**Ongoing:**
+- Weekly: Read WALLIX blog posts
+- Monthly: Attend WALLIX webinars
+- Quarterly: Review release notes and upgrade planning
+
+---
+
+### WALLIX OT-Specific Resources
+
+**Industrial Protocol Documentation:**
+
+1. **Modbus Support in WALLIX**
+   - Location: Admin guide, industrial protocols chapter
+   - Content: Configuration, port mapping, session recording
+
+2. **DNP3 Support in WALLIX**
+   - Location: Admin guide
+   - Content: DNP3 proxy configuration, logging
+
+3. **OPC UA Support in WALLIX**
+   - Location: Admin guide
+   - Content: OPC UA client/server configuration, certificate management
+
+4. **S7comm / Siemens Support**
+   - Location: Admin guide or vendor integration guide
+   - Content: S7 protocol handling, Siemens PLC access
+
+**Air-Gapped Deployment Guides:**
+
+5. **WALLIX Offline Operations**
+   - Location: OT deployment guide
+   - Content: Credential caching, offline mode, synchronization
+
+6. **Data Diode Integration**
+   - Location: Integration guides
+   - Content: One-way data flows, log extraction, monitoring
+
+---
+
+### WALLIX FAQ & Troubleshooting
+
+**Common Questions:**
+
+1. **WALLIX FAQ**
+   - Location: Support portal knowledge base
+   - Categories: Installation, configuration, licensing, troubleshooting
+   - Searchable: Yes
+
+2. **Error Code Reference**
+   - Location: This repository - [Error Reference](../../pam/18-error-reference/README.md)
+   - Content: Common errors, root causes, remediation
+
+3. **Troubleshooting Guides**
+   - Location: This repository - [Troubleshooting](../../pam/13-troubleshooting/README.md)
+   - Categories: Network, LDAP, protocols, sessions, HA
+
+---
+
+### WALLIX Product Comparison
+
+**Competitive Positioning:**
+
+1. **WALLIX vs CyberArk Comparison**
+   - Location: This repository - [Appendix](../../pam/15-appendix/cyberark-wallix-comparison.md)
+   - Content: Feature comparison, pricing models, OT focus
+
+2. **WALLIX TCO Calculator**
+   - Location: WALLIX sales team or partner
+   - Use: ROI and cost comparison
+
+---
+
+### Contact & Support
+
+**Getting Help:**
+
+| Need | Contact Method |
+|------|---------------|
+| **Pre-Sales Questions** | https://www.wallix.com/contact/ |
+| **Technical Support** | https://support.wallix.com/ |
+| **Training Inquiries** | training@wallix.com |
+| **Partner Program** | partners@wallix.com |
+| **Emergency Support** | 24/7 hotline (Premium/Enterprise customers) |
+
+**Global Offices:**
+
+- **Headquarters**: Paris, France
+- **Regional Offices**: Germany, UK, USA, Singapore
+- **Support Hours**: 24/7 for Premium/Enterprise, Business hours for Standard
 
 ---
 
