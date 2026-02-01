@@ -20,6 +20,36 @@ This guide covers setting up a pre-production environment that **closely mirrors
 
 ---
 
+## Prerequisites
+
+### VMware vSphere/ESXi Environment
+
+| Component | Requirement |
+|-----------|-------------|
+| **Hypervisor** | VMware vSphere 7.0+ or ESXi 7.0+ |
+| **vCenter Server** | Optional but recommended for HA cluster management |
+| **Storage** | VMFS or NFS datastore with at least 2TB available space |
+| **Network** | Distributed vSwitch preferred, Standard vSwitch acceptable |
+| **Templates** | Debian 12 OVA template recommended for rapid deployment |
+
+### Hardware Resources (Total)
+
+| Resource | Minimum | Recommended |
+|----------|---------|-------------|
+| **CPU** | 48 vCPU | 64 vCPU |
+| **RAM** | 128 GB | 192 GB |
+| **Storage** | 1.5 TB | 2 TB |
+| **Network** | 1 Gbps | 10 Gbps |
+
+### Network Configuration
+
+- 6 VLANs configured on vSwitch (Enterprise, OT DMZ, Site Ops, Area Supervisory, Basic Control, Process)
+- Port groups created for each VLAN with appropriate security policies
+- Network connectivity to corporate Active Directory and DNS
+- Internet access for downloading software packages (can be restricted post-deployment)
+
+---
+
 ## Architecture Overview - Purdue Model
 
 ```
@@ -189,6 +219,81 @@ This guide covers setting up a pre-production environment that **closely mirrors
 | `10.10.1.101` | Internal cluster VIP | pam4ot-node1, pam4ot-node2 |
 
 **Total VMs**: 24 (minimum for realistic OT lab with MFA and RDS)
+
+---
+
+## VMware Deployment Workflow
+
+### Recommended Deployment Approach
+
+For VMware vSphere/ESXi environments, we recommend the following workflow:
+
+**1. Prepare VMware Environment**
+- Create VLANs and port groups on Distributed vSwitch or Standard vSwitch
+- Create VM folder structure (PAM4OT > Production)
+- Prepare Debian 12 and Ubuntu 22.04 templates
+- Ensure datastore has sufficient space (2TB+)
+
+**2. Automated Deployment (Recommended)**
+- Use Terraform with vSphere provider for VM provisioning
+- Refer to `scripts/provision-vms.sh` for complete Terraform configuration
+- Leverage OVA/OVF templates for rapid deployment
+- Use cloud-init for automated OS configuration
+
+**3. Manual Deployment (Alternative)**
+- Deploy VMs via vCenter Web UI
+- Use govc CLI for scriptable deployments
+- Use PowerCLI for Windows-based automation
+
+**4. VMware-Specific Optimizations**
+- Use VMXNET3 network adapters for better performance
+- Enable VMware Paravirtual SCSI controllers
+- Configure VM anti-affinity rules for HA nodes
+- Enable CPU and memory hot-add for flexibility
+- Configure VM snapshots before major changes
+
+### VMware HA Considerations
+
+For production-like HA testing:
+
+```
+1. Create DRS anti-affinity rule for PAM4OT nodes
+   - pam4ot-node1 and pam4ot-node2 should run on different ESXi hosts
+
+2. Enable vSphere HA with:
+   - Host Failure Response: Restart VMs
+   - VM Monitoring: Enabled
+   - VM Restart Priority: High (for PAM4OT nodes)
+
+3. Configure vMotion network for live migrations
+
+4. Test failover scenarios:
+   - ESXi host failure
+   - Network failure
+   - Storage failure
+```
+
+### Creating Debian 12 Template for VMware
+
+```bash
+# Deploy Debian 12 ISO to vSphere
+# Install with minimal packages
+# After installation:
+
+# Install VMware Tools (open-vm-tools)
+apt update
+apt install -y open-vm-tools cloud-init qemu-guest-agent
+
+# Clean up
+apt clean
+rm -rf /tmp/*
+history -c
+
+# Shutdown and convert to template
+shutdown -h now
+
+# In vCenter: Right-click VM > Template > Convert to Template
+```
 
 ---
 

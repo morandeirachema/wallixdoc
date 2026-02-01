@@ -65,14 +65,124 @@ DNS: 10.10.0.10
 
 ### Initial Deployment
 
-**VMware/Proxmox:**
+#### VMware vSphere/ESXi (Recommended)
+
+**Download FortiAuthenticator OVA:**
+- Visit: https://support.fortinet.com
+- Navigate to: Downloads > FortiAuthenticator
+- Download: FortiAuthenticator VM (OVA format) version 6.5.x or later
+
+**Deploy OVA using vCenter:**
+
+```
+1. Log into vCenter Server (https://vcenter.company.com)
+2. Navigate to VMs and Templates
+3. Right-click datacenter/folder > Deploy OVF Template
+4. Select local file: FortiAuthenticator_VM64.ovf
+
+DEPLOYMENT WIZARD:
+- Name: fortiauth
+- Folder: PAM4OT
+- Compute Resource: Select cluster/host
+- Review Details: Verify publisher (Fortinet)
+- Storage: Select datastore
+- Network Mapping:
+  - Source Network: VM Network
+  - Destination Network: PAM4OT-OT-DMZ (VLAN 110)
+- Customize template:
+  - Admin Password: FortiAuth2026!
+  - IP Address: 10.10.1.50
+  - Netmask: 255.255.255.0
+  - Gateway: 10.10.1.1
+  - DNS: 10.10.0.10
+- Power on after deployment: Yes
+
+5. Click Finish and wait for deployment to complete
+```
+
+**Deploy OVA using govc CLI:**
+
 ```bash
-# Download FortiAuthenticator OVA from:
+# Set environment variables
+export GOVC_URL=vcenter.company.com
+export GOVC_USERNAME=administrator@vsphere.local
+export GOVC_PASSWORD=YourPassword
+export GOVC_INSECURE=true
+export GOVC_DATACENTER=Datacenter1
+export GOVC_DATASTORE=Datastore1
+export GOVC_NETWORK="PAM4OT-OT-DMZ"
+
+# Import OVA
+govc import.ova \
+  -name=fortiauth \
+  -ds=Datastore1 \
+  -net="PAM4OT-OT-DMZ" \
+  -pool=/Datacenter1/host/Cluster1/Resources \
+  FortiAuthenticator_VM64.ova
+
+# Configure VM properties
+govc vm.change -vm fortiauth -c 2 -m 4096
+
+# Power on VM
+govc vm.power -on fortiauth
+
+# Wait for VM to boot
+sleep 60
+
+# Get IP address
+govc vm.ip fortiauth
+```
+
+**Deploy OVA using PowerCLI:**
+
+```powershell
+# Connect to vCenter
+Connect-VIServer -Server vcenter.company.com
+
+# Import OVA
+$ovfConfig = Get-OvfConfiguration -Ovf "C:\Downloads\FortiAuthenticator_VM64.ova"
+
+# Configure network properties
+$ovfConfig.NetworkMapping.VM_Network.Value = "PAM4OT-OT-DMZ"
+$ovfConfig.Common.ip0.Value = "10.10.1.50"
+$ovfConfig.Common.netmask0.Value = "255.255.255.0"
+$ovfConfig.Common.gateway.Value = "10.10.1.1"
+$ovfConfig.Common.dns1.Value = "10.10.0.10"
+
+# Deploy OVA
+Import-VApp -Source "C:\Downloads\FortiAuthenticator_VM64.ova" `
+  -OvfConfiguration $ovfConfig `
+  -Name "fortiauth" `
+  -VMHost (Get-Cluster "Cluster1" | Get-VMHost | Select-Object -First 1) `
+  -Datastore "Datastore1" `
+  -DiskStorageFormat Thin
+
+# Start VM
+Start-VM -VM "fortiauth"
+```
+
+#### Alternative: Proxmox (If VMware Not Available)
+
+```bash
+# NOTE: VMware vSphere/ESXi is the recommended platform
+# Use Proxmox only if VMware is not available
+
+# Download QCOW2 image from Fortinet Support Portal
 # https://support.fortinet.com
 
-# Deploy OVA/QCOW2 to hypervisor
-# Configure VM with 2 vCPU, 4GB RAM
-# Attach to OT DMZ network (10.10.1.0/24)
+# Deploy QCOW2 to Proxmox
+qm create 150 --name fortiauth --memory 4096 --cores 2 \
+  --net0 virtio,bridge=vmbr0,tag=110
+
+# Import disk
+qm importdisk 150 fortiauthenticator.qcow2 local-lvm
+
+# Attach disk and configure boot
+qm set 150 --scsi0 local-lvm:vm-150-disk-0
+qm set 150 --boot c --bootdisk scsi0
+
+# Start VM
+qm start 150
 ```
 
 ---
