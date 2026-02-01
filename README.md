@@ -36,25 +36,33 @@
 ```
 wallixdoc/
 │
-├── docs/                         # Technical Documentation (65 sections)
-│   ├── pam/                      # PAM/WALLIX Core (47 sections)
-│   │   ├── 00-14  Getting Started & Core
-│   │   ├── 05-06  Authentication & Authorization
-│   │   ├── 07-08  Password & Session Management
-│   │   ├── 09-26  API & Automation
-│   │   ├── 10-47  Infrastructure & Operations
-│   │   └── 32-60  Security & Compliance
+├── docs/                         # Technical Documentation (66 sections)
+│   ├── pam/                      # PAM/WALLIX Core (47 sections, 00-46)
+│   │   ├── 00-05  Getting Started & Configuration
+│   │   ├── 06-09  Authentication, Authorization & Sessions
+│   │   ├── 10-15  API, HA, Monitoring & Best Practices
+│   │   ├── 16-24  Deployment, Operations & Compliance
+│   │   ├── 25-32  JIT Access, Performance & Infrastructure
+│   │   └── 33-46  Advanced Features & Security
 │   │
-│   └── ot/                       # OT Foundational (18 sections)
+│   └── ot/                       # OT Foundational (19 sections, 00-18)
 │       ├── 00     OT Fundamentals (16-week learning path)
 │       ├── 01-09  Overview, Architecture & Protocols
 │       ├── 05-10  Air-Gapped & Offline Operations
 │       ├── 06-08  Compliance & Integration
-│       └── 11-17  Vendor Access & Safety
+│       ├── 11-17  Vendor Access & Safety
+│       └── 18     Training & Certifications
 │
 ├── install/                      # Multi-Site Deployment
 │   ├── HOWTO.md                  # Complete installation guide
 │   └── 00-10-*.md                # Step-by-step procedures
+│
+├── pre/                          # Pre-Production Lab (14 guides)
+│   ├── README.md                 # Lab overview and architecture
+│   ├── 01-infrastructure-setup.md    # VMware vSphere/ESXi 8.0+
+│   ├── 04-fortiauthenticator-setup.md # FortiAuthenticator MFA
+│   ├── 05-wallix-rds-setup.md    # WALLIX RDS configuration
+│   └── 01-14-*.md                # Complete lab setup
 │
 └── examples/                     # Automation Examples
     ├── ansible/                  # Ansible playbooks and roles
@@ -94,7 +102,7 @@ wallixdoc/
 
 | Category | Capabilities |
 |----------|-------------|
-| **Authentication** | MFA (FIDO2/WebAuthn, TOTP, YubiKey), LDAP/AD, Kerberos SSO, OIDC/SAML, X.509 Certificates |
+| **Authentication** | MFA (FIDO2/WebAuthn, TOTP, YubiKey, FortiAuthenticator), LDAP/AD, Kerberos SSO, OIDC/SAML, X.509 Certificates |
 | **Authorization** | RBAC, approval workflows, time-based access, JIT privileged access |
 | **Session Management** | Video recording, OCR search, real-time monitoring, keystroke logging, session sharing |
 | **Password Management** | AES-256 encrypted vault, automatic rotation, SSH key lifecycle, credential checkout |
@@ -127,6 +135,7 @@ See [Compliance & Audit Guide](./docs/pam/24-compliance-audit/README.md) for det
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS disk encryption |
 | **Key Derivation** | Argon2ID |
 | **Deployment** | On-premises (bare metal, VMs) - No cloud/containers |
+| **Hypervisor (Pre-Prod Lab)** | VMware vSphere/ESXi 8.0+ |
 
 See [System Requirements](./docs/pam/19-system-requirements/README.md) for detailed sizing.
 
@@ -166,7 +175,22 @@ wabadmin audit --last 20
 
 ## Getting Started
 
-### 1. Production Deployment
+### 1. Pre-Production Lab (Recommended)
+
+Start with the [Pre-Production Lab Guide](./pre/README.md) to build a test environment:
+
+```
+Lab Environment
+├── VMware vSphere/ESXi 8.0+ cluster
+├── Active Directory domain controller
+├── HAProxy load balancer (2x)
+├── FortiAuthenticator MFA server
+├── WALLIX Bastion (Active-Active HA)
+├── WALLIX RDS (Remote Desktop Services)
+└── Test targets (Linux, Windows, network devices)
+```
+
+### 2. Production Deployment
 
 Follow the [Multi-Site Installation Guide](./install/README.md) for production:
 
@@ -177,7 +201,7 @@ Production Architecture
 └── Site C: Remote Field (Standalone + Offline)
 ```
 
-### 2. Automation
+### 3. Automation
 
 Explore [Examples](./examples/README.md) for automation:
 
@@ -217,7 +241,7 @@ Explore [Examples](./examples/README.md) for automation:
 
 | Section | Description |
 |---------|-------------|
-| [06 - Authentication](./docs/pam/06-authentication/README.md) | MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML |
+| [06 - Authentication](./docs/pam/06-authentication/README.md) | MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML, FortiAuthenticator |
 | [07 - Authorization](./docs/pam/07-authorization/README.md) | RBAC, approval workflows, time windows |
 | [25 - JIT Access](./docs/pam/25-jit-access/README.md) | Just-In-Time access, approval workflows |
 | [34 - LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) | Active Directory integration |
@@ -341,8 +365,14 @@ Explore [Examples](./examples/README.md) for automation:
 | [13 - OT Safety Procedures](./docs/ot/13-ot-safety-procedures/README.md) | LOTO integration, SIS access |
 | [15 - OT Change Management](./docs/ot/15-ot-change-management/README.md) | Change windows, rollback |
 
+### Training & Career Development
+
+| Section | Description |
+|---------|-------------|
+| [18 - OT Training & Certifications](./docs/ot/18-ot-training-certifications/README.md) | Professional certifications (GICSP, GRID), training providers, career paths |
+
 ---
 
 <p align="center">
-  <sub>65 Sections • 47 PAM + 18 OT (including 16-module fundamentals) • February 2026</sub>
+  <sub>66 Sections • 47 PAM + 19 OT • Pre-Production Lab • February 2026</sub>
 </p>

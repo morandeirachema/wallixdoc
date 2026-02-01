@@ -11,7 +11,7 @@ This file provides context for AI assistants (Claude, Copilot, etc.) working wit
 | **Focus** | Privileged Access Management (PAM) for IT and OT environments |
 | **Deployment** | On-premises only (bare metal and VMs, no cloud/SaaS) |
 | **Version** | WALLIX Bastion 12.1.x |
-| **Content** | 65 documentation sections (47 PAM + 18 OT) |
+| **Content** | 66 documentation sections (47 PAM + 19 OT) |
 
 ## Directory Structure
 
@@ -20,7 +20,7 @@ wallixdoc/
 ├── CLAUDE.md              # This file - AI assistant context
 ├── README.md              # Repository overview and navigation
 │
-├── docs/                  # Product documentation (64 sections)
+├── docs/                  # Product documentation (66 sections)
 │   ├── README.md          # Documentation index with learning paths
 │   │
 │   ├── pam/               # PAM/WALLIX Core Documentation (47 sections)
@@ -72,7 +72,7 @@ wallixdoc/
 │   │   ├── 45-user-self-service/      # Self-service portal
 │   │   └── 46-privileged-task-automation/ # Automated privileged operations
 │   │
-│   └── ot/                # OT Foundational Documentation (18 sections)
+│   └── ot/                # OT Foundational Documentation (19 sections)
 │       ├── 00-fundamentals/           # OT Cybersecurity Fundamentals (16 modules)
 │       │   ├── README.md              # 16-week learning path overview
 │       │   ├── 01-ot-fundamentals.md  # Control theory, process basics
@@ -106,7 +106,8 @@ wallixdoc/
 │       ├── 14-engineering-workstation-access/ # EWS access patterns
 │       ├── 15-ot-change-management/   # Change windows, rollback
 │       ├── 16-historian-access/       # Historian security, data diode
-│       └── 17-rtu-field-access/       # RTU and field device management
+│       ├── 17-rtu-field-access/       # RTU and field device management
+│       └── 18-ot-training-certifications/ # OT cybersecurity training, certifications, career paths
 │
 ├── install/               # Multi-site OT installation guide
 │   ├── README.md          # Architecture overview, 30-day timeline
@@ -122,6 +123,23 @@ wallixdoc/
 │   ├── 08-validation-testing.md        # Testing and go-live
 │   ├── 09-architecture-diagrams.md     # Visual diagrams and ports
 │   └── 10-postgresql-streaming-replication.md  # Database HA
+│
+├── pre/                   # Pre-production lab environment
+│   ├── README.md          # Lab overview and architecture
+│   ├── 01-infrastructure-setup.md      # VMware vSphere/ESXi setup
+│   ├── 02-active-directory-setup.md    # AD domain controller
+│   ├── 03-haproxy-setup.md             # Load balancer configuration
+│   ├── 04-fortiauthenticator-setup.md  # FortiAuthenticator MFA
+│   ├── 05-wallix-rds-setup.md          # WALLIX RDS configuration
+│   ├── 06-ad-integration.md            # AD/LDAP integration
+│   ├── 07-pam4ot-installation.md       # WALLIX Bastion installation
+│   ├── 08-ha-active-active.md          # HA cluster setup
+│   ├── 09-test-targets.md              # Target systems configuration
+│   ├── 10-siem-integration.md          # SIEM integration
+│   ├── 11-observability.md             # Monitoring and observability
+│   ├── 12-validation-testing.md        # Validation procedures
+│   ├── 13-team-handoffs.md             # Team handoff documentation
+│   └── 14-battery-tests.md             # Comprehensive test suite
 │
 └── examples/              # Automation examples
     ├── README.md          # Examples overview and quick start
@@ -155,11 +173,13 @@ wallixdoc/
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS disk encryption |
 | **Key Derivation** | Argon2ID |
 | **Protocols** | SSH, RDP, VNC, HTTP, Modbus, DNP3, OPC UA |
+| **Hypervisor (Pre-Prod Lab)** | VMware vSphere/ESXi 8.0+ |
+| **MFA (Pre-Prod Lab)** | FortiAuthenticator 6.4+ |
 
 ## Key Topics Covered
 
 ### Core PAM (docs/pam/)
-- Multi-factor authentication (TOTP, FIDO2/WebAuthn, LDAP/AD, Kerberos, OIDC, SAML)
+- Multi-factor authentication (TOTP, FIDO2/WebAuthn, FortiAuthenticator, LDAP/AD, Kerberos, OIDC, SAML)
 - Role-based access control with approval workflows
 - Session recording with OCR and keystroke logging
 - Credential vault with automatic password rotation
@@ -172,6 +192,7 @@ wallixdoc/
 
 ### Industrial/OT Security (docs/ot/)
 - **OT Cybersecurity Fundamentals** - 16-week learning path for IT professionals transitioning to OT
+- **OT Training & Certifications** - Professional certifications (GICSP, GRID), training providers, career paths
 - IEC 62443 compliance (Security Levels 1-4)
 - Zone-based architecture (Zones 0-5)
 - Industrial protocols: Modbus, DNP3, OPC UA, EtherNet/IP, IEC 61850, S7comm
@@ -275,10 +296,13 @@ Use these authoritative sources when verifying or extending documentation:
 | `docs/README.md` | Documentation index with role-based learning paths | Root |
 | `docs/pam/17-api-reference/README.md` | REST API documentation | PAM Core |
 | `docs/pam/31-wabadmin-reference/README.md` | Complete CLI reference | PAM Core |
+| `docs/ot/00-fundamentals/README.md` | OT Cybersecurity Fundamentals (16-week learning path) | OT |
 | `docs/ot/06-iec62443-compliance/README.md` | IEC 62443 compliance guide | OT |
+| `docs/ot/18-ot-training-certifications/README.md` | OT training, certifications, career paths | OT |
 | `install/HOWTO.md` | Main installation walkthrough | Installation |
 | `install/README.md` | Architecture overview and 30-day timeline | Installation |
 | `install/09-architecture-diagrams.md` | Network diagrams and port reference | Installation |
+| `pre/README.md` | Pre-production lab setup guide | Pre-Prod Lab |
 | `examples/ansible/README.md` | Ansible automation documentation | Examples |
 
 ## Common Editing Tasks
@@ -360,7 +384,7 @@ wabadmin sync-status
 
 | Item | Value |
 |------|-------|
-| Documentation Version | 6.0 |
+| Documentation Version | 7.0 |
 | WALLIX Bastion Version | 12.1.x |
 | Terraform Provider | 0.14.0 (API v3.12) |
 | Last Updated | February 2026 |
@@ -370,8 +394,9 @@ wabadmin sync-status
 | Category | Sections | Location | Focus |
 |----------|----------|----------|-------|
 | **PAM Core** | 47 | `docs/pam/` | Authentication, authorization, password management, session recording, API, deployment, operations, compliance |
-| **OT Foundational** | 18 | `docs/ot/` | OT fundamentals (16-week learning path), industrial protocols, IEC 62443, SCADA/ICS, air-gapped environments, OT safety, vendor access |
+| **OT Foundational** | 19 | `docs/ot/` | OT fundamentals (16-week learning path), industrial protocols, IEC 62443, SCADA/ICS, air-gapped environments, OT safety, vendor access, training & certifications |
 | **Installation** | 11 | `install/` | Multi-site deployment, HA configuration, security hardening |
+| **Pre-Production Lab** | 14 | `pre/` | VMware vSphere/ESXi lab setup, FortiAuthenticator MFA, WALLIX RDS, test targets, validation |
 | **Automation** | 3 | `examples/` | Ansible playbooks, Terraform IaC, API samples |
 
 ---
