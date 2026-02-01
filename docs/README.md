@@ -126,6 +126,31 @@ docs/
 
 ## OT Foundational Documentation
 
+### OT Fundamentals (ot/)
+
+**Start Here**: If you're new to OT/ICS security, begin with the fundamentals guide.
+
+| # | Section | Description |
+|---|---------|-------------|
+| 00 | [OT Cybersecurity Fundamentals](./ot/00-fundamentals/README.md) | 16-week learning path for IT professionals transitioning to OT security |
+
+**Learning Path Modules** (within 00-fundamentals/):
+- 01-ot-fundamentals.md - Control theory, process control basics
+- 02-control-systems-101.md - PLC, RTU, DCS, HMI, SCADA architecture
+- 03-ot-vs-it-security.md - Mindset shift, CIA triad reversal
+- 04-industrial-protocols.md - Modbus, DNP3, OPC UA, EtherNet/IP
+- 05-ot-network-architecture.md - Purdue Model, zones/conduits
+- 06-legacy-systems.md - Securing unpatchable systems
+- 07-ot-threat-landscape.md - APT groups, ICS malware
+- 08-ot-threat-modeling.md - Attack trees, STRIDE for OT
+- 09-ot-incident-response.md - Safety-first IR, forensics
+- 10-iec62443-deep-dive.md - Security levels, compliance
+- 11-regulatory-landscape.md - NERC CIP, CFATS, NIS2
+- 12-vendor-risk-management.md - Third-party access, supply chain
+- 13-ot-security-career.md - Certifications, career paths
+- 14-hands-on-labs.md - Lab setup, practice environments
+- 15-resources.md - Books, courses, communities, tools
+
 ### OT Overview & Architecture (ot/)
 
 | # | Section | Description |
@@ -179,7 +204,7 @@ Architect       → pam/01 → pam/02 → pam/10 → pam/13 → pam/24
 Engineer        → pam/01 → pam/03 → pam/04 → pam/07 → pam/09
 Security        → pam/05 → pam/52 → pam/06 → pam/34 → pam/08 → pam/50 → pam/32 → pam/33
 Operations      → pam/30 → pam/12 → pam/27 → pam/31
-OT/Industrial   → ot/15 → ot/16 → ot/17 → ot/20 → ot/23
+OT/Industrial   → ot/00-fundamentals → ot/15 → ot/16 → ot/17 → ot/20 → ot/23
 DevOps          → pam/09 → pam/26 → examples/
 Compliance      → pam/33 → pam/34 → ot/20 → pam/08 → pam/50 → pam/06
 ```
@@ -193,6 +218,7 @@ Compliance      → pam/33 → pam/34 → ot/20 → pam/08 → pam/50 → pam/06
 | Prepare for audit | pam/33 → pam/08 → pam/50 → pam/30 |
 | Review session recordings | pam/50 → pam/08 → pam/32 |
 | Set up automation | pam/09 → pam/26 → [examples/](../examples/README.md) |
+| Learn OT fundamentals | ot/00-fundamentals (start here for OT basics) |
 | Deploy OT zone architecture | ot/15 → ot/16 → ot/17 → ot/23 |
 | Configure SCADA access | ot/18 → ot/17 → ot/55 → ot/62 |
 | Air-gapped deployment | ot/19 → ot/51 → ot/55 |
@@ -234,11 +260,11 @@ Compliance      → pam/33 → pam/34 → ot/20 → pam/08 → pam/50 → pam/06
 | Category | Sections | Location | Status |
 |----------|----------|----------|--------|
 | PAM Core | 47 | docs/pam/ | Complete |
-| OT Foundational | 17 | docs/ot/ | Complete |
-| **Total** | **64** | | **Complete** |
+| OT Foundational | 18 | docs/ot/ | Complete |
+| **Total** | **65** | | **Complete** |
 
 ---
 
 <p align="center">
-  <sub>64 Sections • 47 PAM + 17 OT • February 2026</sub>
+  <sub>65 Sections • 47 PAM + 18 OT (including 16-module fundamentals) • February 2026</sub>
 </p>

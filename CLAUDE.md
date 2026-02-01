@@ -11,7 +11,7 @@ This file provides context for AI assistants (Claude, Copilot, etc.) working wit
 | **Focus** | Privileged Access Management (PAM) for IT and OT environments |
 | **Deployment** | On-premises only (bare metal and VMs, no cloud/SaaS) |
 | **Version** | WALLIX Bastion 12.1.x |
-| **Content** | 64 documentation sections (47 PAM + 17 OT) |
+| **Content** | 65 documentation sections (47 PAM + 18 OT) |
 
 ## Directory Structure
 
@@ -72,7 +72,24 @@ wallixdoc/
 │   │   ├── 59-user-self-service/      # Self-service portal
 │   │   └── 60-privileged-task-automation/ # Automated privileged operations
 │   │
-│   └── ot/                # OT Foundational Documentation (17 sections)
+│   └── ot/                # OT Foundational Documentation (18 sections)
+│       ├── 00-fundamentals/           # OT Cybersecurity Fundamentals (16 modules)
+│       │   ├── README.md              # 16-week learning path overview
+│       │   ├── 01-ot-fundamentals.md  # Control theory, process basics
+│       │   ├── 02-control-systems-101.md # PLC, RTU, DCS, HMI, SCADA
+│       │   ├── 03-ot-vs-it-security.md # Mindset shift, CIA reversal
+│       │   ├── 04-industrial-protocols.md # Modbus, DNP3, OPC UA
+│       │   ├── 05-ot-network-architecture.md # Purdue Model, zones
+│       │   ├── 06-legacy-systems.md   # Securing unpatchable systems
+│       │   ├── 07-ot-threat-landscape.md # APT groups, ICS malware
+│       │   ├── 08-ot-threat-modeling.md # Attack trees, STRIDE for OT
+│       │   ├── 09-ot-incident-response.md # Safety-first IR
+│       │   ├── 10-iec62443-deep-dive.md # Security levels, compliance
+│       │   ├── 11-regulatory-landscape.md # NERC CIP, CFATS, NIS2
+│       │   ├── 12-vendor-risk-management.md # Third-party access
+│       │   ├── 13-ot-security-career.md # Certifications, career paths
+│       │   ├── 14-hands-on-labs.md    # Lab setup, practice
+│       │   └── 15-resources.md        # Books, courses, communities
 │       ├── 15-industrial-overview/    # OT vs IT, regulatory requirements
 │       ├── 16-ot-architecture/        # Zone deployment, IEC 62443 zones
 │       ├── 17-industrial-protocols/   # Modbus, DNP3, OPC UA, IEC 61850
@@ -154,6 +171,7 @@ wallixdoc/
 - Command filtering and restrictions
 
 ### Industrial/OT Security (docs/ot/)
+- **OT Cybersecurity Fundamentals** - 16-week learning path for IT professionals transitioning to OT
 - IEC 62443 compliance (Security Levels 1-4)
 - Zone-based architecture (Zones 0-5)
 - Industrial protocols: Modbus, DNP3, OPC UA, EtherNet/IP, IEC 61850, S7comm
@@ -352,7 +370,7 @@ wabadmin sync-status
 | Category | Sections | Location | Focus |
 |----------|----------|----------|-------|
 | **PAM Core** | 47 | `docs/pam/` | Authentication, authorization, password management, session recording, API, deployment, operations, compliance |
-| **OT Foundational** | 17 | `docs/ot/` | Industrial protocols, IEC 62443, SCADA/ICS, air-gapped environments, OT safety, vendor access |
+| **OT Foundational** | 18 | `docs/ot/` | OT fundamentals (16-week learning path), industrial protocols, IEC 62443, SCADA/ICS, air-gapped environments, OT safety, vendor access |
 | **Installation** | 11 | `install/` | Multi-site deployment, HA configuration, security hardening |
 | **Automation** | 3 | `examples/` | Ansible playbooks, Terraform IaC, API samples |
 

@@ -36,7 +36,7 @@
 ```
 wallixdoc/
 │
-├── docs/                         # Technical Documentation (64 sections)
+├── docs/                         # Technical Documentation (65 sections)
 │   ├── pam/                      # PAM/WALLIX Core (47 sections)
 │   │   ├── 00-14  Getting Started & Core
 │   │   ├── 05-06  Authentication & Authorization
@@ -45,7 +45,8 @@ wallixdoc/
 │   │   ├── 10-47  Infrastructure & Operations
 │   │   └── 32-60  Security & Compliance
 │   │
-│   └── ot/                       # OT Foundational (17 sections)
+│   └── ot/                       # OT Foundational (18 sections)
+│       ├── 00     OT Fundamentals (16-week learning path)
 │       ├── 15-23  Overview, Architecture & Protocols
 │       ├── 19-51  Air-Gapped & Offline Operations
 │       ├── 20-22  Compliance & Integration
@@ -72,7 +73,7 @@ wallixdoc/
 | **New to PAM4OT** | [Introduction](./docs/pam/01-introduction/README.md) → [Architecture](./docs/pam/02-architecture/README.md) → [Core Components](./docs/pam/03-core-components/README.md) |
 | **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/04-configuration/README.md) → [Troubleshooting](./docs/pam/12-troubleshooting/README.md) |
 | **Security Engineer** | [Authentication](./docs/pam/05-authentication/README.md) → [FIDO2 MFA](./docs/pam/52-fido2-hardware-mfa/README.md) → [Best Practices](./docs/pam/13-best-practices/README.md) → [Incident Response](./docs/pam/32-incident-response/README.md) |
-| **OT/ICS Engineer** | [Industrial Overview](./docs/ot/15-industrial-overview/README.md) → [Protocols](./docs/ot/17-industrial-protocols/README.md) → [SCADA Access](./docs/ot/18-scada-ics-access/README.md) → [Safety Procedures](./docs/ot/61-ot-safety-procedures/README.md) |
+| **OT/ICS Engineer** | [OT Fundamentals](./docs/ot/00-fundamentals/README.md) → [Industrial Overview](./docs/ot/15-industrial-overview/README.md) → [Protocols](./docs/ot/17-industrial-protocols/README.md) → [SCADA Access](./docs/ot/18-scada-ics-access/README.md) |
 | **DevOps/Automation** | [API Reference](./docs/pam/26-api-reference/README.md) → [Deployment](./docs/pam/24-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
 | **Compliance Officer** | [IEC 62443](./docs/ot/20-iec62443-compliance/README.md) → [Compliance Audit](./docs/pam/33-compliance-audit/README.md) → [Evidence Collection](./docs/pam/48-compliance-evidence/README.md) |
 
@@ -292,6 +293,12 @@ Explore [Examples](./examples/README.md) for automation:
 
 ## OT Foundational Documentation (docs/ot/)
 
+### Fundamentals & Learning
+
+| Section | Description |
+|---------|-------------|
+| [00 - OT Cybersecurity Fundamentals](./docs/ot/00-fundamentals/README.md) | 16-week learning path for IT professionals (control theory, protocols, threats, compliance) |
+
 ### Overview & Architecture
 
 | Section | Description |
@@ -337,5 +344,5 @@ Explore [Examples](./examples/README.md) for automation:
 ---
 
 <p align="center">
-  <sub>64 Sections • 47 PAM + 17 OT • February 2026</sub>
+  <sub>65 Sections • 47 PAM + 18 OT (including 16-module fundamentals) • February 2026</sub>
 </p>
