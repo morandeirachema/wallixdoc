@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/PAM4OT-12.1.x-0066cc?style=flat-square" alt="Version"/>
   <img src="https://img.shields.io/badge/Debian-12-a80030?style=flat-square" alt="Debian"/>
-  <img src="https://img.shields.io/badge/MariaDB-10.6+-003545?style=flat-square" alt="MariaDB"/>
+  <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=flat-square" alt="PostgreSQL"/>
   <img src="https://img.shields.io/badge/IEC_62443-Compliant-228b22?style=flat-square" alt="IEC 62443"/>
   <img src="https://img.shields.io/badge/NIST_800--82-Compliant-228b22?style=flat-square" alt="NIST"/>
 </p>
@@ -24,8 +24,8 @@
 **PAM4OT** is WALLIX's unified privileged access management solution designed for OT/industrial environments. Built on WALLIX Bastion 12.x, it provides:
 
 - **Secure Remote Access** - Controlled access to critical systems through a single gateway
-- **Strong Authentication** - MFA with FortiAuthenticator, LDAP/AD, Kerberos, SAML/OIDC
-- **Session Recording** - Full audit trail with video replay and keystroke logging
+- **Strong Authentication** - MFA with FIDO2, LDAP/AD, Kerberos, SAML/OIDC
+- **Session Recording** - Full audit trail with video replay, OCR, and keystroke logging
 - **Password Management** - Encrypted vault with automatic credential rotation
 - **Industrial Protocol Support** - Native proxying for Modbus, DNP3, OPC UA, S7comm
 
@@ -34,25 +34,31 @@
 ## Documentation Structure
 
 ```
-wallix/
+wallixdoc/
 │
-├── docs/                         # Product Documentation
-│   ├── 01-14  Core PAM           # Authentication, sessions, passwords, HA
-│   ├── 15-23  Industrial/OT      # IEC 62443, SCADA, protocols, air-gapped
-│   ├── 24-29  Deployment         # Cloud, containers, API, upgrades
-│   └── 30-33  Operations         # Runbooks, compliance, incident response
+├── docs/                         # Technical Documentation (64 sections)
+│   ├── pam/                      # PAM/WALLIX Core (47 sections)
+│   │   ├── 00-14  Getting Started & Core
+│   │   ├── 05-06  Authentication & Authorization
+│   │   ├── 07-08  Password & Session Management
+│   │   ├── 09-26  API & Automation
+│   │   ├── 10-47  Infrastructure & Operations
+│   │   └── 32-60  Security & Compliance
+│   │
+│   └── ot/                       # OT Foundational (17 sections)
+│       ├── 15-23  Overview, Architecture & Protocols
+│       ├── 19-51  Air-Gapped & Offline Operations
+│       ├── 20-22  Compliance & Integration
+│       └── 54-65  Vendor Access & Safety
 │
 ├── install/                      # Multi-Site Deployment
 │   ├── HOWTO.md                  # Complete installation guide
 │   └── 00-10-*.md                # Step-by-step procedures
 │
-├── pre/                          # Pre-Production Lab
-│   ├── 01-10-*.md                # Lab setup and validation
-│   └── scripts/                  # Automation scripts
-│
-└── examples/                     # Code Examples
+└── examples/                     # Automation Examples
+    ├── ansible/                  # Ansible playbooks and roles
     ├── terraform/                # Infrastructure as Code
-    └── api/                      # REST API samples
+    └── api/                      # REST API samples (Python, curl)
 ```
 
 ---
@@ -63,23 +69,23 @@ wallix/
 
 | Role | Recommended Path |
 |------|------------------|
-| **New to PAM4OT** | [Introduction](./docs/01-introduction/README.md) → [Architecture](./docs/02-architecture/README.md) → [Core Components](./docs/03-core-components/README.md) |
-| **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/04-configuration/README.md) → [Troubleshooting](./docs/12-troubleshooting/README.md) |
-| **Security Engineer** | [Authentication](./docs/05-authentication/README.md) → [Best Practices](./docs/13-best-practices/README.md) → [Incident Response](./docs/32-incident-response/README.md) |
-| **OT/ICS Engineer** | [Industrial Overview](./docs/15-industrial-overview/README.md) → [Protocols](./docs/17-industrial-protocols/README.md) → [SCADA Access](./docs/18-scada-ics-access/README.md) |
-| **DevOps/Automation** | [API Reference](./docs/26-api-reference/README.md) → [Cloud Deployment](./docs/24-cloud-deployment/README.md) → [Examples](./examples/README.md) |
-| **Compliance Officer** | [IEC 62443](./docs/20-iec62443-compliance/README.md) → [Compliance Audit](./docs/33-compliance-audit/README.md) |
+| **New to PAM4OT** | [Introduction](./docs/pam/01-introduction/README.md) → [Architecture](./docs/pam/02-architecture/README.md) → [Core Components](./docs/pam/03-core-components/README.md) |
+| **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/04-configuration/README.md) → [Troubleshooting](./docs/pam/12-troubleshooting/README.md) |
+| **Security Engineer** | [Authentication](./docs/pam/05-authentication/README.md) → [FIDO2 MFA](./docs/pam/52-fido2-hardware-mfa/README.md) → [Best Practices](./docs/pam/13-best-practices/README.md) → [Incident Response](./docs/pam/32-incident-response/README.md) |
+| **OT/ICS Engineer** | [Industrial Overview](./docs/ot/15-industrial-overview/README.md) → [Protocols](./docs/ot/17-industrial-protocols/README.md) → [SCADA Access](./docs/ot/18-scada-ics-access/README.md) → [Safety Procedures](./docs/ot/61-ot-safety-procedures/README.md) |
+| **DevOps/Automation** | [API Reference](./docs/pam/26-api-reference/README.md) → [Deployment](./docs/pam/24-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
+| **Compliance Officer** | [IEC 62443](./docs/ot/20-iec62443-compliance/README.md) → [Compliance Audit](./docs/pam/33-compliance-audit/README.md) → [Evidence Collection](./docs/pam/48-compliance-evidence/README.md) |
 
 ### By Team
 
 | Team | Key Documents |
 |------|---------------|
-| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [Network Segmentation](./docs/16-ot-architecture/network-segmentation-validation.md) • [Network Troubleshooting](./docs/12-troubleshooting/network-troubleshooting.md) |
-| **Identity/IAM** | [Authentication](./docs/05-authentication/README.md) • [FortiAuthenticator](./docs/05-authentication/fortiauthenticator-integration.md) • [Kerberos](./docs/05-authentication/kerberos-configuration.md) • [LDAP Troubleshooting](./docs/12-troubleshooting/ldap-ad-troubleshooting.md) |
-| **Security/SIEM** | [SIEM Integration](./docs/22-ot-integration/README.md) • [Incident Response](./docs/32-incident-response/README.md) • [SIEM Troubleshooting](./docs/12-troubleshooting/siem-troubleshooting.md) |
-| **Monitoring/Observability** | [Alertmanager Integrations](./docs/13-best-practices/alertmanager-integrations.md) • [Alert Escalation](./docs/30-operational-runbooks/alert-escalation.md) • [Pre-prod Observability](./pre/08-observability.md) |
-| **Infrastructure** | [High Availability](./docs/10-high-availability/README.md) • [Backup & Recovery](./docs/30-operational-runbooks/backup-recovery.md) • [Failover Testing](./docs/30-operational-runbooks/failover-testing.md) |
-| **OT/Industrial** | [Industrial Protocols](./docs/17-industrial-protocols/README.md) • [Protocol Validation](./docs/17-industrial-protocols/protocol-security-validation.md) • [Emergency Vendor Access](./docs/30-operational-runbooks/emergency-vendor-access.md) |
+| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [OT Architecture](./docs/ot/16-ot-architecture/README.md) • [Network Validation](./docs/pam/47-network-validation/README.md) |
+| **Identity/IAM** | [Authentication](./docs/pam/05-authentication/README.md) • [LDAP/AD Integration](./docs/pam/45-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/46-kerberos-authentication/README.md) • [FIDO2 MFA](./docs/pam/52-fido2-hardware-mfa/README.md) |
+| **Security** | [Session Recording](./docs/pam/50-session-recording-playback/README.md) • [Incident Response](./docs/pam/32-incident-response/README.md) • [Command Filtering](./docs/pam/49-command-filtering/README.md) |
+| **Infrastructure** | [High Availability](./docs/pam/10-high-availability/README.md) • [Backup & Restore](./docs/pam/40-backup-restore/README.md) • [Disaster Recovery](./docs/pam/39-disaster-recovery/README.md) • [Load Balancer](./docs/pam/42-load-balancer/README.md) |
+| **OT/Industrial** | [Industrial Protocols](./docs/ot/17-industrial-protocols/README.md) • [OT Jump Host](./docs/ot/55-ot-jump-host/README.md) • [Vendor Remote Access](./docs/ot/54-vendor-remote-access/README.md) • [Engineering Workstation Access](./docs/ot/62-engineering-workstation-access/README.md) |
+| **Operations** | [Operational Runbooks](./docs/pam/30-operational-runbooks/README.md) • [wabadmin CLI](./docs/pam/41-wabadmin-reference/README.md) • [Monitoring](./docs/pam/11-monitoring-observability/README.md) |
 
 ---
 
@@ -87,12 +93,13 @@ wallix/
 
 | Category | Capabilities |
 |----------|-------------|
-| **Authentication** | MFA (FortiAuthenticator, TOTP, FIDO2), LDAP/AD, Kerberos SSO, OIDC/SAML, X.509 Certificates |
+| **Authentication** | MFA (FIDO2/WebAuthn, TOTP, YubiKey), LDAP/AD, Kerberos SSO, OIDC/SAML, X.509 Certificates |
 | **Authorization** | RBAC, approval workflows, time-based access, JIT privileged access |
-| **Session Management** | Video recording, real-time monitoring, keystroke logging, session sharing |
-| **Password Management** | AES-256 encrypted vault, automatic rotation, SSH key management, credential checkout |
+| **Session Management** | Video recording, OCR search, real-time monitoring, keystroke logging, session sharing |
+| **Password Management** | AES-256 encrypted vault, automatic rotation, SSH key lifecycle, credential checkout |
 | **Industrial Protocols** | Modbus TCP, DNP3, OPC UA, EtherNet/IP, S7comm, IEC 61850 |
-| **High Availability** | Active-Active clustering, MariaDB HA replication, automatic failover |
+| **High Availability** | Active-Active clustering, PostgreSQL streaming replication, automatic failover |
+| **OT Security** | Air-gapped operations, offline credential cache, safety procedure integration (LOTO, SIS) |
 
 ---
 
@@ -105,7 +112,7 @@ wallix/
 | **NIS2 Directive** | Full | **PCI-DSS** | Full |
 | **NERC CIP** | Full | **HIPAA** | Full |
 
-See [Compliance & Audit Guide](./docs/33-compliance-audit/README.md) for detailed mapping.
+See [Compliance & Audit Guide](./docs/pam/33-compliance-audit/README.md) for detailed mapping.
 
 ---
 
@@ -114,13 +121,13 @@ See [Compliance & Audit Guide](./docs/33-compliance-audit/README.md) for detaile
 | Component | Specification |
 |-----------|---------------|
 | **Operating System** | Debian 12 (Bookworm) |
-| **Database** | MariaDB 10.6+ with HA replication (ports 3306/3307) |
+| **Database** | PostgreSQL 15+ with streaming replication |
 | **Clustering** | Pacemaker/Corosync |
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS disk encryption |
 | **Key Derivation** | Argon2ID |
-| **MFA** | FortiAuthenticator via RADIUS |
+| **Deployment** | On-premises (bare metal, VMs) - No cloud/containers |
 
-See [System Requirements](./docs/28-system-requirements/README.md) for detailed sizing.
+See [System Requirements](./docs/pam/28-system-requirements/README.md) for detailed sizing.
 
 ---
 
@@ -138,7 +145,7 @@ crm status
 pcs status
 
 # Database Replication
-sudo mysql -e "SHOW SLAVE STATUS\G"
+sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
 
 # License & Audit
 wabadmin license-info
@@ -151,27 +158,14 @@ wabadmin audit --last 20
 |------|---------|------|---------|
 | 443 | HTTPS/Web UI | 22 | SSH Proxy |
 | 636 | LDAPS | 88 | Kerberos |
-| 1812 | RADIUS (MFA) | 3306 | MariaDB |
+| 1812 | RADIUS (MFA) | 5432 | PostgreSQL |
 | 514/6514 | Syslog | 502 | Modbus |
 
 ---
 
 ## Getting Started
 
-### 1. Pre-Production Lab (Recommended)
-
-Start with our [Pre-Production Lab Guide](./pre/README.md) to build a test environment:
-
-```
-Pre-Production Lab
-├── AD/LDAP test domain
-├── FortiAuthenticator MFA
-├── PAM4OT HA cluster
-├── Test targets (Linux/Windows/OT)
-└── Monitoring stack (Prometheus/Grafana)
-```
-
-### 2. Production Deployment
+### 1. Production Deployment
 
 Follow the [Multi-Site Installation Guide](./install/README.md) for production:
 
@@ -181,6 +175,15 @@ Production Architecture
 ├── Site B: Secondary Plant (Active-Passive DR)
 └── Site C: Remote Field (Standalone + Offline)
 ```
+
+### 2. Automation
+
+Explore [Examples](./examples/README.md) for automation:
+
+- **Ansible** - Device provisioning, user management, health checks
+- **Terraform** - Infrastructure as Code for resource management
+- **Python API** - Custom integrations and scripting
+- **curl Scripts** - Quick API operations
 
 ---
 
@@ -196,51 +199,143 @@ Production Architecture
 
 ---
 
-## Document Index
+## PAM Core Documentation (docs/pam/)
 
-### Core Documentation (docs/)
-
-| Section | Description |
-|---------|-------------|
-| [01 - Introduction](./docs/01-introduction/README.md) | Company and product overview |
-| [02 - Architecture](./docs/02-architecture/README.md) | System architecture and deployment models |
-| [03 - Core Components](./docs/03-core-components/README.md) | Session Manager, Password Manager, Access Manager |
-| [04 - Configuration](./docs/04-configuration/README.md) | Object model, domains, devices, accounts |
-| [05 - Authentication](./docs/05-authentication/README.md) | MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML |
-| [06 - Authorization](./docs/06-authorization/README.md) | RBAC, approval workflows, JIT access |
-| [07 - Password Management](./docs/07-password-management/README.md) | Credential vault, rotation, checkout |
-| [08 - Session Management](./docs/08-session-management/README.md) | Recording, monitoring, audit trails |
-| [09 - API & Automation](./docs/09-api-automation/README.md) | REST API, DevOps integration |
-| [10 - High Availability](./docs/10-high-availability/README.md) | Clustering, DR, failover |
-| [11 - Monitoring & Observability](./docs/11-monitoring-observability/README.md) | Prometheus, Grafana, alerting |
-| [12 - Troubleshooting](./docs/12-troubleshooting/README.md) | Diagnostics, log analysis |
-| [13 - Best Practices](./docs/13-best-practices/README.md) | Security hardening, operations |
-
-### Industrial/OT Documentation
+### Getting Started
 
 | Section | Description |
 |---------|-------------|
-| [15 - Industrial Overview](./docs/15-industrial-overview/README.md) | OT vs IT, regulatory requirements |
-| [16 - OT Architecture](./docs/16-ot-architecture/README.md) | Zone deployment, IEC 62443 zones |
-| [17 - Industrial Protocols](./docs/17-industrial-protocols/README.md) | Modbus, DNP3, OPC UA, IEC 61850 |
-| [18 - SCADA/ICS Access](./docs/18-scada-ics-access/README.md) | HMI, PLC, vendor maintenance |
-| [19 - Air-Gapped Environments](./docs/19-airgapped-environments/README.md) | Isolated deployments, data diodes |
-| [20 - IEC 62443 Compliance](./docs/20-iec62443-compliance/README.md) | Security levels, audit evidence |
+| [00 - Official Resources](./docs/pam/00-official-resources/README.md) | Curated links to official WALLIX documentation |
+| [00 - Quick Start](./docs/pam/00-quick-start/README.md) | Quick installation and configuration guide |
+| [01 - Introduction](./docs/pam/01-introduction/README.md) | Company and product overview |
+| [02 - Architecture](./docs/pam/02-architecture/README.md) | System architecture and deployment models |
+| [03 - Core Components](./docs/pam/03-core-components/README.md) | Session Manager, Password Manager, Access Manager |
+| [04 - Configuration](./docs/pam/04-configuration/README.md) | Object model, domains, devices, accounts |
 
-### Operations & Reference
+### Security & Access Control
 
 | Section | Description |
 |---------|-------------|
-| [26 - API Reference](./docs/26-api-reference/README.md) | Complete REST API documentation |
-| [27 - Error Reference](./docs/27-error-reference/README.md) | Error codes and remediation |
-| [28 - System Requirements](./docs/28-system-requirements/README.md) | Hardware, sizing, performance |
-| [30 - Operational Runbooks](./docs/30-operational-runbooks/README.md) | Daily/weekly/monthly procedures |
-| [31 - FAQ & Known Issues](./docs/31-faq-known-issues/README.md) | Common questions, compatibility |
-| [32 - Incident Response](./docs/32-incident-response/README.md) | Security incident playbooks |
-| [33 - Compliance & Audit](./docs/33-compliance-audit/README.md) | SOC2, ISO27001, PCI-DSS, HIPAA |
+| [05 - Authentication](./docs/pam/05-authentication/README.md) | MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML |
+| [06 - Authorization](./docs/pam/06-authorization/README.md) | RBAC, approval workflows, time windows |
+| [34 - JIT Access](./docs/pam/34-jit-access/README.md) | Just-In-Time access, approval workflows |
+| [45 - LDAP/AD Integration](./docs/pam/45-ldap-ad-integration/README.md) | Active Directory integration |
+| [46 - Kerberos Authentication](./docs/pam/46-kerberos-authentication/README.md) | Kerberos, SPNEGO, SSO |
+| [52 - FIDO2 & Hardware MFA](./docs/pam/52-fido2-hardware-mfa/README.md) | FIDO2/WebAuthn, YubiKey, passwordless |
+
+### Credential Management
+
+| Section | Description |
+|---------|-------------|
+| [07 - Password Management](./docs/pam/07-password-management/README.md) | Credential vault, rotation, checkout |
+| [44 - Password Rotation Troubleshooting](./docs/pam/44-password-rotation-troubleshooting/README.md) | Rotation failures and remediation |
+| [56 - SSH Key Lifecycle](./docs/pam/56-ssh-key-lifecycle/README.md) | SSH key management, rotation, CA |
+| [57 - Service Account Lifecycle](./docs/pam/57-service-account-lifecycle/README.md) | Service account governance |
+
+### Session Management
+
+| Section | Description |
+|---------|-------------|
+| [08 - Session Management](./docs/pam/08-session-management/README.md) | Recording, monitoring, audit trails |
+| [49 - Command Filtering](./docs/pam/49-command-filtering/README.md) | Command whitelisting/blacklisting |
+| [50 - Session Recording Playback](./docs/pam/50-session-recording-playback/README.md) | Playback, OCR search, forensics |
+| [58 - Session Sharing](./docs/pam/58-session-sharing/README.md) | Multi-user sessions, dual-control |
+
+### Infrastructure & Operations
+
+| Section | Description |
+|---------|-------------|
+| [09 - API & Automation](./docs/pam/09-api-automation/README.md) | REST API, DevOps integration |
+| [10 - High Availability](./docs/pam/10-high-availability/README.md) | Clustering, DR, failover |
+| [11 - Monitoring & Observability](./docs/pam/11-monitoring-observability/README.md) | Prometheus, Grafana, alerting |
+| [12 - Troubleshooting](./docs/pam/12-troubleshooting/README.md) | Diagnostics, log analysis |
+| [13 - Best Practices](./docs/pam/13-best-practices/README.md) | Security hardening, operations |
+| [24 - Deployment Options](./docs/pam/24-cloud-deployment/README.md) | On-premises deployment patterns |
+| [26 - API Reference](./docs/pam/26-api-reference/README.md) | Complete REST API documentation |
+| [27 - Error Reference](./docs/pam/27-error-reference/README.md) | Error codes and remediation |
+| [28 - System Requirements](./docs/pam/28-system-requirements/README.md) | Hardware, sizing, performance |
+| [29 - Upgrade Guide](./docs/pam/29-upgrade-guide/README.md) | Version upgrades, HA procedures |
+| [30 - Operational Runbooks](./docs/pam/30-operational-runbooks/README.md) | Daily/weekly/monthly procedures |
+| [31 - FAQ & Known Issues](./docs/pam/31-faq-known-issues/README.md) | Common questions, compatibility |
+| [35 - Performance Benchmarks](./docs/pam/35-performance-benchmarks/README.md) | Capacity planning, load testing |
+| [38 - Certificate Management](./docs/pam/38-certificate-management/README.md) | TLS/SSL, CSR, renewal |
+| [39 - Disaster Recovery](./docs/pam/39-disaster-recovery/README.md) | DR runbooks, RTO/RPO, PITR |
+| [40 - Backup and Restore](./docs/pam/40-backup-restore/README.md) | Backup, restore, disaster recovery |
+| [41 - wabadmin CLI Reference](./docs/pam/41-wabadmin-reference/README.md) | Complete CLI command reference |
+| [42 - Load Balancer](./docs/pam/42-load-balancer/README.md) | HAProxy, health checks, SSL |
+| [47 - Network Configuration](./docs/pam/47-network-validation/README.md) | Firewall rules, DNS, NTP |
+
+### Advanced Features
+
+| Section | Description |
+|---------|-------------|
+| [36 - Vendor Integration](./docs/pam/36-vendor-integration/README.md) | Cisco, Siemens, ABB, Rockwell |
+| [53 - Account Discovery](./docs/pam/53-account-discovery/README.md) | Discovery scanning, bulk import |
+| [59 - User Self-Service](./docs/pam/59-user-self-service/README.md) | Self-service portal |
+| [60 - Privileged Task Automation](./docs/pam/60-privileged-task-automation/README.md) | Automated privileged operations |
+
+### Compliance & Security
+
+| Section | Description |
+|---------|-------------|
+| [32 - Incident Response](./docs/pam/32-incident-response/README.md) | Security incident playbooks |
+| [33 - Compliance & Audit](./docs/pam/33-compliance-audit/README.md) | SOC2, ISO27001, PCI-DSS, HIPAA |
+| [48 - Compliance Evidence](./docs/pam/48-compliance-evidence/README.md) | Evidence collection, attestation |
+
+### Reference
+
+| Section | Description |
+|---------|-------------|
+| [14 - Appendix](./docs/pam/14-appendix/README.md) | Glossary, quick reference, cheat sheets |
+
+---
+
+## OT Foundational Documentation (docs/ot/)
+
+### Overview & Architecture
+
+| Section | Description |
+|---------|-------------|
+| [15 - Industrial Overview](./docs/ot/15-industrial-overview/README.md) | OT vs IT security, regulatory landscape |
+| [16 - OT Architecture](./docs/ot/16-ot-architecture/README.md) | Zone deployment, IEC 62443 zones |
+| [23 - Industrial Best Practices](./docs/ot/23-industrial-best-practices/README.md) | OT security design |
+| [55 - OT Jump Host](./docs/ot/55-ot-jump-host/README.md) | Jump server configuration |
+
+### Protocols & Access
+
+| Section | Description |
+|---------|-------------|
+| [17 - Industrial Protocols](./docs/ot/17-industrial-protocols/README.md) | Modbus, DNP3, OPC UA, IEC 61850 |
+| [18 - SCADA/ICS Access](./docs/ot/18-scada-ics-access/README.md) | HMI, PLC programming, vendor maintenance |
+| [62 - Engineering Workstation Access](./docs/ot/62-engineering-workstation-access/README.md) | EWS access patterns |
+| [64 - Historian Access](./docs/ot/64-historian-access/README.md) | Historian security, data diode |
+| [65 - RTU Field Access](./docs/ot/65-rtu-field-access/README.md) | Remote terminal unit access |
+
+### Air-Gapped & Offline
+
+| Section | Description |
+|---------|-------------|
+| [19 - Air-Gapped Environments](./docs/ot/19-airgapped-environments/README.md) | Isolated deployments, data diodes |
+| [51 - Offline Operations](./docs/ot/51-offline-operations/README.md) | Credential cache, sneakernet |
+
+### Compliance & Integration
+
+| Section | Description |
+|---------|-------------|
+| [20 - IEC 62443 Compliance](./docs/ot/20-iec62443-compliance/README.md) | Security levels, audit evidence |
+| [21 - Industrial Use Cases](./docs/ot/21-industrial-use-cases/README.md) | Power, Oil & Gas, Manufacturing |
+| [22 - OT Integration](./docs/ot/22-ot-integration/README.md) | SIEM, CMDB, monitoring |
+
+### Operations & Safety
+
+| Section | Description |
+|---------|-------------|
+| [54 - Vendor Remote Access](./docs/ot/54-vendor-remote-access/README.md) | Third-party vendor access |
+| [61 - OT Safety Procedures](./docs/ot/61-ot-safety-procedures/README.md) | LOTO integration, SIS access |
+| [63 - OT Change Management](./docs/ot/63-ot-change-management/README.md) | Change windows, rollback |
 
 ---
 
 <p align="center">
-  <sub>WALLIX PAM4OT Documentation • Version 5.0 • January 2026</sub>
+  <sub>64 Sections • 47 PAM + 17 OT • February 2026</sub>
 </p>
