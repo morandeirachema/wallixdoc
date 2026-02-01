@@ -25,52 +25,52 @@ wallixdoc/
 │   │
 │   ├── pam/               # PAM/WALLIX Core Documentation (47 sections)
 │   │   ├── 00-official-resources/     # Official WALLIX documentation links
-│   │   ├── 00-quick-start/            # Quick start guide and UI walkthrough
-│   │   ├── 01-introduction/           # Company and product overview
-│   │   ├── 02-architecture/           # System architecture, deployment models
-│   │   ├── 03-core-components/        # Session Manager, Password Manager
-│   │   ├── 04-configuration/          # Object model, domains, devices
-│   │   ├── 05-authentication/         # MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML
-│   │   ├── 06-authorization/          # RBAC, approval workflows, JIT access
-│   │   ├── 07-password-management/    # Credential vault, rotation, checkout
-│   │   ├── 08-session-management/     # Recording, monitoring, audit trails
-│   │   ├── 09-api-automation/         # REST API, DevOps integration
-│   │   ├── 10-high-availability/      # Clustering, DR, failover
-│   │   ├── 11-monitoring-observability/ # Prometheus, Grafana, alerting
-│   │   ├── 12-troubleshooting/        # Diagnostics, log analysis
-│   │   ├── 13-best-practices/         # Security hardening, operations
-│   │   ├── 14-appendix/               # Quick reference, glossary
-│   │   ├── 24-cloud-deployment/       # On-premises deployment patterns
-│   │   ├── 26-api-reference/          # REST API documentation
-│   │   ├── 27-error-reference/        # Error codes and remediation
-│   │   ├── 28-system-requirements/    # Hardware, sizing, performance
-│   │   ├── 29-upgrade-guide/          # Version upgrades, HA clusters
-│   │   ├── 30-operational-runbooks/   # Daily/weekly/monthly procedures
-│   │   ├── 31-faq-known-issues/       # FAQ, known issues, compatibility
-│   │   ├── 32-incident-response/      # Security incident playbooks
-│   │   ├── 33-compliance-audit/       # SOC2, ISO27001, PCI-DSS, HIPAA, GDPR
-│   │   ├── 34-jit-access/             # Just-In-Time access, approvals
-│   │   ├── 35-performance-benchmarks/ # Capacity planning, load testing
-│   │   ├── 36-vendor-integration/     # Cisco, Siemens, ABB, Rockwell
-│   │   ├── 38-certificate-management/ # TLS/SSL, CSR, renewal, Let's Encrypt
-│   │   ├── 39-disaster-recovery/      # DR runbooks, RTO/RPO, PITR
-│   │   ├── 40-backup-restore/         # Full/selective backup, disaster recovery
-│   │   ├── 41-wabadmin-reference/     # Complete CLI command reference
-│   │   ├── 42-load-balancer/          # HAProxy, Nginx, F5, health checks
-│   │   ├── 44-password-rotation-troubleshooting/ # Rotation failures
-│   │   ├── 45-ldap-ad-integration/    # Active Directory integration
-│   │   ├── 46-kerberos-authentication/ # Kerberos, SPNEGO, SSO
-│   │   ├── 47-network-validation/     # Firewall rules, DNS, NTP
-│   │   ├── 48-compliance-evidence/    # Evidence collection, attestation
-│   │   ├── 49-command-filtering/      # Command whitelist/blacklist
-│   │   ├── 50-session-recording-playback/ # Playback, OCR, forensics
-│   │   ├── 52-fido2-hardware-mfa/     # FIDO2/WebAuthn, YubiKey
-│   │   ├── 53-account-discovery/      # Discovery scanning, bulk import
-│   │   ├── 56-ssh-key-lifecycle/      # SSH key management, rotation, CA
-│   │   ├── 57-service-account-lifecycle/ # Service account governance
-│   │   ├── 58-session-sharing/        # Multi-user sessions, dual-control
-│   │   ├── 59-user-self-service/      # Self-service portal
-│   │   └── 60-privileged-task-automation/ # Automated privileged operations
+│   │   ├── 01-quick-start/            # Quick start guide and UI walkthrough
+│   │   ├── 02-introduction/           # Company and product overview
+│   │   ├── 03-architecture/           # System architecture, deployment models
+│   │   ├── 04-core-components/        # Session Manager, Password Manager
+│   │   ├── 05-configuration/          # Object model, domains, devices
+│   │   ├── 06-authentication/         # MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML
+│   │   ├── 07-authorization/          # RBAC, approval workflows, JIT access
+│   │   ├── 08-password-management/    # Credential vault, rotation, checkout
+│   │   ├── 09-session-management/     # Recording, monitoring, audit trails
+│   │   ├── 10-api-automation/         # REST API, DevOps integration
+│   │   ├── 11-high-availability/      # Clustering, DR, failover
+│   │   ├── 12-monitoring-observability/ # Prometheus, Grafana, alerting
+│   │   ├── 13-troubleshooting/        # Diagnostics, log analysis
+│   │   ├── 14-best-practices/         # Security hardening, operations
+│   │   ├── 15-appendix/               # Quick reference, glossary
+│   │   ├── 16-cloud-deployment/       # On-premises deployment patterns
+│   │   ├── 17-api-reference/          # REST API documentation
+│   │   ├── 18-error-reference/        # Error codes and remediation
+│   │   ├── 19-system-requirements/    # Hardware, sizing, performance
+│   │   ├── 20-upgrade-guide/          # Version upgrades, HA clusters
+│   │   ├── 21-operational-runbooks/   # Daily/weekly/monthly procedures
+│   │   ├── 22-faq-known-issues/       # FAQ, known issues, compatibility
+│   │   ├── 23-incident-response/      # Security incident playbooks
+│   │   ├── 24-compliance-audit/       # SOC2, ISO27001, PCI-DSS, HIPAA, GDPR
+│   │   ├── 25-jit-access/             # Just-In-Time access, approvals
+│   │   ├── 26-performance-benchmarks/ # Capacity planning, load testing
+│   │   ├── 27-vendor-integration/     # Cisco, Siemens, ABB, Rockwell
+│   │   ├── 28-certificate-management/ # TLS/SSL, CSR, renewal, Let's Encrypt
+│   │   ├── 29-disaster-recovery/      # DR runbooks, RTO/RPO, PITR
+│   │   ├── 30-backup-restore/         # Full/selective backup, disaster recovery
+│   │   ├── 31-wabadmin-reference/     # Complete CLI command reference
+│   │   ├── 32-load-balancer/          # HAProxy, Nginx, F5, health checks
+│   │   ├── 33-password-rotation-troubleshooting/ # Rotation failures
+│   │   ├── 34-ldap-ad-integration/    # Active Directory integration
+│   │   ├── 35-kerberos-authentication/ # Kerberos, SPNEGO, SSO
+│   │   ├── 36-network-validation/     # Firewall rules, DNS, NTP
+│   │   ├── 37-compliance-evidence/    # Evidence collection, attestation
+│   │   ├── 38-command-filtering/      # Command whitelist/blacklist
+│   │   ├── 39-session-recording-playback/ # Playback, OCR, forensics
+│   │   ├── 40-fido2-hardware-mfa/     # FIDO2/WebAuthn, YubiKey
+│   │   ├── 41-account-discovery/      # Discovery scanning, bulk import
+│   │   ├── 42-ssh-key-lifecycle/      # SSH key management, rotation, CA
+│   │   ├── 43-service-account-lifecycle/ # Service account governance
+│   │   ├── 44-session-sharing/        # Multi-user sessions, dual-control
+│   │   ├── 45-user-self-service/      # Self-service portal
+│   │   └── 46-privileged-task-automation/ # Automated privileged operations
 │   │
 │   └── ot/                # OT Foundational Documentation (18 sections)
 │       ├── 00-fundamentals/           # OT Cybersecurity Fundamentals (16 modules)
@@ -273,8 +273,8 @@ Use these authoritative sources when verifying or extending documentation:
 | File | Purpose | Location |
 |------|---------|----------|
 | `docs/README.md` | Documentation index with role-based learning paths | Root |
-| `docs/pam/26-api-reference/README.md` | REST API documentation | PAM Core |
-| `docs/pam/41-wabadmin-reference/README.md` | Complete CLI reference | PAM Core |
+| `docs/pam/17-api-reference/README.md` | REST API documentation | PAM Core |
+| `docs/pam/31-wabadmin-reference/README.md` | Complete CLI reference | PAM Core |
 | `docs/ot/06-iec62443-compliance/README.md` | IEC 62443 compliance guide | OT |
 | `install/HOWTO.md` | Main installation walkthrough | Installation |
 | `install/README.md` | Architecture overview and 30-day timeline | Installation |
@@ -311,7 +311,7 @@ Use these authoritative sources when verifying or extending documentation:
 5. Test rendering in GitHub markdown preview
 
 ### Expanding API Examples
-1. Add to `docs/pam/26-api-reference/README.md`
+1. Add to `docs/pam/17-api-reference/README.md`
 2. Include curl and Python examples
 3. Show request and response payloads
 4. Reference official wbrest_samples for patterns

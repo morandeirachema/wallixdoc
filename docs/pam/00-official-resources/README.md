@@ -175,8 +175,8 @@ This document provides curated links to official WALLIX documentation, tools, an
 
 ## Next Steps
 
-- [Quick Start Guide](../00-quick-start/README.md) - Get started with PAM4OT
-- [Introduction](../01-introduction/README.md) - Learn about WALLIX PAM
+- [Quick Start Guide](../01-quick-start/README.md) - Get started with PAM4OT
+- [Introduction](../02-introduction/README.md) - Learn about WALLIX PAM
 
 ---
 

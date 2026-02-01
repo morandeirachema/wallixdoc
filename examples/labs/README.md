@@ -669,7 +669,7 @@ For a complete pre-production environment matching real OT deployments, see:
 After completing these labs:
 
 1. **Production Deployment**: [Install Guide](../../install/README.md)
-2. **Advanced Configuration**: [Configuration Guide](../../docs/04-configuration/README.md)
+2. **Advanced Configuration**: [Configuration Guide](../../docs/05-configuration/README.md)
 3. **OT Deployment**: [OT Architecture](../../docs/16-ot-architecture/README.md)
 
 ---
@@ -685,7 +685,7 @@ After completing these labs:
 ---
 
 <p align="center">
-  <a href="../../docs/00-quick-start/README.md">Quick Start</a> •
+  <a href="../../docs/01-quick-start/README.md">Quick Start</a> •
   <a href="../../install/README.md">Installation</a> •
-  <a href="../../docs/12-troubleshooting/README.md">Troubleshooting</a>
+  <a href="../../docs/13-troubleshooting/README.md">Troubleshooting</a>
 </p>

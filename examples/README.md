@@ -236,7 +236,7 @@ done
 - [Terraform Examples](./terraform/README.md) - Infrastructure as Code
 - [API Examples](./api/README.md) - REST API client usage
 - [Automation Examples](./automation/README.md) - Additional automation
-- [API Reference](../docs/26-api-reference/README.md) - Complete API documentation
+- [API Reference](../docs/17-api-reference/README.md) - Complete API documentation
 
 ---
 

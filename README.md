@@ -70,23 +70,23 @@ wallixdoc/
 
 | Role | Recommended Path |
 |------|------------------|
-| **New to PAM4OT** | [Introduction](./docs/pam/01-introduction/README.md) → [Architecture](./docs/pam/02-architecture/README.md) → [Core Components](./docs/pam/03-core-components/README.md) |
-| **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/04-configuration/README.md) → [Troubleshooting](./docs/pam/12-troubleshooting/README.md) |
-| **Security Engineer** | [Authentication](./docs/pam/05-authentication/README.md) → [FIDO2 MFA](./docs/pam/52-fido2-hardware-mfa/README.md) → [Best Practices](./docs/pam/13-best-practices/README.md) → [Incident Response](./docs/pam/32-incident-response/README.md) |
+| **New to PAM4OT** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) → [Core Components](./docs/pam/04-core-components/README.md) |
+| **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) → [Troubleshooting](./docs/pam/13-troubleshooting/README.md) |
+| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [FIDO2 MFA](./docs/pam/40-fido2-hardware-mfa/README.md) → [Best Practices](./docs/pam/14-best-practices/README.md) → [Incident Response](./docs/pam/23-incident-response/README.md) |
 | **OT/ICS Engineer** | [OT Fundamentals](./docs/ot/00-fundamentals/README.md) → [Industrial Overview](./docs/ot/01-industrial-overview/README.md) → [Protocols](./docs/ot/03-industrial-protocols/README.md) → [SCADA Access](./docs/ot/04-scada-ics-access/README.md) |
-| **DevOps/Automation** | [API Reference](./docs/pam/26-api-reference/README.md) → [Deployment](./docs/pam/24-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
-| **Compliance Officer** | [IEC 62443](./docs/ot/06-iec62443-compliance/README.md) → [Compliance Audit](./docs/pam/33-compliance-audit/README.md) → [Evidence Collection](./docs/pam/48-compliance-evidence/README.md) |
+| **DevOps/Automation** | [API Reference](./docs/pam/17-api-reference/README.md) → [Deployment](./docs/pam/16-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
+| **Compliance Officer** | [IEC 62443](./docs/ot/06-iec62443-compliance/README.md) → [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence Collection](./docs/pam/37-compliance-evidence/README.md) |
 
 ### By Team
 
 | Team | Key Documents |
 |------|---------------|
-| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [OT Architecture](./docs/ot/02-ot-architecture/README.md) • [Network Validation](./docs/pam/47-network-validation/README.md) |
-| **Identity/IAM** | [Authentication](./docs/pam/05-authentication/README.md) • [LDAP/AD Integration](./docs/pam/45-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/46-kerberos-authentication/README.md) • [FIDO2 MFA](./docs/pam/52-fido2-hardware-mfa/README.md) |
-| **Security** | [Session Recording](./docs/pam/50-session-recording-playback/README.md) • [Incident Response](./docs/pam/32-incident-response/README.md) • [Command Filtering](./docs/pam/49-command-filtering/README.md) |
-| **Infrastructure** | [High Availability](./docs/pam/10-high-availability/README.md) • [Backup & Restore](./docs/pam/40-backup-restore/README.md) • [Disaster Recovery](./docs/pam/39-disaster-recovery/README.md) • [Load Balancer](./docs/pam/42-load-balancer/README.md) |
+| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [OT Architecture](./docs/ot/02-ot-architecture/README.md) • [Network Validation](./docs/pam/36-network-validation/README.md) |
+| **Identity/IAM** | [Authentication](./docs/pam/06-authentication/README.md) • [LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/35-kerberos-authentication/README.md) • [FIDO2 MFA](./docs/pam/40-fido2-hardware-mfa/README.md) |
+| **Security** | [Session Recording](./docs/pam/39-session-recording-playback/README.md) • [Incident Response](./docs/pam/23-incident-response/README.md) • [Command Filtering](./docs/pam/38-command-filtering/README.md) |
+| **Infrastructure** | [High Availability](./docs/pam/11-high-availability/README.md) • [Backup & Restore](./docs/pam/30-backup-restore/README.md) • [Disaster Recovery](./docs/pam/29-disaster-recovery/README.md) • [Load Balancer](./docs/pam/32-load-balancer/README.md) |
 | **OT/Industrial** | [Industrial Protocols](./docs/ot/03-industrial-protocols/README.md) • [OT Jump Host](./docs/ot/12-ot-jump-host/README.md) • [Vendor Remote Access](./docs/ot/11-vendor-remote-access/README.md) • [Engineering Workstation Access](./docs/ot/14-engineering-workstation-access/README.md) |
-| **Operations** | [Operational Runbooks](./docs/pam/30-operational-runbooks/README.md) • [wabadmin CLI](./docs/pam/41-wabadmin-reference/README.md) • [Monitoring](./docs/pam/11-monitoring-observability/README.md) |
+| **Operations** | [Operational Runbooks](./docs/pam/21-operational-runbooks/README.md) • [wabadmin CLI](./docs/pam/31-wabadmin-reference/README.md) • [Monitoring](./docs/pam/12-monitoring-observability/README.md) |
 
 ---
 
@@ -113,7 +113,7 @@ wallixdoc/
 | **NIS2 Directive** | Full | **PCI-DSS** | Full |
 | **NERC CIP** | Full | **HIPAA** | Full |
 
-See [Compliance & Audit Guide](./docs/pam/33-compliance-audit/README.md) for detailed mapping.
+See [Compliance & Audit Guide](./docs/pam/24-compliance-audit/README.md) for detailed mapping.
 
 ---
 
@@ -128,7 +128,7 @@ See [Compliance & Audit Guide](./docs/pam/33-compliance-audit/README.md) for det
 | **Key Derivation** | Argon2ID |
 | **Deployment** | On-premises (bare metal, VMs) - No cloud/containers |
 
-See [System Requirements](./docs/pam/28-system-requirements/README.md) for detailed sizing.
+See [System Requirements](./docs/pam/19-system-requirements/README.md) for detailed sizing.
 
 ---
 
@@ -207,87 +207,87 @@ Explore [Examples](./examples/README.md) for automation:
 | Section | Description |
 |---------|-------------|
 | [00 - Official Resources](./docs/pam/00-official-resources/README.md) | Curated links to official WALLIX documentation |
-| [00 - Quick Start](./docs/pam/00-quick-start/README.md) | Quick installation and configuration guide |
-| [01 - Introduction](./docs/pam/01-introduction/README.md) | Company and product overview |
-| [02 - Architecture](./docs/pam/02-architecture/README.md) | System architecture and deployment models |
-| [03 - Core Components](./docs/pam/03-core-components/README.md) | Session Manager, Password Manager, Access Manager |
-| [04 - Configuration](./docs/pam/04-configuration/README.md) | Object model, domains, devices, accounts |
+| [01 - Quick Start](./docs/pam/01-quick-start/README.md) | Quick installation and configuration guide |
+| [02 - Introduction](./docs/pam/02-introduction/README.md) | Company and product overview |
+| [03 - Architecture](./docs/pam/03-architecture/README.md) | System architecture and deployment models |
+| [04 - Core Components](./docs/pam/04-core-components/README.md) | Session Manager, Password Manager, Access Manager |
+| [05 - Configuration](./docs/pam/05-configuration/README.md) | Object model, domains, devices, accounts |
 
 ### Security & Access Control
 
 | Section | Description |
 |---------|-------------|
-| [05 - Authentication](./docs/pam/05-authentication/README.md) | MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML |
-| [06 - Authorization](./docs/pam/06-authorization/README.md) | RBAC, approval workflows, time windows |
-| [34 - JIT Access](./docs/pam/34-jit-access/README.md) | Just-In-Time access, approval workflows |
-| [45 - LDAP/AD Integration](./docs/pam/45-ldap-ad-integration/README.md) | Active Directory integration |
-| [46 - Kerberos Authentication](./docs/pam/46-kerberos-authentication/README.md) | Kerberos, SPNEGO, SSO |
-| [52 - FIDO2 & Hardware MFA](./docs/pam/52-fido2-hardware-mfa/README.md) | FIDO2/WebAuthn, YubiKey, passwordless |
+| [06 - Authentication](./docs/pam/06-authentication/README.md) | MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML |
+| [07 - Authorization](./docs/pam/07-authorization/README.md) | RBAC, approval workflows, time windows |
+| [25 - JIT Access](./docs/pam/25-jit-access/README.md) | Just-In-Time access, approval workflows |
+| [34 - LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) | Active Directory integration |
+| [35 - Kerberos Authentication](./docs/pam/35-kerberos-authentication/README.md) | Kerberos, SPNEGO, SSO |
+| [40 - FIDO2 & Hardware MFA](./docs/pam/40-fido2-hardware-mfa/README.md) | FIDO2/WebAuthn, YubiKey, passwordless |
 
 ### Credential Management
 
 | Section | Description |
 |---------|-------------|
-| [07 - Password Management](./docs/pam/07-password-management/README.md) | Credential vault, rotation, checkout |
-| [44 - Password Rotation Troubleshooting](./docs/pam/44-password-rotation-troubleshooting/README.md) | Rotation failures and remediation |
-| [56 - SSH Key Lifecycle](./docs/pam/56-ssh-key-lifecycle/README.md) | SSH key management, rotation, CA |
-| [57 - Service Account Lifecycle](./docs/pam/57-service-account-lifecycle/README.md) | Service account governance |
+| [08 - Password Management](./docs/pam/08-password-management/README.md) | Credential vault, rotation, checkout |
+| [33 - Password Rotation Troubleshooting](./docs/pam/33-password-rotation-troubleshooting/README.md) | Rotation failures and remediation |
+| [42 - SSH Key Lifecycle](./docs/pam/42-ssh-key-lifecycle/README.md) | SSH key management, rotation, CA |
+| [43 - Service Account Lifecycle](./docs/pam/43-service-account-lifecycle/README.md) | Service account governance |
 
 ### Session Management
 
 | Section | Description |
 |---------|-------------|
-| [08 - Session Management](./docs/pam/08-session-management/README.md) | Recording, monitoring, audit trails |
-| [49 - Command Filtering](./docs/pam/49-command-filtering/README.md) | Command whitelisting/blacklisting |
-| [50 - Session Recording Playback](./docs/pam/50-session-recording-playback/README.md) | Playback, OCR search, forensics |
-| [58 - Session Sharing](./docs/pam/58-session-sharing/README.md) | Multi-user sessions, dual-control |
+| [09 - Session Management](./docs/pam/09-session-management/README.md) | Recording, monitoring, audit trails |
+| [38 - Command Filtering](./docs/pam/38-command-filtering/README.md) | Command whitelisting/blacklisting |
+| [39 - Session Recording Playback](./docs/pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics |
+| [44 - Session Sharing](./docs/pam/44-session-sharing/README.md) | Multi-user sessions, dual-control |
 
 ### Infrastructure & Operations
 
 | Section | Description |
 |---------|-------------|
-| [09 - API & Automation](./docs/pam/09-api-automation/README.md) | REST API, DevOps integration |
-| [10 - High Availability](./docs/pam/10-high-availability/README.md) | Clustering, DR, failover |
-| [11 - Monitoring & Observability](./docs/pam/11-monitoring-observability/README.md) | Prometheus, Grafana, alerting |
-| [12 - Troubleshooting](./docs/pam/12-troubleshooting/README.md) | Diagnostics, log analysis |
-| [13 - Best Practices](./docs/pam/13-best-practices/README.md) | Security hardening, operations |
-| [24 - Deployment Options](./docs/pam/24-cloud-deployment/README.md) | On-premises deployment patterns |
-| [26 - API Reference](./docs/pam/26-api-reference/README.md) | Complete REST API documentation |
-| [27 - Error Reference](./docs/pam/27-error-reference/README.md) | Error codes and remediation |
-| [28 - System Requirements](./docs/pam/28-system-requirements/README.md) | Hardware, sizing, performance |
-| [29 - Upgrade Guide](./docs/pam/29-upgrade-guide/README.md) | Version upgrades, HA procedures |
-| [30 - Operational Runbooks](./docs/pam/30-operational-runbooks/README.md) | Daily/weekly/monthly procedures |
-| [31 - FAQ & Known Issues](./docs/pam/31-faq-known-issues/README.md) | Common questions, compatibility |
-| [35 - Performance Benchmarks](./docs/pam/35-performance-benchmarks/README.md) | Capacity planning, load testing |
-| [38 - Certificate Management](./docs/pam/38-certificate-management/README.md) | TLS/SSL, CSR, renewal |
-| [39 - Disaster Recovery](./docs/pam/39-disaster-recovery/README.md) | DR runbooks, RTO/RPO, PITR |
-| [40 - Backup and Restore](./docs/pam/40-backup-restore/README.md) | Backup, restore, disaster recovery |
-| [41 - wabadmin CLI Reference](./docs/pam/41-wabadmin-reference/README.md) | Complete CLI command reference |
-| [42 - Load Balancer](./docs/pam/42-load-balancer/README.md) | HAProxy, health checks, SSL |
-| [47 - Network Configuration](./docs/pam/47-network-validation/README.md) | Firewall rules, DNS, NTP |
+| [10 - API & Automation](./docs/pam/10-api-automation/README.md) | REST API, DevOps integration |
+| [11 - High Availability](./docs/pam/11-high-availability/README.md) | Clustering, DR, failover |
+| [12 - Monitoring & Observability](./docs/pam/12-monitoring-observability/README.md) | Prometheus, Grafana, alerting |
+| [13 - Troubleshooting](./docs/pam/13-troubleshooting/README.md) | Diagnostics, log analysis |
+| [14 - Best Practices](./docs/pam/14-best-practices/README.md) | Security hardening, operations |
+| [16 - Deployment Options](./docs/pam/16-cloud-deployment/README.md) | On-premises deployment patterns |
+| [17 - API Reference](./docs/pam/17-api-reference/README.md) | Complete REST API documentation |
+| [18 - Error Reference](./docs/pam/18-error-reference/README.md) | Error codes and remediation |
+| [19 - System Requirements](./docs/pam/19-system-requirements/README.md) | Hardware, sizing, performance |
+| [20 - Upgrade Guide](./docs/pam/20-upgrade-guide/README.md) | Version upgrades, HA procedures |
+| [21 - Operational Runbooks](./docs/pam/21-operational-runbooks/README.md) | Daily/weekly/monthly procedures |
+| [22 - FAQ & Known Issues](./docs/pam/22-faq-known-issues/README.md) | Common questions, compatibility |
+| [26 - Performance Benchmarks](./docs/pam/26-performance-benchmarks/README.md) | Capacity planning, load testing |
+| [28 - Certificate Management](./docs/pam/28-certificate-management/README.md) | TLS/SSL, CSR, renewal |
+| [29 - Disaster Recovery](./docs/pam/29-disaster-recovery/README.md) | DR runbooks, RTO/RPO, PITR |
+| [30 - Backup and Restore](./docs/pam/30-backup-restore/README.md) | Backup, restore, disaster recovery |
+| [31 - wabadmin CLI Reference](./docs/pam/31-wabadmin-reference/README.md) | Complete CLI command reference |
+| [32 - Load Balancer](./docs/pam/32-load-balancer/README.md) | HAProxy, health checks, SSL |
+| [36 - Network Configuration](./docs/pam/36-network-validation/README.md) | Firewall rules, DNS, NTP |
 
 ### Advanced Features
 
 | Section | Description |
 |---------|-------------|
-| [36 - Vendor Integration](./docs/pam/36-vendor-integration/README.md) | Cisco, Siemens, ABB, Rockwell |
-| [53 - Account Discovery](./docs/pam/53-account-discovery/README.md) | Discovery scanning, bulk import |
-| [59 - User Self-Service](./docs/pam/59-user-self-service/README.md) | Self-service portal |
-| [60 - Privileged Task Automation](./docs/pam/60-privileged-task-automation/README.md) | Automated privileged operations |
+| [27 - Vendor Integration](./docs/pam/27-vendor-integration/README.md) | Cisco, Siemens, ABB, Rockwell |
+| [41 - Account Discovery](./docs/pam/41-account-discovery/README.md) | Discovery scanning, bulk import |
+| [45 - User Self-Service](./docs/pam/45-user-self-service/README.md) | Self-service portal |
+| [46 - Privileged Task Automation](./docs/pam/46-privileged-task-automation/README.md) | Automated privileged operations |
 
 ### Compliance & Security
 
 | Section | Description |
 |---------|-------------|
-| [32 - Incident Response](./docs/pam/32-incident-response/README.md) | Security incident playbooks |
-| [33 - Compliance & Audit](./docs/pam/33-compliance-audit/README.md) | SOC2, ISO27001, PCI-DSS, HIPAA |
-| [48 - Compliance Evidence](./docs/pam/48-compliance-evidence/README.md) | Evidence collection, attestation |
+| [23 - Incident Response](./docs/pam/23-incident-response/README.md) | Security incident playbooks |
+| [24 - Compliance & Audit](./docs/pam/24-compliance-audit/README.md) | SOC2, ISO27001, PCI-DSS, HIPAA |
+| [37 - Compliance Evidence](./docs/pam/37-compliance-evidence/README.md) | Evidence collection, attestation |
 
 ### Reference
 
 | Section | Description |
 |---------|-------------|
-| [14 - Appendix](./docs/pam/14-appendix/README.md) | Glossary, quick reference, cheat sheets |
+| [15 - Appendix](./docs/pam/15-appendix/README.md) | Glossary, quick reference, cheat sheets |
 
 ---
 

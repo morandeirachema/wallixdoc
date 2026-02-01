@@ -1050,4 +1050,4 @@ This industrial security best practices guide covers:
 
 ## Next Steps
 
-Continue to [24 - Cloud Deployment](../24-cloud-deployment/README.md) for cloud deployment patterns and Terraform examples.
+Continue to [16 - Cloud Deployment](../pam/16-cloud-deployment/README.md) for cloud deployment patterns and Terraform examples.

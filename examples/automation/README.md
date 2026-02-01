@@ -869,6 +869,6 @@ export TF_VAR_wallix_password="secure-password"
 
 <p align="center">
   <a href="../labs/README.md">Hands-On Labs</a> •
-  <a href="../../docs/09-api-automation/README.md">API Documentation</a> •
-  <a href="../../docs/24-cloud-deployment/README.md">Cloud Deployment</a>
+  <a href="../../docs/10-api-automation/README.md">API Documentation</a> •
+  <a href="../../docs/16-cloud-deployment/README.md">Cloud Deployment</a>
 </p>
