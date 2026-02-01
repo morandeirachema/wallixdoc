@@ -686,6 +686,6 @@ echo "Tests completed. Log saved to: $LOG_FILE" | tee -a "$LOG_FILE"
 ---
 
 <p align="center">
-  <a href="./08-observability.md">← Previous</a> •
-  <a href="./10-team-handoffs.md">Next: Team Handoffs →</a>
+  <a href="./11-observability.md">← Previous: Observability Stack</a> •
+  <a href="./13-team-handoffs.md">Next: Team Handoffs →</a>
 </p>

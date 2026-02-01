@@ -859,6 +859,6 @@ EOF
 ---
 
 <p align="center">
-  <a href="./05-ad-integration.md">← Previous</a> •
-  <a href="./07-siem-integration.md">Next: SIEM Integration →</a>
+  <a href="./08-ha-active-active.md">← Previous: HA Active-Active Configuration</a> •
+  <a href="./10-siem-integration.md">Next: SIEM Integration →</a>
 </p>

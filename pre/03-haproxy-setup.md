@@ -104,14 +104,19 @@ global
     log /dev/log local0
     log /dev/log local1 notice
     chroot /var/lib/haproxy
-    stats socket /run/haproxy/admin.sock mode 660 level admin
+    stats socket /run/haproxy/admin.sock mode 660 level admin expose-fd listeners
     stats timeout 30s
     user haproxy
     group haproxy
     daemon
 
-    # SSL/TLS settings
-    ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256
+    # Default SSL material locations
+    ca-base /etc/ssl/certs
+    crt-base /etc/ssl/private
+
+    # SSL/TLS settings - Production-grade ciphers
+    ssl-default-bind-ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384
+    ssl-default-bind-ciphersuites TLS_AES_128_GCM_SHA256:TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256
     ssl-default-bind-options ssl-min-ver TLSv1.2 no-tls-tickets
 
 #---------------------------------------------------------------------
@@ -122,9 +127,14 @@ defaults
     mode    tcp
     option  tcplog
     option  dontlognull
-    timeout connect 5000ms
-    timeout client  50000ms
-    timeout server  50000ms
+    option  redispatch
+    timeout connect 10s
+    timeout client  1h
+    timeout server  1h
+    timeout queue   30s
+    timeout tunnel  1h
+    timeout client-fin 30s
+    timeout server-fin 30s
     errorfile 400 /etc/haproxy/errors/400.http
     errorfile 403 /etc/haproxy/errors/403.http
     errorfile 408 /etc/haproxy/errors/408.http
@@ -141,66 +151,92 @@ listen stats
     mode http
     stats enable
     stats uri /stats
-    stats refresh 10s
+    stats refresh 30s
+    stats show-legends
     stats admin if LOCALHOST
+    stats auth admin:HAProxyStats2026!
 
 #---------------------------------------------------------------------
 # PAM4OT HTTPS Frontend (Web UI)
 #---------------------------------------------------------------------
 frontend pam4ot_https
-    bind *:443
+    bind 10.10.1.100:443
     mode tcp
     option tcplog
     default_backend pam4ot_https_backend
+
+    # Connection limits
+    maxconn 2000
 
 backend pam4ot_https_backend
     mode tcp
     balance roundrobin
     option tcp-check
-    server pam4ot-node1 10.10.1.11:443 check inter 5000 rise 2 fall 3
-    server pam4ot-node2 10.10.1.12:443 check inter 5000 rise 2 fall 3 backup
+    option log-health-checks
+
+    # Active-Active: both nodes serve traffic
+    server pam4ot-node1 10.10.1.11:443 check inter 5s rise 2 fall 3 maxconn 1000
+    server pam4ot-node2 10.10.1.12:443 check inter 5s rise 2 fall 3 maxconn 1000
 
 #---------------------------------------------------------------------
 # PAM4OT SSH Proxy Frontend
 #---------------------------------------------------------------------
 frontend pam4ot_ssh
-    bind *:22
+    bind 10.10.1.100:22
     mode tcp
     option tcplog
     default_backend pam4ot_ssh_backend
 
+    # SSH connection limits
+    maxconn 500
+
 backend pam4ot_ssh_backend
     mode tcp
-    balance roundrobin
+    balance leastconn
     option tcp-check
-    tcp-check connect port 22
-    server pam4ot-node1 10.10.1.11:22 check inter 5000 rise 2 fall 3
-    server pam4ot-node2 10.10.1.12:22 check inter 5000 rise 2 fall 3 backup
+    option log-health-checks
+
+    # Active-Active SSH
+    server pam4ot-node1 10.10.1.11:22 check inter 5s rise 2 fall 3
+    server pam4ot-node2 10.10.1.12:22 check inter 5s rise 2 fall 3
 
 #---------------------------------------------------------------------
 # PAM4OT RDP Proxy Frontend
 #---------------------------------------------------------------------
 frontend pam4ot_rdp
-    bind *:3389
+    bind 10.10.1.100:3389
     mode tcp
     option tcplog
     default_backend pam4ot_rdp_backend
 
+    # RDP connection limits
+    maxconn 500
+
 backend pam4ot_rdp_backend
     mode tcp
-    balance roundrobin
+    balance leastconn
     option tcp-check
-    tcp-check connect port 3389
-    server pam4ot-node1 10.10.1.11:3389 check inter 5000 rise 2 fall 3
-    server pam4ot-node2 10.10.1.12:3389 check inter 5000 rise 2 fall 3 backup
+    option log-health-checks
+
+    # Active-Active RDP
+    server pam4ot-node1 10.10.1.11:3389 check inter 5s rise 2 fall 3
+    server pam4ot-node2 10.10.1.12:3389 check inter 5s rise 2 fall 3
 
 #---------------------------------------------------------------------
-# PAM4OT HTTP Redirect (optional)
+# PAM4OT HTTP Redirect
 #---------------------------------------------------------------------
 frontend pam4ot_http
-    bind *:80
+    bind 10.10.1.100:80
     mode http
-    redirect scheme https code 301
+    http-request redirect scheme https code 301
+
+#---------------------------------------------------------------------
+# Prometheus Metrics (Optional)
+#---------------------------------------------------------------------
+frontend prometheus
+    bind *:8405
+    mode http
+    http-request use-service prometheus-exporter if { path /metrics }
 
 EOF
 ```
@@ -530,6 +566,6 @@ frontend pam4ot_https
 ---
 
 <p align="center">
-  <a href="./02-active-directory-setup.md">← Previous</a> •
-  <a href="./03-pam4ot-installation.md">Next: PAM4OT Installation →</a>
+  <a href="./02-active-directory-setup.md">← Previous: Active Directory Setup</a> •
+  <a href="./04-fortiauthenticator-setup.md">Next: FortiAuthenticator MFA Setup →</a>
 </p>

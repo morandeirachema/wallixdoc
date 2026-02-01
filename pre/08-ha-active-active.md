@@ -558,6 +558,6 @@ SQL
 ---
 
 <p align="center">
-  <a href="./03-pam4ot-installation.md">← Previous</a> •
-  <a href="./05-ad-integration.md">Next: AD Integration →</a>
+  <a href="./07-pam4ot-installation.md">← Previous: PAM4OT Installation</a> •
+  <a href="./09-test-targets.md">Next: Test Targets Setup →</a>
 </p>

@@ -625,6 +625,6 @@ For security incidents involving PAM4OT:
 ---
 
 <p align="center">
-  <a href="./09-validation-testing.md">← Previous</a> •
-  <a href="./README.md">Back to Overview</a>
+  <a href="./12-validation-testing.md">← Previous: Validation Testing</a> •
+  <a href="./14-battery-tests.md">Next: Battery Tests →</a>
 </p>

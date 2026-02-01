@@ -6,13 +6,15 @@ This guide covers setting up a pre-production environment that **closely mirrors
 
 ### Lab Features
 - 2x WALLIX PAM4OT nodes in Active-Active HA with HAProxy LB
-- 2x HAProxy load balancers in HA
+- 2x HAProxy load balancers in HA with Keepalived VIP
+- 1x WALLIX RDS Session Manager for RDP session management
+- 1x FortiAuthenticator for MFA (RADIUS/TOTP)
 - Full Purdue Model zones (Levels 0-4)
 - Industrial protocol simulators (Modbus, DNP3, OPC UA, S7, EtherNet/IP)
 - PLCs, RTUs, HMIs, SCADA, Historians
 - Engineering Workstations
 - Vendor remote access scenarios
-- Active Directory integration
+- Active Directory integration with MFA
 - SIEM/SOC integration
 - Observability/monitoring stack
 
@@ -55,11 +57,14 @@ This guide covers setting up a pre-production environment that **closely mirrors
                  |10.10.1.11 |               |10.10.1.12 |
                  +-----------+               +-----------+
                        |                           |
-                 +-----------+               +-----------+
-                 | Historian |               | Monitoring|
-                 | (PI/OSI)  |               | Prometheus|
-                 |10.10.1.20 |               |10.10.1.60 |
-                 +-----------+               +-----------+
+       +---------------+---------------+-----------+----------+
+       |               |               |           |          |
+  +-----------+  +-----------+  +-----------+ +-----------+ +-----------+
+  | Historian |  |WALLIX RDS |  |FortiAuth  | |   SIEM    | | Monitoring|
+  | (PI/OSI)  |  | Session   |  |   (MFA)   | | (Wazuh)   | |Prometheus |
+  |10.10.1.20 |  |   Mgr     |  |10.10.1.50 | |10.10.0.50 | |10.10.1.60 |
+  +-----------+  |10.10.1.30 |  +-----------+ +-----------+ +-----------+
+                 +-----------+
                                      |
   ----------------------------- FIREWALL L3/L2 -----------------------------
                                      |
@@ -144,6 +149,8 @@ This guide covers setting up a pre-production environment that **closely mirrors
 | `pam4ot-node1` | 10.10.1.11 | Debian 12 | PAM4OT Primary | 4 vCPU, 16GB RAM, 200GB |
 | `pam4ot-node2` | 10.10.1.12 | Debian 12 | PAM4OT Secondary | 4 vCPU, 16GB RAM, 200GB |
 | `historian` | 10.10.1.20 | Windows Server 2022 | OSIsoft PI / Historian | 4 vCPU, 16GB RAM, 200GB |
+| `wallix-rds` | 10.10.1.30 | Windows Server 2022 | WALLIX RDS Session Manager | 4 vCPU, 8GB RAM, 100GB |
+| `fortiauth` | 10.10.1.50 | FortiAuthenticator | MFA Server (RADIUS/TOTP) | 2 vCPU, 4GB RAM, 40GB |
 | `monitor-lab` | 10.10.1.60 | Ubuntu 22.04 | Prometheus/Grafana | 2 vCPU, 8GB RAM, 100GB |
 
 ### Site Operations (L3) - 10.10.2.0/24
@@ -181,7 +188,7 @@ This guide covers setting up a pre-production environment that **closely mirrors
 | `10.10.1.100` | PAM4OT Cluster VIP | haproxy-1, haproxy-2 |
 | `10.10.1.101` | Internal cluster VIP | pam4ot-node1, pam4ot-node2 |
 
-**Total VMs**: 22 (minimum for realistic OT lab)
+**Total VMs**: 24 (minimum for realistic OT lab with MFA and RDS)
 
 ---
 
@@ -192,17 +199,19 @@ This guide covers setting up a pre-production environment that **closely mirrors
 | 1 | [Infrastructure Setup](./01-infrastructure-setup.md) | 4 hours |
 | 2 | [Active Directory Setup](./02-active-directory-setup.md) | 1 hour |
 | 3 | [HAProxy Load Balancers](./03-haproxy-setup.md) | 1 hour |
-| 4 | [PAM4OT Node Installation](./03-pam4ot-installation.md) | 2 hours |
-| 5 | [HA Active-Active Configuration](./04-ha-active-active.md) | 2 hours |
-| 6 | [AD Integration](./05-ad-integration.md) | 1 hour |
-| 7 | [OT Targets Setup](./06-test-targets.md) | 3 hours |
-| 8 | [SIEM Integration](./07-siem-integration.md) | 2 hours |
-| 9 | [Observability Stack](./08-observability.md) | 2 hours |
-| 10 | [Validation & Testing](./09-validation-testing.md) | 2 hours |
-| 11 | [Team Handoff Guides](./10-team-handoffs.md) | - |
-| 12 | [Battery Tests (Client Demos)](./11-battery-tests.md) | 4 hours |
+| 4 | [FortiAuthenticator MFA Setup](./04-fortiauthenticator-setup.md) | 1 hour |
+| 5 | [WALLIX RDS Session Manager](./05-wallix-rds-setup.md) | 1 hour |
+| 6 | [AD Integration with MFA](./06-ad-integration.md) | 1 hour |
+| 7 | [PAM4OT Node Installation](./07-pam4ot-installation.md) | 2 hours |
+| 8 | [HA Active-Active Configuration](./08-ha-active-active.md) | 2 hours |
+| 9 | [OT Targets Setup](./09-test-targets.md) | 3 hours |
+| 10 | [SIEM Integration](./10-siem-integration.md) | 2 hours |
+| 11 | [Observability Stack](./11-observability.md) | 2 hours |
+| 12 | [Validation & Testing](./12-validation-testing.md) | 2 hours |
+| 13 | [Team Handoff Guides](./13-team-handoffs.md) | - |
+| 14 | [Battery Tests (Client Demos)](./14-battery-tests.md) | 4 hours |
 
-**Total Estimated Time**: ~24 hours (3 days)
+**Total Estimated Time**: ~26 hours (3-4 days)
 
 ---
 
@@ -323,19 +332,22 @@ AREA (L2) <-> CONTROL (L1)
 
 ```
 pre/
-├── README.md                      # This file
-├── 01-infrastructure-setup.md     # VM provisioning
-├── 02-active-directory-setup.md   # AD configuration
-├── 03-pam4ot-installation.md      # PAM4OT base install
-├── 04-ha-active-active.md         # HA cluster setup
-├── 05-ad-integration.md           # LDAP/Kerberos config
-├── 06-test-targets.md             # Test VMs setup
-├── 07-siem-integration.md         # Splunk/ELK setup
-├── 08-observability.md            # Prometheus/Grafana
-├── 09-validation-testing.md       # Test procedures
-├── 10-team-handoffs.md            # Team documentation
-├── 11-battery-tests.md            # Client demo test suite
-└── scripts/                       # Automation scripts
+├── README.md                            # This file
+├── 01-infrastructure-setup.md           # VM provisioning
+├── 02-active-directory-setup.md         # AD configuration
+├── 03-haproxy-setup.md                  # HAProxy LB with Keepalived
+├── 04-fortiauthenticator-setup.md       # FortiAuth MFA configuration
+├── 05-wallix-rds-setup.md               # WALLIX RDS Session Manager
+├── 06-ad-integration.md                 # LDAP/Kerberos/MFA integration
+├── 07-pam4ot-installation.md            # PAM4OT base install
+├── 08-ha-active-active.md               # HA cluster setup
+├── 09-test-targets.md                   # Test VMs setup
+├── 10-siem-integration.md               # Splunk/Wazuh setup
+├── 11-observability.md                  # Prometheus/Grafana
+├── 12-validation-testing.md             # Test procedures
+├── 13-team-handoffs.md                  # Team documentation
+├── 14-battery-tests.md                  # Client demo test suite
+└── scripts/                             # Automation scripts
     ├── provision-vms.sh
     ├── setup-ad.ps1
     └── test-suite.sh

@@ -421,6 +421,6 @@ wabadmin db reset
 ---
 
 <p align="center">
-  <a href="./02-active-directory-setup.md">← Previous</a> •
-  <a href="./04-ha-active-active.md">Next: HA Active-Active Configuration →</a>
+  <a href="./06-ad-integration.md">← Previous: AD Integration with MFA</a> •
+  <a href="./08-ha-active-active.md">Next: HA Active-Active Configuration →</a>
 </p>

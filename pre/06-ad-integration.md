@@ -1,8 +1,8 @@
-# 05 - Active Directory Integration
+# 06 - Active Directory Integration with MFA
 
-## Configuring LDAP/AD Authentication for PAM4OT
+## Configuring LDAP/AD Authentication and Multi-Factor Authentication for PAM4OT
 
-This guide covers integrating PAM4OT with Active Directory for user authentication.
+This guide covers integrating PAM4OT with Active Directory for user authentication and FortiAuthenticator for MFA.
 
 ---
 
@@ -10,28 +10,27 @@ This guide covers integrating PAM4OT with Active Directory for user authenticati
 
 ```
 +===============================================================================+
-|                         AD AUTHENTICATION FLOW                                |
+|                    AD + MFA AUTHENTICATION FLOW                               |
 +===============================================================================+
 
-  User Login                  PAM4OT                      Active Directory
-  ==========                  ======                      ================
+  User Login              PAM4OT           FortiAuth         Active Directory
+  ==========              ======           =========         ================
 
-  1. User enters         2. PAM4OT binds to AD       3. AD validates
-     AD credentials         using service account       user credentials
+  1. User enters     2. PAM4OT sends  3. FortiAuth    4. FortiAuth
+     credentials        RADIUS req       validates        queries AD
+                                         TOTP code
 
-  +----------+           +------------------+           +------------------+
-  |  jadmin  |   --->    |     PAM4OT       |   --->    |     DC-LAB       |
-  |   ****   |           |                  |           |                  |
-  +----------+           |  LDAPS:636       |           |  Validate user   |
-                         |  Bind: wallix-svc|           |  Check groups    |
-                         +------------------+           +------------------+
-                                  |                              |
-                                  |     4. Return user info      |
-                                  |     & group membership       |
-                                  |<-----------------------------|
-                                  |
-                         5. Map AD groups to
-                            PAM4OT permissions
+  +----------+       +----------+      +----------+      +-------------+
+  |  jadmin  |------>| PAM4OT   |----->|FortiAuth |----->|   DC-LAB    |
+  | password |HTTPS  |          |RADIUS|          | LDAP |             |
+  | + TOTP   |       |10.10.1.11|:1812 |10.10.1.50|:389  | 10.10.0.10  |
+  +----------+       +----------+      +----------+      +-------------+
+                           |                  |                 |
+                           |<-Access-Accept---|<--User Info-----|
+                           |   + Attributes   |
+                           |
+                     5. Grant access based
+                        on AD groups + MFA
 
 +===============================================================================+
 ```
@@ -45,6 +44,8 @@ This guide covers integrating PAM4OT with Active Directory for user authenticati
 - [ ] Service account created (wallix-svc)
 - [ ] AD CA certificate imported to PAM4OT
 - [ ] Test users created in AD
+- [ ] FortiAuthenticator configured (see [04-fortiauthenticator-setup.md](./04-fortiauthenticator-setup.md))
+- [ ] Users imported into FortiAuth with MFA tokens activated
 
 ### Verify Connectivity
 
@@ -311,7 +312,181 @@ Should show:
 
 ---
 
-## Step 6: Configure Kerberos (Optional)
+## Step 6: Configure RADIUS for MFA
+
+### Enable RADIUS Authentication in PAM4OT
+
+**Navigate to: Configuration > Authentication > RADIUS**
+
+Click **Add RADIUS Server**:
+
+```
++===============================================================================+
+|  RADIUS SERVER CONFIGURATION                                                  |
++===============================================================================+
+|                                                                               |
+|  GENERAL                                                                      |
+|  -------                                                                      |
+|  Name:                  FortiAuth-MFA                                         |
+|  Description:           FortiAuthenticator for MFA                            |
+|                                                                               |
+|  CONNECTION                                                                   |
+|  ----------                                                                   |
+|  Primary Server:        10.10.1.50                                            |
+|  Port:                  1812                                                  |
+|  Secret:                WallixRadius2026!                                     |
+|  Timeout:               30 seconds                                            |
+|  Retries:               3                                                     |
+|                                                                               |
+|  AUTHENTICATION                                                               |
+|  --------------                                                               |
+|  [x] Enable RADIUS authentication                                             |
+|  [x] Use for two-factor authentication                                        |
+|  Password Format:       password+token (concatenated)                         |
+|                                                                               |
+|  FALLBACK                                                                     |
+|  --------                                                                     |
+|  Fallback to LDAP:      No (MFA required)                                     |
+|                                                                               |
++===============================================================================+
+```
+
+### Test RADIUS Connection
+
+```bash
+# From PAM4OT node
+apt install -y freeradius-utils
+
+# Test RADIUS authentication with MFA
+# Password format: AD_Password + TOTP_Code
+radtest jadmin "JohnAdmin123!123456" 10.10.1.50 0 WallixRadius2026!
+
+# Expected: Access-Accept
+```
+
+---
+
+## Step 7: Configure Authentication Chain
+
+### Enable MFA for User Groups
+
+**Navigate to: Configuration > User Groups**
+
+For each user group, configure MFA:
+
+```
++===============================================================================+
+|  USER GROUP - LDAP-Admins (MFA CONFIGURATION)                                 |
++===============================================================================+
+|                                                                               |
+|  AUTHENTICATION                                                               |
+|  --------------                                                               |
+|  Primary Auth:          LDAP (LAB.LOCAL)                                      |
+|  [x] Require two-factor authentication                                        |
+|  2FA Method:            RADIUS                                                |
+|  RADIUS Server:         FortiAuth-MFA                                         |
+|                                                                               |
+|  PASSWORD FORMAT                                                              |
+|  ---------------                                                              |
+|  Format:                password+token                                        |
+|  Description:           User enters AD password followed immediately by       |
+|                         6-digit TOTP code from FortiToken Mobile              |
+|  Example:               MyPassword123!456789                                  |
+|                                                                               |
++===============================================================================+
+```
+
+### Alternative: Separate Prompt for MFA
+
+If you want users to enter password and OTP separately:
+
+```
+Configuration > Authentication > Settings
+
+[x] Use separate MFA prompt
+    User will enter password first, then be prompted for OTP code
+```
+
+---
+
+## Step 8: Configure Authentication Chain (LDAP + RADIUS)
+
+**Navigate to: Configuration > Authentication > Authentication Chain**
+
+```
++===============================================================================+
+|  AUTHENTICATION CHAIN CONFIGURATION                                           |
++===============================================================================+
+|                                                                               |
+|  Chain Name:            AD-MFA-Chain                                          |
+|  Description:           Active Directory with FortiAuthenticator MFA          |
+|                                                                               |
+|  AUTHENTICATION METHODS (in order)                                            |
+|  ----------------------------------                                           |
+|  1. LDAP Domain:        LAB.LOCAL                                             |
+|     Purpose:            Validate AD credentials and retrieve group membership |
+|                                                                               |
+|  2. RADIUS Server:      FortiAuth-MFA                                         |
+|     Purpose:            Validate TOTP/MFA token                               |
+|     Required:           Yes (authentication fails if RADIUS fails)            |
+|                                                                               |
+|  BEHAVIOR                                                                     |
+|  --------                                                                     |
+|  [x] Require all methods to succeed                                           |
+|  [x] Stop on first failure                                                    |
+|  [ ] Allow fallback to local authentication                                   |
+|                                                                               |
++===============================================================================+
+```
+
+---
+
+## Step 9: Test MFA Authentication
+
+### Web UI Login Test
+
+1. Navigate to: `https://10.10.1.100`
+2. Enter credentials:
+   ```
+   Username: jadmin
+   Password: JohnAdmin123!456789
+            └─ AD Password ─┘└─ TOTP ─┘
+   ```
+3. Click **Login**
+4. Verify successful authentication
+
+**Expected behavior:**
+- PAM4OT validates AD password via LDAP
+- PAM4OT sends full credential to FortiAuth via RADIUS
+- FortiAuth validates TOTP code
+- User logged in with correct AD group permissions
+
+### SSH Login Test
+
+```bash
+# SSH to PAM4OT
+ssh jadmin@10.10.1.100
+
+# Enter password when prompted:
+Password: JohnAdmin123!456789
+
+# Should display target menu
+```
+
+### RDP Login Test
+
+```bash
+# From Windows client, open mstsc.exe
+# Computer: 10.10.1.100
+# Username: jadmin@windows-server01
+# Password: JohnAdmin123!456789
+
+# Should connect through PAM4OT with MFA
+```
+
+---
+
+## Step 10: Configure Kerberos (Optional)
 
 For single sign-on with Kerberos:
 
@@ -363,13 +538,13 @@ Keytab: (upload keytab file from AD)
 
 ## User Authentication Matrix
 
-| User | AD Groups | PAM4OT Groups | Access Level |
-|------|-----------|---------------|--------------|
-| jadmin | PAM4OT-Admins, Linux-Admins, Windows-Admins | LDAP-Admins, LDAP-Linux-Admins | Full Admin |
-| soperator | PAM4OT-Operators, Linux-Admins | LDAP-Operators, LDAP-Linux-Admins | Operator |
-| mauditor | PAM4OT-Auditors | LDAP-Auditors | Audit Only |
-| lnetwork | Network-Admins | LDAP-Network-Admins | Network Access |
-| totengineer | OT-Engineers | LDAP-OT-Engineers | OT Access |
+| User | AD Groups | PAM4OT Groups | MFA | Access Level |
+|------|-----------|---------------|-----|--------------|
+| jadmin | PAM4OT-Admins, Linux-Admins, Windows-Admins | LDAP-Admins, LDAP-Linux-Admins | Required | Full Admin |
+| soperator | PAM4OT-Operators, Linux-Admins | LDAP-Operators, LDAP-Linux-Admins | Required | Operator |
+| mauditor | PAM4OT-Auditors | LDAP-Auditors | Required | Audit Only |
+| lnetwork | Network-Admins | LDAP-Network-Admins | Required | Network Access |
+| totengineer | OT-Engineers | LDAP-OT-Engineers | Required | OT Access |
 
 ---
 
@@ -432,7 +607,7 @@ update-ca-certificates
 
 ---
 
-## AD Integration Checklist
+## AD Integration with MFA Checklist
 
 | Check | Status |
 |-------|--------|
@@ -440,14 +615,19 @@ update-ca-certificates
 | Service account can bind | [ ] |
 | User search returns results | [ ] |
 | Group mapping configured | [ ] |
-| Test user can login via web | [ ] |
-| Test user can login via SSH | [ ] |
+| FortiAuth RADIUS configured | [ ] |
+| RADIUS connection test successful | [ ] |
+| MFA enabled for user groups | [ ] |
+| Test user can login via web with MFA | [ ] |
+| Test user can login via SSH with MFA | [ ] |
+| Test user can login via RDP with MFA | [ ] |
 | Groups mapped correctly | [ ] |
 | Permissions applied correctly | [ ] |
+| Authentication logs visible in FortiAuth | [ ] |
 
 ---
 
 <p align="center">
-  <a href="./04-ha-active-active.md">← Previous</a> •
-  <a href="./06-test-targets.md">Next: Test Targets Setup →</a>
+  <a href="./05-wallix-rds-setup.md">← Previous: WALLIX RDS Setup</a> •
+  <a href="./07-pam4ot-installation.md">Next: PAM4OT Installation →</a>
 </p>
