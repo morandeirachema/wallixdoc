@@ -1,0 +1,197 @@
+---
+# WALLIX Bastion health check and monitoring
+# Usage:
+#   ansible-playbook playbooks/health_check.yml
+#   ansible-playbook playbooks/health_check.yml -e "alert_email=admin@company.com"
+#   ansible-playbook playbooks/health_check.yml -e "slack_webhook=https://hooks.slack.com/xxx"
+
+- name: WALLIX Bastion Health Check
+  hosts: localhost
+  gather_facts: true
+
+  vars:
+    alert_email: ""
+    slack_webhook: ""
+    alert_on_warning: false
+    disk_warning_threshold: 70
+    disk_critical_threshold: 85
+    session_warning_threshold: 100
+    rotation_failure_threshold: 5
+
+  tasks:
+    - name: Initialize WALLIX connection
+      ansible.builtin.include_role:
+        name: wallix_bastion
+      vars:
+        wallix_test_connection: true
+
+    - name: Initialize health report
+      ansible.builtin.set_fact:
+        health_status: "OK"
+        health_issues: []
+        health_warnings: []
+
+    # Check 1: API Status
+    - name: Check API status
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/status"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+        timeout: 10
+      register: api_status
+      ignore_errors: true
+
+    - name: Record API status
+      ansible.builtin.set_fact:
+        health_issues: "{{ health_issues + ['API not responding'] }}"
+        health_status: "CRITICAL"
+      when: api_status.failed | default(false)
+
+    # Check 2: Active sessions count
+    - name: Get active sessions
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/sessions?status=current"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: active_sessions
+      when: not (api_status.failed | default(false))
+
+    - name: Check session count
+      ansible.builtin.set_fact:
+        health_warnings: "{{ health_warnings + ['High session count: ' + (active_sessions.json.total | string)] }}"
+      when:
+        - active_sessions.json.total | default(0) > session_warning_threshold
+        - not (api_status.failed | default(false))
+
+    # Check 3: Password rotation failures
+    - name: Get rotation status
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/accounts?rotation_status=failed"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: failed_rotations
+      when: not (api_status.failed | default(false))
+      ignore_errors: true
+
+    - name: Check rotation failures
+      ansible.builtin.set_fact:
+        health_issues: "{{ health_issues + ['Password rotation failures: ' + (failed_rotations.json.total | default(0) | string)] }}"
+        health_status: "{{ 'CRITICAL' if health_status != 'CRITICAL' else health_status }}"
+      when:
+        - failed_rotations.json.total | default(0) > rotation_failure_threshold
+        - not (api_status.failed | default(false))
+
+    # Check 4: Pending approvals (informational)
+    - name: Get pending approvals
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/approvals?status=pending"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: pending_approvals
+      when: not (api_status.failed | default(false))
+      ignore_errors: true
+
+    # Check 5: License status
+    - name: Get license info
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/licenseinfo"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: license_info
+      when: not (api_status.failed | default(false))
+      ignore_errors: true
+
+    - name: Check license expiration
+      ansible.builtin.set_fact:
+        health_warnings: "{{ health_warnings + ['License expiring soon'] }}"
+      when:
+        - license_info.json.days_remaining | default(999) < 30
+        - not (api_status.failed | default(false))
+
+    # Determine final status
+    - name: Set final health status
+      ansible.builtin.set_fact:
+        health_status: "{{ 'WARNING' if health_warnings | length > 0 and health_status == 'OK' else health_status }}"
+
+    # Generate report
+    - name: Generate health report
+      ansible.builtin.set_fact:
+        health_report: |
+          ╔══════════════════════════════════════════════════════════════════╗
+          ║              WALLIX BASTION HEALTH CHECK REPORT                 ║
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║  Host: {{ wallix_host | default('N/A') }}
+          ║  Time: {{ ansible_date_time.iso8601 }}
+          ║  Status: {{ health_status }}
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║  METRICS                                                         ║
+          ║  ├─ Active Sessions: {{ active_sessions.json.total | default('N/A') }}
+          ║  ├─ Pending Approvals: {{ pending_approvals.json.total | default('N/A') }}
+          ║  ├─ Failed Rotations: {{ failed_rotations.json.total | default('N/A') }}
+          ║  └─ License Days: {{ license_info.json.days_remaining | default('N/A') }}
+          {% if health_issues | length > 0 %}
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║  CRITICAL ISSUES                                                 ║
+          {% for issue in health_issues %}
+          ║  ✗ {{ issue }}
+          {% endfor %}
+          {% endif %}
+          {% if health_warnings | length > 0 %}
+          ╠══════════════════════════════════════════════════════════════════╣
+          ║  WARNINGS                                                        ║
+          {% for warning in health_warnings %}
+          ║  ⚠ {{ warning }}
+          {% endfor %}
+          {% endif %}
+          ╚══════════════════════════════════════════════════════════════════╝
+
+    - name: Display health report
+      ansible.builtin.debug:
+        msg: "{{ health_report }}"
+
+    # Send alerts if needed
+    - name: Send email alert
+      community.general.mail:
+        host: "{{ smtp_host | default('localhost') }}"
+        port: "{{ smtp_port | default(25) }}"
+        to: "{{ alert_email }}"
+        subject: "WALLIX Health Alert: {{ health_status }} on {{ wallix_host }}"
+        body: "{{ health_report }}"
+      when:
+        - alert_email | length > 0
+        - health_status != 'OK' or (alert_on_warning and health_warnings | length > 0)
+      ignore_errors: true
+
+    - name: Send Slack alert
+      ansible.builtin.uri:
+        url: "{{ slack_webhook }}"
+        method: POST
+        body_format: json
+        body:
+          text: "WALLIX Health Alert: {{ health_status }}"
+          attachments:
+            - color: "{{ 'danger' if health_status == 'CRITICAL' else 'warning' if health_status == 'WARNING' else 'good' }}"
+              title: "{{ wallix_host }}"
+              text: "{{ health_report | regex_replace('[╔╗╚╝╠╣║═]', '') }}"
+      when:
+        - slack_webhook | length > 0
+        - health_status != 'OK'
+      ignore_errors: true
+
+    # Fail playbook if critical
+    - name: Fail on critical issues
+      ansible.builtin.fail:
+        msg: "Health check failed with critical issues: {{ health_issues | join(', ') }}"
+      when:
+        - health_status == 'CRITICAL'
+        - fail_on_critical | default(true) | bool

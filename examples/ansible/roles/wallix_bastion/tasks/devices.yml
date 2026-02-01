@@ -1,0 +1,127 @@
+---
+# wallix_bastion role - device management tasks
+
+- name: Get existing devices
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/devices?limit=1000"
+    method: GET
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+  register: existing_devices
+  when: wallix_get_existing | default(true)
+
+- name: Build existing devices lookup
+  ansible.builtin.set_fact:
+    existing_device_names: "{{ existing_devices.json.data | default([]) | map(attribute='device_name') | list }}"
+  when: existing_devices is defined
+
+- name: Create devices
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/devices"
+    method: POST
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      device_name: "{{ item.device_name }}"
+      host: "{{ item.host }}"
+      alias: "{{ item.alias | default(item.host) }}"
+      description: "{{ item.description | default('') }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 201]
+  loop: "{{ wallix_devices }}"
+  when:
+    - wallix_devices is defined
+    - item.device_name not in (existing_device_names | default([]))
+    - not (wallix_check_mode | default(false))
+  register: created_devices
+  retries: "{{ wallix_retries }}"
+  delay: "{{ wallix_retry_delay }}"
+  until: created_devices is not failed
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Update existing devices
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/devices/{{ item.device_name }}"
+    method: PUT
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      host: "{{ item.host }}"
+      alias: "{{ item.alias | default(item.host) }}"
+      description: "{{ item.description | default('') }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 204]
+  loop: "{{ wallix_devices }}"
+  when:
+    - wallix_devices is defined
+    - wallix_update_existing | default(false)
+    - item.device_name in (existing_device_names | default([]))
+    - not (wallix_check_mode | default(false))
+  register: updated_devices
+  retries: "{{ wallix_retries }}"
+  delay: "{{ wallix_retry_delay }}"
+  until: updated_devices is not failed
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Add device to domain
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/domains/{{ item.domain | default(wallix_default_domain) }}/devices/{{ item.device_name }}"
+    method: POST
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 201, 204, 409]  # 409 = already in domain
+  loop: "{{ wallix_devices }}"
+  when:
+    - wallix_devices is defined
+    - item.domain is defined or wallix_default_domain is defined
+    - not (wallix_check_mode | default(false))
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Create device services
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/devices/{{ item.0.device_name }}/services"
+    method: POST
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      service_name: "{{ item.1.name }}"
+      port: "{{ item.1.port }}"
+      protocol: "{{ item.1.protocol }}"
+      subprotocols: "{{ item.1.subprotocols | default([]) }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 201, 409]  # 409 = already exists
+  loop: "{{ wallix_devices | subelements('services', skip_missing=True) }}"
+  when:
+    - wallix_devices is defined
+    - not (wallix_check_mode | default(false))
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Delete devices
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/devices/{{ item }}"
+    method: DELETE
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 204, 404]
+  loop: "{{ wallix_devices_to_delete | default([]) }}"
+  when:
+    - wallix_devices_to_delete is defined
+    - not (wallix_check_mode | default(false))
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"

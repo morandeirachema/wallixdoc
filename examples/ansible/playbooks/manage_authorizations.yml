@@ -1,0 +1,96 @@
+---
+# Manage authorizations in WALLIX Bastion
+# Usage:
+#   ansible-playbook playbooks/manage_authorizations.yml -e "action=create" -e "@vars/authorizations.yml"
+#   ansible-playbook playbooks/manage_authorizations.yml -e "action=list"
+
+- name: Manage Authorizations
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    action: "list"  # list, create, update, delete
+    dry_run: false
+
+  tasks:
+    - name: Initialize WALLIX connection
+      ansible.builtin.include_role:
+        name: wallix_bastion
+
+    # Action: List authorizations
+    - name: List authorizations
+      when: action == "list"
+      block:
+        - name: Query authorizations
+          ansible.builtin.uri:
+            url: "{{ wallix_base_url }}/authorizations?limit=500"
+            method: GET
+            headers:
+              Authorization: "{{ wallix_auth_header }}"
+            validate_certs: "{{ wallix_verify_ssl }}"
+          register: auth_list
+
+        - name: Display authorizations
+          ansible.builtin.debug:
+            msg: |
+              Authorizations: {{ auth_list.json.data | length }}
+              {% for a in auth_list.json.data %}
+              - {{ a.authorization_name }}
+                User Group: {{ a.user_group }}
+                Target Group: {{ a.target_group }}
+                Recorded: {{ a.is_recorded | default(false) }}
+                Approval: {{ a.approval_required | default(false) }}
+              {% endfor %}
+
+    # Action: Create full authorization stack
+    - name: Create authorization stack
+      when: action == "create"
+      block:
+        - name: Validate required variables
+          ansible.builtin.assert:
+            that:
+              - wallix_authorizations is defined or (wallix_user_groups is defined and wallix_target_groups is defined)
+            fail_msg: "Provide wallix_authorizations, or wallix_user_groups and wallix_target_groups"
+
+        - name: Create groups and authorizations
+          ansible.builtin.include_role:
+            name: wallix_bastion
+            tasks_from: authorizations
+          vars:
+            wallix_check_mode: "{{ dry_run | bool }}"
+
+        - name: Creation summary
+          ansible.builtin.debug:
+            msg: |
+              Authorization creation complete!
+              - User groups: {{ wallix_user_groups | default([]) | length }}
+              - Target groups: {{ wallix_target_groups | default([]) | length }}
+              - Authorizations: {{ created_authorizations.results | default([]) | selectattr('status', 'defined') | list | length }}
+
+    # Action: Update authorizations
+    - name: Update authorizations
+      when: action == "update"
+      block:
+        - name: Update authorization policies
+          ansible.builtin.include_role:
+            name: wallix_bastion
+            tasks_from: authorizations
+          vars:
+            wallix_check_mode: "{{ dry_run | bool }}"
+            wallix_update_existing: true
+
+    # Action: Delete authorizations
+    - name: Delete authorizations
+      when: action == "delete" and wallix_authorizations_to_delete is defined
+      block:
+        - name: Confirm deletion
+          ansible.builtin.pause:
+            prompt: "Deleting {{ wallix_authorizations_to_delete | length }} authorizations. Continue?"
+          when: not (force_delete | default(false) | bool)
+
+        - name: Execute deletion
+          ansible.builtin.include_role:
+            name: wallix_bastion
+            tasks_from: authorizations
+          vars:
+            wallix_check_mode: "{{ dry_run | bool }}"

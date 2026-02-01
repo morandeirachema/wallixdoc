@@ -1,0 +1,31 @@
+---
+# wallix_bastion role defaults
+
+# Connection (override in inventory or extra vars)
+wallix_host: "{{ lookup('env', 'WALLIX_HOST') }}"
+wallix_user: "{{ lookup('env', 'WALLIX_USER') }}"
+wallix_api_key: "{{ lookup('env', 'WALLIX_API_KEY') }}"
+wallix_api_version: "v3.12"
+wallix_base_url: "https://{{ wallix_host }}/api/{{ wallix_api_version }}"
+wallix_verify_ssl: true
+wallix_timeout: 30
+
+# Retry configuration
+wallix_retries: 3
+wallix_retry_delay: 5
+
+# Operation modes
+wallix_check_mode: false
+wallix_ignore_errors: false
+wallix_debug: false
+
+# Default values for resources
+wallix_default_domain: "Default"
+wallix_session_recording: true
+wallix_password_auto_change: true
+wallix_password_change_interval: 30
+
+# Headers for API calls
+wallix_headers:
+  Content-Type: "application/json"
+  Accept: "application/json"

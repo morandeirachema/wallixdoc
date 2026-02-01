@@ -13,12 +13,23 @@ This directory contains ready-to-use examples for:
 | **Terraform** | Infrastructure as Code | Automated deployment and configuration |
 | **Python API** | REST API client library | Custom integrations and scripts |
 | **Shell Scripts** | curl-based API calls | Quick automation and testing |
-| **Automation** | Ansible playbooks | Configuration management |
+| **Ansible** | Ansible playbooks | Configuration management |
 | **Labs** | Test environment setup | Learning and validation |
 
 ---
 
 ## Quick Start
+
+### Ansible
+
+```bash
+cd ansible
+pip install ansible>=2.12
+export WALLIX_HOST="bastion.example.com"
+export WALLIX_API_KEY="your-api-key"
+export WALLIX_USER="api-admin"
+ansible-playbook playbooks/health_check.yml
+```
 
 ### Terraform
 
@@ -63,38 +74,56 @@ export BASTION_API_KEY="your-api-key"
 
 ```
 examples/
+├── ansible/                         # Ansible automation
+│   ├── playbooks/
+│   │   ├── provision_devices.yml    # Bulk device provisioning
+│   │   ├── provision_users.yml      # User lifecycle management
+│   │   ├── manage_accounts.yml      # Account/password operations
+│   │   ├── manage_authorizations.yml# Authorization policies
+│   │   ├── health_check.yml         # Health checks
+│   │   ├── backup_config.yml        # Configuration backup
+│   │   └── sync_from_cmdb.yml       # ServiceNow/CMDB sync
+│   ├── roles/wallix_bastion/        # Reusable Ansible role
+│   ├── files/csv/                   # Sample import files
+│   └── filter_plugins/              # Custom filters
 │
-├── terraform/                    # Infrastructure as Code
-│   ├── README.md                 # Terraform guide
-│   ├── provider.tf               # Provider configuration
+├── terraform/                       # Infrastructure as Code
+│   ├── README.md                    # Terraform guide
+│   ├── provider.tf                  # Provider configuration
 │   └── resources/
-│       ├── device.tf             # Device management
-│       ├── user.tf               # User provisioning
-│       └── authorization.tf      # Access policies
+│       └── device.tf                # Device management
 │
-├── api/                          # REST API Examples
-│   ├── README.md                 # API guide
+├── api/                             # REST API Examples
+│   ├── README.md                    # API guide
 │   ├── python/
-│   │   ├── bastion_client.py     # Reusable client class
-│   │   ├── list_devices.py       # List all devices
-│   │   ├── create_user.py        # User provisioning
-│   │   └── rotate_password.py    # Credential rotation
+│   │   ├── bastion_client.py        # Reusable client class
+│   │   └── list_devices.py          # List all devices
 │   └── curl/
-│       ├── get_status.sh         # Health check
-│       ├── list_devices.sh       # Device listing
-│       └── create_session.sh     # Session management
+│       ├── get_status.sh            # Health check
+│       └── list_devices.sh          # Device listing
 │
-├── automation/                   # Configuration Management
-│   ├── README.md                 # Automation guide
-│   └── ansible/
-│       ├── inventory.yml         # Host inventory
-│       └── playbooks/
-│           ├── deploy.yml        # Initial deployment
-│           └── configure.yml     # Configuration tasks
+├── automation/                      # Additional automation
+│   └── README.md                    # Automation guide
 │
-└── labs/                         # Test Environments
-    └── README.md                 # Lab guide (VM-based)
+└── labs/                            # Test Environments
+    └── README.md                    # Lab guide (VM-based)
 ```
+
+---
+
+## Ansible Playbooks
+
+| Playbook | Description | Use Case |
+|----------|-------------|----------|
+| `provision_devices.yml` | Bulk device onboarding | Import servers from CSV/CMDB |
+| `provision_users.yml` | User lifecycle management | Sync users from LDAP/CSV |
+| `manage_accounts.yml` | Password operations | Rotate credentials, checkout |
+| `manage_authorizations.yml` | Access policies | Create/modify authorizations |
+| `health_check.yml` | System health checks | Daily health monitoring |
+| `backup_config.yml` | Configuration export | Backup WALLIX config via API |
+| `sync_from_cmdb.yml` | CMDB synchronization | ServiceNow integration |
+
+See [ansible/README.md](./ansible/README.md) for full documentation.
 
 ---
 
@@ -203,13 +232,20 @@ done
 
 ## Next Steps
 
-- [Terraform Examples](./terraform/README.md) - Infrastructure as Code details
+- [Ansible Playbooks](./ansible/README.md) - Configuration management
+- [Terraform Examples](./terraform/README.md) - Infrastructure as Code
 - [API Examples](./api/README.md) - REST API client usage
-- [Automation Examples](./automation/README.md) - Ansible playbooks
+- [Automation Examples](./automation/README.md) - Additional automation
 - [API Reference](../docs/26-api-reference/README.md) - Complete API documentation
 
 ---
 
 <p align="center">
-  <sub>PAM4OT Examples • Version 2.0 • January 2026</sub>
+  <a href="./ansible/README.md">Ansible</a> •
+  <a href="./terraform/README.md">Terraform</a> •
+  <a href="./api/README.md">API</a>
+</p>
+
+<p align="center">
+  <sub>PAM4OT Examples • Version 2.0 • February 2026</sub>
 </p>

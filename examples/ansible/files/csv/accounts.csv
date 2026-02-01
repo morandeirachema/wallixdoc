@@ -1,0 +1,11 @@
+account_name,login,device,description,auto_change_password,checkout_policy
+root@srv-web-01,root,srv-web-01,Root account for web server,true,exclusive
+root@srv-web-02,root,srv-web-02,Root account for web server,true,exclusive
+postgres@srv-db-01,postgres,srv-db-01,PostgreSQL admin account,true,exclusive
+postgres@srv-db-02,postgres,srv-db-02,PostgreSQL admin account,true,exclusive
+admin@srv-app-01,admin,srv-app-01,Application admin account,true,concurrent
+developer@srv-dev-01,developer,srv-dev-01,Development account,false,concurrent
+developer@srv-dev-02,developer,srv-dev-02,Development account,false,concurrent
+admin@plc-line1,admin,plc-line1,PLC admin account,false,exclusive
+admin@plc-line2,admin,plc-line2,PLC admin account,false,exclusive
+operator@hmi-ctrl-01,operator,hmi-ctrl-01,HMI operator account,false,concurrent

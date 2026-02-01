@@ -1,0 +1,77 @@
+---
+# Provision devices to WALLIX Bastion
+# Usage:
+#   ansible-playbook playbooks/provision_devices.yml -e "csv_file=files/csv/devices.csv"
+#   ansible-playbook playbooks/provision_devices.yml -e "@vars/production_servers.yml"
+
+- name: Provision Devices to WALLIX Bastion
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    # Default values - override via extra vars or inventory
+    wallix_domain: "{{ domain | default(wallix_default_domain) }}"
+    csv_file: ""
+    dry_run: false
+
+  tasks:
+    - name: Initialize WALLIX connection
+      ansible.builtin.include_role:
+        name: wallix_bastion
+
+    # Option 1: Load devices from CSV file
+    - name: Load devices from CSV
+      community.general.read_csv:
+        path: "{{ csv_file }}"
+        delimiter: ','
+      register: csv_devices
+      when: csv_file | length > 0
+
+    - name: Transform CSV to device format
+      ansible.builtin.set_fact:
+        wallix_devices: "{{ wallix_devices | default([]) + [device_entry] }}"
+      vars:
+        device_entry:
+          device_name: "{{ item.device_name | default(item.hostname) }}"
+          host: "{{ item.host | default(item.ip_address) }}"
+          alias: "{{ item.alias | default(item.host | default(item.ip_address)) }}"
+          description: "{{ item.description | default('Provisioned by Ansible') }}"
+          domain: "{{ item.domain | default(wallix_domain) }}"
+          services: "{{ item.services | default('SSH:22') | split(';') | map('wallix_service_parse') | list }}"
+      loop: "{{ csv_devices.list | default([]) }}"
+      when: csv_file | length > 0
+
+    # Option 2: Use devices defined in extra vars
+    - name: Validate devices variable
+      ansible.builtin.assert:
+        that:
+          - wallix_devices is defined
+          - wallix_devices | length > 0
+        fail_msg: "No devices to provision. Provide csv_file or wallix_devices variable."
+
+    - name: Display devices to provision
+      ansible.builtin.debug:
+        msg: |
+          Devices to provision: {{ wallix_devices | length }}
+          {% for d in wallix_devices %}
+          - {{ d.device_name }} ({{ d.host }}) -> {{ d.domain | default(wallix_domain) }}
+          {% endfor %}
+
+    - name: Provision devices
+      ansible.builtin.include_role:
+        name: wallix_bastion
+        tasks_from: devices
+      vars:
+        wallix_check_mode: "{{ dry_run | bool }}"
+        wallix_update_existing: "{{ update_existing | default(false) | bool }}"
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg: |
+          Provisioning complete!
+          - Created: {{ created_devices.results | default([]) | selectattr('status', 'defined') | selectattr('status', 'eq', 201) | list | length }}
+          - Updated: {{ updated_devices.results | default([]) | selectattr('status', 'defined') | list | length }}
+          - Failed: {{ created_devices.results | default([]) | selectattr('failed', 'defined') | selectattr('failed', 'eq', true) | list | length }}
+
+# Custom filter to parse service string "SSH:22" -> dict
+# Add to filter_plugins/wallix_filters.py

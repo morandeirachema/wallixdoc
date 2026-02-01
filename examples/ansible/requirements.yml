@@ -1,0 +1,9 @@
+---
+# Ansible Galaxy requirements for WALLIX Bastion automation
+collections:
+  - name: ansible.builtin
+    version: ">=2.12.0"
+  - name: community.general
+    version: ">=6.0.0"
+  - name: servicenow.itsm
+    version: ">=2.0.0"

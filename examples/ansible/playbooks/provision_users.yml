@@ -1,0 +1,109 @@
+---
+# Provision users to WALLIX Bastion
+# Usage:
+#   ansible-playbook playbooks/provision_users.yml -e "csv_file=files/csv/users.csv"
+#   ansible-playbook playbooks/provision_users.yml -e "source=ldap" -e "ldap_group=PAM-Users"
+
+- name: Provision Users to WALLIX Bastion
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    source: "csv"  # csv, ldap, or vars
+    csv_file: ""
+    dry_run: false
+    default_profile: "user"
+    default_groups: []
+
+  tasks:
+    - name: Initialize WALLIX connection
+      ansible.builtin.include_role:
+        name: wallix_bastion
+
+    # Source: CSV file
+    - name: Load users from CSV
+      when: source == "csv" and csv_file | length > 0
+      block:
+        - name: Read CSV file
+          community.general.read_csv:
+            path: "{{ csv_file }}"
+            delimiter: ','
+          register: csv_users
+
+        - name: Transform CSV to user format
+          ansible.builtin.set_fact:
+            wallix_users: "{{ wallix_users | default([]) + [user_entry] }}"
+          vars:
+            user_entry:
+              user_name: "{{ item.user_name | default(item.username) }}"
+              display_name: "{{ item.display_name | default(item.full_name | default(item.user_name)) }}"
+              email: "{{ item.email }}"
+              profile: "{{ item.profile | default(default_profile) }}"
+              groups: "{{ (item.groups | default('')) | split(',') | map('trim') | select() | list + default_groups }}"
+              language: "{{ item.language | default('en') }}"
+          loop: "{{ csv_users.list | default([]) }}"
+
+    # Source: LDAP/AD query (requires ldap collection)
+    - name: Load users from LDAP
+      when: source == "ldap"
+      block:
+        - name: Query LDAP for users
+          community.general.ldap_search:
+            server_uri: "{{ ldap_uri }}"
+            bind_dn: "{{ ldap_bind_dn }}"
+            bind_pw: "{{ ldap_bind_pw }}"
+            dn: "{{ ldap_user_base }}"
+            scope: "subtree"
+            filter: "(&(objectClass=user)(memberOf={{ ldap_group_dn }}))"
+            attrs:
+              - sAMAccountName
+              - displayName
+              - mail
+          register: ldap_users
+          no_log: true
+
+        - name: Transform LDAP to user format
+          ansible.builtin.set_fact:
+            wallix_users: "{{ wallix_users | default([]) + [user_entry] }}"
+          vars:
+            user_entry:
+              user_name: "{{ item.sAMAccountName }}"
+              display_name: "{{ item.displayName | default(item.sAMAccountName) }}"
+              email: "{{ item.mail }}"
+              profile: "{{ default_profile }}"
+              groups: "{{ default_groups }}"
+          loop: "{{ ldap_users.results | default([]) }}"
+
+    - name: Validate users variable
+      ansible.builtin.assert:
+        that:
+          - wallix_users is defined
+          - wallix_users | length > 0
+        fail_msg: "No users to provision. Check source configuration."
+
+    - name: Display users to provision
+      ansible.builtin.debug:
+        msg: |
+          Users to provision: {{ wallix_users | length }}
+          {% for u in wallix_users[:10] %}
+          - {{ u.user_name }} ({{ u.email }}) -> groups: {{ u.groups | join(', ') }}
+          {% endfor %}
+          {% if wallix_users | length > 10 %}
+          ... and {{ wallix_users | length - 10 }} more
+          {% endif %}
+
+    - name: Provision users
+      ansible.builtin.include_role:
+        name: wallix_bastion
+        tasks_from: users
+      vars:
+        wallix_check_mode: "{{ dry_run | bool }}"
+        wallix_update_existing: "{{ update_existing | default(false) | bool }}"
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg: |
+          User provisioning complete!
+          - Total processed: {{ wallix_users | length }}
+          - Created: {{ created_users.results | default([]) | selectattr('status', 'defined') | selectattr('status', 'eq', 201) | list | length }}
+          - Updated: {{ updated_users.results | default([]) | selectattr('status', 'defined') | list | length }}

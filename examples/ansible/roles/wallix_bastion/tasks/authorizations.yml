@@ -1,0 +1,150 @@
+---
+# wallix_bastion role - authorization management tasks
+
+- name: Get existing authorizations
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/authorizations?limit=1000"
+    method: GET
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+  register: existing_authorizations
+  when: wallix_get_existing | default(true)
+
+- name: Build existing authorizations lookup
+  ansible.builtin.set_fact:
+    existing_auth_names: "{{ existing_authorizations.json.data | default([]) | map(attribute='authorization_name') | list }}"
+  when: existing_authorizations is defined
+
+- name: Create user groups
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/usergroups"
+    method: POST
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      group_name: "{{ item.group_name }}"
+      description: "{{ item.description | default('') }}"
+      timeframes: "{{ item.timeframes | default([]) }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 201, 409]  # 409 = already exists
+  loop: "{{ wallix_user_groups | default([]) }}"
+  when:
+    - wallix_user_groups is defined
+    - not (wallix_check_mode | default(false))
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Create target groups
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/targetgroups"
+    method: POST
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      group_name: "{{ item.group_name }}"
+      description: "{{ item.description | default('') }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 201, 409]
+  loop: "{{ wallix_target_groups | default([]) }}"
+  when:
+    - wallix_target_groups is defined
+    - not (wallix_check_mode | default(false))
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Add accounts to target groups
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/targetgroups/{{ item.0.group_name }}/accounts/{{ item.1 }}"
+    method: POST
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 201, 204, 409]
+  loop: "{{ wallix_target_groups | subelements('accounts', skip_missing=True) }}"
+  when:
+    - wallix_target_groups is defined
+    - not (wallix_check_mode | default(false))
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Create authorizations
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/authorizations"
+    method: POST
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      authorization_name: "{{ item.authorization_name }}"
+      description: "{{ item.description | default('') }}"
+      user_group: "{{ item.user_group }}"
+      target_group: "{{ item.target_group }}"
+      is_critical: "{{ item.is_critical | default(false) }}"
+      is_recorded: "{{ item.is_recorded | default(wallix_session_recording) }}"
+      approval_required: "{{ item.approval_required | default(false) }}"
+      approval_timeout: "{{ item.approval_timeout | default(wallix_approval_timeout) }}"
+      approvers: "{{ item.approvers | default([]) }}"
+      subprotocols: "{{ item.subprotocols | default(['SSH_SHELL_SESSION']) }}"
+      active_quorum: "{{ item.active_quorum | default(-1) }}"
+      inactive_quorum: "{{ item.inactive_quorum | default(-1) }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 201]
+  loop: "{{ wallix_authorizations }}"
+  when:
+    - wallix_authorizations is defined
+    - item.authorization_name not in (existing_auth_names | default([]))
+    - not (wallix_check_mode | default(false))
+  register: created_authorizations
+  retries: "{{ wallix_retries }}"
+  delay: "{{ wallix_retry_delay }}"
+  until: created_authorizations is not failed
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Update authorizations
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/authorizations/{{ item.authorization_name }}"
+    method: PUT
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    body_format: json
+    body:
+      description: "{{ item.description | default('') }}"
+      is_critical: "{{ item.is_critical | default(false) }}"
+      is_recorded: "{{ item.is_recorded | default(wallix_session_recording) }}"
+      approval_required: "{{ item.approval_required | default(false) }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 204]
+  loop: "{{ wallix_authorizations }}"
+  when:
+    - wallix_authorizations is defined
+    - wallix_update_existing | default(false)
+    - item.authorization_name in (existing_auth_names | default([]))
+    - not (wallix_check_mode | default(false))
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"
+
+- name: Delete authorizations
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/authorizations/{{ item }}"
+    method: DELETE
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200, 204, 404]
+  loop: "{{ wallix_authorizations_to_delete | default([]) }}"
+  when:
+    - wallix_authorizations_to_delete is defined
+    - not (wallix_check_mode | default(false))
+  ignore_errors: "{{ wallix_ignore_errors | default(false) }}"

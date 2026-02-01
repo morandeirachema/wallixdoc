@@ -1,0 +1,47 @@
+---
+# WALLIX Bastion connection settings
+# Credentials should be in vault.yml or environment variables
+
+# API Configuration
+wallix_host: "{{ lookup('env', 'WALLIX_HOST') | default('bastion.company.com', true) }}"
+wallix_user: "{{ lookup('env', 'WALLIX_USER') | default('api-admin', true) }}"
+wallix_api_key: "{{ vault_wallix_api_key | default(lookup('env', 'WALLIX_API_KEY')) }}"
+wallix_api_version: "v3.12"
+wallix_base_url: "https://{{ wallix_host }}/api/{{ wallix_api_version }}"
+
+# Connection settings
+wallix_verify_ssl: true
+wallix_timeout: 30
+wallix_retries: 3
+wallix_retry_delay: 5
+
+# Default domains
+wallix_default_domain: "Production"
+wallix_domains:
+  - Production
+  - Development
+  - OT-Zone3
+  - OT-Zone4
+
+# Default services
+wallix_default_services:
+  linux:
+    - name: SSH
+      port: 22
+      protocol: SSH
+  windows:
+    - name: RDP
+      port: 3389
+      protocol: RDP
+    - name: WinRM
+      port: 5985
+      protocol: RAWTCPIP
+
+# Approval settings
+wallix_approval_timeout: 3600  # 1 hour
+wallix_default_approvers:
+  - group: PAM-Approvers
+
+# Session settings
+wallix_session_recording: true
+wallix_session_audit_enabled: true

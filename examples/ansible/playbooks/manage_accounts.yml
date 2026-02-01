@@ -1,0 +1,142 @@
+---
+# Manage privileged accounts in WALLIX Bastion
+# Usage:
+#   ansible-playbook playbooks/manage_accounts.yml -e "action=rotate" -e "domain=Production"
+#   ansible-playbook playbooks/manage_accounts.yml -e "action=create" -e "@vars/accounts.yml"
+#   ansible-playbook playbooks/manage_accounts.yml -e "action=checkout" -e "account=root@srv-web-01"
+
+- name: Manage Privileged Accounts
+  hosts: localhost
+  gather_facts: false
+
+  vars:
+    action: "list"  # list, create, rotate, checkout, delete
+    domain: ""
+    account: ""
+    dry_run: false
+
+  tasks:
+    - name: Initialize WALLIX connection
+      ansible.builtin.include_role:
+        name: wallix_bastion
+
+    # Action: List accounts
+    - name: List accounts
+      when: action == "list"
+      block:
+        - name: Query accounts
+          ansible.builtin.uri:
+            url: "{{ wallix_base_url }}/accounts{% if domain %}?domain={{ domain }}{% endif %}"
+            method: GET
+            headers:
+              Authorization: "{{ wallix_auth_header }}"
+            validate_certs: "{{ wallix_verify_ssl }}"
+          register: account_list
+
+        - name: Display accounts
+          ansible.builtin.debug:
+            msg: |
+              Accounts{% if domain %} in {{ domain }}{% endif %}: {{ account_list.json.data | length }}
+              {% for a in account_list.json.data %}
+              - {{ a.account_name }} @ {{ a.device | default('N/A') }}
+                Auto-rotate: {{ a.auto_change_password | default(false) }}
+                Last changed: {{ a.last_password_change | default('Never') }}
+              {% endfor %}
+
+    # Action: Create accounts
+    - name: Create accounts
+      when: action == "create" and wallix_accounts is defined
+      block:
+        - name: Provision accounts
+          ansible.builtin.include_role:
+            name: wallix_bastion
+            tasks_from: accounts
+          vars:
+            wallix_check_mode: "{{ dry_run | bool }}"
+
+    # Action: Rotate passwords
+    - name: Rotate passwords
+      when: action == "rotate"
+      block:
+        - name: Get accounts for rotation
+          ansible.builtin.uri:
+            url: "{{ wallix_base_url }}/accounts?auto_change_password=true{% if domain %}&domain={{ domain }}{% endif %}"
+            method: GET
+            headers:
+              Authorization: "{{ wallix_auth_header }}"
+            validate_certs: "{{ wallix_verify_ssl }}"
+          register: rotation_candidates
+          when: account | length == 0
+
+        - name: Build rotation list from query
+          ansible.builtin.set_fact:
+            wallix_accounts_to_rotate: "{{ rotation_candidates.json.data | map(attribute='account_name') | list }}"
+          when: account | length == 0
+
+        - name: Set single account for rotation
+          ansible.builtin.set_fact:
+            wallix_accounts_to_rotate:
+              - "{{ account }}"
+          when: account | length > 0
+
+        - name: Display rotation targets
+          ansible.builtin.debug:
+            msg: "Rotating {{ wallix_accounts_to_rotate | length }} account(s): {{ wallix_accounts_to_rotate | join(', ') }}"
+
+        - name: Execute rotation
+          ansible.builtin.include_role:
+            name: wallix_bastion
+            tasks_from: accounts
+          vars:
+            wallix_check_mode: "{{ dry_run | bool }}"
+          when: not (dry_run | bool)
+
+        - name: Rotation summary
+          ansible.builtin.debug:
+            msg: |
+              Rotation complete!
+              - Requested: {{ wallix_accounts_to_rotate | length }}
+              - Successful: {{ rotated_accounts.results | default([]) | selectattr('status', 'defined') | selectattr('status', 'in', [200, 202]) | list | length }}
+              - Failed: {{ rotated_accounts.results | default([]) | selectattr('failed', 'defined') | selectattr('failed', 'eq', true) | list | length }}
+
+    # Action: Checkout password
+    - name: Checkout password
+      when: action == "checkout" and account | length > 0
+      block:
+        - name: Set checkout request
+          ansible.builtin.set_fact:
+            wallix_accounts_to_checkout:
+              - account_name: "{{ account }}"
+                reason: "{{ checkout_reason | default('Ansible automation') }}"
+                duration: "{{ checkout_duration | default(3600) }}"
+
+        - name: Execute checkout
+          ansible.builtin.include_role:
+            name: wallix_bastion
+            tasks_from: accounts
+          vars:
+            wallix_check_mode: "{{ dry_run | bool }}"
+
+        - name: Display checkout result
+          ansible.builtin.debug:
+            msg: |
+              Password checkout successful for: {{ account }}
+              The password has been retrieved (not displayed for security).
+              Checkout valid for: {{ checkout_duration | default(3600) }} seconds
+          when: checked_out_passwords is defined and checked_out_passwords.results | length > 0
+
+    # Action: Delete accounts
+    - name: Delete accounts
+      when: action == "delete" and wallix_accounts_to_delete is defined
+      block:
+        - name: Confirm deletion
+          ansible.builtin.pause:
+            prompt: "About to delete {{ wallix_accounts_to_delete | length }} accounts. Press Enter to continue or Ctrl+C to abort."
+          when: not (force_delete | default(false) | bool)
+
+        - name: Execute deletion
+          ansible.builtin.include_role:
+            name: wallix_bastion
+            tasks_from: accounts
+          vars:
+            wallix_check_mode: "{{ dry_run | bool }}"

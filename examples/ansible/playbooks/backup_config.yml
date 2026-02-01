@@ -1,0 +1,213 @@
+---
+# Backup WALLIX Bastion configuration via API
+# Usage:
+#   ansible-playbook playbooks/backup_config.yml
+#   ansible-playbook playbooks/backup_config.yml -e "backup_dir=/backups/wallix"
+#   ansible-playbook playbooks/backup_config.yml -e "include_passwords=false"
+
+- name: Backup WALLIX Bastion Configuration
+  hosts: localhost
+  gather_facts: true
+
+  vars:
+    backup_dir: "./backups"
+    backup_prefix: "wallix_backup"
+    include_passwords: false  # Security: disable by default
+    include_sessions: false   # Can be large
+    compress_backup: true
+    retention_days: 30
+
+  tasks:
+    - name: Initialize WALLIX connection
+      ansible.builtin.include_role:
+        name: wallix_bastion
+
+    - name: Create backup directory
+      ansible.builtin.file:
+        path: "{{ backup_dir }}"
+        state: directory
+        mode: '0750'
+
+    - name: Set backup timestamp
+      ansible.builtin.set_fact:
+        backup_timestamp: "{{ ansible_date_time.iso8601_basic_short }}"
+        backup_path: "{{ backup_dir }}/{{ backup_prefix }}_{{ ansible_date_time.iso8601_basic_short }}"
+
+    - name: Create backup subdirectory
+      ansible.builtin.file:
+        path: "{{ backup_path }}"
+        state: directory
+        mode: '0750'
+
+    # Export domains
+    - name: Export domains
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/domains"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: domains_export
+
+    - name: Save domains
+      ansible.builtin.copy:
+        content: "{{ domains_export.json | to_nice_json }}"
+        dest: "{{ backup_path }}/domains.json"
+        mode: '0640'
+
+    # Export devices
+    - name: Export devices
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/devices?limit=10000"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: devices_export
+
+    - name: Save devices
+      ansible.builtin.copy:
+        content: "{{ devices_export.json | to_nice_json }}"
+        dest: "{{ backup_path }}/devices.json"
+        mode: '0640'
+
+    # Export accounts (without passwords by default)
+    - name: Export accounts
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/accounts?limit=10000"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: accounts_export
+
+    - name: Save accounts
+      ansible.builtin.copy:
+        content: "{{ accounts_export.json | to_nice_json }}"
+        dest: "{{ backup_path }}/accounts.json"
+        mode: '0640'
+
+    # Export users
+    - name: Export users
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/users?limit=10000"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: users_export
+
+    - name: Save users
+      ansible.builtin.copy:
+        content: "{{ users_export.json | to_nice_json }}"
+        dest: "{{ backup_path }}/users.json"
+        mode: '0640'
+
+    # Export user groups
+    - name: Export user groups
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/usergroups?limit=1000"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: usergroups_export
+
+    - name: Save user groups
+      ansible.builtin.copy:
+        content: "{{ usergroups_export.json | to_nice_json }}"
+        dest: "{{ backup_path }}/usergroups.json"
+        mode: '0640'
+
+    # Export target groups
+    - name: Export target groups
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/targetgroups?limit=1000"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: targetgroups_export
+
+    - name: Save target groups
+      ansible.builtin.copy:
+        content: "{{ targetgroups_export.json | to_nice_json }}"
+        dest: "{{ backup_path }}/targetgroups.json"
+        mode: '0640'
+
+    # Export authorizations
+    - name: Export authorizations
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/authorizations?limit=1000"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: authorizations_export
+
+    - name: Save authorizations
+      ansible.builtin.copy:
+        content: "{{ authorizations_export.json | to_nice_json }}"
+        dest: "{{ backup_path }}/authorizations.json"
+        mode: '0640'
+
+    # Create backup manifest
+    - name: Create backup manifest
+      ansible.builtin.copy:
+        content: |
+          {
+            "backup_date": "{{ ansible_date_time.iso8601 }}",
+            "wallix_host": "{{ wallix_host }}",
+            "api_version": "{{ wallix_api_version }}",
+            "include_passwords": {{ include_passwords | lower }},
+            "counts": {
+              "domains": {{ domains_export.json.data | default([]) | length }},
+              "devices": {{ devices_export.json.data | default([]) | length }},
+              "accounts": {{ accounts_export.json.data | default([]) | length }},
+              "users": {{ users_export.json.data | default([]) | length }},
+              "usergroups": {{ usergroups_export.json.data | default([]) | length }},
+              "targetgroups": {{ targetgroups_export.json.data | default([]) | length }},
+              "authorizations": {{ authorizations_export.json.data | default([]) | length }}
+            }
+          }
+        dest: "{{ backup_path }}/manifest.json"
+        mode: '0640'
+
+    # Compress backup
+    - name: Compress backup
+      community.general.archive:
+        path: "{{ backup_path }}"
+        dest: "{{ backup_path }}.tar.gz"
+        format: gz
+        remove: true
+      when: compress_backup | bool
+
+    # Cleanup old backups
+    - name: Find old backups
+      ansible.builtin.find:
+        paths: "{{ backup_dir }}"
+        patterns: "{{ backup_prefix }}_*.tar.gz"
+        age: "{{ retention_days }}d"
+      register: old_backups
+
+    - name: Remove old backups
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_backups.files }}"
+      when: old_backups.files | length > 0
+
+    - name: Backup summary
+      ansible.builtin.debug:
+        msg: |
+          Backup completed successfully!
+          ├─ Location: {{ backup_path }}{% if compress_backup %}.tar.gz{% endif %}
+          ├─ Domains: {{ domains_export.json.data | default([]) | length }}
+          ├─ Devices: {{ devices_export.json.data | default([]) | length }}
+          ├─ Accounts: {{ accounts_export.json.data | default([]) | length }}
+          ├─ Users: {{ users_export.json.data | default([]) | length }}
+          ├─ User Groups: {{ usergroups_export.json.data | default([]) | length }}
+          ├─ Target Groups: {{ targetgroups_export.json.data | default([]) | length }}
+          └─ Authorizations: {{ authorizations_export.json.data | default([]) | length }}
+
+          Old backups removed: {{ old_backups.files | length }}

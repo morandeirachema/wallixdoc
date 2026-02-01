@@ -1,0 +1,34 @@
+---
+# wallix_bastion role - main tasks
+
+- name: Validate required variables
+  ansible.builtin.assert:
+    that:
+      - wallix_host is defined and wallix_host | length > 0
+      - wallix_api_key is defined and wallix_api_key | length > 0
+      - wallix_user is defined and wallix_user | length > 0
+    fail_msg: "Required WALLIX connection variables are not set"
+    quiet: true
+
+- name: Set API authentication header
+  ansible.builtin.set_fact:
+    wallix_auth_header: "Basic {{ (wallix_user + ':' + wallix_api_key) | b64encode }}"
+  no_log: true
+
+- name: Test API connectivity
+  ansible.builtin.uri:
+    url: "{{ wallix_base_url }}/status"
+    method: GET
+    headers:
+      Authorization: "{{ wallix_auth_header }}"
+      Content-Type: "application/json"
+    validate_certs: "{{ wallix_verify_ssl }}"
+    timeout: "{{ wallix_timeout }}"
+    status_code: [200]
+  register: wallix_status
+  when: wallix_test_connection | default(true)
+
+- name: Display connection status
+  ansible.builtin.debug:
+    msg: "Connected to WALLIX Bastion {{ wallix_host }} - API {{ wallix_api_version }}"
+  when: wallix_debug | default(false)

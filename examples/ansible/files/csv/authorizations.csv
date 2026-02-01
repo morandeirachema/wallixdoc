@@ -1,0 +1,8 @@
+authorization_name,user_group,target_group,is_recorded,approval_required,description
+linux-admins-prod,Linux-Admins,Production-Linux,true,false,Linux admins to production servers
+dba-prod-db,DBA-Team,Production-Databases,true,true,DBAs to production databases with approval
+ot-engineers-zone3,OT-Engineers,OT-Zone3-PLCs,true,true,OT engineers to Zone 3 PLCs
+ot-vendors-zone3,OT-Vendors,OT-Zone3-PLCs,true,true,External vendors to Zone 3 with approval
+dev-team-dev,Dev-Team,Development-Servers,true,false,Developers to development servers
+helpdesk-readonly,Help-Desk,All-Servers-Readonly,true,false,Help desk read-only access
+auditors-sessions,Auditors,Session-Audit-Access,true,false,Auditors session review access

@@ -1,0 +1,11 @@
+device_name,host,domain,description,services
+srv-web-01,192.168.1.10,Production,Production Web Server,SSH:22;HTTPS:443
+srv-web-02,192.168.1.11,Production,Production Web Server,SSH:22;HTTPS:443
+srv-db-01,192.168.1.20,Production,Primary Database Server,SSH:22;PostgreSQL:5432
+srv-db-02,192.168.1.21,Production,Secondary Database Server,SSH:22;PostgreSQL:5432
+srv-app-01,192.168.1.30,Production,Application Server,SSH:22;HTTP:8080
+srv-dev-01,192.168.2.10,Development,Development Server,SSH:22
+srv-dev-02,192.168.2.11,Development,Development Server,SSH:22
+plc-line1,10.10.1.10,OT-Zone3,Production Line 1 PLC,SSH:22;Modbus:502
+plc-line2,10.10.1.11,OT-Zone3,Production Line 2 PLC,SSH:22;Modbus:502
+hmi-ctrl-01,10.10.2.10,OT-Zone4,HMI Control Station,RDP:3389;VNC:5900

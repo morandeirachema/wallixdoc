@@ -1,0 +1,11 @@
+user_name,display_name,email,profile,groups,language
+jsmith,John Smith,jsmith@company.com,user,"Linux-Admins,Web-Team",en
+mjones,Mary Jones,mjones@company.com,user,"DBA-Team,Linux-Admins",en
+bwilson,Bob Wilson,bwilson@company.com,user,"OT-Engineers",en
+agarcia,Ana Garcia,agarcia@company.com,auditor,"Auditors",es
+tlee,Thomas Lee,tlee@company.com,operator,"Help-Desk",en
+schen,Sarah Chen,schen@company.com,user,"Dev-Team,Linux-Admins",en
+rjohnson,Robert Johnson,rjohnson@company.com,approver,"PAM-Approvers,Security-Team",en
+kbrown,Karen Brown,kbrown@company.com,admin,"PAM-Admins",en
+vendor-siemens,Siemens Support,siemens-support@vendor.com,user,"OT-Vendors",en
+vendor-abb,ABB Support,abb-support@vendor.com,user,"OT-Vendors",en

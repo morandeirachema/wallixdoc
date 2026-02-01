@@ -1,0 +1,36 @@
+---
+# WALLIX Bastion Ansible Inventory Example
+# Copy to hosts.yml and customize
+
+all:
+  hosts:
+    localhost:
+      ansible_connection: local
+      ansible_python_interpreter: "{{ ansible_playbook_python }}"
+
+  children:
+    wallix_primary:
+      hosts:
+        wallix-primary.company.com:
+          wallix_role: primary
+          wallix_cluster: hq
+
+    wallix_secondary:
+      hosts:
+        wallix-secondary.company.com:
+          wallix_role: secondary
+          wallix_cluster: hq
+
+    wallix_remote:
+      hosts:
+        wallix-remote.company.com:
+          wallix_role: standalone
+          wallix_cluster: remote
+
+  vars:
+    # Connection settings (override with environment variables)
+    wallix_host: "{{ lookup('env', 'WALLIX_HOST') | default('bastion.company.com', true) }}"
+    wallix_api_key: "{{ lookup('env', 'WALLIX_API_KEY') }}"
+    wallix_user: "{{ lookup('env', 'WALLIX_USER') | default('api-admin', true) }}"
+    wallix_verify_ssl: "{{ lookup('env', 'WALLIX_VERIFY_SSL') | default(true, true) | bool }}"
+    wallix_api_version: "v3.12"

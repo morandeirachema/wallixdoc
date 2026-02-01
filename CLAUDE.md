@@ -11,7 +11,7 @@ This file provides context for AI assistants (Claude, Copilot, etc.) working wit
 | **Focus** | Privileged Access Management (PAM) for IT and OT environments |
 | **Deployment** | On-premises only (bare metal and VMs, no cloud/SaaS) |
 | **Version** | WALLIX Bastion 12.1.x |
-| **Content** | ~33,700 lines across 44 markdown files |
+| **Content** | ~36,000 lines across 45 markdown files |
 
 ## Directory Structure
 
@@ -53,7 +53,8 @@ wallix/
 │   ├── 30-operational-runbooks/ # Daily/weekly/monthly procedures
 │   ├── 31-faq-known-issues/     # FAQ, known issues, compatibility
 │   ├── 32-incident-response/    # Security incident playbooks
-│   └── 33-compliance-audit/     # SOC2, ISO27001, PCI-DSS, HIPAA, GDPR
+│   ├── 33-compliance-audit/     # SOC2, ISO27001, PCI-DSS, HIPAA, GDPR
+│   └── 40-backup-restore/       # Backup, restore, PITR, disaster recovery
 └── install/               # Multi-site OT installation guide
     ├── README.md          # Architecture overview, 30-day timeline
     ├── HOWTO.md           # Step-by-step guide (1685 lines)

@@ -1,0 +1,186 @@
+---
+# Synchronize WALLIX Bastion with external CMDB (ServiceNow example)
+# Usage:
+#   ansible-playbook playbooks/sync_from_cmdb.yml -e "cmdb_type=servicenow"
+#   ansible-playbook playbooks/sync_from_cmdb.yml -e "cmdb_type=csv" -e "cmdb_file=cmdb_export.csv"
+
+- name: Sync WALLIX from CMDB
+  hosts: localhost
+  gather_facts: true
+
+  vars:
+    cmdb_type: "servicenow"  # servicenow, csv, api
+    sync_mode: "additive"     # additive (add only) or full (add + remove stale)
+    dry_run: false
+
+    # ServiceNow settings
+    snow_instance: "{{ lookup('env', 'SNOW_INSTANCE') }}"
+    snow_user: "{{ lookup('env', 'SNOW_USER') }}"
+    snow_password: "{{ lookup('env', 'SNOW_PASSWORD') }}"
+    snow_table: "cmdb_ci_server"
+    snow_query: "operational_status=1^u_pam_managed=true"
+
+    # CSV settings
+    cmdb_file: ""
+
+    # Mapping: CMDB field -> WALLIX field
+    field_mapping:
+      device_name: "name"           # or "host_name", "asset_tag"
+      host: "ip_address"            # or "fqdn", "dns_domain"
+      description: "short_description"
+      domain: "u_environment"       # Custom field for domain mapping
+      os_type: "os"                 # For service detection
+
+  tasks:
+    - name: Initialize WALLIX connection
+      ansible.builtin.include_role:
+        name: wallix_bastion
+
+    # Source: ServiceNow
+    - name: Query ServiceNow CMDB
+      when: cmdb_type == "servicenow"
+      block:
+        - name: Validate ServiceNow credentials
+          ansible.builtin.assert:
+            that:
+              - snow_instance | length > 0
+              - snow_user | length > 0
+              - snow_password | length > 0
+            fail_msg: "ServiceNow credentials not configured"
+
+        - name: Query ServiceNow
+          ansible.builtin.uri:
+            url: "https://{{ snow_instance }}.service-now.com/api/now/table/{{ snow_table }}"
+            method: GET
+            user: "{{ snow_user }}"
+            password: "{{ snow_password }}"
+            force_basic_auth: true
+            headers:
+              Accept: "application/json"
+            body_format: json
+            body:
+              sysparm_query: "{{ snow_query }}"
+              sysparm_fields: "name,ip_address,short_description,os,u_environment,sys_id"
+              sysparm_limit: 10000
+          register: snow_results
+          no_log: true
+
+        - name: Transform ServiceNow data
+          ansible.builtin.set_fact:
+            cmdb_devices: "{{ snow_results.json.result | default([]) }}"
+
+    # Source: CSV file
+    - name: Load from CSV
+      when: cmdb_type == "csv" and cmdb_file | length > 0
+      block:
+        - name: Read CSV file
+          community.general.read_csv:
+            path: "{{ cmdb_file }}"
+          register: csv_cmdb
+
+        - name: Set CMDB devices from CSV
+          ansible.builtin.set_fact:
+            cmdb_devices: "{{ csv_cmdb.list | default([]) }}"
+
+    # Transform to WALLIX format
+    - name: Transform CMDB to WALLIX format
+      ansible.builtin.set_fact:
+        wallix_devices: "{{ wallix_devices | default([]) + [device_entry] }}"
+      vars:
+        device_entry:
+          device_name: "{{ item[field_mapping.device_name] | lower | regex_replace('[^a-z0-9-]', '-') }}"
+          host: "{{ item[field_mapping.host] }}"
+          description: "{{ item[field_mapping.description] | default('Synced from CMDB') }}"
+          domain: "{{ item[field_mapping.domain] | default(wallix_default_domain) }}"
+          services: "{{ lookup('template', 'templates/services_from_os.j2') | from_yaml }}"
+          cmdb_id: "{{ item.sys_id | default(item.id | default('')) }}"
+      loop: "{{ cmdb_devices }}"
+      when: item[field_mapping.host] | default('') | length > 0
+
+    # Get existing WALLIX devices for comparison
+    - name: Get existing WALLIX devices
+      ansible.builtin.uri:
+        url: "{{ wallix_base_url }}/devices?limit=10000"
+        method: GET
+        headers:
+          Authorization: "{{ wallix_auth_header }}"
+        validate_certs: "{{ wallix_verify_ssl }}"
+      register: existing_wallix
+
+    - name: Build existing device lookup
+      ansible.builtin.set_fact:
+        existing_device_names: "{{ existing_wallix.json.data | default([]) | map(attribute='device_name') | list }}"
+
+    # Calculate changes
+    - name: Calculate devices to add
+      ansible.builtin.set_fact:
+        devices_to_add: "{{ wallix_devices | selectattr('device_name', 'notin', existing_device_names) | list }}"
+
+    - name: Calculate stale devices (full sync mode)
+      ansible.builtin.set_fact:
+        cmdb_device_names: "{{ wallix_devices | map(attribute='device_name') | list }}"
+        devices_to_remove: "{{ existing_device_names | difference(wallix_devices | map(attribute='device_name') | list) }}"
+      when: sync_mode == "full"
+
+    # Display sync plan
+    - name: Display sync plan
+      ansible.builtin.debug:
+        msg: |
+          CMDB Sync Plan
+          ==============
+          CMDB Source: {{ cmdb_type }}
+          Sync Mode: {{ sync_mode }}
+
+          CMDB Records: {{ cmdb_devices | length }}
+          Valid Devices: {{ wallix_devices | length }}
+
+          Changes:
+          ├─ To Add: {{ devices_to_add | length }}
+          {% if sync_mode == 'full' %}
+          └─ To Remove (stale): {{ devices_to_remove | default([]) | length }}
+          {% else %}
+          └─ To Remove: 0 (additive mode)
+          {% endif %}
+
+          {% if devices_to_add | length > 0 %}
+          Devices to add:
+          {% for d in devices_to_add[:20] %}
+            - {{ d.device_name }} ({{ d.host }})
+          {% endfor %}
+          {% if devices_to_add | length > 20 %}
+            ... and {{ devices_to_add | length - 20 }} more
+          {% endif %}
+          {% endif %}
+
+    # Execute sync
+    - name: Execute sync - Add devices
+      ansible.builtin.include_role:
+        name: wallix_bastion
+        tasks_from: devices
+      vars:
+        wallix_devices: "{{ devices_to_add }}"
+        wallix_check_mode: "{{ dry_run | bool }}"
+      when: devices_to_add | length > 0
+
+    - name: Execute sync - Remove stale devices
+      ansible.builtin.include_role:
+        name: wallix_bastion
+        tasks_from: devices
+      vars:
+        wallix_devices_to_delete: "{{ devices_to_remove }}"
+        wallix_check_mode: "{{ dry_run | bool }}"
+      when:
+        - sync_mode == "full"
+        - devices_to_remove | default([]) | length > 0
+
+    # Summary
+    - name: Sync summary
+      ansible.builtin.debug:
+        msg: |
+          CMDB Sync Complete!
+          ├─ Mode: {{ 'DRY RUN' if dry_run else 'EXECUTED' }}
+          ├─ Added: {{ devices_to_add | length }}
+          {% if sync_mode == 'full' %}
+          ├─ Removed: {{ devices_to_remove | default([]) | length }}
+          {% endif %}
+          └─ Timestamp: {{ ansible_date_time.iso8601 }}
