@@ -155,43 +155,43 @@ docs/
 
 | # | Section | Description |
 |---|---------|-------------|
-| 15 | [Industrial Overview](./ot/15-industrial-overview/README.md) | OT vs IT security, regulatory landscape |
-| 16 | [OT Architecture](./ot/16-ot-architecture/README.md) | Zone deployment, IEC 62443 zones 0-5 |
-| 23 | [Industrial Best Practices](./ot/23-industrial-best-practices/README.md) | OT security design, incident response |
-| 55 | [OT Jump Host](./ot/55-ot-jump-host/README.md) | OT jump server configuration, industrial access |
+| 01 | [Industrial Overview](./ot/01-industrial-overview/README.md) | OT vs IT security, regulatory landscape |
+| 02 | [OT Architecture](./ot/02-ot-architecture/README.md) | Zone deployment, IEC 62443 zones 0-5 |
+| 09 | [Industrial Best Practices](./ot/09-industrial-best-practices/README.md) | OT security design, incident response |
+| 12 | [OT Jump Host](./ot/12-ot-jump-host/README.md) | OT jump server configuration, industrial access |
 
 ### Industrial Protocols & Access (ot/)
 
 | # | Section | Description |
 |---|---------|-------------|
-| 17 | [Industrial Protocols](./ot/17-industrial-protocols/README.md) | Modbus, DNP3, OPC UA, IEC 61850, S7comm |
-| 18 | [SCADA/ICS Access](./ot/18-scada-ics-access/README.md) | HMI, PLC programming, vendor maintenance |
-| 62 | [Engineering Workstation Access](./ot/62-engineering-workstation-access/README.md) | EWS access patterns, PLC programming |
-| 64 | [Historian Access](./ot/64-historian-access/README.md) | Historian security, data diode integration |
-| 65 | [RTU Field Access](./ot/65-rtu-field-access/README.md) | Remote terminal unit access, field device management |
+| 03 | [Industrial Protocols](./ot/03-industrial-protocols/README.md) | Modbus, DNP3, OPC UA, IEC 61850, S7comm |
+| 04 | [SCADA/ICS Access](./ot/04-scada-ics-access/README.md) | HMI, PLC programming, vendor maintenance |
+| 14 | [Engineering Workstation Access](./ot/14-engineering-workstation-access/README.md) | EWS access patterns, PLC programming |
+| 16 | [Historian Access](./ot/16-historian-access/README.md) | Historian security, data diode integration |
+| 17 | [RTU Field Access](./ot/17-rtu-field-access/README.md) | Remote terminal unit access, field device management |
 
 ### Air-Gapped & Offline (ot/)
 
 | # | Section | Description |
 |---|---------|-------------|
-| 19 | [Air-Gapped Environments](./ot/19-airgapped-environments/README.md) | Isolated deployments, data diodes |
-| 51 | [Offline & Sneakernet Operations](./ot/51-offline-operations/README.md) | Air-gapped operations, credential cache, secure media |
+| 05 | [Air-Gapped Environments](./ot/05-airgapped-environments/README.md) | Isolated deployments, data diodes |
+| 10 | [Offline & Sneakernet Operations](./ot/10-offline-operations/README.md) | Air-gapped operations, credential cache, secure media |
 
 ### Compliance & Use Cases (ot/)
 
 | # | Section | Description |
 |---|---------|-------------|
-| 20 | [IEC 62443 Compliance](./ot/20-iec62443-compliance/README.md) | Security levels SL1-4, audit evidence |
-| 21 | [Industrial Use Cases](./ot/21-industrial-use-cases/README.md) | Power, Oil & Gas, Manufacturing, Water |
-| 22 | [OT Integration](./ot/22-ot-integration/README.md) | SIEM, CMDB, monitoring platforms |
+| 06 | [IEC 62443 Compliance](./ot/06-iec62443-compliance/README.md) | Security levels SL1-4, audit evidence |
+| 07 | [Industrial Use Cases](./ot/07-industrial-use-cases/README.md) | Power, Oil & Gas, Manufacturing, Water |
+| 08 | [OT Integration](./ot/08-ot-integration/README.md) | SIEM, CMDB, monitoring platforms |
 
 ### OT Operations & Safety (ot/)
 
 | # | Section | Description |
 |---|---------|-------------|
-| 54 | [Vendor Remote Access](./ot/54-vendor-remote-access/README.md) | Third-party vendor access, contractor management |
-| 61 | [OT Safety Procedures](./ot/61-ot-safety-procedures/README.md) | LOTO integration, SIS access, emergency procedures |
-| 63 | [OT Change Management](./ot/63-ot-change-management/README.md) | Change windows, safety-critical changes, rollback |
+| 11 | [Vendor Remote Access](./ot/11-vendor-remote-access/README.md) | Third-party vendor access, contractor management |
+| 13 | [OT Safety Procedures](./ot/13-ot-safety-procedures/README.md) | LOTO integration, SIS access, emergency procedures |
+| 15 | [OT Change Management](./ot/15-ot-change-management/README.md) | Change windows, safety-critical changes, rollback |
 
 ---
 
@@ -204,7 +204,7 @@ Architect       → pam/01 → pam/02 → pam/10 → pam/13 → pam/24
 Engineer        → pam/01 → pam/03 → pam/04 → pam/07 → pam/09
 Security        → pam/05 → pam/52 → pam/06 → pam/34 → pam/08 → pam/50 → pam/32 → pam/33
 Operations      → pam/30 → pam/12 → pam/27 → pam/31
-OT/Industrial   → ot/00-fundamentals → ot/15 → ot/16 → ot/17 → ot/20 → ot/23
+OT/Industrial   → ot/00-fundamentals → ot/01 → ot/02 → ot/03 → ot/06 → ot/09
 DevOps          → pam/09 → pam/26 → examples/
 Compliance      → pam/33 → pam/34 → ot/20 → pam/08 → pam/50 → pam/06
 ```
@@ -219,10 +219,10 @@ Compliance      → pam/33 → pam/34 → ot/20 → pam/08 → pam/50 → pam/06
 | Review session recordings | pam/50 → pam/08 → pam/32 |
 | Set up automation | pam/09 → pam/26 → [examples/](../examples/README.md) |
 | Learn OT fundamentals | ot/00-fundamentals (start here for OT basics) |
-| Deploy OT zone architecture | ot/15 → ot/16 → ot/17 → ot/23 |
-| Configure SCADA access | ot/18 → ot/17 → ot/55 → ot/62 |
-| Air-gapped deployment | ot/19 → ot/51 → ot/55 |
-| IEC 62443 compliance | ot/20 → pam/48 → pam/33 → ot/61 |
+| Deploy OT zone architecture | ot/01 → ot/02 → ot/03 → ot/09 |
+| Configure SCADA access | ot/04 → ot/03 → ot/12 → ot/14 |
+| Air-gapped deployment | ot/05 → ot/10 → ot/12 |
+| IEC 62443 compliance | ot/06 → pam/48 → pam/33 → ot/13 |
 
 ---
 

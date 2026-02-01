@@ -90,23 +90,23 @@ wallixdoc/
 │       │   ├── 13-ot-security-career.md # Certifications, career paths
 │       │   ├── 14-hands-on-labs.md    # Lab setup, practice
 │       │   └── 15-resources.md        # Books, courses, communities
-│       ├── 15-industrial-overview/    # OT vs IT, regulatory requirements
-│       ├── 16-ot-architecture/        # Zone deployment, IEC 62443 zones
-│       ├── 17-industrial-protocols/   # Modbus, DNP3, OPC UA, IEC 61850
-│       ├── 18-scada-ics-access/       # HMI, PLC, vendor maintenance
-│       ├── 19-airgapped-environments/ # Isolated deployments, data diodes
-│       ├── 20-iec62443-compliance/    # Security levels, audit evidence
-│       ├── 21-industrial-use-cases/   # Power, Oil & Gas, Manufacturing
-│       ├── 22-ot-integration/         # SIEM, CMDB, monitoring platforms
-│       ├── 23-industrial-best-practices/ # OT security design
-│       ├── 51-offline-operations/     # Air-gapped ops, credential cache
-│       ├── 54-vendor-remote-access/   # Third-party vendor access
-│       ├── 55-ot-jump-host/           # Jump server configuration
-│       ├── 61-ot-safety-procedures/   # LOTO integration, SIS access
-│       ├── 62-engineering-workstation-access/ # EWS access patterns
-│       ├── 63-ot-change-management/   # Change windows, rollback
-│       ├── 64-historian-access/       # Historian security, data diode
-│       └── 65-rtu-field-access/       # RTU and field device management
+│       ├── 01-industrial-overview/    # OT vs IT, regulatory requirements
+│       ├── 02-ot-architecture/        # Zone deployment, IEC 62443 zones
+│       ├── 03-industrial-protocols/   # Modbus, DNP3, OPC UA, IEC 61850
+│       ├── 04-scada-ics-access/       # HMI, PLC, vendor maintenance
+│       ├── 05-airgapped-environments/ # Isolated deployments, data diodes
+│       ├── 06-iec62443-compliance/    # Security levels, audit evidence
+│       ├── 07-industrial-use-cases/   # Power, Oil & Gas, Manufacturing
+│       ├── 08-ot-integration/         # SIEM, CMDB, monitoring platforms
+│       ├── 09-industrial-best-practices/ # OT security design
+│       ├── 10-offline-operations/     # Air-gapped ops, credential cache
+│       ├── 11-vendor-remote-access/   # Third-party vendor access
+│       ├── 12-ot-jump-host/           # Jump server configuration
+│       ├── 13-ot-safety-procedures/   # LOTO integration, SIS access
+│       ├── 14-engineering-workstation-access/ # EWS access patterns
+│       ├── 15-ot-change-management/   # Change windows, rollback
+│       ├── 16-historian-access/       # Historian security, data diode
+│       └── 17-rtu-field-access/       # RTU and field device management
 │
 ├── install/               # Multi-site OT installation guide
 │   ├── README.md          # Architecture overview, 30-day timeline
@@ -275,7 +275,7 @@ Use these authoritative sources when verifying or extending documentation:
 | `docs/README.md` | Documentation index with role-based learning paths | Root |
 | `docs/pam/26-api-reference/README.md` | REST API documentation | PAM Core |
 | `docs/pam/41-wabadmin-reference/README.md` | Complete CLI reference | PAM Core |
-| `docs/ot/20-iec62443-compliance/README.md` | IEC 62443 compliance guide | OT |
+| `docs/ot/06-iec62443-compliance/README.md` | IEC 62443 compliance guide | OT |
 | `install/HOWTO.md` | Main installation walkthrough | Installation |
 | `install/README.md` | Architecture overview and 30-day timeline | Installation |
 | `install/09-architecture-diagrams.md` | Network diagrams and port reference | Installation |

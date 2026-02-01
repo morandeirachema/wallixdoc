@@ -47,10 +47,10 @@ wallixdoc/
 │   │
 │   └── ot/                       # OT Foundational (18 sections)
 │       ├── 00     OT Fundamentals (16-week learning path)
-│       ├── 15-23  Overview, Architecture & Protocols
-│       ├── 19-51  Air-Gapped & Offline Operations
-│       ├── 20-22  Compliance & Integration
-│       └── 54-65  Vendor Access & Safety
+│       ├── 01-09  Overview, Architecture & Protocols
+│       ├── 05-10  Air-Gapped & Offline Operations
+│       ├── 06-08  Compliance & Integration
+│       └── 11-17  Vendor Access & Safety
 │
 ├── install/                      # Multi-Site Deployment
 │   ├── HOWTO.md                  # Complete installation guide
@@ -73,19 +73,19 @@ wallixdoc/
 | **New to PAM4OT** | [Introduction](./docs/pam/01-introduction/README.md) → [Architecture](./docs/pam/02-architecture/README.md) → [Core Components](./docs/pam/03-core-components/README.md) |
 | **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/04-configuration/README.md) → [Troubleshooting](./docs/pam/12-troubleshooting/README.md) |
 | **Security Engineer** | [Authentication](./docs/pam/05-authentication/README.md) → [FIDO2 MFA](./docs/pam/52-fido2-hardware-mfa/README.md) → [Best Practices](./docs/pam/13-best-practices/README.md) → [Incident Response](./docs/pam/32-incident-response/README.md) |
-| **OT/ICS Engineer** | [OT Fundamentals](./docs/ot/00-fundamentals/README.md) → [Industrial Overview](./docs/ot/15-industrial-overview/README.md) → [Protocols](./docs/ot/17-industrial-protocols/README.md) → [SCADA Access](./docs/ot/18-scada-ics-access/README.md) |
+| **OT/ICS Engineer** | [OT Fundamentals](./docs/ot/00-fundamentals/README.md) → [Industrial Overview](./docs/ot/01-industrial-overview/README.md) → [Protocols](./docs/ot/03-industrial-protocols/README.md) → [SCADA Access](./docs/ot/04-scada-ics-access/README.md) |
 | **DevOps/Automation** | [API Reference](./docs/pam/26-api-reference/README.md) → [Deployment](./docs/pam/24-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
-| **Compliance Officer** | [IEC 62443](./docs/ot/20-iec62443-compliance/README.md) → [Compliance Audit](./docs/pam/33-compliance-audit/README.md) → [Evidence Collection](./docs/pam/48-compliance-evidence/README.md) |
+| **Compliance Officer** | [IEC 62443](./docs/ot/06-iec62443-compliance/README.md) → [Compliance Audit](./docs/pam/33-compliance-audit/README.md) → [Evidence Collection](./docs/pam/48-compliance-evidence/README.md) |
 
 ### By Team
 
 | Team | Key Documents |
 |------|---------------|
-| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [OT Architecture](./docs/ot/16-ot-architecture/README.md) • [Network Validation](./docs/pam/47-network-validation/README.md) |
+| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [OT Architecture](./docs/ot/02-ot-architecture/README.md) • [Network Validation](./docs/pam/47-network-validation/README.md) |
 | **Identity/IAM** | [Authentication](./docs/pam/05-authentication/README.md) • [LDAP/AD Integration](./docs/pam/45-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/46-kerberos-authentication/README.md) • [FIDO2 MFA](./docs/pam/52-fido2-hardware-mfa/README.md) |
 | **Security** | [Session Recording](./docs/pam/50-session-recording-playback/README.md) • [Incident Response](./docs/pam/32-incident-response/README.md) • [Command Filtering](./docs/pam/49-command-filtering/README.md) |
 | **Infrastructure** | [High Availability](./docs/pam/10-high-availability/README.md) • [Backup & Restore](./docs/pam/40-backup-restore/README.md) • [Disaster Recovery](./docs/pam/39-disaster-recovery/README.md) • [Load Balancer](./docs/pam/42-load-balancer/README.md) |
-| **OT/Industrial** | [Industrial Protocols](./docs/ot/17-industrial-protocols/README.md) • [OT Jump Host](./docs/ot/55-ot-jump-host/README.md) • [Vendor Remote Access](./docs/ot/54-vendor-remote-access/README.md) • [Engineering Workstation Access](./docs/ot/62-engineering-workstation-access/README.md) |
+| **OT/Industrial** | [Industrial Protocols](./docs/ot/03-industrial-protocols/README.md) • [OT Jump Host](./docs/ot/12-ot-jump-host/README.md) • [Vendor Remote Access](./docs/ot/11-vendor-remote-access/README.md) • [Engineering Workstation Access](./docs/ot/14-engineering-workstation-access/README.md) |
 | **Operations** | [Operational Runbooks](./docs/pam/30-operational-runbooks/README.md) • [wabadmin CLI](./docs/pam/41-wabadmin-reference/README.md) • [Monitoring](./docs/pam/11-monitoring-observability/README.md) |
 
 ---
@@ -303,43 +303,43 @@ Explore [Examples](./examples/README.md) for automation:
 
 | Section | Description |
 |---------|-------------|
-| [15 - Industrial Overview](./docs/ot/15-industrial-overview/README.md) | OT vs IT security, regulatory landscape |
-| [16 - OT Architecture](./docs/ot/16-ot-architecture/README.md) | Zone deployment, IEC 62443 zones |
-| [23 - Industrial Best Practices](./docs/ot/23-industrial-best-practices/README.md) | OT security design |
-| [55 - OT Jump Host](./docs/ot/55-ot-jump-host/README.md) | Jump server configuration |
+| [01 - Industrial Overview](./docs/ot/01-industrial-overview/README.md) | OT vs IT security, regulatory landscape |
+| [02 - OT Architecture](./docs/ot/02-ot-architecture/README.md) | Zone deployment, IEC 62443 zones |
+| [09 - Industrial Best Practices](./docs/ot/09-industrial-best-practices/README.md) | OT security design |
+| [12 - OT Jump Host](./docs/ot/12-ot-jump-host/README.md) | Jump server configuration |
 
 ### Protocols & Access
 
 | Section | Description |
 |---------|-------------|
-| [17 - Industrial Protocols](./docs/ot/17-industrial-protocols/README.md) | Modbus, DNP3, OPC UA, IEC 61850 |
-| [18 - SCADA/ICS Access](./docs/ot/18-scada-ics-access/README.md) | HMI, PLC programming, vendor maintenance |
-| [62 - Engineering Workstation Access](./docs/ot/62-engineering-workstation-access/README.md) | EWS access patterns |
-| [64 - Historian Access](./docs/ot/64-historian-access/README.md) | Historian security, data diode |
-| [65 - RTU Field Access](./docs/ot/65-rtu-field-access/README.md) | Remote terminal unit access |
+| [03 - Industrial Protocols](./docs/ot/03-industrial-protocols/README.md) | Modbus, DNP3, OPC UA, IEC 61850 |
+| [04 - SCADA/ICS Access](./docs/ot/04-scada-ics-access/README.md) | HMI, PLC programming, vendor maintenance |
+| [14 - Engineering Workstation Access](./docs/ot/14-engineering-workstation-access/README.md) | EWS access patterns |
+| [16 - Historian Access](./docs/ot/16-historian-access/README.md) | Historian security, data diode |
+| [17 - RTU Field Access](./docs/ot/17-rtu-field-access/README.md) | Remote terminal unit access |
 
 ### Air-Gapped & Offline
 
 | Section | Description |
 |---------|-------------|
-| [19 - Air-Gapped Environments](./docs/ot/19-airgapped-environments/README.md) | Isolated deployments, data diodes |
-| [51 - Offline Operations](./docs/ot/51-offline-operations/README.md) | Credential cache, sneakernet |
+| [05 - Air-Gapped Environments](./docs/ot/05-airgapped-environments/README.md) | Isolated deployments, data diodes |
+| [10 - Offline Operations](./docs/ot/10-offline-operations/README.md) | Credential cache, sneakernet |
 
 ### Compliance & Integration
 
 | Section | Description |
 |---------|-------------|
-| [20 - IEC 62443 Compliance](./docs/ot/20-iec62443-compliance/README.md) | Security levels, audit evidence |
-| [21 - Industrial Use Cases](./docs/ot/21-industrial-use-cases/README.md) | Power, Oil & Gas, Manufacturing |
-| [22 - OT Integration](./docs/ot/22-ot-integration/README.md) | SIEM, CMDB, monitoring |
+| [06 - IEC 62443 Compliance](./docs/ot/06-iec62443-compliance/README.md) | Security levels, audit evidence |
+| [07 - Industrial Use Cases](./docs/ot/07-industrial-use-cases/README.md) | Power, Oil & Gas, Manufacturing |
+| [08 - OT Integration](./docs/ot/08-ot-integration/README.md) | SIEM, CMDB, monitoring |
 
 ### Operations & Safety
 
 | Section | Description |
 |---------|-------------|
-| [54 - Vendor Remote Access](./docs/ot/54-vendor-remote-access/README.md) | Third-party vendor access |
-| [61 - OT Safety Procedures](./docs/ot/61-ot-safety-procedures/README.md) | LOTO integration, SIS access |
-| [63 - OT Change Management](./docs/ot/63-ot-change-management/README.md) | Change windows, rollback |
+| [11 - Vendor Remote Access](./docs/ot/11-vendor-remote-access/README.md) | Third-party vendor access |
+| [13 - OT Safety Procedures](./docs/ot/13-ot-safety-procedures/README.md) | LOTO integration, SIS access |
+| [15 - OT Change Management](./docs/ot/15-ot-change-management/README.md) | Change windows, rollback |
 
 ---
 
