@@ -24,21 +24,33 @@ wallixdoc/
 │   ├── README.md          # Documentation index with learning paths
 │   │
 │   └── pam/               # PAM/WALLIX Core Documentation (47 sections)
+│       │
+│       │   # Getting Started (00-05)
 │       ├── 00-official-resources/     # Official WALLIX documentation links
 │       ├── 01-quick-start/            # Quick start guide and UI walkthrough
 │       ├── 02-introduction/           # Company and product overview
 │       ├── 03-architecture/           # System architecture, deployment models
 │       ├── 04-core-components/        # Session Manager, Password Manager
 │       ├── 05-configuration/          # Object model, domains, devices
+│       │
+│       │   # Authentication & Authorization (06-07)
 │       ├── 06-authentication/         # MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML
 │       ├── 07-authorization/          # RBAC, approval workflows, JIT access
+│       │
+│       │   # Credential & Session Management (08-09)
 │       ├── 08-password-management/    # Credential vault, rotation, checkout
 │       ├── 09-session-management/     # Recording, monitoring, audit trails
+│       │
+│       │   # API & Automation (10)
 │       ├── 10-api-automation/         # REST API, DevOps integration
+│       │
+│       │   # Infrastructure & High Availability (11-14)
 │       ├── 11-high-availability/      # Clustering, DR, failover
 │       ├── 12-monitoring-observability/ # Prometheus, Grafana, alerting
 │       ├── 13-troubleshooting/        # Diagnostics, log analysis
 │       ├── 14-best-practices/         # Security hardening, operations
+│       │
+│       │   # Reference & Appendix (15-22)
 │       ├── 15-appendix/               # Quick reference, glossary
 │       ├── 16-cloud-deployment/       # On-premises deployment patterns
 │       ├── 17-api-reference/          # REST API documentation
@@ -47,9 +59,13 @@ wallixdoc/
 │       ├── 20-upgrade-guide/          # Version upgrades, HA clusters
 │       ├── 21-operational-runbooks/   # Daily/weekly/monthly procedures
 │       ├── 22-faq-known-issues/       # FAQ, known issues, compatibility
+│       │
+│       │   # Compliance & Incident Response (23-25)
 │       ├── 23-incident-response/      # Security incident playbooks
 │       ├── 24-compliance-audit/       # SOC2, ISO27001, PCI-DSS, HIPAA, GDPR
 │       ├── 25-jit-access/             # Just-In-Time access, approvals
+│       │
+│       │   # Performance & Infrastructure (26-32)
 │       ├── 26-performance-benchmarks/ # Capacity planning, load testing
 │       ├── 27-vendor-integration/     # Cisco, Microsoft, Red Hat
 │       ├── 28-certificate-management/ # TLS/SSL, CSR, renewal, Let's Encrypt
@@ -57,6 +73,8 @@ wallixdoc/
 │       ├── 30-backup-restore/         # Full/selective backup, disaster recovery
 │       ├── 31-wabadmin-reference/     # Complete CLI command reference
 │       ├── 32-load-balancer/          # HAProxy, Nginx, F5, health checks
+│       │
+│       │   # Advanced Authentication (33-40)
 │       ├── 33-password-rotation-troubleshooting/ # Rotation failures
 │       ├── 34-ldap-ad-integration/    # Active Directory integration
 │       ├── 35-kerberos-authentication/ # Kerberos, SPNEGO, SSO
@@ -65,6 +83,8 @@ wallixdoc/
 │       ├── 38-command-filtering/      # Command whitelist/blacklist
 │       ├── 39-session-recording-playback/ # Playback, OCR, forensics
 │       ├── 40-fido2-hardware-mfa/     # FIDO2/WebAuthn, YubiKey
+│       │
+│       │   # Advanced Features (41-47)
 │       ├── 41-account-discovery/      # Discovery scanning, bulk import
 │       ├── 42-ssh-key-lifecycle/      # SSH key management, rotation, CA
 │       ├── 43-service-account-lifecycle/ # Service account governance

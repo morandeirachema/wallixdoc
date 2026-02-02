@@ -22,7 +22,7 @@ docs/
 
 ## PAM / WALLIX Core Documentation
 
-### Getting Started (pam/)
+### Getting Started (00-05)
 
 | # | Section | Description |
 |---|---------|-------------|
@@ -33,92 +33,92 @@ docs/
 | 04 | [Core Components](./pam/04-core-components/README.md) | Session Manager, Password Manager, Access Manager |
 | 05 | [Configuration](./pam/05-configuration/README.md) | Object model, domains, devices, accounts |
 
-### Authentication & Authorization (pam/)
+### Authentication & Authorization (06-07)
 
 | # | Section | Description |
 |---|---------|-------------|
 | 06 | [Authentication](./pam/06-authentication/README.md) | MFA, SSO, LDAP/AD, OIDC/SAML, Kerberos, FortiAuthenticator |
 | 07 | [Authorization](./pam/07-authorization/README.md) | RBAC, approval workflows, time windows |
-| 25 | [JIT Access](./pam/25-jit-access/README.md) | Just-In-Time access, approval workflows, time-bounded access |
-| 34 | [LDAP/AD Integration](./pam/34-ldap-ad-integration/README.md) | Active Directory, LDAP sync, group mapping |
-| 35 | [Kerberos Authentication](./pam/35-kerberos-authentication/README.md) | Kerberos, SPNEGO, keytab, cross-realm trust |
-| 40 | [FIDO2 & Hardware MFA](./pam/40-fido2-hardware-mfa/README.md) | FIDO2/WebAuthn, YubiKey, smart cards, passwordless |
-| 47 | [Fortigate Integration](./pam/47-fortigate-integration/README.md) | Fortigate firewall, FortiAuthenticator MFA, SSL VPN |
 
-### Password & Session Management (pam/)
+### Credential & Session Management (08-09)
 
 | # | Section | Description |
 |---|---------|-------------|
 | 08 | [Password Management](./pam/08-password-management/README.md) | Vault, rotation, checkout workflows |
 | 09 | [Session Management](./pam/09-session-management/README.md) | Recording, monitoring, audit trails |
-| 33 | [Password Rotation Troubleshooting](./pam/33-password-rotation-troubleshooting/README.md) | Rotation failures, SSH keys, custom scripts |
-| 38 | [Command Filtering](./pam/38-command-filtering/README.md) | Command whitelisting/blacklisting, regex patterns |
-| 39 | [Session Recording Playback](./pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics, export |
-| 42 | [SSH Key Lifecycle](./pam/42-ssh-key-lifecycle/README.md) | SSH key generation, rotation, revocation, CA, HSM |
-| 43 | [Service Account Lifecycle](./pam/43-service-account-lifecycle/README.md) | Service account governance, rotation, decommissioning |
-| 44 | [Session Sharing & Collaboration](./pam/44-session-sharing/README.md) | Multi-user sessions, dual-control, training |
-| 45 | [User Self-Service Portal](./pam/45-user-self-service/README.md) | Password management, MFA enrollment, credential checkout |
-| 46 | [Privileged Task Automation](./pam/46-privileged-task-automation/README.md) | Automated privileged tasks, service accounts, runbooks |
 
-### Discovery & Onboarding (pam/)
-
-| # | Section | Description |
-|---|---------|-------------|
-| 41 | [Account Discovery & Onboarding](./pam/41-account-discovery/README.md) | Discovery scanning, orphaned accounts, bulk import |
-
-### API & Automation (pam/)
+### API & Automation (10)
 
 | # | Section | Description |
 |---|---------|-------------|
 | 10 | [API & Automation](./pam/10-api-automation/README.md) | REST API, scripting, DevOps integration |
-| 17 | [API Reference](./pam/17-api-reference/README.md) | Complete REST API documentation |
 
-### Deployment & Infrastructure (pam/)
+### Infrastructure & High Availability (11-14)
 
 | # | Section | Description |
 |---|---------|-------------|
 | 11 | [High Availability](./pam/11-high-availability/README.md) | Clustering, DR, backup, failover |
-| 16 | [Deployment Options](./pam/16-cloud-deployment/README.md) | On-premises VMs, bare metal, Terraform IaC |
-| 19 | [System Requirements](./pam/19-system-requirements/README.md) | Hardware sizing, performance tuning |
-| 20 | [Upgrade Guide](./pam/20-upgrade-guide/README.md) | Version upgrades, HA procedures |
-| 26 | [Performance Benchmarks](./pam/26-performance-benchmarks/README.md) | Capacity planning, load testing, optimization |
-| 28 | [Certificate Management](./pam/28-certificate-management/README.md) | TLS/SSL, CSR generation, renewal, Let's Encrypt, HSM |
-| 29 | [Disaster Recovery](./pam/29-disaster-recovery/README.md) | DR runbooks, RTO/RPO, failover procedures, PITR |
-| 30 | [Backup and Restore](./pam/30-backup-restore/README.md) | Full/selective backup, PITR, offsite storage |
-| 32 | [Load Balancer Configuration](./pam/32-load-balancer/README.md) | HAProxy, Nginx, F5, health checks, SSL termination |
-| 36 | [Network Configuration](./pam/36-network-validation/README.md) | Firewall rules, DNS, NTP, validation procedures |
-
-### Vendor Integration (pam/)
-
-| # | Section | Description |
-|---|---------|-------------|
-| 27 | [Vendor-Specific Integration](./pam/27-vendor-integration/README.md) | Cisco, Microsoft, Red Hat |
-
-### Operations & Monitoring (pam/)
-
-| # | Section | Description |
-|---|---------|-------------|
 | 12 | [Monitoring & Observability](./pam/12-monitoring-observability/README.md) | Prometheus, Grafana, alerting, logs |
 | 13 | [Troubleshooting](./pam/13-troubleshooting/README.md) | Diagnostics, common issues, log analysis |
 | 14 | [Best Practices](./pam/14-best-practices/README.md) | Security hardening, design patterns |
+
+### Reference & Appendix (15-22)
+
+| # | Section | Description |
+|---|---------|-------------|
+| 15 | [Appendix](./pam/15-appendix/README.md) | Glossary, quick reference, cheat sheets |
+| 16 | [Deployment Options](./pam/16-cloud-deployment/README.md) | On-premises VMs, bare metal, Terraform IaC |
+| 17 | [API Reference](./pam/17-api-reference/README.md) | Complete REST API documentation |
 | 18 | [Error Reference](./pam/18-error-reference/README.md) | Error codes, causes, remediation |
+| 19 | [System Requirements](./pam/19-system-requirements/README.md) | Hardware sizing, performance tuning |
+| 20 | [Upgrade Guide](./pam/20-upgrade-guide/README.md) | Version upgrades, HA procedures |
 | 21 | [Operational Runbooks](./pam/21-operational-runbooks/README.md) | Daily/weekly/monthly procedures |
 | 22 | [FAQ & Known Issues](./pam/22-faq-known-issues/README.md) | Common questions, limitations |
-| 31 | [wabadmin CLI Reference](./pam/31-wabadmin-reference/README.md) | Complete CLI command reference, syntax, examples |
 
-### Compliance & Security (pam/)
+### Compliance & Incident Response (23-25)
 
 | # | Section | Description |
 |---|---------|-------------|
 | 23 | [Incident Response](./pam/23-incident-response/README.md) | Security playbooks, forensics |
 | 24 | [Compliance & Audit](./pam/24-compliance-audit/README.md) | SOC2, ISO27001, PCI-DSS, HIPAA, GDPR |
-| 37 | [Compliance Evidence](./pam/37-compliance-evidence/README.md) | Evidence collection, audit artifacts, attestation |
+| 25 | [JIT Access](./pam/25-jit-access/README.md) | Just-In-Time access, approval workflows, time-bounded access |
 
-### Reference (pam/)
+### Performance & Infrastructure (26-32)
 
 | # | Section | Description |
 |---|---------|-------------|
-| 15 | [Appendix](./pam/15-appendix/README.md) | Glossary, quick reference, cheat sheets |
+| 26 | [Performance Benchmarks](./pam/26-performance-benchmarks/README.md) | Capacity planning, load testing, optimization |
+| 27 | [Vendor-Specific Integration](./pam/27-vendor-integration/README.md) | Cisco, Microsoft, Red Hat |
+| 28 | [Certificate Management](./pam/28-certificate-management/README.md) | TLS/SSL, CSR generation, renewal, Let's Encrypt, HSM |
+| 29 | [Disaster Recovery](./pam/29-disaster-recovery/README.md) | DR runbooks, RTO/RPO, failover procedures, PITR |
+| 30 | [Backup and Restore](./pam/30-backup-restore/README.md) | Full/selective backup, PITR, offsite storage |
+| 31 | [wabadmin CLI Reference](./pam/31-wabadmin-reference/README.md) | Complete CLI command reference, syntax, examples |
+| 32 | [Load Balancer Configuration](./pam/32-load-balancer/README.md) | HAProxy, Nginx, F5, health checks, SSL termination |
+
+### Advanced Authentication (33-40)
+
+| # | Section | Description |
+|---|---------|-------------|
+| 33 | [Password Rotation Troubleshooting](./pam/33-password-rotation-troubleshooting/README.md) | Rotation failures, SSH keys, custom scripts |
+| 34 | [LDAP/AD Integration](./pam/34-ldap-ad-integration/README.md) | Active Directory, LDAP sync, group mapping |
+| 35 | [Kerberos Authentication](./pam/35-kerberos-authentication/README.md) | Kerberos, SPNEGO, keytab, cross-realm trust |
+| 36 | [Network Configuration](./pam/36-network-validation/README.md) | Firewall rules, DNS, NTP, validation procedures |
+| 37 | [Compliance Evidence](./pam/37-compliance-evidence/README.md) | Evidence collection, audit artifacts, attestation |
+| 38 | [Command Filtering](./pam/38-command-filtering/README.md) | Command whitelisting/blacklisting, regex patterns |
+| 39 | [Session Recording Playback](./pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics, export |
+| 40 | [FIDO2 & Hardware MFA](./pam/40-fido2-hardware-mfa/README.md) | FIDO2/WebAuthn, YubiKey, smart cards, passwordless |
+
+### Advanced Features (41-47)
+
+| # | Section | Description |
+|---|---------|-------------|
+| 41 | [Account Discovery & Onboarding](./pam/41-account-discovery/README.md) | Discovery scanning, orphaned accounts, bulk import |
+| 42 | [SSH Key Lifecycle](./pam/42-ssh-key-lifecycle/README.md) | SSH key generation, rotation, revocation, CA, HSM |
+| 43 | [Service Account Lifecycle](./pam/43-service-account-lifecycle/README.md) | Service account governance, rotation, decommissioning |
+| 44 | [Session Sharing & Collaboration](./pam/44-session-sharing/README.md) | Multi-user sessions, dual-control, training |
+| 45 | [User Self-Service Portal](./pam/45-user-self-service/README.md) | Password management, MFA enrollment, credential checkout |
+| 46 | [Privileged Task Automation](./pam/46-privileged-task-automation/README.md) | Automated privileged tasks, service accounts, runbooks |
+| 47 | [Fortigate Integration](./pam/47-fortigate-integration/README.md) | Fortigate firewall, FortiAuthenticator MFA, SSL VPN |
 
 ---
 
