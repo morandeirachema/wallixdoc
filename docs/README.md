@@ -107,17 +107,17 @@ docs/
 | 38 | [Command Filtering](./pam/38-command-filtering/README.md) | Command whitelisting/blacklisting, regex patterns |
 | 39 | [Session Recording Playback](./pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics, export |
 
-### Advanced Features (41-47)
+### Advanced Features (40-46)
 
 | # | Section | Description |
 |---|---------|-------------|
-| 41 | [Account Discovery & Onboarding](./pam/41-account-discovery/README.md) | Discovery scanning, orphaned accounts, bulk import |
-| 42 | [SSH Key Lifecycle](./pam/42-ssh-key-lifecycle/README.md) | SSH key generation, rotation, revocation, CA, HSM |
-| 43 | [Service Account Lifecycle](./pam/43-service-account-lifecycle/README.md) | Service account governance, rotation, decommissioning |
-| 44 | [Session Sharing & Collaboration](./pam/44-session-sharing/README.md) | Multi-user sessions, dual-control, training |
-| 45 | [User Self-Service Portal](./pam/45-user-self-service/README.md) | Password management, MFA enrollment, credential checkout |
-| 46 | [Privileged Task Automation](./pam/46-privileged-task-automation/README.md) | Automated privileged tasks, service accounts, runbooks |
-| 47 | [Fortigate Integration](./pam/47-fortigate-integration/README.md) | Fortigate firewall, FortiAuthenticator MFA, SSL VPN |
+| 40 | [Account Discovery & Onboarding](./pam/40-account-discovery/README.md) | Discovery scanning, orphaned accounts, bulk import |
+| 41 | [SSH Key Lifecycle](./pam/41-ssh-key-lifecycle/README.md) | SSH key generation, rotation, revocation, CA, HSM |
+| 42 | [Service Account Lifecycle](./pam/42-service-account-lifecycle/README.md) | Service account governance, rotation, decommissioning |
+| 43 | [Session Sharing & Collaboration](./pam/43-session-sharing/README.md) | Multi-user sessions, dual-control, training |
+| 44 | [User Self-Service Portal](./pam/44-user-self-service/README.md) | Password management, MFA enrollment, credential checkout |
+| 45 | [Privileged Task Automation](./pam/45-privileged-task-automation/README.md) | Automated privileged tasks, service accounts, runbooks |
+| 46 | [Fortigate Integration](./pam/46-fortigate-integration/README.md) | Fortigate firewall, FortiAuthenticator MFA, SSL VPN |
 
 ---
 

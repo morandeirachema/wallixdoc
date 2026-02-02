@@ -961,5 +961,5 @@ wabadmin auth radius test "FortiAuth-Primary"
 ---
 
 <p align="center">
-  <a href="../46-privileged-task-automation/README.md">← Previous: Privileged Task Automation</a>
+  <a href="../45-privileged-task-automation/README.md">← Previous: Privileged Task Automation</a>
 </p>

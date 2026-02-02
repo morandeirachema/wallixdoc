@@ -83,14 +83,14 @@ wallixdoc/
 │       ├── 38-command-filtering/      # Command whitelist/blacklist
 │       ├── 39-session-recording-playback/ # Playback, OCR, forensics
 │       │
-│       │   # Advanced Features (41-47)
-│       ├── 41-account-discovery/      # Discovery scanning, bulk import
-│       ├── 42-ssh-key-lifecycle/      # SSH key management, rotation, CA
-│       ├── 43-service-account-lifecycle/ # Service account governance
-│       ├── 44-session-sharing/        # Multi-user sessions, dual-control
-│       ├── 45-user-self-service/      # Self-service portal
-│       ├── 46-privileged-task-automation/ # Automated privileged operations
-│       └── 47-fortigate-integration/  # Fortigate firewall and MFA integration
+│       │   # Advanced Features (40-46)
+│       ├── 40-account-discovery/      # Discovery scanning, bulk import
+│       ├── 41-ssh-key-lifecycle/      # SSH key management, rotation, CA
+│       ├── 42-service-account-lifecycle/ # Service account governance
+│       ├── 43-session-sharing/        # Multi-user sessions, dual-control
+│       ├── 44-user-self-service/      # Self-service portal
+│       ├── 45-privileged-task-automation/ # Automated privileged operations
+│       └── 46-fortigate-integration/  # Fortigate firewall and MFA integration
 │
 ├── install/               # Multi-site installation guide
 │   ├── README.md          # Architecture overview, 30-day timeline
@@ -293,7 +293,7 @@ Use these authoritative sources when verifying or extending documentation:
 | `docs/pam/17-api-reference/README.md` | REST API documentation | PAM Core |
 | `docs/pam/31-wabadmin-reference/README.md` | Complete CLI reference | PAM Core |
 | `docs/pam/06-authentication/fortiauthenticator-integration.md` | FortiAuthenticator MFA integration | PAM Core |
-| `docs/pam/47-fortigate-integration/README.md` | Fortigate firewall integration | PAM Core |
+| `docs/pam/46-fortigate-integration/README.md` | Fortigate firewall integration | PAM Core |
 | `install/HOWTO.md` | Main installation walkthrough | Installation |
 | `install/README.md` | Architecture overview and timeline | Installation |
 | `install/09-architecture-diagrams.md` | Network diagrams and port reference | Installation |

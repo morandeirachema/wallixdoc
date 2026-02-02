@@ -226,7 +226,7 @@ After completing installation:
 | Step | Document |
 |------|----------|
 | Configure authentication | [Authentication Guide](../docs/pam/06-authentication/README.md) |
-| Configure Fortigate MFA | [Fortigate Integration](../docs/pam/47-fortigate-integration/README.md) |
+| Configure Fortigate MFA | [Fortigate Integration](../docs/pam/46-fortigate-integration/README.md) |
 | Set up monitoring | [Monitoring & Observability](../docs/pam/12-monitoring-observability/README.md) |
 | Review best practices | [Best Practices](../docs/pam/14-best-practices/README.md) |
 | Set up operational procedures | [Operational Runbooks](../docs/pam/21-operational-runbooks/README.md) |

@@ -292,7 +292,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   Module 2: FortiAuthenticator Configuration (2 hours)
   +------------------------------------------------------------------------+
   | [_] Read: 06-authentication/fortiauthenticator-integration.md          |
-  | [_] Read: 47-fortigate-integration/README.md                           |
+  | [_] Read: 46-fortigate-integration/README.md                           |
   | [_] Practice: Configure RADIUS client on FortiAuthenticator            |
   | [_] Practice: Sync users from Active Directory                         |
   | [_] Practice: Provision FortiToken Mobile to users                     |
@@ -309,7 +309,7 @@ Choose your role to get a customized learning path. Each path includes estimated
 
   Module 4: Fortigate Firewall Integration (2 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: 47-fortigate-integration/README.md                           |
+  | [_] Read: 46-fortigate-integration/README.md                           |
   | [_] Practice: Configure SSL VPN with FortiAuth                         |
   | [_] Practice: Set up firewall policies for WALLIX                      |
   | [_] Practice: Configure VIP for WALLIX access                          |
@@ -543,7 +543,7 @@ If you only have 2 hours, read these in order:
 |----------|-----|
 | WALLIX Documentation | https://pam.wallix.one/documentation |
 | WALLIX Support | https://support.wallix.com |
-| Fortigate MFA Integration | 47-fortigate-integration/README.md |
+| Fortigate MFA Integration | 46-fortigate-integration/README.md |
 | API Samples | https://github.com/wallix/wbrest_samples |
 | Terraform Provider | https://registry.terraform.io/providers/wallix/wallix-bastion |
 

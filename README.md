@@ -40,9 +40,9 @@
 |  4-SITE SYNCHRONIZED ARCHITECTURE                                             |
 +===============================================================================+
 |                                                                               |
-|  Each Site: Fortigate -> HAProxy (HA) -> WALLIX Bastion (HA) -> WALLIX RDS   |
+|  Each Site: Fortigate -> HAProxy (HA) -> WALLIX Bastion (HA) -> WALLIX RDS    |
 |                                                                               |
-|  Site 1-4: Active-Active HA with cross-site synchronization                  |
+|  Site 1-4: Active-Active HA with cross-site synchronization                   |
 |  Targets: Windows Server 2022, RHEL 10, RHEL 9                                |
 |                                                                               |
 +===============================================================================+
@@ -102,7 +102,7 @@ wallixdoc/
 |------|------------------|
 | **New to WALLIX** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) → [Core Components](./docs/pam/04-core-components/README.md) |
 | **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) → [Troubleshooting](./docs/pam/13-troubleshooting/README.md) |
-| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate Integration](./docs/pam/47-fortigate-integration/README.md) → [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) → [Best Practices](./docs/pam/14-best-practices/README.md) |
+| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate Integration](./docs/pam/46-fortigate-integration/README.md) → [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) → [Best Practices](./docs/pam/14-best-practices/README.md) |
 | **DevOps/Automation** | [API Reference](./docs/pam/17-api-reference/README.md) → [Deployment](./docs/pam/16-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
 | **Compliance Officer** | [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence Collection](./docs/pam/37-compliance-evidence/README.md) |
 
@@ -111,7 +111,7 @@ wallixdoc/
 | Team | Key Documents |
 |------|---------------|
 | **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [Network Validation](./docs/pam/36-network-validation/README.md) • [Load Balancer](./docs/pam/32-load-balancer/README.md) |
-| **Identity/IAM** | [Authentication](./docs/pam/06-authentication/README.md) • [Fortigate MFA](./docs/pam/47-fortigate-integration/README.md) • [LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/35-kerberos-authentication/README.md) |
+| **Identity/IAM** | [Authentication](./docs/pam/06-authentication/README.md) • [Fortigate MFA](./docs/pam/46-fortigate-integration/README.md) • [LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/35-kerberos-authentication/README.md) |
 | **Security** | [Session Recording](./docs/pam/39-session-recording-playback/README.md) • [Incident Response](./docs/pam/23-incident-response/README.md) • [Command Filtering](./docs/pam/38-command-filtering/README.md) |
 | **Infrastructure** | [High Availability](./docs/pam/11-high-availability/README.md) • [Backup & Restore](./docs/pam/30-backup-restore/README.md) • [Disaster Recovery](./docs/pam/29-disaster-recovery/README.md) |
 | **Operations** | [Operational Runbooks](./docs/pam/21-operational-runbooks/README.md) • [wabadmin CLI](./docs/pam/31-wabadmin-reference/README.md) • [Monitoring](./docs/pam/12-monitoring-observability/README.md) |
@@ -331,17 +331,17 @@ Explore [Examples](./examples/README.md) for automation:
 | [38 - Command Filtering](./docs/pam/38-command-filtering/README.md) | Command whitelisting/blacklisting |
 | [39 - Session Recording Playback](./docs/pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics |
 
-### Advanced Features (41-47)
+### Advanced Features (40-46)
 
 | Section | Description |
 |---------|-------------|
-| [41 - Account Discovery](./docs/pam/41-account-discovery/README.md) | Discovery scanning, bulk import |
-| [42 - SSH Key Lifecycle](./docs/pam/42-ssh-key-lifecycle/README.md) | SSH key management, rotation, CA |
-| [43 - Service Account Lifecycle](./docs/pam/43-service-account-lifecycle/README.md) | Service account governance |
-| [44 - Session Sharing](./docs/pam/44-session-sharing/README.md) | Multi-user sessions, dual-control |
-| [45 - User Self-Service](./docs/pam/45-user-self-service/README.md) | Self-service portal |
-| [46 - Privileged Task Automation](./docs/pam/46-privileged-task-automation/README.md) | Automated privileged operations |
-| [47 - Fortigate Integration](./docs/pam/47-fortigate-integration/README.md) | Fortigate firewall and FortiAuthenticator MFA |
+| [40 - Account Discovery](./docs/pam/40-account-discovery/README.md) | Discovery scanning, bulk import |
+| [41 - SSH Key Lifecycle](./docs/pam/41-ssh-key-lifecycle/README.md) | SSH key management, rotation, CA |
+| [42 - Service Account Lifecycle](./docs/pam/42-service-account-lifecycle/README.md) | Service account governance |
+| [43 - Session Sharing](./docs/pam/43-session-sharing/README.md) | Multi-user sessions, dual-control |
+| [44 - User Self-Service](./docs/pam/44-user-self-service/README.md) | Self-service portal |
+| [45 - Privileged Task Automation](./docs/pam/45-privileged-task-automation/README.md) | Automated privileged operations |
+| [46 - Fortigate Integration](./docs/pam/46-fortigate-integration/README.md) | Fortigate firewall and FortiAuthenticator MFA |
 
 ---
 

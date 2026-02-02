@@ -1961,7 +1961,7 @@ Every service account must have clearly defined ownership and accountability.
 - [07 - Password Management](../08-password-management/README.md) - Credential vault and rotation
 - [26 - API Reference](../17-api-reference/README.md) - Complete API documentation
 - [33 - Compliance & Audit](../24-compliance-audit/README.md) - Compliance framework mappings
-- [53 - Account Discovery](../41-account-discovery/README.md) - Discovering unmanaged accounts
+- [53 - Account Discovery](../40-account-discovery/README.md) - Discovering unmanaged accounts
 
 ---
 
