@@ -7,9 +7,9 @@ Understanding the hardware and software that runs industrial processes.
 Industrial control systems are organized in layers, from field devices to enterprise systems:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    Purdue Model / ISA-95                             │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │   Level 5   ┌─────────────────────────────────────────────────────┐  │
 │   Enterprise│  ERP, Business Systems, Corporate Network           │  │
@@ -43,7 +43,7 @@ Industrial control systems are organized in layers, from field devices to enterp
 │   Process   │  Sensors, Actuators, Valves, Motors, Drives         │  │
 │             └─────────────────────────────────────────────────────┘  │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Programmable Logic Controllers (PLCs)
@@ -53,31 +53,31 @@ Industrial control systems are organized in layers, from field devices to enterp
 A PLC is a ruggedized computer designed to control industrial processes:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    PLC Architecture                                  │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│   ┌────────────────────────────────────────────────────────────┐    │
-│   │                         PLC Rack                           │    │
-│   │                                                            │    │
-│   │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐   │    │
-│   │  │ Power  │ │  CPU   │ │  DI    │ │  DO    │ │  AI    │   │    │
-│   │  │ Supply │ │        │ │ Module │ │ Module │ │ Module │   │    │
-│   │  │        │ │        │ │        │ │        │ │        │   │    │
-│   │  │  24V   │ │ Program│ │ 16 ch  │ │ 16 ch  │ │ 8 ch   │   │    │
-│   │  │  DC    │ │ Memory │ │ 24VDC  │ │ 24VDC  │ │ 4-20mA │   │    │
-│   │  └────────┘ └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘   │    │
-│   │                 │          │          │          │         │    │
-│   │                 └──────────┴──────────┴──────────┘         │    │
-│   │                         Backplane Bus                      │    │
-│   └────────────────────────────────────────────────────────────┘    │
+│   ┌────────────────────────────────────────────────────────────┐     │
+│   │                         PLC Rack                           │     │
+│   │                                                            │     │
+│   │  ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐    │     │
+│   │  │ Power  │ │  CPU   │ │  DI    │ │  DO    │ │  AI    │    │     │
+│   │  │ Supply │ │        │ │ Module │ │ Module │ │ Module │    │     │
+│   │  │        │ │        │ │        │ │        │ │        │    │     │
+│   │  │  24V   │ │ Program│ │ 16 ch  │ │ 16 ch  │ │ 8 ch   │    │     │
+│   │  │  DC    │ │ Memory │ │ 24VDC  │ │ 24VDC  │ │ 4-20mA │    │     │
+│   │  └────────┘ └───┬────┘ └───┬────┘ └───┬────┘ └───┬────┘    │     │
+│   │                 │          │          │          │         │     │
+│   │                 └──────────┴──────────┴──────────┘         │     │
+│   │                         Backplane Bus                      │     │
+│   └────────────────────────────────────────────────────────────┘     │
 │                                                                      │
 │   DI = Digital Input (On/Off sensors)                                │
 │   DO = Digital Output (On/Off control)                               │
 │   AI = Analog Input (Variable sensors like 4-20mA)                   │
 │   AO = Analog Output (Variable control like 0-10V)                   │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ### PLC Scan Cycle
@@ -85,9 +85,9 @@ A PLC is a ruggedized computer designed to control industrial processes:
 PLCs execute code in a continuous **scan cycle**:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    PLC Scan Cycle                                    │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │                    ┌──────────────────┐                              │
 │            ┌──────►│  1. Read Inputs  │                              │
@@ -116,7 +116,7 @@ PLCs execute code in a continuous **scan cycle**:
 │                                                                      │
 │   Typical scan time: 5-50 milliseconds                               │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 **Security implication**: Attack code injected into PLC program executes every scan cycle.

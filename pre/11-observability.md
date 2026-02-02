@@ -21,7 +21,7 @@ This guide covers deploying a monitoring stack for PAM4OT infrastructure visibil
   |  Metrics Export  |----+                  |     10.10.1.60          |
   |  Port 9100       |    |                  |                         |
   +------------------+    |    Scrape        |  +-------------------+  |
-                          +------------------->  |    Prometheus     |  |
+                          +------------------->  |    Prometheus    |  |
   +------------------+    |    Port 9090     |  |    :9090          |  |
   |  pam4ot-node2    |----+                  |  +---------+---------+  |
   |  Metrics Export  |                       |            |            |
@@ -31,12 +31,12 @@ This guide covers deploying a monitoring stack for PAM4OT infrastructure visibil
   +------------------+                       |  |    :3000          |  |
   |  dc-lab          |----+                  |  +-------------------+  |
   |  Port 9182       |    |    Scrape        |                         |
-  +------------------+    +------------------->  +-------------------+  |
+  +------------------+    +-------------------> +-------------------+  |
                                              |  |   Alertmanager    |  |
   +------------------+                       |  |    :9093          |  |
   |  siem-lab        |----+                  |  +-------------------+  |
   |  Port 9100       |    |    Scrape        |                         |
-  +------------------+    +------------------->-------------------------+
+  +------------------+    +------------------>-------------------------+
 
   METRICS COLLECTED:
   - System: CPU, Memory, Disk, Network

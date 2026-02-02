@@ -33,7 +33,7 @@ This guide covers setting up PAM4OT in Active-Active high availability mode wher
          |  [Active]        |            |  [Active]        |
          |                  |            |                  |
          |  +------------+  |            |  +------------+  |
-         |  | MariaDB |<-+-- Sync --->+->| MariaDB |  |
+         |  | MariaDB    |<-+-- Sync --->+->| MariaDB    |  |
          |  | (Primary)  |  |            |  | (Replica)  |  |
          |  +------------+  |            |  +------------+  |
          +------------------+            +------------------+

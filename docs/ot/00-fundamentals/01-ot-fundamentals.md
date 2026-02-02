@@ -7,9 +7,9 @@ Understanding Operational Technology from the ground up.
 Operational Technology (OT) refers to hardware and software that detects or causes changes through direct monitoring and control of physical devices, processes, and events.
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    OT vs IT Definition                               │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │   Information Technology (IT)                                        │
 │   ─────────────────────────────                                      │
@@ -22,7 +22,7 @@ Operational Technology (OT) refers to hardware and software that detects or caus
 │   physical world                                                     │
 │   Examples: Power grids, water treatment, manufacturing lines        │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## The Physical World Connection
@@ -41,9 +41,9 @@ When an OT system fails or is compromised:
 OT systems are **cyber-physical systems** - they bridge the digital and physical worlds:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    Cyber-Physical Loop                               │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │                        ┌───────────────┐                             │
 │                        │   Controller  │                             │
@@ -67,7 +67,7 @@ OT systems are **cyber-physical systems** - they bridge the digital and physical
 │            │    temperature, pressure)       │                       │
 │            └─────────────────────────────────┘                       │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Basic Control Theory
@@ -87,11 +87,11 @@ All OT systems operate on the principle of feedback control:
 Most industrial processes use **PID (Proportional-Integral-Derivative)** control:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    PID Controller Explained                          │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│   Setpoint (SP) ──────────┬──────────────────────────────────────►  │
+│   Setpoint (SP) ──────────┬───────────────────────────────────────►  │
 │                           │                                          │
 │   Process Variable (PV) ──┼──►  Error = SP - PV                      │
 │                           │                                          │
@@ -113,7 +113,7 @@ Most industrial processes use **PID (Proportional-Integral-Derivative)** control
 │                                                                      │
 │   Output = Kp*Error + Ki*∫Error + Kd*(dError/dt)                     │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 **Why does this matter for security?**
@@ -141,9 +141,9 @@ OT systems operate in **real-time** - responses must happen within strict time l
 Industrial processes operate in different states:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    Process Operating States                          │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │   SHUTDOWN ──► STARTUP ──► RUNNING ──► STEADY STATE                  │
 │       ▲                                     │                        │
@@ -161,7 +161,7 @@ Industrial processes operate in different states:
 │   UPSET: Abnormal condition requiring intervention                   │
 │   EMERGENCY: Safety system triggered, immediate halt                 │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 **Startup and shutdown are the most dangerous periods** - this is when:
@@ -245,14 +245,14 @@ Change the physical process:
 Control motor speed electronically:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    VFD in a System                                   │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│   ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐          │
-│   │  Power  │───►│   VFD   │───►│  Motor  │───►│  Pump   │          │
-│   │  (AC)   │    │         │    │         │    │         │          │
-│   └─────────┘    └────┬────┘    └─────────┘    └─────────┘          │
+│   ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐           │
+│   │  Power  │───►│   VFD   │───►│  Motor  │───►│  Pump   │           │
+│   │  (AC)   │    │         │    │         │    │         │           │
+│   └─────────┘    └────┬────┘    └─────────┘    └─────────┘           │
 │                       │                                              │
 │                       │ Control                                      │
 │                       │ Signal                                       │
@@ -265,7 +265,7 @@ Control motor speed electronically:
 │   Typically 0-60 Hz (or 0-50 Hz in Europe)                           │
 │   Speed commands can be analog (4-20mA) or digital (Modbus)          │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 **VFDs were a target in Stuxnet** - the malware manipulated drive frequencies to damage centrifuges.
@@ -277,9 +277,9 @@ Control motor speed electronically:
 Industrial safety uses multiple independent layers:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    Layers of Protection Model                        │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │              ┌─────────────────────────────────┐                     │
 │              │     Community Emergency         │ ◄── External        │
@@ -299,7 +299,7 @@ Industrial safety uses multiple independent layers:
 │    │                    PROCESS                                     ││
 │    └────────────────────────────────────────────────────────────────┘│
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Safety Instrumented Systems (SIS)
@@ -316,9 +316,9 @@ Dedicated systems that prevent catastrophic failures:
 **SIS is separate from the control system** - this is intentional:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    SIS Independence                                  │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │   ┌─────────────────┐              ┌─────────────────┐               │
 │   │  Control System │              │ Safety System   │               │
@@ -345,7 +345,7 @@ Dedicated systems that prevent catastrophic failures:
 │              │  PHYSICAL PROCESS  │                                  │
 │              └────────────────────┘                                  │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 **Critical security principle**: Never connect security controls to SIS networks. The SIS must remain independent.
@@ -355,19 +355,19 @@ Dedicated systems that prevent catastrophic failures:
 ### Example 1: Water Treatment
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    Water Treatment Process                           │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│  Raw      ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐     │
+│  Raw      ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐      │
 │  Water───►│ Screen  │──►│ Coag/   │──►│ Filter  │──►│ Chlorine│──► Clean
 │           │         │   │ Floc    │   │         │   │ Contact │    Water
-│           └─────────┘   └────┬────┘   └────┬────┘   └────┬────┘     │
+│           └─────────┘   └────┬────┘   └────┬────┘   └────┬────┘      │
 │                              │             │             │           │
-│                         ┌────┴────┐   ┌────┴────┐   ┌────┴────┐     │
-│                         │Chemical │   │Turbidity│   │ pH/Cl2  │     │
-│                         │ Dosing  │   │ Monitor │   │ Monitor │     │
-│                         └─────────┘   └─────────┘   └─────────┘     │
+│                         ┌────┴────┐   ┌────┴────┐   ┌────┴────┐      │
+│                         │Chemical │   │Turbidity│   │ pH/Cl2  │      │
+│                         │ Dosing  │   │ Monitor │   │ Monitor │      │
+│                         └─────────┘   └─────────┘   └─────────┘      │
 │                                                                      │
 │   Key Control Loops:                                                 │
 │   • Chemical dosing based on raw water turbidity                     │
@@ -379,15 +379,15 @@ Dedicated systems that prevent catastrophic failures:
 │   • Under-chlorination = public health risk                          │
 │   • False sensor readings = wrong chemical dosing                    │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Example 2: Power Generation
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    Combined Cycle Power Plant                        │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │        ┌────────────────┐    ┌────────────────┐                      │
 │   Gas─►│  Gas Turbine   │───►│   Generator    │──► Grid              │
@@ -418,7 +418,7 @@ Dedicated systems that prevent catastrophic failures:
 │   • Overspeed = catastrophic turbine failure                         │
 │   • Grid synchronization attacks                                     │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Failure Modes
@@ -440,9 +440,9 @@ Understanding how things fail is critical for OT security:
 OT systems are designed to **fail to a safe state**:
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────────────┐
 │                    Fail-Safe Examples                                │
-├─────────────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────────────┤
 │                                                                      │
 │   Equipment          Failure Mode        Safe State                  │
 │   ─────────────────────────────────────────────────────────────────  │
@@ -454,7 +454,7 @@ OT systems are designed to **fail to a safe state**:
 │                                                                      │
 │   Key Principle: Systems should fail to least harmful state          │
 │                                                                      │
-└─────────────────────────────────────────────────────────────────────┘
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Units and Measurements
