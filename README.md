@@ -12,7 +12,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/WALLIX-12.1.x-0066cc?style=flat-square" alt="Version"/>
   <img src="https://img.shields.io/badge/Debian-12-a80030?style=flat-square" alt="Debian"/>
-  <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=flat-square" alt="PostgreSQL"/>
+  <img src="https://img.shields.io/badge/MariaDB-10.11+-c0765a?style=flat-square" alt="MariaDB"/>
   <img src="https://img.shields.io/badge/Fortigate-MFA-ee3124?style=flat-square" alt="Fortigate"/>
   <img src="https://img.shields.io/badge/ISO_27001-Compliant-228b22?style=flat-square" alt="ISO 27001"/>
 </p>
@@ -54,7 +54,7 @@
 |-----------|----------|---------|
 | Fortigate Firewall | 1 | Perimeter security, SSL VPN, RADIUS proxy |
 | HAProxy | 2 (HA pair) | Load balancing with Keepalived VRRP |
-| WALLIX Bastion | 2 (HA pair) | PAM core with PostgreSQL streaming |
+| WALLIX Bastion | 2 (HA pair) | PAM core with MariaDB replication |
 | WALLIX RDS | 1 | Windows session management |
 | Targets | N | Windows Server 2022, RHEL 10/9 |
 
@@ -127,7 +127,7 @@ wallixdoc/
 | **Authorization** | RBAC, approval workflows, time-based access, JIT privileged access |
 | **Session Management** | Video recording, OCR search, real-time monitoring, keystroke logging, session sharing |
 | **Password Management** | AES-256 encrypted vault, automatic rotation, SSH key lifecycle, credential checkout |
-| **High Availability** | Active-Active clustering, PostgreSQL streaming replication, automatic failover |
+| **High Availability** | Active-Active clustering, MariaDB streaming replication, automatic failover |
 
 ---
 
@@ -148,7 +148,7 @@ See [Compliance & Audit Guide](./docs/pam/24-compliance-audit/README.md) for det
 | Component | Specification |
 |-----------|---------------|
 | **Operating System** | Debian 12 (Bookworm) |
-| **Database** | PostgreSQL 15+ with streaming replication |
+| **Database** | MariaDB 10.11+ with streaming replication |
 | **Clustering** | Pacemaker/Corosync |
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS disk encryption |
 | **Key Derivation** | Argon2ID |
@@ -174,7 +174,7 @@ crm status
 pcs status
 
 # Database Replication
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
 # License & Audit
 wabadmin license-info
@@ -187,7 +187,7 @@ wabadmin audit --last 20
 |------|---------|------|---------|
 | 443 | HTTPS/Web UI | 22 | SSH Proxy |
 | 636 | LDAPS | 88 | Kerberos |
-| 1812 | RADIUS (MFA) | 5432 | PostgreSQL |
+| 1812 | RADIUS (MFA) | 3306 | MariaDB |
 | 514/6514 | Syslog | 3389 | RDP |
 
 ---

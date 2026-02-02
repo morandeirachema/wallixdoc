@@ -177,7 +177,7 @@ crm status
 wabadmin license-info
 
 # Database
-sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
+sudo mysql -e "SHOW SLAVE STATUS\G"
 
 # Recent audit
 wabadmin audit --last 10

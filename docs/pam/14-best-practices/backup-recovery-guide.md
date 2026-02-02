@@ -1,6 +1,6 @@
 # Backup and Recovery Guide
 
-## Comprehensive Data Protection for WALLIX WALLIX Bastion
+## Comprehensive Data Protection for WALLIX Bastion
 
 This guide covers backup strategies, procedures, and disaster recovery for WALLIX deployments.
 

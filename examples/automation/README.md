@@ -1,8 +1,8 @@
 # DevOps Automation Examples
 
-## Infrastructure as Code for WALLIX WALLIX Bastion
+## Infrastructure as Code for WALLIX Bastion
 
-This directory contains automation examples for deploying and managing WALLIX WALLIX Bastion using modern DevOps practices.
+This directory contains automation examples for deploying and managing WALLIX Bastion using modern DevOps practices.
 
 ---
 
@@ -45,7 +45,7 @@ all:
 # playbooks/onboard-devices.yml
 
 ---
-- name: Onboard devices to WALLIX WALLIX Bastion
+- name: Onboard devices to WALLIX Bastion
   hosts: localhost
   gather_facts: false
 
@@ -277,7 +277,7 @@ provider "wallix-wallix" {
 # terraform/variables.tf
 
 variable "wallix_host" {
-  description = "WALLIX WALLIX Bastion hostname or IP"
+  description = "WALLIX Bastion hostname or IP"
   type        = string
 }
 

@@ -179,7 +179,7 @@ This guide covers setting up a pre-production environment that **closely mirrors
 | 4 | [FortiAuthenticator MFA Setup](./04-fortiauthenticator-setup.md) | 1 hour |
 | 5 | [WALLIX RDS Session Manager](./05-wallix-rds-setup.md) | 1 hour |
 | 6 | [AD Integration with MFA](./06-ad-integration.md) | 1 hour |
-| 7 | [WALLIX Bastion Installation](./08-wallix-installation.md) | 2 hours |
+| 7 | [WALLIX Bastion Installation](../install/HOWTO.md) | 2 hours |
 | 8 | [HA Active-Active Configuration](./08-ha-active-active.md) | 2 hours |
 | 9 | [Test Targets Setup](./09-test-targets.md) | 2 hours |
 | 10 | [SIEM Integration](./10-siem-integration.md) | 2 hours |

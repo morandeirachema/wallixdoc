@@ -1,6 +1,6 @@
 # Hands-On Labs
 
-## Practice Environments for WALLIX WALLIX Bastion
+## Practice Environments for WALLIX Bastion
 
 These labs provide safe environments to learn WALLIX without affecting production systems.
 

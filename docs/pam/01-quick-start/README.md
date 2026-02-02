@@ -1,6 +1,6 @@
 # 00 - Quick Start Guide
 
-## Your First 30 Minutes with WALLIX WALLIX Bastion
+## Your First 30 Minutes with WALLIX Bastion
 
 This guide gets you operational quickly. Read this first, then explore deeper sections.
 
@@ -211,7 +211,7 @@ crm status
 
 **Expected output:**
 ```
-WALLIX WALLIX Bastion Status: Running
+WALLIX Bastion Status: Running
   - Access Manager: OK
   - Session Manager: OK
   - Password Manager: OK

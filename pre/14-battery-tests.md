@@ -2,7 +2,7 @@
 
 ## WALLIX Bastion Comprehensive Test Suite
 
-This document provides a complete battery of tests to demonstrate WALLIX WALLIX Bastion capabilities to clients. Each test includes expected results, success criteria, and talking points for client presentations.
+This document provides a complete battery of tests to demonstrate WALLIX Bastion capabilities to clients. Each test includes expected results, success criteria, and talking points for client presentations.
 
 ---
 

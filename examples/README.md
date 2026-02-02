@@ -1,4 +1,4 @@
-# WALLIX WALLIX Bastion Examples
+# WALLIX Bastion Examples
 
 > Practical code examples for automating and integrating with WALLIX Bastion.
 

@@ -90,7 +90,7 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
    Name:           WALLIX-Cluster
    Client IP/Name: 10.10.1.11
    Secret:         [Strong shared secret - save this!]
-   Description:    WALLIX WALLIX Primary Node
+   Description:    WALLIX Primary Node
 
    Authentication:
    [x] Enable
