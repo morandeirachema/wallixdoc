@@ -1,62 +1,95 @@
-# WALLIX Bastion Documentation
+# WALLIX Bastion + FortiAuthenticator MFA
 
 <p align="center">
-  <img src="https://www.wallix.com/wp-content/uploads/2021/03/wallix-logo.svg" alt="WALLIX Logo" width="200"/>
+  <img src="https://www.wallix.com/wp-content/uploads/2021/03/wallix-logo.svg" alt="WALLIX" width="180"/>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Fortinet_logo.svg" alt="Fortinet" width="180"/>
 </p>
 
 <p align="center">
-  <strong>Privileged Access Management with Fortigate MFA</strong><br/>
-  <em>Secure access to enterprise systems with integrated Fortinet authentication</em>
+  <strong>Enterprise Privileged Access Management</strong><br/>
+  <em>4-Site Synchronized Architecture with Fortinet MFA Integration</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/WALLIX-12.1.x-0066cc?style=flat-square" alt="Version"/>
-  <img src="https://img.shields.io/badge/Debian-12-a80030?style=flat-square" alt="Debian"/>
-  <img src="https://img.shields.io/badge/MariaDB-10.11+-c0765a?style=flat-square" alt="MariaDB"/>
-  <img src="https://img.shields.io/badge/Fortigate-MFA-ee3124?style=flat-square" alt="Fortigate"/>
-  <img src="https://img.shields.io/badge/ISO_27001-Compliant-228b22?style=flat-square" alt="ISO 27001"/>
+  <img src="https://img.shields.io/badge/WALLIX_Bastion-12.1.x-0066cc?style=for-the-badge" alt="WALLIX"/>
+  <img src="https://img.shields.io/badge/FortiAuthenticator-6.4+-ee3124?style=for-the-badge" alt="FortiAuth"/>
+  <img src="https://img.shields.io/badge/ISO_27001-Compliant-228b22?style=for-the-badge" alt="ISO"/>
 </p>
 
 ---
 
-## Overview
+## Project Overview
 
-**WALLIX Bastion** with Fortigate MFA integration provides enterprise-grade privileged access management with Fortinet's multi-factor authentication. Built on WALLIX Bastion 12.x, it delivers:
+This repository contains comprehensive documentation for deploying **WALLIX Bastion PAM** with **FortiAuthenticator MFA** in a 4-site synchronized enterprise architecture.
 
-- **Secure Remote Access** - Controlled access to critical systems through a single gateway
-- **Fortigate MFA Integration** - FortiAuthenticator with FortiToken Mobile/Push authentication
-- **Strong Authentication** - FortiAuthenticator MFA with LDAP/AD integration
-- **Session Recording** - Full audit trail with video replay, OCR, and keystroke logging
-- **Password Management** - Encrypted vault with automatic credential rotation
+| Aspect | Details |
+|--------|---------|
+| **Solution** | Privileged Access Management (PAM) |
+| **Authentication** | FortiAuthenticator with FortiToken Mobile/Push |
+| **Architecture** | 4 synchronized sites in single CPD |
+| **High Availability** | Active-Active clustering per site |
+| **Target Systems** | Windows Server 2022, RHEL 10, RHEL 9 |
+| **Documentation** | 46 comprehensive sections |
 
 ---
 
 ## Architecture
 
-### 4-Site Synchronized Architecture (Single CPD)
-
 ```
 +===============================================================================+
-|  4-SITE SYNCHRONIZED ARCHITECTURE                                             |
+|                     4-SITE SYNCHRONIZED ARCHITECTURE                          |
 +===============================================================================+
 |                                                                               |
-|  Each Site: Fortigate -> HAProxy (HA) -> WALLIX Bastion (HA) -> WALLIX RDS    |
+|                          +--------------------+                               |
+|                          |  FortiAuthenticator |                              |
+|                          |    (HW Appliance)   |                              |
+|                          |     RADIUS MFA      |                              |
+|                          +---------+----------+                               |
+|                                    |                                          |
+|         +------------+-------------+-------------+------------+               |
+|         |            |             |             |            |               |
+|    +----v----+  +----v----+  +----v----+  +----v----+                         |
+|    |  Site 1 |  |  Site 2 |  |  Site 3 |  |  Site 4 |                         |
+|    +---------+  +---------+  +---------+  +---------+                         |
 |                                                                               |
-|  Site 1-4: Active-Active HA with cross-site synchronization                   |
-|  Targets: Windows Server 2022, RHEL 10, RHEL 9                                |
+|    Each Site:                                                                 |
+|    +-----------------------------------------------------------------------+  |
+|    |  Fortigate FW --> HAProxy (2x HA) --> WALLIX (2x HA) --> WALLIX RDS  |  |
+|    +-----------------------------------------------------------------------+  |
+|                                    |                                          |
+|                          +---------v----------+                               |
+|                          |   Target Systems   |                               |
+|                          | Windows Server 2022|                               |
+|                          |  RHEL 10 / RHEL 9  |                               |
+|                          +--------------------+                               |
 |                                                                               |
 +===============================================================================+
 ```
 
-### Per-Site Components
+### Component Stack
 
-| Component | Quantity | Purpose |
-|-----------|----------|---------|
-| Fortigate Firewall | 1 | Perimeter security, SSL VPN, RADIUS proxy |
-| HAProxy | 2 (HA pair) | Load balancing with Keepalived VRRP |
-| WALLIX Bastion | 2 (HA pair) | PAM core with MariaDB replication |
-| WALLIX RDS | 1 | Windows session management |
-| Targets | N | Windows Server 2022, RHEL 10/9 |
+| Layer | Component | Type | Quantity/Site |
+|-------|-----------|------|---------------|
+| **MFA** | FortiAuthenticator | HW Appliance | 1 (shared) |
+| **Firewall** | Fortigate | HW Appliance | 1 |
+| **Load Balancer** | HAProxy + Keepalived | VM | 2 (HA pair) |
+| **PAM** | WALLIX Bastion | HW Appliance | 2 (HA pair) |
+| **RDP Gateway** | WALLIX RDS | VM | 1 |
+| **Targets** | Windows/RHEL | VM | N |
+
+---
+
+## Quick Start
+
+| Step | Description | Link |
+|:----:|-------------|------|
+| **1** | Review architecture and requirements | [Architecture](./docs/pam/03-architecture/README.md) |
+| **2** | Set up pre-production lab | [Lab Guide](./pre/README.md) |
+| **3** | Configure FortiAuthenticator MFA | [FortiAuth Setup](./pre/04-fortiauthenticator-setup.md) |
+| **4** | Deploy WALLIX Bastion | [Installation](./install/HOWTO.md) |
+| **5** | Integrate with Active Directory | [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) |
+| **6** | Configure Fortigate integration | [Fortigate MFA](./docs/pam/46-fortigate-integration/README.md) |
 
 ---
 
@@ -64,108 +97,137 @@
 
 ```
 wallixdoc/
+├── docs/pam/                    # 46 PAM Documentation Sections
+│   ├── 00-05   Getting Started
+│   ├── 06-09   Authentication & Sessions
+│   ├── 10-14   API, HA & Operations
+│   ├── 15-25   Reference & Compliance
+│   ├── 26-39   Infrastructure & Security
+│   └── 40-46   Advanced Features & Fortigate
 │
-├── docs/                         # Technical Documentation (46 sections)
-│   └── pam/                      # PAM/WALLIX Core (46 sections, 00-47)
-│       ├── 00-05  Getting Started & Configuration
-│       ├── 06-09  Authentication, Authorization & Sessions
-│       ├── 10-15  API, HA, Monitoring & Best Practices
-│       ├── 16-24  Deployment, Operations & Compliance
-│       ├── 25-32  JIT Access, Performance & Infrastructure
-│       ├── 33-46  Advanced Features & Security
-│       └── 47     Fortigate Integration
+├── install/                     # Multi-Site Deployment Guides
+│   ├── HOWTO.md                 # Complete installation walkthrough
+│   └── 00-10 *.md               # Step-by-step procedures
 │
-├── install/                      # Multi-Site Deployment
-│   ├── HOWTO.md                  # Complete installation guide
-│   └── 00-10-*.md                # Step-by-step procedures
+├── pre/                         # Pre-Production Lab (14 guides)
+│   ├── 01-infrastructure        # VMware vSphere/ESXi setup
+│   ├── 04-fortiauthenticator    # MFA configuration
+│   └── 09-test-targets          # Windows/RHEL setup
 │
-├── pre/                          # Pre-Production Lab (13 guides)
-│   ├── README.md                 # Lab overview and architecture
-│   ├── 01-infrastructure-setup.md    # VMware vSphere/ESXi 8.0+
-│   ├── 04-fortiauthenticator-setup.md # FortiAuthenticator MFA
-│   ├── 05-wallix-rds-setup.md    # WALLIX RDS configuration
-│   └── 01-14-*.md                # Complete lab setup
-│
-└── examples/                     # Automation Examples
-    ├── ansible/                  # Ansible playbooks and roles
-    ├── terraform/                # Infrastructure as Code
-    └── api/                      # REST API samples (Python, curl)
+└── examples/                    # Automation
+    ├── ansible/                 # Playbooks and roles
+    ├── terraform/               # Infrastructure as Code
+    └── api/                     # REST API samples
 ```
 
 ---
 
-## Quick Navigation
+## Navigation by Role
 
-### By Role
-
-| Role | Recommended Path |
-|------|------------------|
-| **New to WALLIX** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) → [Core Components](./docs/pam/04-core-components/README.md) |
-| **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) → [Troubleshooting](./docs/pam/13-troubleshooting/README.md) |
-| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate Integration](./docs/pam/46-fortigate-integration/README.md) → [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) → [Best Practices](./docs/pam/14-best-practices/README.md) |
-| **DevOps/Automation** | [API Reference](./docs/pam/17-api-reference/README.md) → [Deployment](./docs/pam/16-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
-| **Compliance Officer** | [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence Collection](./docs/pam/37-compliance-evidence/README.md) |
-
-### By Team
-
-| Team | Key Documents |
-|------|---------------|
-| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [Network Validation](./docs/pam/36-network-validation/README.md) • [Load Balancer](./docs/pam/32-load-balancer/README.md) |
-| **Identity/IAM** | [Authentication](./docs/pam/06-authentication/README.md) • [Fortigate MFA](./docs/pam/46-fortigate-integration/README.md) • [LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/35-kerberos-authentication/README.md) |
-| **Security** | [Session Recording](./docs/pam/39-session-recording-playback/README.md) • [Incident Response](./docs/pam/23-incident-response/README.md) • [Command Filtering](./docs/pam/38-command-filtering/README.md) |
-| **Infrastructure** | [High Availability](./docs/pam/11-high-availability/README.md) • [Backup & Restore](./docs/pam/30-backup-restore/README.md) • [Disaster Recovery](./docs/pam/29-disaster-recovery/README.md) |
-| **Operations** | [Operational Runbooks](./docs/pam/21-operational-runbooks/README.md) • [wabadmin CLI](./docs/pam/31-wabadmin-reference/README.md) • [Monitoring](./docs/pam/12-monitoring-observability/README.md) |
+| Role | Start Here |
+|------|------------|
+| **Project Manager** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) |
+| **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) |
+| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate MFA](./docs/pam/46-fortigate-integration/README.md) |
+| **Network Engineer** | [Architecture Diagrams](./install/09-architecture-diagrams.md) → [Load Balancer](./docs/pam/32-load-balancer/README.md) |
+| **Identity/IAM Team** | [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) → [Kerberos](./docs/pam/35-kerberos-authentication/README.md) |
+| **DevOps Engineer** | [API Reference](./docs/pam/17-api-reference/README.md) → [Ansible](./examples/ansible/README.md) |
+| **Compliance Officer** | [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence](./docs/pam/37-compliance-evidence/README.md) |
+| **Operations Team** | [Runbooks](./docs/pam/21-operational-runbooks/README.md) → [CLI Reference](./docs/pam/31-wabadmin-reference/README.md) |
 
 ---
 
-## Key Features
+## Key Capabilities
 
-| Category | Capabilities |
-|----------|-------------|
-| **Authentication** | FortiAuthenticator MFA (FortiToken Mobile/Push), LDAP/AD, Kerberos SSO |
-| **Fortigate Integration** | FortiToken Mobile/Push, RADIUS authentication, SSL VPN integration, Fortigate firewall policies |
-| **Authorization** | RBAC, approval workflows, time-based access, JIT privileged access |
-| **Session Management** | Video recording, OCR search, real-time monitoring, keystroke logging, session sharing |
-| **Password Management** | AES-256 encrypted vault, automatic rotation, SSH key lifecycle, credential checkout |
-| **High Availability** | Active-Active clustering, MariaDB streaming replication, automatic failover |
-
----
-
-## Compliance Coverage
-
-| Standard | Coverage | Standard | Coverage |
-|----------|----------|----------|----------|
-| **ISO 27001** | Full | **SOC 2 Type II** | Full |
-| **NIS2 Directive** | Full | **PCI-DSS** | Full |
-| **GDPR** | Full | **HIPAA** | Full |
-
-See [Compliance & Audit Guide](./docs/pam/24-compliance-audit/README.md) for detailed mapping.
+| Category | Features |
+|----------|----------|
+| **Authentication** | FortiToken Mobile/Push, LDAP/AD, Kerberos SSO, RADIUS |
+| **Session Control** | Video recording, OCR search, keystroke logging, real-time monitoring |
+| **Password Vault** | AES-256 encryption, automatic rotation, credential checkout |
+| **Access Control** | RBAC, approval workflows, JIT access, time-based restrictions |
+| **High Availability** | Active-Active clustering, MariaDB replication, automatic failover |
+| **Compliance** | ISO 27001, SOC 2, NIS2, PCI-DSS, HIPAA, GDPR |
 
 ---
 
-## Technical Requirements
+## Technical Specifications
 
 | Component | Specification |
 |-----------|---------------|
+| **WALLIX Bastion** | Version 12.1.x (HW Appliance) |
+| **FortiAuthenticator** | Version 6.4+ (HW Appliance) |
 | **Operating System** | Debian 12 (Bookworm) |
 | **Database** | MariaDB 10.11+ with streaming replication |
 | **Clustering** | Pacemaker/Corosync |
-| **Encryption** | AES-256-GCM, TLS 1.3, LUKS disk encryption |
-| **Key Derivation** | Argon2ID |
-| **Deployment** | On-premises (bare metal, VMs) - No cloud/containers |
-| **Hypervisor (Pre-Prod Lab)** | VMware vSphere/ESXi 8.0+ |
-| **MFA** | FortiAuthenticator 6.4+ with FortiToken |
+| **Load Balancer** | HAProxy 2.x with Keepalived VRRP |
+| **Encryption** | AES-256-GCM, TLS 1.3, LUKS |
+| **Protocols** | SSH, RDP, WinRM, HTTPS |
 
-See [System Requirements](./docs/pam/19-system-requirements/README.md) for detailed sizing.
+### Network Ports
+
+| Port | Service | Port | Service |
+|:----:|---------|:----:|---------|
+| 443 | HTTPS/Web UI | 22 | SSH Proxy |
+| 3389 | RDP Proxy | 5985/5986 | WinRM |
+| 636 | LDAPS | 88 | Kerberos |
+| 1812/1813 | RADIUS | 3306 | MariaDB |
 
 ---
 
-## Quick Reference
+## Pre-Production Lab
 
-### Essential Commands
+Build a complete test environment before production deployment:
+
+```
+Lab Components
+├── VMware vSphere/ESXi 8.0+
+├── Active Directory Domain Controller
+├── FortiAuthenticator (MFA)
+├── HAProxy Load Balancers (2x HA)
+├── WALLIX Bastion (2x Active-Active)
+├── WALLIX RDS Session Manager
+├── Windows Server 2022 (test target)
+├── RHEL 10 Server (test target)
+└── RHEL 9 Server (legacy target)
+```
+
+**[Start Lab Setup →](./pre/README.md)**
+
+---
+
+## Documentation Sections
+
+### Core (00-14)
+
+| # | Section | Description |
+|:-:|---------|-------------|
+| 00-05 | [Getting Started](./docs/pam/01-quick-start/README.md) | Introduction, architecture, configuration |
+| 06-07 | [Authentication](./docs/pam/06-authentication/README.md) | MFA, authorization, access control |
+| 08-09 | [Sessions & Passwords](./docs/pam/08-password-management/README.md) | Vault, recording, rotation |
+| 10-14 | [Operations](./docs/pam/12-monitoring-observability/README.md) | API, HA, monitoring, troubleshooting |
+
+### Reference (15-32)
+
+| # | Section | Description |
+|:-:|---------|-------------|
+| 15-22 | [Reference](./docs/pam/17-api-reference/README.md) | API docs, CLI, runbooks, FAQ |
+| 23-25 | [Compliance](./docs/pam/24-compliance-audit/README.md) | Audit, incident response, JIT access |
+| 26-32 | [Infrastructure](./docs/pam/29-disaster-recovery/README.md) | DR, backup, certificates, load balancer |
+
+### Advanced (33-46)
+
+| # | Section | Description |
+|:-:|---------|-------------|
+| 33-39 | [Security](./docs/pam/34-ldap-ad-integration/README.md) | AD, Kerberos, command filtering |
+| 40-45 | [Features](./docs/pam/40-account-discovery/README.md) | Discovery, SSH keys, self-service |
+| 46 | [Fortigate](./docs/pam/46-fortigate-integration/README.md) | **FortiAuthenticator MFA integration** |
+
+---
+
+## Quick Commands
 
 ```bash
-# Service Management
+# Service Status
 systemctl status wallix-bastion
 wabadmin status
 
@@ -174,177 +236,34 @@ crm status
 pcs status
 
 # Database Replication
-sudo mysql -e "SHOW SLAVE STATUS\G"
+mysql -e "SHOW SLAVE STATUS\G"
 
-# License & Audit
-wabadmin license-info
+# Audit Log
 wabadmin audit --last 20
+
+# License Info
+wabadmin license-info
 ```
-
-### Key Ports
-
-| Port | Service | Port | Service |
-|------|---------|------|---------|
-| 443 | HTTPS/Web UI | 22 | SSH Proxy |
-| 636 | LDAPS | 88 | Kerberos |
-| 1812 | RADIUS (MFA) | 3306 | MariaDB |
-| 514/6514 | Syslog | 3389 | RDP |
 
 ---
 
-## Getting Started
+## Resources
 
-### 1. Pre-Production Lab (Recommended)
-
-Start with the [Pre-Production Lab Guide](./pre/README.md) to build a test environment:
-
-```
-Lab Environment
-├── VMware vSphere/ESXi 8.0+ cluster
-├── Active Directory domain controller
-├── HAProxy load balancer (2x)
-├── FortiAuthenticator MFA server
-├── WALLIX Bastion (Active-Active HA)
-├── WALLIX RDS (Remote Desktop Services)
-└── Test targets (Windows Server 2022, RHEL 10/9)
-```
-
-### 2. Production Deployment
-
-Follow the [Multi-Site Installation Guide](./install/README.md) for production:
-
-```
-Production Architecture (4-Site Synchronized CPD)
-├── Site 1: Active-Active HA (Fortigate + HAProxy + WALLIX)
-├── Site 2: Active-Active HA (Fortigate + HAProxy + WALLIX)
-├── Site 3: Active-Active HA (Fortigate + HAProxy + WALLIX)
-└── Site 4: Active-Active HA (Fortigate + HAProxy + WALLIX)
-```
-
-### 3. Automation
-
-Explore [Examples](./examples/README.md) for automation:
-
-- **Ansible** - Device provisioning, user management, health checks
-- **Terraform** - Infrastructure as Code for resource management
-- **Python API** - Custom integrations and scripting
-- **curl Scripts** - Quick API operations
-
----
-
-## Official Resources
-
-| Resource | URL |
-|----------|-----|
-| Documentation Portal | https://pam.wallix.one/documentation |
-| Support Portal | https://support.wallix.com |
+| Resource | Link |
+|----------|------|
+| WALLIX Documentation | https://pam.wallix.one/documentation |
+| WALLIX Support | https://support.wallix.com |
 | Terraform Provider | https://registry.terraform.io/providers/wallix/wallix-bastion |
 | REST API Samples | https://github.com/wallix/wbrest_samples |
-| WALLIX GitHub | https://github.com/wallix |
-
----
-
-## PAM Core Documentation (docs/pam/)
-
-### Getting Started (00-05)
-
-| Section | Description |
-|---------|-------------|
-| [00 - Official Resources](./docs/pam/00-official-resources/README.md) | Curated links to official WALLIX documentation |
-| [01 - Quick Start](./docs/pam/01-quick-start/README.md) | Quick installation and configuration guide |
-| [02 - Introduction](./docs/pam/02-introduction/README.md) | Company and product overview |
-| [03 - Architecture](./docs/pam/03-architecture/README.md) | System architecture and deployment models |
-| [04 - Core Components](./docs/pam/04-core-components/README.md) | Session Manager, Password Manager, Access Manager |
-| [05 - Configuration](./docs/pam/05-configuration/README.md) | Object model, domains, devices, accounts |
-
-### Authentication & Authorization (06-07)
-
-| Section | Description |
-|---------|-------------|
-| [06 - Authentication](./docs/pam/06-authentication/README.md) | MFA, SSO, LDAP/AD, Kerberos, OIDC/SAML, FortiAuthenticator |
-| [07 - Authorization](./docs/pam/07-authorization/README.md) | RBAC, approval workflows, time windows |
-
-### Credential & Session Management (08-09)
-
-| Section | Description |
-|---------|-------------|
-| [08 - Password Management](./docs/pam/08-password-management/README.md) | Credential vault, rotation, checkout |
-| [09 - Session Management](./docs/pam/09-session-management/README.md) | Recording, monitoring, audit trails |
-
-### API & Automation (10)
-
-| Section | Description |
-|---------|-------------|
-| [10 - API & Automation](./docs/pam/10-api-automation/README.md) | REST API, DevOps integration |
-
-### Infrastructure & High Availability (11-14)
-
-| Section | Description |
-|---------|-------------|
-| [11 - High Availability](./docs/pam/11-high-availability/README.md) | Clustering, DR, failover |
-| [12 - Monitoring & Observability](./docs/pam/12-monitoring-observability/README.md) | Prometheus, Grafana, alerting |
-| [13 - Troubleshooting](./docs/pam/13-troubleshooting/README.md) | Diagnostics, log analysis |
-| [14 - Best Practices](./docs/pam/14-best-practices/README.md) | Security hardening, operations |
-
-### Reference & Appendix (15-22)
-
-| Section | Description |
-|---------|-------------|
-| [15 - Appendix](./docs/pam/15-appendix/README.md) | Glossary, quick reference, cheat sheets |
-| [16 - Deployment Options](./docs/pam/16-cloud-deployment/README.md) | On-premises deployment patterns |
-| [17 - API Reference](./docs/pam/17-api-reference/README.md) | Complete REST API documentation |
-| [18 - Error Reference](./docs/pam/18-error-reference/README.md) | Error codes and remediation |
-| [19 - System Requirements](./docs/pam/19-system-requirements/README.md) | Hardware, sizing, performance |
-| [20 - Upgrade Guide](./docs/pam/20-upgrade-guide/README.md) | Version upgrades, HA procedures |
-| [21 - Operational Runbooks](./docs/pam/21-operational-runbooks/README.md) | Daily/weekly/monthly procedures |
-| [22 - FAQ & Known Issues](./docs/pam/22-faq-known-issues/README.md) | Common questions, compatibility |
-
-### Compliance & Incident Response (23-25)
-
-| Section | Description |
-|---------|-------------|
-| [23 - Incident Response](./docs/pam/23-incident-response/README.md) | Security incident playbooks |
-| [24 - Compliance & Audit](./docs/pam/24-compliance-audit/README.md) | SOC2, ISO27001, PCI-DSS, HIPAA |
-| [25 - JIT Access](./docs/pam/25-jit-access/README.md) | Just-In-Time access, approval workflows |
-
-### Performance & Infrastructure (26-32)
-
-| Section | Description |
-|---------|-------------|
-| [26 - Performance Benchmarks](./docs/pam/26-performance-benchmarks/README.md) | Capacity planning, load testing |
-| [27 - Vendor Integration](./docs/pam/27-vendor-integration/README.md) | Cisco, Microsoft, Red Hat |
-| [28 - Certificate Management](./docs/pam/28-certificate-management/README.md) | TLS/SSL, CSR, renewal |
-| [29 - Disaster Recovery](./docs/pam/29-disaster-recovery/README.md) | DR runbooks, RTO/RPO, PITR |
-| [30 - Backup and Restore](./docs/pam/30-backup-restore/README.md) | Backup, restore, disaster recovery |
-| [31 - wabadmin CLI Reference](./docs/pam/31-wabadmin-reference/README.md) | Complete CLI command reference |
-| [32 - Load Balancer](./docs/pam/32-load-balancer/README.md) | HAProxy, health checks, SSL |
-
-### Advanced Authentication (33-40)
-
-| Section | Description |
-|---------|-------------|
-| [33 - Password Rotation Troubleshooting](./docs/pam/33-password-rotation-troubleshooting/README.md) | Rotation failures and remediation |
-| [34 - LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) | Active Directory integration |
-| [35 - Kerberos Authentication](./docs/pam/35-kerberos-authentication/README.md) | Kerberos, SPNEGO, SSO |
-| [36 - Network Configuration](./docs/pam/36-network-validation/README.md) | Firewall rules, DNS, NTP |
-| [37 - Compliance Evidence](./docs/pam/37-compliance-evidence/README.md) | Evidence collection, attestation |
-| [38 - Command Filtering](./docs/pam/38-command-filtering/README.md) | Command whitelisting/blacklisting |
-| [39 - Session Recording Playback](./docs/pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics |
-
-### Advanced Features (40-46)
-
-| Section | Description |
-|---------|-------------|
-| [40 - Account Discovery](./docs/pam/40-account-discovery/README.md) | Discovery scanning, bulk import |
-| [41 - SSH Key Lifecycle](./docs/pam/41-ssh-key-lifecycle/README.md) | SSH key management, rotation, CA |
-| [42 - Service Account Lifecycle](./docs/pam/42-service-account-lifecycle/README.md) | Service account governance |
-| [43 - Session Sharing](./docs/pam/43-session-sharing/README.md) | Multi-user sessions, dual-control |
-| [44 - User Self-Service](./docs/pam/44-user-self-service/README.md) | Self-service portal |
-| [45 - Privileged Task Automation](./docs/pam/45-privileged-task-automation/README.md) | Automated privileged operations |
-| [46 - Fortigate Integration](./docs/pam/46-fortigate-integration/README.md) | Fortigate firewall and FortiAuthenticator MFA |
 
 ---
 
 <p align="center">
-  <sub>46 Sections • PAM with Fortigate MFA • Pre-Production Lab • February 2026</sub>
+  <strong>46 Documentation Sections</strong> ·
+  <strong>4-Site Architecture</strong> ·
+  <strong>FortiAuthenticator MFA</strong>
+</p>
+
+<p align="center">
+  <sub>WALLIX Bastion 12.1.x · FortiAuthenticator 6.4+ · February 2026</sub>
 </p>
