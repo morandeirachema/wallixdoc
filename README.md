@@ -1,33 +1,62 @@
-# WALLIX PAM4OT Documentation
+# WALLIX Bastion Documentation
 
 <p align="center">
   <img src="https://www.wallix.com/wp-content/uploads/2021/03/wallix-logo.svg" alt="WALLIX Logo" width="200"/>
 </p>
 
 <p align="center">
-  <strong>Privileged Access Management for Operational Technology</strong><br/>
-  <em>Secure access to critical infrastructure with enterprise-grade PAM</em>
+  <strong>Privileged Access Management with Fortigate MFA</strong><br/>
+  <em>Secure access to enterprise systems with integrated Fortinet authentication</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/PAM4OT-12.1.x-0066cc?style=flat-square" alt="Version"/>
+  <img src="https://img.shields.io/badge/WALLIX-12.1.x-0066cc?style=flat-square" alt="Version"/>
   <img src="https://img.shields.io/badge/Debian-12-a80030?style=flat-square" alt="Debian"/>
   <img src="https://img.shields.io/badge/PostgreSQL-15+-336791?style=flat-square" alt="PostgreSQL"/>
-  <img src="https://img.shields.io/badge/IEC_62443-Compliant-228b22?style=flat-square" alt="IEC 62443"/>
-  <img src="https://img.shields.io/badge/NIST_800--82-Compliant-228b22?style=flat-square" alt="NIST"/>
+  <img src="https://img.shields.io/badge/Fortigate-MFA-ee3124?style=flat-square" alt="Fortigate"/>
+  <img src="https://img.shields.io/badge/ISO_27001-Compliant-228b22?style=flat-square" alt="ISO 27001"/>
 </p>
 
 ---
 
 ## Overview
 
-**PAM4OT** is WALLIX's unified privileged access management solution designed for OT/industrial environments. Built on WALLIX Bastion 12.x, it provides:
+**WALLIX Bastion** with Fortigate MFA integration provides enterprise-grade privileged access management with Fortinet's multi-factor authentication. Built on WALLIX Bastion 12.x, it delivers:
 
 - **Secure Remote Access** - Controlled access to critical systems through a single gateway
+- **Fortigate MFA Integration** - FortiAuthenticator with FortiToken Mobile/Push authentication
 - **Strong Authentication** - MFA with FIDO2, LDAP/AD, Kerberos, SAML/OIDC
 - **Session Recording** - Full audit trail with video replay, OCR, and keystroke logging
 - **Password Management** - Encrypted vault with automatic credential rotation
-- **Industrial Protocol Support** - Native proxying for Modbus, DNP3, OPC UA, S7comm
+
+---
+
+## Architecture
+
+### 4-Site Synchronized Architecture (Single CPD)
+
+```
++===============================================================================+
+|  4-SITE SYNCHRONIZED ARCHITECTURE                                             |
++===============================================================================+
+|                                                                               |
+|  Each Site: Fortigate -> HAProxy (HA) -> WALLIX Bastion (HA) -> WALLIX RDS   |
+|                                                                               |
+|  Site 1-4: Active-Active HA with cross-site synchronization                  |
+|  Targets: Windows Server 2022, RHEL 10, RHEL 9                                |
+|                                                                               |
++===============================================================================+
+```
+
+### Per-Site Components
+
+| Component | Quantity | Purpose |
+|-----------|----------|---------|
+| Fortigate Firewall | 1 | Perimeter security, SSL VPN, RADIUS proxy |
+| HAProxy | 2 (HA pair) | Load balancing with Keepalived VRRP |
+| WALLIX Bastion | 2 (HA pair) | PAM core with PostgreSQL streaming |
+| WALLIX RDS | 1 | Windows session management |
+| Targets | N | Windows Server 2022, RHEL 10/9 |
 
 ---
 
@@ -36,28 +65,21 @@
 ```
 wallixdoc/
 │
-├── docs/                         # Technical Documentation (66 sections)
-│   ├── pam/                      # PAM/WALLIX Core (47 sections, 00-46)
-│   │   ├── 00-05  Getting Started & Configuration
-│   │   ├── 06-09  Authentication, Authorization & Sessions
-│   │   ├── 10-15  API, HA, Monitoring & Best Practices
-│   │   ├── 16-24  Deployment, Operations & Compliance
-│   │   ├── 25-32  JIT Access, Performance & Infrastructure
-│   │   └── 33-46  Advanced Features & Security
-│   │
-│   └── ot/                       # OT Foundational (19 sections, 00-18)
-│       ├── 00     OT Fundamentals (16-week learning path)
-│       ├── 01-09  Overview, Architecture & Protocols
-│       ├── 05-10  Air-Gapped & Offline Operations
-│       ├── 06-08  Compliance & Integration
-│       ├── 11-17  Vendor Access & Safety
-│       └── 18     Training & Certifications
+├── docs/                         # Technical Documentation (47 sections)
+│   └── pam/                      # PAM/WALLIX Core (47 sections, 00-47)
+│       ├── 00-05  Getting Started & Configuration
+│       ├── 06-09  Authentication, Authorization & Sessions
+│       ├── 10-15  API, HA, Monitoring & Best Practices
+│       ├── 16-24  Deployment, Operations & Compliance
+│       ├── 25-32  JIT Access, Performance & Infrastructure
+│       ├── 33-46  Advanced Features & Security
+│       └── 47     Fortigate Integration
 │
 ├── install/                      # Multi-Site Deployment
 │   ├── HOWTO.md                  # Complete installation guide
 │   └── 00-10-*.md                # Step-by-step procedures
 │
-├── pre/                          # Pre-Production Lab (14 guides)
+├── pre/                          # Pre-Production Lab (13 guides)
 │   ├── README.md                 # Lab overview and architecture
 │   ├── 01-infrastructure-setup.md    # VMware vSphere/ESXi 8.0+
 │   ├── 04-fortiauthenticator-setup.md # FortiAuthenticator MFA
@@ -78,22 +100,20 @@ wallixdoc/
 
 | Role | Recommended Path |
 |------|------------------|
-| **New to PAM4OT** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) → [Core Components](./docs/pam/04-core-components/README.md) |
+| **New to WALLIX** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) → [Core Components](./docs/pam/04-core-components/README.md) |
 | **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) → [Troubleshooting](./docs/pam/13-troubleshooting/README.md) |
-| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [FIDO2 MFA](./docs/pam/40-fido2-hardware-mfa/README.md) → [Best Practices](./docs/pam/14-best-practices/README.md) → [Incident Response](./docs/pam/23-incident-response/README.md) |
-| **OT/ICS Engineer** | [OT Fundamentals](./docs/ot/00-fundamentals/README.md) → [Industrial Overview](./docs/ot/01-industrial-overview/README.md) → [Protocols](./docs/ot/03-industrial-protocols/README.md) → [SCADA Access](./docs/ot/04-scada-ics-access/README.md) |
+| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate Integration](./docs/pam/47-fortigate-integration/README.md) → [FIDO2 MFA](./docs/pam/40-fido2-hardware-mfa/README.md) → [Best Practices](./docs/pam/14-best-practices/README.md) |
 | **DevOps/Automation** | [API Reference](./docs/pam/17-api-reference/README.md) → [Deployment](./docs/pam/16-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
-| **Compliance Officer** | [IEC 62443](./docs/ot/06-iec62443-compliance/README.md) → [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence Collection](./docs/pam/37-compliance-evidence/README.md) |
+| **Compliance Officer** | [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence Collection](./docs/pam/37-compliance-evidence/README.md) |
 
 ### By Team
 
 | Team | Key Documents |
 |------|---------------|
-| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [OT Architecture](./docs/ot/02-ot-architecture/README.md) • [Network Validation](./docs/pam/36-network-validation/README.md) |
-| **Identity/IAM** | [Authentication](./docs/pam/06-authentication/README.md) • [LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/35-kerberos-authentication/README.md) • [FIDO2 MFA](./docs/pam/40-fido2-hardware-mfa/README.md) |
+| **Networking** | [Architecture Diagrams](./install/09-architecture-diagrams.md) • [Network Validation](./docs/pam/36-network-validation/README.md) • [Load Balancer](./docs/pam/32-load-balancer/README.md) |
+| **Identity/IAM** | [Authentication](./docs/pam/06-authentication/README.md) • [Fortigate MFA](./docs/pam/47-fortigate-integration/README.md) • [LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) • [Kerberos](./docs/pam/35-kerberos-authentication/README.md) |
 | **Security** | [Session Recording](./docs/pam/39-session-recording-playback/README.md) • [Incident Response](./docs/pam/23-incident-response/README.md) • [Command Filtering](./docs/pam/38-command-filtering/README.md) |
-| **Infrastructure** | [High Availability](./docs/pam/11-high-availability/README.md) • [Backup & Restore](./docs/pam/30-backup-restore/README.md) • [Disaster Recovery](./docs/pam/29-disaster-recovery/README.md) • [Load Balancer](./docs/pam/32-load-balancer/README.md) |
-| **OT/Industrial** | [Industrial Protocols](./docs/ot/03-industrial-protocols/README.md) • [OT Jump Host](./docs/ot/12-ot-jump-host/README.md) • [Vendor Remote Access](./docs/ot/11-vendor-remote-access/README.md) • [Engineering Workstation Access](./docs/ot/14-engineering-workstation-access/README.md) |
+| **Infrastructure** | [High Availability](./docs/pam/11-high-availability/README.md) • [Backup & Restore](./docs/pam/30-backup-restore/README.md) • [Disaster Recovery](./docs/pam/29-disaster-recovery/README.md) |
 | **Operations** | [Operational Runbooks](./docs/pam/21-operational-runbooks/README.md) • [wabadmin CLI](./docs/pam/31-wabadmin-reference/README.md) • [Monitoring](./docs/pam/12-monitoring-observability/README.md) |
 
 ---
@@ -103,12 +123,11 @@ wallixdoc/
 | Category | Capabilities |
 |----------|-------------|
 | **Authentication** | MFA (FIDO2/WebAuthn, TOTP, YubiKey, FortiAuthenticator), LDAP/AD, Kerberos SSO, OIDC/SAML, X.509 Certificates |
+| **Fortigate Integration** | FortiToken Mobile/Push, RADIUS authentication, SSL VPN integration, Fortigate firewall policies |
 | **Authorization** | RBAC, approval workflows, time-based access, JIT privileged access |
 | **Session Management** | Video recording, OCR search, real-time monitoring, keystroke logging, session sharing |
 | **Password Management** | AES-256 encrypted vault, automatic rotation, SSH key lifecycle, credential checkout |
-| **Industrial Protocols** | Modbus TCP, DNP3, OPC UA, EtherNet/IP, S7comm, IEC 61850 |
 | **High Availability** | Active-Active clustering, PostgreSQL streaming replication, automatic failover |
-| **OT Security** | Air-gapped operations, offline credential cache, safety procedure integration (LOTO, SIS) |
 
 ---
 
@@ -116,10 +135,9 @@ wallixdoc/
 
 | Standard | Coverage | Standard | Coverage |
 |----------|----------|----------|----------|
-| **IEC 62443** | Full | **SOC 2 Type II** | Full |
-| **NIST 800-82** | Full | **ISO 27001** | Full |
+| **ISO 27001** | Full | **SOC 2 Type II** | Full |
 | **NIS2 Directive** | Full | **PCI-DSS** | Full |
-| **NERC CIP** | Full | **HIPAA** | Full |
+| **GDPR** | Full | **HIPAA** | Full |
 
 See [Compliance & Audit Guide](./docs/pam/24-compliance-audit/README.md) for detailed mapping.
 
@@ -136,6 +154,7 @@ See [Compliance & Audit Guide](./docs/pam/24-compliance-audit/README.md) for det
 | **Key Derivation** | Argon2ID |
 | **Deployment** | On-premises (bare metal, VMs) - No cloud/containers |
 | **Hypervisor (Pre-Prod Lab)** | VMware vSphere/ESXi 8.0+ |
+| **MFA** | FortiAuthenticator 6.4+ with FortiToken |
 
 See [System Requirements](./docs/pam/19-system-requirements/README.md) for detailed sizing.
 
@@ -169,7 +188,7 @@ wabadmin audit --last 20
 | 443 | HTTPS/Web UI | 22 | SSH Proxy |
 | 636 | LDAPS | 88 | Kerberos |
 | 1812 | RADIUS (MFA) | 5432 | PostgreSQL |
-| 514/6514 | Syslog | 502 | Modbus |
+| 514/6514 | Syslog | 3389 | RDP |
 
 ---
 
@@ -187,7 +206,7 @@ Lab Environment
 ├── FortiAuthenticator MFA server
 ├── WALLIX Bastion (Active-Active HA)
 ├── WALLIX RDS (Remote Desktop Services)
-└── Test targets (Linux, Windows, network devices)
+└── Test targets (Windows Server 2022, RHEL 10/9)
 ```
 
 ### 2. Production Deployment
@@ -195,10 +214,11 @@ Lab Environment
 Follow the [Multi-Site Installation Guide](./install/README.md) for production:
 
 ```
-Production Architecture
-├── Site A: Primary HQ (Active-Active HA)
-├── Site B: Secondary Plant (Active-Passive DR)
-└── Site C: Remote Field (Standalone + Offline)
+Production Architecture (4-Site Synchronized CPD)
+├── Site 1: Active-Active HA (Fortigate + HAProxy + WALLIX)
+├── Site 2: Active-Active HA (Fortigate + HAProxy + WALLIX)
+├── Site 3: Active-Active HA (Fortigate + HAProxy + WALLIX)
+└── Site 4: Active-Active HA (Fortigate + HAProxy + WALLIX)
 ```
 
 ### 3. Automation
@@ -247,6 +267,7 @@ Explore [Examples](./examples/README.md) for automation:
 | [34 - LDAP/AD Integration](./docs/pam/34-ldap-ad-integration/README.md) | Active Directory integration |
 | [35 - Kerberos Authentication](./docs/pam/35-kerberos-authentication/README.md) | Kerberos, SPNEGO, SSO |
 | [40 - FIDO2 & Hardware MFA](./docs/pam/40-fido2-hardware-mfa/README.md) | FIDO2/WebAuthn, YubiKey, passwordless |
+| [47 - Fortigate Integration](./docs/pam/47-fortigate-integration/README.md) | Fortigate firewall and FortiAuthenticator MFA |
 
 ### Credential Management
 
@@ -294,7 +315,7 @@ Explore [Examples](./examples/README.md) for automation:
 
 | Section | Description |
 |---------|-------------|
-| [27 - Vendor Integration](./docs/pam/27-vendor-integration/README.md) | Cisco, Siemens, ABB, Rockwell |
+| [27 - Vendor Integration](./docs/pam/27-vendor-integration/README.md) | Cisco, Microsoft, Red Hat |
 | [41 - Account Discovery](./docs/pam/41-account-discovery/README.md) | Discovery scanning, bulk import |
 | [45 - User Self-Service](./docs/pam/45-user-self-service/README.md) | Self-service portal |
 | [46 - Privileged Task Automation](./docs/pam/46-privileged-task-automation/README.md) | Automated privileged operations |
@@ -315,64 +336,6 @@ Explore [Examples](./examples/README.md) for automation:
 
 ---
 
-## OT Foundational Documentation (docs/ot/)
-
-### Fundamentals & Learning
-
-| Section | Description |
-|---------|-------------|
-| [00 - OT Cybersecurity Fundamentals](./docs/ot/00-fundamentals/README.md) | 16-week learning path for IT professionals (control theory, protocols, threats, compliance) |
-
-### Overview & Architecture
-
-| Section | Description |
-|---------|-------------|
-| [01 - Industrial Overview](./docs/ot/01-industrial-overview/README.md) | OT vs IT security, regulatory landscape |
-| [02 - OT Architecture](./docs/ot/02-ot-architecture/README.md) | Zone deployment, IEC 62443 zones |
-| [09 - Industrial Best Practices](./docs/ot/09-industrial-best-practices/README.md) | OT security design |
-| [12 - OT Jump Host](./docs/ot/12-ot-jump-host/README.md) | Jump server configuration |
-
-### Protocols & Access
-
-| Section | Description |
-|---------|-------------|
-| [03 - Industrial Protocols](./docs/ot/03-industrial-protocols/README.md) | Modbus, DNP3, OPC UA, IEC 61850 |
-| [04 - SCADA/ICS Access](./docs/ot/04-scada-ics-access/README.md) | HMI, PLC programming, vendor maintenance |
-| [14 - Engineering Workstation Access](./docs/ot/14-engineering-workstation-access/README.md) | EWS access patterns |
-| [16 - Historian Access](./docs/ot/16-historian-access/README.md) | Historian security, data diode |
-| [17 - RTU Field Access](./docs/ot/17-rtu-field-access/README.md) | Remote terminal unit access |
-
-### Air-Gapped & Offline
-
-| Section | Description |
-|---------|-------------|
-| [05 - Air-Gapped Environments](./docs/ot/05-airgapped-environments/README.md) | Isolated deployments, data diodes |
-| [10 - Offline Operations](./docs/ot/10-offline-operations/README.md) | Credential cache, sneakernet |
-
-### Compliance & Integration
-
-| Section | Description |
-|---------|-------------|
-| [06 - IEC 62443 Compliance](./docs/ot/06-iec62443-compliance/README.md) | Security levels, audit evidence |
-| [07 - Industrial Use Cases](./docs/ot/07-industrial-use-cases/README.md) | Power, Oil & Gas, Manufacturing |
-| [08 - OT Integration](./docs/ot/08-ot-integration/README.md) | SIEM, CMDB, monitoring |
-
-### Operations & Safety
-
-| Section | Description |
-|---------|-------------|
-| [11 - Vendor Remote Access](./docs/ot/11-vendor-remote-access/README.md) | Third-party vendor access |
-| [13 - OT Safety Procedures](./docs/ot/13-ot-safety-procedures/README.md) | LOTO integration, SIS access |
-| [15 - OT Change Management](./docs/ot/15-ot-change-management/README.md) | Change windows, rollback |
-
-### Training & Career Development
-
-| Section | Description |
-|---------|-------------|
-| [18 - OT Training & Certifications](./docs/ot/18-ot-training-certifications/README.md) | Professional certifications (GICSP, GRID), training providers, career paths |
-
----
-
 <p align="center">
-  <sub>66 Sections • 47 PAM + 19 OT • Pre-Production Lab • February 2026</sub>
+  <sub>47 Sections • PAM with Fortigate MFA • Pre-Production Lab • February 2026</sub>
 </p>

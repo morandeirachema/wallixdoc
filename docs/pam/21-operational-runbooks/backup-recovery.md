@@ -1,6 +1,6 @@
 # Backup and Recovery Procedures
 
-## Comprehensive Backup Strategy and Disaster Recovery for PAM4OT
+## Comprehensive Backup Strategy and Disaster Recovery for WALLIX Bastion
 
 This document provides detailed backup, restore, and disaster recovery procedures.
 
@@ -10,10 +10,10 @@ This document provides detailed backup, restore, and disaster recovery procedure
 
 ```
 +===============================================================================+
-|                         PAM4OT BACKUP ARCHITECTURE                            |
+|                         WALLIX Bastion BACKUP ARCHITECTURE                            |
 +===============================================================================+
 
-  PAM4OT Cluster                    Backup Storage                   Archive
+  WALLIX Bastion Cluster                    Backup Storage                   Archive
   ==============                    ==============                   =======
 
   ┌─────────────┐                  ┌──────────────┐              ┌───────────┐
@@ -58,7 +58,7 @@ This document provides detailed backup, restore, and disaster recovery procedure
 # /opt/wab/scripts/backup-database.sh
 
 # Configuration
-BACKUP_DIR="/backup/pam4ot/database"
+BACKUP_DIR="/backup/wallix/database"
 RETENTION_DAYS=30
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="${BACKUP_DIR}/wabdb_${TIMESTAMP}.sql.gz"
@@ -141,8 +141,8 @@ binlog_format = ROW
 expire_logs_days = 7
 
 # Create archive directory
-mkdir -p /backup/pam4ot/binlog_archive
-chown mysql:mysql /backup/pam4ot/binlog_archive
+mkdir -p /backup/wallix/binlog_archive
+chown mysql:mysql /backup/wallix/binlog_archive
 
 # Restart MariaDB
 systemctl restart mariadb
@@ -158,7 +158,7 @@ systemctl restart mariadb
 #!/bin/bash
 # /opt/wab/scripts/backup-config.sh
 
-BACKUP_DIR="/backup/pam4ot/config"
+BACKUP_DIR="/backup/wallix/config"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="${BACKUP_DIR}/config_${TIMESTAMP}.tar.gz"
 LOG_FILE="/var/log/wab-backup/config-backup.log"
@@ -171,9 +171,9 @@ log() {
 
 log "Starting configuration backup..."
 
-# Export PAM4OT configuration
-log "Exporting PAM4OT configuration..."
-wabadmin config export > /tmp/pam4ot-config.json
+# Export WALLIX Bastion configuration
+log "Exporting WALLIX Bastion configuration..."
+wabadmin config export > /tmp/wallix-config.json
 
 # Create tarball
 log "Creating configuration archive..."
@@ -184,7 +184,7 @@ tar -czvf "${BACKUP_FILE}" \
     /etc/pacemaker/ \
     /etc/corosync/ \
     /etc/mysql/mariadb.conf.d/*.cnf \
-    /tmp/pam4ot-config.json \
+    /tmp/wallix-config.json \
     2>/dev/null
 
 if [ $? -eq 0 ]; then
@@ -196,7 +196,7 @@ else
 fi
 
 # Cleanup
-rm /tmp/pam4ot-config.json
+rm /tmp/wallix-config.json
 
 # Cleanup old backups (keep 90 days)
 find "${BACKUP_DIR}" -name "config_*.tar.gz" -mtime +90 -delete
@@ -214,7 +214,7 @@ exit 0
 #!/bin/bash
 # /opt/wab/scripts/backup-recordings.sh
 
-BACKUP_DIR="/backup/pam4ot/recordings"
+BACKUP_DIR="/backup/wallix/recordings"
 SOURCE_DIR="/var/wab/recorded"
 TIMESTAMP=$(date +%Y%m%d)
 LOG_FILE="/var/log/wab-backup/recording-backup.log"
@@ -263,7 +263,7 @@ exit 0
 #!/bin/bash
 # /opt/wab/scripts/backup-full.sh
 
-BACKUP_BASE="/backup/pam4ot"
+BACKUP_BASE="/backup/wallix"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 LOG_FILE="/var/log/wab-backup/full-backup.log"
 HOSTNAME=$(hostname)
@@ -275,7 +275,7 @@ log() {
 }
 
 log "=========================================="
-log "Starting full PAM4OT backup on ${HOSTNAME}"
+log "Starting full WALLIX Bastion backup on ${HOSTNAME}"
 log "=========================================="
 
 # Stop non-critical services during backup
@@ -307,7 +307,7 @@ KEYS_STATUS=$?
 # 5. Create backup manifest
 MANIFEST="${BACKUP_BASE}/manifest_${TIMESTAMP}.txt"
 cat > "${MANIFEST}" << EOF
-PAM4OT BACKUP MANIFEST
+WALLIX Bastion BACKUP MANIFEST
 ======================
 Date: $(date)
 Hostname: ${HOSTNAME}
@@ -348,13 +348,13 @@ fi
 ### Database Restore
 
 ```bash
-# Stop PAM4OT services
+# Stop WALLIX Bastion services
 systemctl stop wallix-bastion
 
 # Restore from SQL dump
 sudo mysql -e "DROP DATABASE IF EXISTS wabdb_restore;"
 sudo mysql -e "CREATE DATABASE wabdb_restore;"
-gunzip -c /backup/pam4ot/database/wabdb_20250128_010000.sql.gz | \
+gunzip -c /backup/wallix/database/wabdb_20250128_010000.sql.gz | \
     sudo mysql wabdb_restore
 
 # Verify restore
@@ -369,7 +369,7 @@ EOF
 # Start services
 systemctl start wallix-bastion
 
-# Verify PAM4OT
+# Verify WALLIX Bastion
 wabadmin status
 ```
 
@@ -385,11 +385,11 @@ systemctl stop mariadb
 mv /var/lib/mysql /var/lib/mysql_old
 
 # 3. Restore base backup
-mariabackup --copy-back --target-dir=/backup/pam4ot/basebackup/base_20250127
+mariabackup --copy-back --target-dir=/backup/wallix/basebackup/base_20250127
 
 # 4. Apply binary logs up to specific point
 mysqlbinlog --stop-datetime="2025-01-28 14:30:00" \
-  /backup/pam4ot/binlog_archive/mariadb-bin.* | mysql
+  /backup/wallix/binlog_archive/mariadb-bin.* | mysql
 
 # 5. Set ownership
 chown -R mysql:mysql /var/lib/mysql
@@ -405,14 +405,14 @@ tail -f /var/log/mysql/error.log
 
 ```bash
 # Extract configuration backup
-tar -xzvf /backup/pam4ot/config/config_20250128_010000.tar.gz -C /tmp/config_restore/
+tar -xzvf /backup/wallix/config/config_20250128_010000.tar.gz -C /tmp/config_restore/
 
 # Restore specific files
 cp /tmp/config_restore/etc/wab/* /etc/wab/
 cp /tmp/config_restore/etc/ssl/wab/* /etc/ssl/wab/
 
-# Or import PAM4OT configuration
-wabadmin config import < /tmp/config_restore/tmp/pam4ot-config.json
+# Or import WALLIX Bastion configuration
+wabadmin config import < /tmp/config_restore/tmp/wallix-config.json
 
 # Restart services
 systemctl restart wallix-bastion
@@ -425,7 +425,7 @@ systemctl restart wallix-bastion
 # Estimated time: 1-2 hours depending on data size
 
 # Prerequisites:
-# - Fresh PAM4OT installation completed
+# - Fresh WALLIX Bastion installation completed
 # - Backup files accessible
 # - Network connectivity verified
 
@@ -437,14 +437,14 @@ systemctl stop mariadb
 # (Follow Database Restore steps above)
 
 # Step 3: Restore configuration
-tar -xzvf /backup/pam4ot/config/config_YYYYMMDD.tar.gz -C /
+tar -xzvf /backup/wallix/config/config_YYYYMMDD.tar.gz -C /
 
 # Step 4: Restore vault keys
-gpg --decrypt /backup/pam4ot/keys/vault_keys_YYYYMMDD.tar.gz.gpg | \
+gpg --decrypt /backup/wallix/keys/vault_keys_YYYYMMDD.tar.gz.gpg | \
     tar -xzf - -C /
 
 # Step 5: Restore session recordings
-rsync -av /backup/pam4ot/recordings/latest/ /var/wab/recorded/
+rsync -av /backup/wallix/recordings/latest/ /var/wab/recorded/
 
 # Step 6: Fix permissions
 chown -R wabuser:wabgroup /var/wab/
@@ -469,7 +469,7 @@ wabadmin license-info
 #!/bin/bash
 # /opt/wab/scripts/verify-backup.sh
 
-BACKUP_BASE="/backup/pam4ot"
+BACKUP_BASE="/backup/wallix"
 TIMESTAMP=$1
 
 if [ -z "${TIMESTAMP}" ]; then
@@ -547,7 +547,7 @@ DISASTER RECOVERY CHECKLIST
 BEFORE DISASTER (Preparation):
 [ ] Daily backups running and verified
 [ ] Offsite backup copies current (< 24h)
-[ ] DR site PAM4OT installed (if applicable)
+[ ] DR site WALLIX Bastion installed (if applicable)
 [ ] Recovery procedures documented and tested
 [ ] Contact list updated
 [ ] RTO/RPO requirements documented
@@ -590,7 +590,7 @@ POST-RECOVERY:
 ### Backup Cron Jobs
 
 ```bash
-# /etc/cron.d/pam4ot-backup
+# /etc/cron.d/wallix-backup
 
 # Database backup - Daily at 1:00 AM
 0 1 * * * root /opt/wab/scripts/backup-database.sh >> /var/log/wab-backup/cron.log 2>&1
@@ -608,7 +608,7 @@ POST-RECOVERY:
 0 6 * * * root /opt/wab/scripts/verify-backup.sh >> /var/log/wab-backup/cron.log 2>&1
 
 # Offsite sync - Daily at 5:00 AM
-0 5 * * * root rsync -avz /backup/pam4ot/ backup-server:/backup/pam4ot-$(hostname)/ >> /var/log/wab-backup/cron.log 2>&1
+0 5 * * * root rsync -avz /backup/wallix/ backup-server:/backup/wallix-$(hostname)/ >> /var/log/wab-backup/cron.log 2>&1
 ```
 
 ---
@@ -626,19 +626,19 @@ POST-RECOVERY:
 /opt/wab/scripts/verify-backup.sh
 
 # Check backup status
-ls -lh /backup/pam4ot/database/
-ls -lh /backup/pam4ot/config/
-du -sh /backup/pam4ot/recordings/
+ls -lh /backup/wallix/database/
+ls -lh /backup/wallix/config/
+du -sh /backup/wallix/recordings/
 
 # View backup logs
 tail -f /var/log/wab-backup/database-backup.log
 tail -f /var/log/wab-backup/full-backup.log
 
 # Export config for backup
-wabadmin config export > /tmp/pam4ot-config.json
+wabadmin config export > /tmp/wallix-config.json
 
 # Import config from backup
-wabadmin config import < /tmp/pam4ot-config.json
+wabadmin config import < /tmp/wallix-config.json
 ```
 
 ---

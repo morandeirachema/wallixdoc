@@ -2,7 +2,7 @@
 
 ## Prometheus, Grafana, and Alertmanager Setup
 
-This guide covers deploying a monitoring stack for PAM4OT infrastructure visibility.
+This guide covers deploying a monitoring stack for WALLIX Bastion infrastructure visibility.
 
 ---
 
@@ -13,17 +13,17 @@ This guide covers deploying a monitoring stack for PAM4OT infrastructure visibil
 |                          OBSERVABILITY STACK                                  |
 +===============================================================================+
 
-  PAM4OT Cluster                                  Monitoring Stack
+  WALLIX Bastion Cluster                                  Monitoring Stack
   ==============                                  ================
 
   +------------------+                       +-------------------------+
-  |  pam4ot-node1    |                       |     monitoring-lab      |
+  |  wallix-node1    |                       |     monitoring-lab      |
   |  Metrics Export  |----+                  |     10.10.1.60          |
   |  Port 9100       |    |                  |                         |
   +------------------+    |    Scrape        |  +-------------------+  |
                           +------------------->  |    Prometheus    |  |
   +------------------+    |    Port 9090     |  |    :9090          |  |
-  |  pam4ot-node2    |----+                  |  +---------+---------+  |
+  |  wallix-node2    |----+                  |  +---------+---------+  |
   |  Metrics Export  |                       |            |            |
   |  Port 9100       |                       |            v            |
   +------------------+                       |  +-------------------+  |
@@ -40,7 +40,7 @@ This guide covers deploying a monitoring stack for PAM4OT infrastructure visibil
 
   METRICS COLLECTED:
   - System: CPU, Memory, Disk, Network
-  - PAM4OT: Sessions, Authentications, API calls
+  - WALLIX Bastion: Sessions, Authentications, API calls
   - MariaDB: Connections, Replication lag
   - Cluster: Pacemaker status, VIP health
 
@@ -115,33 +115,33 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # PAM4OT Nodes
-  - job_name: 'pam4ot'
+  # WALLIX Bastion Nodes
+  - job_name: 'wallix'
     static_configs:
       - targets:
-        - 'pam4ot-node1.lab.local:9100'
-        - 'pam4ot-node2.lab.local:9100'
+        - 'wallix-node1.lab.local:9100'
+        - 'wallix-node2.lab.local:9100'
         labels:
-          service: 'pam4ot'
+          service: 'wallix'
           environment: 'lab'
 
-  # PAM4OT MariaDB
-  - job_name: 'pam4ot-mariadb'
+  # WALLIX Bastion MariaDB
+  - job_name: 'wallix-mariadb'
     static_configs:
       - targets:
-        - 'pam4ot-node1.lab.local:9104'
-        - 'pam4ot-node2.lab.local:9104'
+        - 'wallix-node1.lab.local:9104'
+        - 'wallix-node2.lab.local:9104'
         labels:
           service: 'mariadb'
 
-  # PAM4OT Application Metrics
-  - job_name: 'pam4ot-app'
+  # WALLIX Bastion Application Metrics
+  - job_name: 'wallix-app'
     static_configs:
       - targets:
-        - 'pam4ot-node1.lab.local:9091'
-        - 'pam4ot-node2.lab.local:9091'
+        - 'wallix-node1.lab.local:9091'
+        - 'wallix-node2.lab.local:9091'
         labels:
-          service: 'pam4ot-app'
+          service: 'wallix-app'
 
   # Active Directory DC
   - job_name: 'windows'
@@ -207,9 +207,9 @@ curl http://localhost:9090/-/healthy
 
 ---
 
-## Step 2: Install Node Exporter on PAM4OT Nodes
+## Step 2: Install Node Exporter on WALLIX Bastion Nodes
 
-### On both pam4ot-node1 and pam4ot-node2
+### On both wallix-node1 and wallix-node2
 
 ```bash
 # Create user
@@ -253,7 +253,7 @@ curl http://localhost:9100/metrics | head
 
 ## Step 3: Install MariaDB Exporter
 
-### On both PAM4OT nodes
+### On both WALLIX Bastion nodes
 
 ```bash
 # Download
@@ -389,8 +389,8 @@ route:
         severity: critical
       receiver: 'critical'
     - match:
-        service: pam4ot
-      receiver: 'pam4ot-team'
+        service: wallix
+      receiver: 'wallix-team'
 
 receivers:
   - name: 'default'
@@ -401,9 +401,9 @@ receivers:
     email_configs:
       - to: 'oncall@lab.local'
 
-  - name: 'pam4ot-team'
+  - name: 'wallix-team'
     email_configs:
-      - to: 'pam4ot-team@lab.local'
+      - to: 'wallix-team@lab.local'
 
 inhibit_rules:
   - source_match:
@@ -449,61 +449,61 @@ systemctl start alertmanager
 ```bash
 mkdir -p /etc/prometheus/rules
 
-cat > /etc/prometheus/rules/pam4ot.yml << 'EOF'
+cat > /etc/prometheus/rules/wallix.yml << 'EOF'
 groups:
-  - name: pam4ot
+  - name: wallix
     rules:
       # Node Down
-      - alert: PAM4OTNodeDown
-        expr: up{job="pam4ot"} == 0
+      - alert: WALLIX BastionNodeDown
+        expr: up{job="wallix"} == 0
         for: 1m
         labels:
           severity: critical
-          service: pam4ot
+          service: wallix
         annotations:
-          summary: "PAM4OT node {{ $labels.instance }} is down"
-          description: "PAM4OT node has been unreachable for more than 1 minute."
+          summary: "WALLIX Bastion node {{ $labels.instance }} is down"
+          description: "WALLIX Bastion node has been unreachable for more than 1 minute."
 
       # High CPU Usage
-      - alert: PAM4OTHighCPU
-        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",job="pam4ot"}[5m])) * 100) > 80
+      - alert: WALLIX BastionHighCPU
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",job="wallix"}[5m])) * 100) > 80
         for: 5m
         labels:
           severity: warning
-          service: pam4ot
+          service: wallix
         annotations:
           summary: "High CPU usage on {{ $labels.instance }}"
           description: "CPU usage is above 80% for 5 minutes."
 
       # High Memory Usage
-      - alert: PAM4OTHighMemory
-        expr: (1 - (node_memory_MemAvailable_bytes{job="pam4ot"} / node_memory_MemTotal_bytes{job="pam4ot"})) * 100 > 85
+      - alert: WALLIX BastionHighMemory
+        expr: (1 - (node_memory_MemAvailable_bytes{job="wallix"} / node_memory_MemTotal_bytes{job="wallix"})) * 100 > 85
         for: 5m
         labels:
           severity: warning
-          service: pam4ot
+          service: wallix
         annotations:
           summary: "High memory usage on {{ $labels.instance }}"
           description: "Memory usage is above 85%."
 
       # Disk Space Low
-      - alert: PAM4OTDiskSpaceLow
-        expr: (node_filesystem_avail_bytes{job="pam4ot",mountpoint="/var/wab"} / node_filesystem_size_bytes{job="pam4ot",mountpoint="/var/wab"}) * 100 < 20
+      - alert: WALLIX BastionDiskSpaceLow
+        expr: (node_filesystem_avail_bytes{job="wallix",mountpoint="/var/wab"} / node_filesystem_size_bytes{job="wallix",mountpoint="/var/wab"}) * 100 < 20
         for: 5m
         labels:
           severity: warning
-          service: pam4ot
+          service: wallix
         annotations:
           summary: "Low disk space on {{ $labels.instance }}"
           description: "Disk space is below 20% on /var/wab."
 
       # Disk Space Critical
-      - alert: PAM4OTDiskSpaceCritical
-        expr: (node_filesystem_avail_bytes{job="pam4ot",mountpoint="/var/wab"} / node_filesystem_size_bytes{job="pam4ot",mountpoint="/var/wab"}) * 100 < 10
+      - alert: WALLIX BastionDiskSpaceCritical
+        expr: (node_filesystem_avail_bytes{job="wallix",mountpoint="/var/wab"} / node_filesystem_size_bytes{job="wallix",mountpoint="/var/wab"}) * 100 < 10
         for: 1m
         labels:
           severity: critical
-          service: pam4ot
+          service: wallix
         annotations:
           summary: "Critical disk space on {{ $labels.instance }}"
           description: "Disk space is below 10% on /var/wab."
@@ -512,7 +512,7 @@ groups:
     rules:
       # MariaDB Down
       - alert: MariaDBDown
-        expr: mysql_up{job="pam4ot-mariadb"} == 0
+        expr: mysql_up{job="wallix-mariadb"} == 0
         for: 1m
         labels:
           severity: critical
@@ -523,7 +523,7 @@ groups:
 
       # Replication Lag
       - alert: MariaDBReplicationLag
-        expr: mysql_slave_status_seconds_behind_master{job="pam4ot-mariadb"} > 60
+        expr: mysql_slave_status_seconds_behind_master{job="wallix-mariadb"} > 60
         for: 5m
         labels:
           severity: warning
@@ -534,7 +534,7 @@ groups:
 
       # Too Many Connections
       - alert: MariaDBTooManyConnections
-        expr: mysql_global_status_threads_connected{job="pam4ot-mariadb"} > 80
+        expr: mysql_global_status_threads_connected{job="wallix-mariadb"} > 80
         for: 5m
         labels:
           severity: warning
@@ -547,17 +547,17 @@ groups:
     rules:
       # VIP Not Assigned
       - alert: ClusterVIPDown
-        expr: absent(up{instance=~".*:9100",job="pam4ot"} == 1) or (sum(up{job="pam4ot"}) < 1)
+        expr: absent(up{instance=~".*:9100",job="wallix"} == 1) or (sum(up{job="wallix"}) < 1)
         for: 2m
         labels:
           severity: critical
-          service: pam4ot
+          service: wallix
         annotations:
-          summary: "PAM4OT cluster VIP may be down"
-          description: "No PAM4OT nodes are responding."
+          summary: "WALLIX Bastion cluster VIP may be down"
+          description: "No WALLIX Bastion nodes are responding."
 EOF
 
-chown prometheus:prometheus /etc/prometheus/rules/pam4ot.yml
+chown prometheus:prometheus /etc/prometheus/rules/wallix.yml
 
 # Reload Prometheus
 curl -X POST http://localhost:9090/-/reload
@@ -567,12 +567,12 @@ curl -X POST http://localhost:9090/-/reload
 
 ## Step 7: Create Grafana Dashboards
 
-### PAM4OT Overview Dashboard
+### WALLIX Bastion Overview Dashboard
 
 ```json
 {
   "dashboard": {
-    "title": "PAM4OT Overview",
+    "title": "WALLIX Bastion Overview",
     "panels": [
       {
         "title": "Node Status",
@@ -580,7 +580,7 @@ curl -X POST http://localhost:9090/-/reload
         "gridPos": {"x": 0, "y": 0, "w": 6, "h": 4},
         "targets": [
           {
-            "expr": "sum(up{job=\"pam4ot\"})",
+            "expr": "sum(up{job=\"wallix\"})",
             "legendFormat": "Nodes Up"
           }
         ]
@@ -591,7 +591,7 @@ curl -X POST http://localhost:9090/-/reload
         "gridPos": {"x": 6, "y": 0, "w": 6, "h": 4},
         "targets": [
           {
-            "expr": "avg(100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\",job=\"pam4ot\"}[5m])) * 100))",
+            "expr": "avg(100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\",job=\"wallix\"}[5m])) * 100))",
             "legendFormat": "CPU %"
           }
         ]
@@ -602,7 +602,7 @@ curl -X POST http://localhost:9090/-/reload
         "gridPos": {"x": 12, "y": 0, "w": 6, "h": 4},
         "targets": [
           {
-            "expr": "avg((1 - (node_memory_MemAvailable_bytes{job=\"pam4ot\"} / node_memory_MemTotal_bytes{job=\"pam4ot\"})) * 100)",
+            "expr": "avg((1 - (node_memory_MemAvailable_bytes{job=\"wallix\"} / node_memory_MemTotal_bytes{job=\"wallix\"})) * 100)",
             "legendFormat": "Memory %"
           }
         ]
@@ -613,7 +613,7 @@ curl -X POST http://localhost:9090/-/reload
         "gridPos": {"x": 18, "y": 0, "w": 6, "h": 4},
         "targets": [
           {
-            "expr": "avg((1 - (node_filesystem_avail_bytes{job=\"pam4ot\",mountpoint=\"/var/wab\"} / node_filesystem_size_bytes{job=\"pam4ot\",mountpoint=\"/var/wab\"})) * 100)",
+            "expr": "avg((1 - (node_filesystem_avail_bytes{job=\"wallix\",mountpoint=\"/var/wab\"} / node_filesystem_size_bytes{job=\"wallix\",mountpoint=\"/var/wab\"})) * 100)",
             "legendFormat": "Disk %"
           }
         ]
@@ -624,7 +624,7 @@ curl -X POST http://localhost:9090/-/reload
         "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
         "targets": [
           {
-            "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\",job=\"pam4ot\"}[5m])) * 100)",
+            "expr": "100 - (avg by(instance) (rate(node_cpu_seconds_total{mode=\"idle\",job=\"wallix\"}[5m])) * 100)",
             "legendFormat": "{{instance}}"
           }
         ]
@@ -635,7 +635,7 @@ curl -X POST http://localhost:9090/-/reload
         "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
         "targets": [
           {
-            "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"pam4ot\"} / node_memory_MemTotal_bytes{job=\"pam4ot\"})) * 100",
+            "expr": "(1 - (node_memory_MemAvailable_bytes{job=\"wallix\"} / node_memory_MemTotal_bytes{job=\"wallix\"})) * 100",
             "legendFormat": "{{instance}}"
           }
         ]
@@ -646,11 +646,11 @@ curl -X POST http://localhost:9090/-/reload
         "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
         "targets": [
           {
-            "expr": "rate(node_network_receive_bytes_total{job=\"pam4ot\",device=\"ens192\"}[5m]) * 8",
+            "expr": "rate(node_network_receive_bytes_total{job=\"wallix\",device=\"ens192\"}[5m]) * 8",
             "legendFormat": "{{instance}} RX"
           },
           {
-            "expr": "rate(node_network_transmit_bytes_total{job=\"pam4ot\",device=\"ens192\"}[5m]) * 8",
+            "expr": "rate(node_network_transmit_bytes_total{job=\"wallix\",device=\"ens192\"}[5m]) * 8",
             "legendFormat": "{{instance}} TX"
           }
         ]
@@ -661,7 +661,7 @@ curl -X POST http://localhost:9090/-/reload
         "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
         "targets": [
           {
-            "expr": "mysql_global_status_threads_connected{job=\"pam4ot-mariadb\"}",
+            "expr": "mysql_global_status_threads_connected{job=\"wallix-mariadb\"}",
             "legendFormat": "{{instance}}"
           }
         ]
@@ -677,7 +677,7 @@ curl -X POST http://localhost:9090/-/reload
 # Save JSON to file and import
 curl -X POST http://admin:GrafanaAdmin123!@localhost:3000/api/dashboards/db \
     -H "Content-Type: application/json" \
-    -d @pam4ot-dashboard.json
+    -d @wallix-dashboard.json
 ```
 
 ---
@@ -735,8 +735,8 @@ curl -s http://admin:GrafanaAdmin123!@localhost:3000/api/health
 | Check | Status |
 |-------|--------|
 | Prometheus installed | [ ] |
-| Node exporter on PAM4OT nodes | [ ] |
-| MariaDB exporter on PAM4OT nodes | [ ] |
+| Node exporter on WALLIX Bastion nodes | [ ] |
+| MariaDB exporter on WALLIX Bastion nodes | [ ] |
 | Grafana installed | [ ] |
 | Prometheus data source configured | [ ] |
 | Alertmanager installed | [ ] |

@@ -1,6 +1,6 @@
 # Backup and Recovery Guide
 
-## Comprehensive Data Protection for WALLIX PAM4OT
+## Comprehensive Data Protection for WALLIX WALLIX Bastion
 
 This guide covers backup strategies, procedures, and disaster recovery for WALLIX deployments.
 
@@ -313,7 +313,7 @@ waservices status
 
 # 2. Install WALLIX package
 # (Get package from WALLIX support)
-dpkg -i wallix-pam4ot_*.deb
+dpkg -i wallix-wallix_*.deb
 
 # 3. Stop services
 systemctl stop wabengine

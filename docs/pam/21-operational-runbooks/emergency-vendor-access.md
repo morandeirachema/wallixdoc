@@ -30,7 +30,7 @@ This document provides complete procedures for granting emergency vendor access 
             |
             v
        +----+----+
-       |   YES   |-------> Use standard PAM4OT request
+       |   YES   |-------> Use standard WALLIX Bastion request
        +---------+
             |
            NO
@@ -52,12 +52,12 @@ This document provides complete procedures for granting emergency vendor access 
 | OT Manager | __________ | __________ | __________ | __________ |
 | Plant Manager | __________ | __________ | __________ | __________ |
 | Security Lead | __________ | __________ | __________ | __________ |
-| PAM4OT Admin | __________ | __________ | __________ | __________ |
+| WALLIX Bastion Admin | __________ | __________ | __________ | __________ |
 | Vendor Contact | __________ | __________ | __________ | __________ |
 
 ### Pre-Staged Items
 
-- [ ] Emergency vendor accounts created (disabled) in PAM4OT
+- [ ] Emergency vendor accounts created (disabled) in WALLIX Bastion
 - [ ] Vendor NDAs and access agreements on file
 - [ ] Emergency credential envelopes sealed and stored
 - [ ] Breakglass account credentials in secure location
@@ -87,7 +87,7 @@ This document provides complete procedures for granting emergency vendor access 
 
   PHASE 3: SUPERVISED SESSION (Duration varies)
   =============================================
-  3.1 Vendor connects via PAM4OT
+  3.1 Vendor connects via WALLIX Bastion
   3.2 Real-time session monitoring enabled
   3.3 All actions recorded
   3.4 Escort observes if required
@@ -166,11 +166,11 @@ Authorization Log:
 
 ### 2.1 Enable Vendor Account
 
-**Via PAM4OT Web UI:**
+**Via WALLIX Bastion Web UI:**
 
 ```
-1. Login to PAM4OT admin console
-   URL: https://pam4ot.company.com/admin
+1. Login to WALLIX Bastion admin console
+   URL: https://wallix.company.com/admin
 
 2. Navigate to: Configuration > Users > External/Vendors
 
@@ -188,8 +188,8 @@ Authorization Log:
 **Via CLI (faster):**
 
 ```bash
-# SSH to PAM4OT node
-ssh admin@pam4ot.company.com
+# SSH to WALLIX Bastion node
+ssh admin@wallix.company.com
 
 # Enable vendor account with time limit
 wabadmin user enable vendor-siemens-emergency \
@@ -266,7 +266,7 @@ ACTION REQUIRED:
 - Alert on any unusual commands
 - Contact OT team immediately if concerns
 
-PAM4OT Session Monitoring: https://pam4ot.company.com/audit/live
+WALLIX Bastion Session Monitoring: https://wallix.company.com/audit/live
 EOF
 ```
 
@@ -283,13 +283,13 @@ EMERGENCY ACCESS INSTRUCTIONS
 =============================
 
 Connection Details:
-- URL: https://pam4ot.company.com
+- URL: https://wallix.company.com
 - Username: vendor-siemens-emergency
 - Password: [Provided separately via secure channel]
 - MFA: Required (use provided token)
 
 Steps:
-1. Navigate to https://pam4ot.company.com
+1. Navigate to https://wallix.company.com
 2. Enter username and password
 3. Complete MFA challenge
 4. Select authorized target system from list
@@ -310,7 +310,7 @@ Target Systems Available:
 **SOC/Monitoring Team Actions:**
 
 ```bash
-# Via PAM4OT Web UI:
+# Via WALLIX Bastion Web UI:
 1. Navigate to: Audit > Live Sessions
 2. Filter by user: vendor-siemens-emergency
 3. Click "Monitor" on active session
@@ -546,14 +546,14 @@ done
 
 ## Appendix B: Breakglass Procedure
 
-**When PAM4OT is Unavailable:**
+**When WALLIX Bastion is Unavailable:**
 
 ```
 +===============================================================================+
-|                    BREAKGLASS ACCESS (PAM4OT DOWN)                            |
+|                    BREAKGLASS ACCESS (WALLIX Bastion DOWN)                            |
 +===============================================================================+
 
-  WARNING: Use ONLY when PAM4OT is completely unavailable
+  WARNING: Use ONLY when WALLIX Bastion is completely unavailable
 
   1. Retrieve breakglass credentials from:
      Location: [Secure safe / HSM / Sealed envelope location]
@@ -567,8 +567,8 @@ done
      - Commands run
      - Reason for access
 
-  3. After PAM4OT restored:
-     - Import manual logs to PAM4OT
+  3. After WALLIX Bastion restored:
+     - Import manual logs to WALLIX Bastion
      - Rotate ALL breakglass credentials
      - Reseal new credentials
      - Report to security within 24 hours
@@ -593,7 +593,7 @@ Print and post in control rooms:
   - Log in ticket: INC-YYYYMMDD-XXXX
 
   STEP 2: ENABLE ACCESS
-  - PAM4OT: https://pam4ot.company.com/admin
+  - WALLIX Bastion: https://wallix.company.com/admin
   - Enable: vendor-[name]-emergency
   - Set expiry time
 
@@ -612,7 +612,7 @@ Print and post in control rooms:
   - Close ticket
 
   EMERGENCY CONTACTS:
-  - PAM4OT Admin: ____________
+  - WALLIX Bastion Admin: ____________
   - OT Manager: ____________
   - Security: ____________
 

@@ -1,15 +1,15 @@
-# WALLIX PAM4OT Multi-Site Installation
+# WALLIX Bastion Multi-Site Installation
 
 <p align="center">
-  <strong>Production deployment guide for OT/Industrial environments</strong><br/>
+  <strong>Production deployment guide with Fortigate MFA integration</strong><br/>
   <sub>Powered by WALLIX Bastion 12.x</sub>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/PAM4OT-12.1.x-0066cc?style=flat-square" alt="Version"/>
-  <img src="https://img.shields.io/badge/Sites-3-green?style=flat-square" alt="Sites"/>
-  <img src="https://img.shields.io/badge/Nodes-5-blue?style=flat-square" alt="Nodes"/>
-  <img src="https://img.shields.io/badge/IEC_62443-Compliant-228b22?style=flat-square" alt="Compliance"/>
+  <img src="https://img.shields.io/badge/WALLIX-12.1.x-0066cc?style=flat-square" alt="Version"/>
+  <img src="https://img.shields.io/badge/Sites-4-green?style=flat-square" alt="Sites"/>
+  <img src="https://img.shields.io/badge/Nodes-8-blue?style=flat-square" alt="Nodes"/>
+  <img src="https://img.shields.io/badge/Fortigate-MFA-ee3124?style=flat-square" alt="Fortigate"/>
 </p>
 
 ---
@@ -18,40 +18,69 @@
 
 | Scope | Details |
 |-------|---------|
-| **Sites** | 3 (HQ, Plant, Field Office) |
-| **Nodes** | 5 total (2+2+1) |
-| **HA Modes** | Active-Active, Active-Passive, Standalone |
+| **Sites** | 4 (synchronized within single CPD) |
+| **Nodes** | 8 total (2 per site) |
+| **HA Modes** | Active-Active at each site |
+| **MFA** | Fortigate with FortiAuthenticator |
 | **Timeline** | 30 days |
 
 ---
 
 ## Architecture
 
+### 4-Site Synchronized Architecture (Single CPD)
+
 ```
-                    ┌─────────────────────┐
-                    │    CORPORATE WAN    │
-                    └──────────┬──────────┘
-           ┌───────────────────┼───────────────────┐
-           │                   │                   │
-           ▼                   ▼                   ▼
-    ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-    │   SITE A    │     │   SITE B    │     │   SITE C    │
-    │     HQ      │     │   Plant     │     │   Field     │
-    ├─────────────┤     ├─────────────┤     ├─────────────┤
-    │ ┌───┐ ┌───┐ │     │ ┌───┐ ┌───┐ │     │   ┌───┐     │
-    │ │N1 │ │N2 │ │     │ │N1 │ │N2 │ │     │   │N1 │     │
-    │ └─┬─┘ └─┬─┘ │     │ └─┬─┘ └─┬─┘ │     │   └─┬─┘     │
-    │   └──┬──┘   │     │   └──┬──┘   │     │     │       │
-    │    [VIP]    │◄───►│    [VIP]    │◄───►│  [Local]    │
-    │ Active-Act. │     │ Active-Pass │     │ Standalone  │
-    └─────────────┘     └─────────────┘     └─────────────┘
++===============================================================================+
+|  4-SITE SYNCHRONIZED ARCHITECTURE (Single CPD)                                |
++===============================================================================+
+|                                                                               |
+|                            +------------------+                               |
+|                            | FortiAuthenticator|                              |
+|                            |   (MFA Server)   |                               |
+|                            +--------+---------+                               |
+|                                     | RADIUS                                  |
+|        +-------------+-------------+-------------+-------------+              |
+|        |             |             |             |             |              |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | Fortigate | | Fortigate | | Fortigate | | Fortigate |                      |
+|  |  Site 1   | |  Site 2   | |  Site 3   | |  Site 4   |                      |
+|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
+|        |             |             |             |                            |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | HAProxy   | | HAProxy   | | HAProxy   | | HAProxy   |                      |
+|  | 1a + 1b   | | 2a + 2b   | | 3a + 3b   | | 4a + 4b   |                      |
+|  | (HA/VRRP) | | (HA/VRRP) | | (HA/VRRP) | | (HA/VRRP) |                      |
+|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
+|        |             |             |             |                            |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | WALLIX    | | WALLIX    | | WALLIX    | | WALLIX    |                      |
+|  | Bastion   | | Bastion   | | Bastion   | | Bastion   |                      |
+|  | 1a + 1b   | | 2a + 2b   | | 3a + 3b   | | 4a + 4b   |                      |
+|  | (HA)      | | (HA)      | | (HA)      | | (HA)      |                      |
+|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
+|        |             |             |             |                            |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | WALLIX    | | WALLIX    | | WALLIX    | | WALLIX    |                      |
+|  |   RDS     | |   RDS     | |   RDS     | |   RDS     |                      |
+|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
+|        |             |             |             |                            |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | Windows   | | Windows   | | Windows   | | Windows   |                      |
+|  | RHEL 10/9 | | RHEL 10/9 | | RHEL 10/9 | | RHEL 10/9 |                      |
+|  +-----------+ +-----------+ +-----------+ +-----------+                      |
+|                                                                               |
+|  <====================== MULTI-SITE SYNC (HTTPS 443) ======================>  |
+|                                                                               |
++===============================================================================+
 ```
 
-| Site | Config | Nodes | HA Mode | Use Case |
-|------|--------|-------|---------|----------|
-| A | HA Cluster | 2 | Active-Active | Primary management |
-| B | HA Cluster | 2 | Active-Passive | DR capability |
-| C | Standalone | 1 | N/A | Offline operation |
+| Site | Config | Nodes | HA Mode | Target Systems |
+|------|--------|-------|---------|----------------|
+| 1 | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
+| 2 | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
+| 3 | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
+| 4 | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
 
 ---
 
@@ -59,15 +88,12 @@
 
 | File | Purpose |
 |------|---------|
-| [appliance-setup-guide.md](./appliance-setup-guide.md) | Quick appliance setup (standalone & HA) |
-| [HOWTO.md](./HOWTO.md) | Complete step-by-step guide (1700+ lines) |
+| [HOWTO.md](./HOWTO.md) | Complete step-by-step guide |
 | [00-debian-luks-installation.md](./00-debian-luks-installation.md) | Debian 12 + LUKS setup |
 | [01-prerequisites.md](./01-prerequisites.md) | Requirements checklist |
-| [02-site-a-primary.md](./02-site-a-primary.md) | Site A HA cluster |
-| [03-site-b-secondary.md](./03-site-b-secondary.md) | Site B HA cluster |
-| [04-site-c-remote.md](./04-site-c-remote.md) | Site C standalone |
+| [02-site-a-primary.md](./02-site-a-primary.md) | Site 1 HA cluster |
+| [03-site-b-secondary.md](./03-site-b-secondary.md) | Site 2 HA cluster |
 | [05-multi-site-sync.md](./05-multi-site-sync.md) | Cross-site sync |
-| [06-ot-network-config.md](./06-ot-network-config.md) | OT protocols |
 | [07-security-hardening.md](./07-security-hardening.md) | Hardening |
 | [08-validation-testing.md](./08-validation-testing.md) | Go-live checklist |
 | [09-architecture-diagrams.md](./09-architecture-diagrams.md) | Diagrams & ports |
@@ -80,10 +106,10 @@
 ```
 Week 1          Week 2          Week 3          Week 4
 ────────────────────────────────────────────────────────
-PLANNING        SITE A + B      SITE C + SYNC   HARDENING
-• Prerequisites • HA clusters   • Standalone    • Security
-• Network       • Basic config  • Multi-site    • Testing
-• VMs           • Testing       • OT protocols  • Go-live
+PLANNING        SITES 1 + 2     SITES 3 + 4     HARDENING
+• Prerequisites • HA clusters   • HA clusters   • Security
+• Network       • Fortigate MFA • Multi-site    • Testing
+• VMs           • Testing       • sync          • Go-live
 ```
 
 ---
@@ -105,7 +131,8 @@ PLANNING        SITE A + B      SITE C + SYNC   HARDENING
 |-----------|---------|
 | WALLIX Bastion | 12.1.x |
 | Debian | 12 (Bookworm) |
-| MariaDB | 10.6+ |
+| MariaDB | 10.11+ |
+| FortiAuthenticator | 6.4+ |
 
 ### Network Ports
 
@@ -116,6 +143,7 @@ PLANNING        SITE A + B      SITE C + SYNC   HARDENING
 | 3389 | TCP | RDP proxy |
 | 3306 | TCP | MariaDB |
 | 5404-5406 | UDP | Cluster sync |
+| 1812/1813 | UDP | RADIUS (FortiAuth) |
 
 ---
 
@@ -149,7 +177,7 @@ crm status
 wabadmin license-info
 
 # Database
-sudo mysql -e "SELECT VERSION();"
+sudo -u postgres psql -c "SELECT * FROM pg_stat_replication;"
 
 # Recent audit
 wabadmin audit --last 10
@@ -161,7 +189,7 @@ wabadmin audit --last 10
 
 | Category | Features |
 |----------|----------|
-| Authentication | MFA, LDAP/AD, Kerberos, OIDC/SAML |
+| Authentication | Fortigate MFA, LDAP/AD, Kerberos, OIDC/SAML |
 | Authorization | RBAC, approval workflows, JIT access |
 | Sessions | Recording, keystroke logging, 4-eyes |
 | Credentials | Vault, auto-rotation, injection |
@@ -173,11 +201,11 @@ wabadmin audit --last 10
 
 | Standard | Coverage |
 |----------|----------|
-| IEC 62443 | Full |
-| NIST 800-82 | Full |
+| ISO 27001 | Full |
+| SOC 2 Type II | Full |
 | NIS2 | Full |
-| ISO 27001 | Partial |
-| SOC 2 | Partial |
+| PCI-DSS | Full |
+| HIPAA | Partial |
 
 ---
 
@@ -197,11 +225,11 @@ After completing installation:
 
 | Step | Document |
 |------|----------|
-| Configure authentication | [Authentication Guide](../docs/05-authentication/README.md) |
-| Set up monitoring | [Monitoring & Observability](../docs/11-monitoring-observability/README.md) |
-| Review best practices | [Best Practices](../docs/13-best-practices/README.md) |
-| Configure OT protocols | [Industrial Protocols](../docs/17-industrial-protocols/README.md) |
-| Set up operational procedures | [Operational Runbooks](../docs/30-operational-runbooks/README.md) |
+| Configure authentication | [Authentication Guide](../docs/pam/06-authentication/README.md) |
+| Configure Fortigate MFA | [Fortigate Integration](../docs/pam/47-fortigate-integration/README.md) |
+| Set up monitoring | [Monitoring & Observability](../docs/pam/12-monitoring-observability/README.md) |
+| Review best practices | [Best Practices](../docs/pam/14-best-practices/README.md) |
+| Set up operational procedures | [Operational Runbooks](../docs/pam/21-operational-runbooks/README.md) |
 
 For pre-production testing, see the [Pre-Production Lab Guide](../pre/README.md).
 

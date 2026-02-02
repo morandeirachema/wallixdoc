@@ -420,4 +420,4 @@ ssh -o ProxyCommand="ssh -W %h:%p admin@10.200.1.100" testuser@10.200.10.50
 
 ---
 
-**Next Step**: [04-site-c-remote.md](./04-site-c-remote.md) - Remote Site Installation
+**Next Step**: [05-multi-site-sync.md](./05-multi-site-sync.md) - Multi-Site Synchronization

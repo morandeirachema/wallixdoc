@@ -1,5 +1,5 @@
 # setup-ad.ps1
-# Active Directory Setup Script for PAM4OT Pre-Production Lab
+# Active Directory Setup Script for WALLIX Pre-Production Lab
 # Run as Administrator on Windows Server 2022
 
 #Requires -RunAsAdministrator
@@ -14,7 +14,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  PAM4OT Lab - AD Setup Script" -ForegroundColor Cyan
+Write-Host "  WALLIX Lab - AD Setup Script" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -71,17 +71,17 @@ if (-not $domainExists) {
 }
 
 Write-Host ""
-Write-Status "Configuring AD objects for PAM4OT..." "INFO"
+Write-Status "Configuring AD objects for WALLIX..." "INFO"
 Write-Host ""
 
 # Create Organizational Units
 Write-Status "Creating Organizational Units..." "INFO"
 
 $ous = @(
-    "OU=PAM4OT,DC=lab,DC=local",
-    "OU=Users,OU=PAM4OT,DC=lab,DC=local",
-    "OU=Groups,OU=PAM4OT,DC=lab,DC=local",
-    "OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local"
+    "OU=WALLIX,DC=lab,DC=local",
+    "OU=Users,OU=WALLIX,DC=lab,DC=local",
+    "OU=Groups,OU=WALLIX,DC=lab,DC=local",
+    "OU=Service Accounts,OU=WALLIX,DC=lab,DC=local"
 )
 
 foreach ($ou in $ous) {
@@ -100,9 +100,9 @@ foreach ($ou in $ous) {
 Write-Status "Creating Security Groups..." "INFO"
 
 $groups = @(
-    @{Name="PAM4OT-Admins"; Description="PAM4OT Administrators"},
-    @{Name="PAM4OT-Operators"; Description="PAM4OT Operators"},
-    @{Name="PAM4OT-Auditors"; Description="PAM4OT Auditors"},
+    @{Name="WALLIX-Admins"; Description="WALLIX Administrators"},
+    @{Name="WALLIX-Operators"; Description="WALLIX Operators"},
+    @{Name="WALLIX-Auditors"; Description="WALLIX Auditors"},
     @{Name="Linux-Admins"; Description="Linux Server Administrators"},
     @{Name="Windows-Admins"; Description="Windows Server Administrators"},
     @{Name="Network-Admins"; Description="Network Device Administrators"},
@@ -117,7 +117,7 @@ foreach ($group in $groups) {
         New-ADGroup -Name $group.Name `
             -GroupCategory Security `
             -GroupScope Global `
-            -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
+            -Path "OU=Groups,OU=WALLIX,DC=lab,DC=local" `
             -Description $group.Description
         Write-Status "  Created group: $($group.Name)" "SUCCESS"
     }
@@ -135,12 +135,12 @@ try {
     New-ADUser -Name "WALLIX Service Account" `
         -SamAccountName $svcAccountName `
         -UserPrincipalName "$svcAccountName@$DomainName" `
-        -Path "OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local" `
+        -Path "OU=Service Accounts,OU=WALLIX,DC=lab,DC=local" `
         -AccountPassword $securePassword `
         -Enabled $true `
         -PasswordNeverExpires $true `
         -CannotChangePassword $true `
-        -Description "Service account for WALLIX PAM4OT LDAP bind"
+        -Description "Service account for WALLIX WALLIX LDAP bind"
     Write-Status "  Created service account: $svcAccountName" "SUCCESS"
 }
 
@@ -152,22 +152,22 @@ $users = @(
         Name="John Admin"
         Sam="jadmin"
         Password="JohnAdmin123!"
-        Groups=@("PAM4OT-Admins","Linux-Admins","Windows-Admins")
-        Description="PAM4OT Lab Administrator"
+        Groups=@("WALLIX-Admins","Linux-Admins","Windows-Admins")
+        Description="WALLIX Lab Administrator"
     },
     @{
         Name="Sarah Operator"
         Sam="soperator"
         Password="SarahOp123!"
-        Groups=@("PAM4OT-Operators","Linux-Admins")
-        Description="PAM4OT Lab Operator"
+        Groups=@("WALLIX-Operators","Linux-Admins")
+        Description="WALLIX Lab Operator"
     },
     @{
         Name="Mike Auditor"
         Sam="mauditor"
         Password="MikeAud123!"
-        Groups=@("PAM4OT-Auditors")
-        Description="PAM4OT Lab Auditor"
+        Groups=@("WALLIX-Auditors")
+        Description="WALLIX Lab Auditor"
     },
     @{
         Name="Lisa Network"
@@ -194,7 +194,7 @@ foreach ($user in $users) {
         New-ADUser -Name $user.Name `
             -SamAccountName $user.Sam `
             -UserPrincipalName "$($user.Sam)@$DomainName" `
-            -Path "OU=Users,OU=PAM4OT,DC=lab,DC=local" `
+            -Path "OU=Users,OU=WALLIX,DC=lab,DC=local" `
             -AccountPassword $securePassword `
             -Enabled $true `
             -Description $user.Description
@@ -258,9 +258,9 @@ try {
 Write-Status "Creating DNS records..." "INFO"
 
 $dnsRecords = @(
-    @{Name="pam4ot-node1"; IP="10.10.1.11"},
-    @{Name="pam4ot-node2"; IP="10.10.1.12"},
-    @{Name="pam4ot"; IP="10.10.1.100"},
+    @{Name="wallix-node1"; IP="10.10.1.11"},
+    @{Name="wallix-node2"; IP="10.10.1.12"},
+    @{Name="wallix"; IP="10.10.1.100"},
     @{Name="siem-lab"; IP="10.10.1.50"},
     @{Name="monitoring-lab"; IP="10.10.1.60"},
     @{Name="linux-test"; IP="10.10.2.10"},
@@ -299,9 +299,9 @@ foreach ($user in $users) {
 Write-Host ""
 Write-Host "CA Certificate: $pemPath" -ForegroundColor Yellow
 Write-Host ""
-Write-Host "Copy the CA certificate to PAM4OT nodes:" -ForegroundColor Yellow
-Write-Host "  scp $pemPath root@pam4ot-node1:/tmp/lab-ca.pem" -ForegroundColor Gray
-Write-Host "  scp $pemPath root@pam4ot-node2:/tmp/lab-ca.pem" -ForegroundColor Gray
+Write-Host "Copy the CA certificate to WALLIX nodes:" -ForegroundColor Yellow
+Write-Host "  scp $pemPath root@wallix-node1:/tmp/lab-ca.pem" -ForegroundColor Gray
+Write-Host "  scp $pemPath root@wallix-node2:/tmp/lab-ca.pem" -ForegroundColor Gray
 Write-Host ""
 
 # Verify LDAPS
@@ -315,7 +315,7 @@ if ($ldapsTest.TcpTestSucceeded) {
 
 Write-Host ""
 Write-Host "AD setup complete. Next steps:" -ForegroundColor Green
-Write-Host "  1. Copy CA certificate to PAM4OT nodes" -ForegroundColor White
-Write-Host "  2. Configure LDAP in PAM4OT" -ForegroundColor White
+Write-Host "  1. Copy CA certificate to WALLIX nodes" -ForegroundColor White
+Write-Host "  2. Configure LDAP in WALLIX" -ForegroundColor White
 Write-Host "  3. Test authentication with jadmin user" -ForegroundColor White
 Write-Host ""

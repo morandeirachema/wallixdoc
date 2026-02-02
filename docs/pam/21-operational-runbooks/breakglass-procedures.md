@@ -2,7 +2,7 @@
 
 ## Emergency Administrative Access When Normal Authentication Fails
 
-This document provides procedures for emergency access when PAM4OT normal authentication is unavailable.
+This document provides procedures for emergency access when WALLIX Bastion normal authentication is unavailable.
 
 ---
 
@@ -13,7 +13,7 @@ This document provides procedures for emergency access when PAM4OT normal authen
 |                       BREAKGLASS DECISION TREE                                |
 +===============================================================================+
 
-  Can you authenticate to PAM4OT normally?
+  Can you authenticate to WALLIX Bastion normally?
             |
             v
        +----+----+
@@ -53,7 +53,7 @@ This document provides procedures for emergency access when PAM4OT normal authen
            NO
             |
             v
-  Is PAM4OT completely inaccessible?
+  Is WALLIX Bastion completely inaccessible?
             |
             v
        +----+----+
@@ -71,8 +71,8 @@ This document provides procedures for emergency access when PAM4OT normal authen
 
 | Account | Type | MFA | Storage Location | Custodians |
 |---------|------|-----|------------------|------------|
-| `breakglass-admin` | Local PAM4OT Admin | Disabled | Sealed envelope in safe | IT Director, CISO |
-| `emergency-ops` | Local PAM4OT Operator | Disabled | Sealed envelope in safe | OT Manager, IT Director |
+| `breakglass-admin` | Local WALLIX Bastion Admin | Disabled | Sealed envelope in safe | IT Director, CISO |
+| `emergency-ops` | Local WALLIX Bastion Operator | Disabled | Sealed envelope in safe | OT Manager, IT Director |
 | `root` (node1) | Linux root | N/A | HSM/Password vault | IT Director, CTO |
 | `root` (node2) | Linux root | N/A | HSM/Password vault | IT Director, CTO |
 
@@ -95,7 +95,7 @@ SECONDARY LOCATION:
 ## Section 2: MFA Bypass (FortiAuthenticator Down)
 
 ### Scenario
-FortiAuthenticator is unavailable but AD and PAM4OT are functioning.
+FortiAuthenticator is unavailable but AD and WALLIX Bastion are functioning.
 
 ### Authorization Required
 - Verbal approval from: Security Lead OR IT Director
@@ -111,12 +111,12 @@ curl -sk https://fortiauth.company.com/
 # This account should be pre-configured with MFA disabled
 
 # Step 3: Login with MFA bypass account
-# URL: https://pam4ot.company.com
+# URL: https://wallix.company.com
 # Username: emergency-ops
 # Password: [Retrieved from secure storage]
 
 # Step 4: If bypass account doesn't exist, use CLI
-ssh root@pam4ot-node1
+ssh root@wallix-node1
 
 # Temporarily disable MFA (requires root)
 wabadmin auth mfa disable --temporary --duration 2h \
@@ -167,7 +167,7 @@ ldapsearch -x -H ldaps://dc-lab.company.com:636 -D "test" -W
 # Requires: Dual authorization
 
 # Step 3: Login with local admin account
-# URL: https://pam4ot.company.com
+# URL: https://wallix.company.com
 # Username: breakglass-admin
 # Password: [From sealed envelope]
 
@@ -201,10 +201,10 @@ wabadmin user show breakglass-admin
 
 ---
 
-## Section 4: Full Breakglass (PAM4OT Inaccessible)
+## Section 4: Full Breakglass (WALLIX Bastion Inaccessible)
 
 ### Scenario
-PAM4OT web UI and services are completely unavailable. Need direct system access.
+WALLIX Bastion web UI and services are completely unavailable. Need direct system access.
 
 ### Authorization Required
 - Verbal approval from: CTO OR IT Director AND Security Lead
@@ -257,10 +257,10 @@ exit  # Stop recording
 
 ---
 
-## Section 5: Direct Target Access (PAM4OT Completely Failed)
+## Section 5: Direct Target Access (WALLIX Bastion Completely Failed)
 
 ### Scenario
-PAM4OT cannot be recovered quickly, but critical systems need immediate access.
+WALLIX Bastion cannot be recovered quickly, but critical systems need immediate access.
 
 ### WARNING
 ```
@@ -271,12 +271,12 @@ PAM4OT cannot be recovered quickly, but critical systems need immediate access.
 |  Direct target access bypasses ALL PAM controls:                              |
 |  - No session recording                                                       |
 |  - No credential injection                                                    |
-|  - No audit trail in PAM4OT                                                   |
+|  - No audit trail in WALLIX Bastion                                                   |
 |                                                                               |
 |  Use ONLY when:                                                               |
 |  - Safety or life is at risk                                                  |
 |  - Critical production impact                                                 |
-|  - PAM4OT cannot be recovered within acceptable timeframe                     |
+|  - WALLIX Bastion cannot be recovered within acceptable timeframe                     |
 |                                                                               |
 |  MUST have written authorization from:                                        |
 |  - CTO or CEO                                                                 |
@@ -326,7 +326,7 @@ DIRECT ACCESS INCIDENT REPORT
 [ ] All actions documented in log
 [ ] Screen recording saved (if available)
 [ ] Target credentials rotated
-[ ] PAM4OT restored and verified
+[ ] WALLIX Bastion restored and verified
 [ ] Security team notified
 [ ] Incident ticket completed
 [ ] Post-incident review scheduled
@@ -336,7 +336,7 @@ DIRECT ACCESS INCIDENT REPORT
 
 ## Section 6: Credential Rotation After Breakglass
 
-### Rotate PAM4OT Breakglass Accounts
+### Rotate WALLIX Bastion Breakglass Accounts
 
 ```bash
 # Generate new strong password
@@ -361,7 +361,7 @@ echo "breakglass-admin: $NEW_PASS" | lp -d secure-printer
 ```bash
 # If direct target access was used, rotate those credentials
 
-# For targets managed by PAM4OT
+# For targets managed by WALLIX Bastion
 wabadmin password rotate --device linux-target --account root
 wabadmin password rotate --device windows-target --account Administrator
 
@@ -375,7 +375,7 @@ wabadmin password status --device linux-target --account root
 # Generate new root password
 NEW_ROOT_PASS=$(openssl rand -base64 24)
 
-# On each PAM4OT node
+# On each WALLIX Bastion node
 echo "root:$NEW_ROOT_PASS" | chpasswd
 
 # Store in HSM/password vault

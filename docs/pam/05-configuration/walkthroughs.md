@@ -347,7 +347,7 @@ win-srv-02,10.1.20.11,Windows-Production,Windows server,RDP:3389,administrator
 ```python
 #!/usr/bin/env python3
 """
-bulk_import.py - Import devices from CSV into WALLIX PAM4OT
+bulk_import.py - Import devices from CSV into WALLIX WALLIX Bastion
 """
 
 import csv

@@ -2,7 +2,7 @@
 
 ## Configuring Log Forwarding to SIEM Platform
 
-This guide covers integrating PAM4OT with Splunk or ELK for security monitoring.
+This guide covers integrating WALLIX Bastion with Splunk or ELK for security monitoring.
 
 ---
 
@@ -13,16 +13,16 @@ This guide covers integrating PAM4OT with Splunk or ELK for security monitoring.
 |                            SIEM INTEGRATION                                   |
 +===============================================================================+
 
-  PAM4OT Cluster                                   SIEM Platform
+  WALLIX Bastion Cluster                                   SIEM Platform
   ==============                                   =============
 
   +------------------+                        +-----------------------+
-  |  pam4ot-node1    |----+                   |      siem-lab         |
+  |  wallix-node1    |----+                   |      siem-lab         |
   |  Syslog Client   |    |    Syslog/TLS     |                       |
   +------------------+    +------------------>|   Splunk Enterprise   |
                           |    Port 6514      |   or ELK Stack        |
   +------------------+    |                   |                       |
-  |  pam4ot-node2    |----+                   |   - Log indexing      |
+  |  wallix-node2    |----+                   |   - Log indexing      |
   |  Syslog Client   |                        |   - Dashboards        |
   +------------------+                        |   - Alerts            |
                                               +-----------------------+
@@ -71,12 +71,12 @@ cat > /opt/splunk/etc/system/local/inputs.conf << 'EOF'
 [tcp://514]
 connection_host = dns
 sourcetype = syslog
-index = pam4ot
+index = wallix
 
 [tcp-ssl://6514]
 connection_host = dns
 sourcetype = syslog
-index = pam4ot
+index = wallix
 serverCert = /opt/splunk/etc/auth/server.pem
 sslPassword = password
 requireClientCert = false
@@ -84,10 +84,10 @@ EOF
 
 # Create index
 cat > /opt/splunk/etc/system/local/indexes.conf << 'EOF'
-[pam4ot]
-homePath = $SPLUNK_DB/pam4ot/db
-coldPath = $SPLUNK_DB/pam4ot/colddb
-thawedPath = $SPLUNK_DB/pam4ot/thaweddb
+[wallix]
+homePath = $SPLUNK_DB/wallix/db
+coldPath = $SPLUNK_DB/wallix/colddb
+thawedPath = $SPLUNK_DB/wallix/thaweddb
 maxDataSize = auto_high_volume
 EOF
 
@@ -95,9 +95,9 @@ EOF
 /opt/splunk/bin/splunk restart
 ```
 
-### Step 3: Configure PAM4OT Syslog
+### Step 3: Configure WALLIX Bastion Syslog
 
-On **both PAM4OT nodes**:
+On **both WALLIX Bastion nodes**:
 
 ```bash
 # Edit syslog configuration
@@ -120,44 +120,44 @@ EOF
 # - Protocol: TCP
 # - Format: CEF
 
-# Restart PAM4OT
+# Restart WALLIX Bastion
 systemctl restart wallix-bastion
 ```
 
 ### Step 4: Splunk Search Queries
 
 ```spl
-# All PAM4OT events
-index=pam4ot
+# All WALLIX Bastion events
+index=wallix
 
 # Login events
-index=pam4ot "authentication"
+index=wallix "authentication"
 
 # Failed logins
-index=pam4ot "authentication failed"
+index=wallix "authentication failed"
 
 # Session events
-index=pam4ot "session"
+index=wallix "session"
 
 # Admin actions
-index=pam4ot "configuration changed"
+index=wallix "configuration changed"
 
 # Password events
-index=pam4ot "password" OR "rotation"
+index=wallix "password" OR "rotation"
 ```
 
 ### Step 5: Splunk Dashboard
 
 ```xml
-<!-- Save as: pam4ot_dashboard.xml -->
+<!-- Save as: wallix_dashboard.xml -->
 <dashboard>
-  <label>PAM4OT Security Dashboard</label>
+  <label>WALLIX Bastion Security Dashboard</label>
   <row>
     <panel>
       <title>Login Activity (24h)</title>
       <chart>
         <search>
-          <query>index=pam4ot "authentication" | timechart count by status</query>
+          <query>index=wallix "authentication" | timechart count by status</query>
           <earliest>-24h</earliest>
         </search>
       </chart>
@@ -166,7 +166,7 @@ index=pam4ot "password" OR "rotation"
       <title>Active Sessions</title>
       <single>
         <search>
-          <query>index=pam4ot "session started" | stats count</query>
+          <query>index=wallix "session started" | stats count</query>
           <earliest>-1h</earliest>
         </search>
       </single>
@@ -177,7 +177,7 @@ index=pam4ot "password" OR "rotation"
       <title>Failed Logins</title>
       <table>
         <search>
-          <query>index=pam4ot "authentication failed" | table _time user src_ip reason</query>
+          <query>index=wallix "authentication failed" | table _time user src_ip reason</query>
           <earliest>-24h</earliest>
         </search>
       </table>
@@ -192,18 +192,18 @@ index=pam4ot "password" OR "rotation"
 Settings > Searches, Reports, and Alerts > New Alert
 
 Alert 1: Multiple Failed Logins
-- Search: index=pam4ot "authentication failed" | stats count by user | where count > 5
+- Search: index=wallix "authentication failed" | stats count by user | where count > 5
 - Schedule: Every 5 minutes
 - Trigger: When results > 0
 - Action: Send email
 
 Alert 2: After-Hours Session
-- Search: index=pam4ot "session started" | where date_hour < 6 OR date_hour > 22
+- Search: index=wallix "session started" | where date_hour < 6 OR date_hour > 22
 - Schedule: Real-time
 - Action: Send email
 
 Alert 3: Admin Config Change
-- Search: index=pam4ot "configuration" "changed"
+- Search: index=wallix "configuration" "changed"
 - Schedule: Real-time
 - Action: Log to index, send email
 ```
@@ -230,7 +230,7 @@ apt install -y elasticsearch
 
 # Configure
 cat > /etc/elasticsearch/elasticsearch.yml << 'EOF'
-cluster.name: pam4ot-lab
+cluster.name: wallix-lab
 node.name: siem-lab
 network.host: 0.0.0.0
 discovery.type: single-node
@@ -246,17 +246,17 @@ systemctl start elasticsearch
 ```bash
 apt install -y logstash
 
-# Configure Logstash for PAM4OT
-cat > /etc/logstash/conf.d/pam4ot.conf << 'EOF'
+# Configure Logstash for WALLIX Bastion
+cat > /etc/logstash/conf.d/wallix.conf << 'EOF'
 input {
   syslog {
     port => 514
-    type => "pam4ot"
+    type => "wallix"
   }
 }
 
 filter {
-  if [type] == "pam4ot" {
+  if [type] == "wallix" {
     grok {
       match => { "message" => "%{SYSLOGTIMESTAMP:timestamp} %{HOSTNAME:source} %{DATA:program}: %{GREEDYDATA:log_message}" }
     }
@@ -273,7 +273,7 @@ filter {
 output {
   elasticsearch {
     hosts => ["localhost:9200"]
-    index => "pam4ot-%{+YYYY.MM.dd}"
+    index => "wallix-%{+YYYY.MM.dd}"
   }
 }
 EOF
@@ -303,7 +303,7 @@ systemctl start kibana
 
 1. Open Kibana: http://10.10.1.50:5601
 2. Go to: Stack Management > Index Patterns
-3. Create pattern: `pam4ot-*`
+3. Create pattern: `wallix-*`
 4. Time field: `@timestamp`
 
 ### Step 5: Kibana Dashboard
@@ -321,18 +321,18 @@ Create visualizations for:
 ### CEF Format (Common Event Format)
 
 ```
-CEF:0|WALLIX|PAM4OT|12.1|100|User Login|5|src=10.10.1.50 suser=jadmin outcome=success
-CEF:0|WALLIX|PAM4OT|12.1|101|User Login Failed|7|src=10.10.1.50 suser=baduser outcome=failure reason=invalid_password
-CEF:0|WALLIX|PAM4OT|12.1|200|Session Started|3|src=10.10.1.50 suser=jadmin dhost=linux-test duser=root protocol=SSH
-CEF:0|WALLIX|PAM4OT|12.1|201|Session Ended|3|src=10.10.1.50 suser=jadmin dhost=linux-test duration=300
+CEF:0|WALLIX|WALLIX Bastion|12.1|100|User Login|5|src=10.10.1.50 suser=jadmin outcome=success
+CEF:0|WALLIX|WALLIX Bastion|12.1|101|User Login Failed|7|src=10.10.1.50 suser=baduser outcome=failure reason=invalid_password
+CEF:0|WALLIX|WALLIX Bastion|12.1|200|Session Started|3|src=10.10.1.50 suser=jadmin dhost=linux-test duser=root protocol=SSH
+CEF:0|WALLIX|WALLIX Bastion|12.1|201|Session Ended|3|src=10.10.1.50 suser=jadmin dhost=linux-test duration=300
 ```
 
 ### Syslog Format
 
 ```
-Jan 29 10:15:23 pam4ot-node1 wallix-bastion[1234]: [AUTH] User jadmin authenticated successfully from 10.10.1.50
-Jan 29 10:15:30 pam4ot-node1 wallix-bastion[1234]: [SESSION] User jadmin started SSH session to linux-test as root
-Jan 29 10:20:30 pam4ot-node1 wallix-bastion[1234]: [SESSION] Session ended for user jadmin (duration: 5m0s)
+Jan 29 10:15:23 wallix-node1 wallix-bastion[1234]: [AUTH] User jadmin authenticated successfully from 10.10.1.50
+Jan 29 10:15:30 wallix-node1 wallix-bastion[1234]: [SESSION] User jadmin started SSH session to linux-test as root
+Jan 29 10:20:30 wallix-node1 wallix-bastion[1234]: [SESSION] Session ended for user jadmin (duration: 5m0s)
 ```
 
 ---
@@ -341,17 +341,17 @@ Jan 29 10:20:30 pam4ot-node1 wallix-bastion[1234]: [SESSION] Session ended for u
 
 ```bash
 # Generate test events
-# 1. Login to PAM4OT
+# 1. Login to WALLIX Bastion
 # 2. Launch a session
 # 3. End session
 
 # On SIEM, search for events:
 
 # Splunk:
-index=pam4ot | head 10
+index=wallix | head 10
 
 # Elasticsearch:
-curl -X GET "localhost:9200/pam4ot-*/_search?q=*&size=10&pretty"
+curl -X GET "localhost:9200/wallix-*/_search?q=*&size=10&pretty"
 ```
 
 ---
@@ -362,7 +362,7 @@ curl -X GET "localhost:9200/pam4ot-*/_search?q=*&size=10&pretty"
 |-------|--------|
 | SIEM platform installed | [ ] |
 | Syslog input configured | [ ] |
-| PAM4OT syslog enabled | [ ] |
+| WALLIX Bastion syslog enabled | [ ] |
 | Test log received | [ ] |
 | Index/sourcetype created | [ ] |
 | Basic searches work | [ ] |

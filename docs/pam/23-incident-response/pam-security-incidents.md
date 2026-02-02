@@ -1,8 +1,8 @@
 # PAM Security Incident Response
 
-## Handling Security Incidents Involving PAM4OT
+## Handling Security Incidents Involving WALLIX Bastion
 
-This document provides incident response procedures specific to PAM4OT security events.
+This document provides incident response procedures specific to WALLIX Bastion security events.
 
 ---
 
@@ -200,7 +200,7 @@ ORDER BY timestamp DESC;"
 
 ### Playbook 4: Unauthorized Direct Target Access
 
-**Trigger:** Access to targets bypassing PAM4OT controls
+**Trigger:** Access to targets bypassing WALLIX Bastion controls
 
 ```bash
 # IMMEDIATE ACTIONS (0-15 minutes)
@@ -209,10 +209,10 @@ ORDER BY timestamp DESC;"
 # Check target system logs for direct logins
 
 # On Linux targets:
-grep "Accepted" /var/log/auth.log | grep -v "pam4ot"
+grep "Accepted" /var/log/auth.log | grep -v "wallix"
 
 # On Windows targets:
-# Event ID 4624 with LogonType 10 (RDP) not from PAM4OT IPs
+# Event ID 4624 with LogonType 10 (RDP) not from WALLIX Bastion IPs
 
 # Step 2: Force credential rotation on affected targets
 wabadmin password rotate --device [target-name] --all-accounts
@@ -256,7 +256,7 @@ wabadmin session list --device [target-name] --last 7d > /tmp/pam-sessions.log
 mkdir -p /evidence/incident-$(date +%Y%m%d-%H%M%S)
 cd /evidence/incident-$(date +%Y%m%d-%H%M%S)
 
-# 1. PAM4OT audit logs
+# 1. WALLIX Bastion audit logs
 wabadmin audit export --last 30d --format json > pam-audit.json
 
 # 2. System logs

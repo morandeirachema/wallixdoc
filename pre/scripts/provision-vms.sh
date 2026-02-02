@@ -1,6 +1,6 @@
 #!/bin/bash
 # provision-vms.sh
-# VM Provisioning Script for PAM4OT Pre-Production Lab
+# VM Provisioning Script for WALLIX Pre-Production Lab
 # This script generates cloud-init configurations and provides guidance
 
 set -e
@@ -25,8 +25,8 @@ OUTPUT_DIR="./vm-configs"
 declare -A VMS=(
     # Management VLAN
     ["dc-lab"]="10.10.1.10|4|8192|100|Windows Server 2022|Active Directory Domain Controller"
-    ["pam4ot-node1"]="10.10.1.11|4|8192|150|Debian 12|PAM4OT Primary Node"
-    ["pam4ot-node2"]="10.10.1.12|4|8192|150|Debian 12|PAM4OT Secondary Node"
+    ["wallix-node1"]="10.10.1.11|4|8192|150|Debian 12|WALLIX Primary Node"
+    ["wallix-node2"]="10.10.1.12|4|8192|150|Debian 12|WALLIX Secondary Node"
     ["siem-lab"]="10.10.1.50|4|8192|200|Ubuntu 22.04|SIEM (Splunk/ELK)"
     ["monitoring-lab"]="10.10.1.60|2|4096|100|Ubuntu 22.04|Prometheus/Grafana"
 
@@ -75,7 +75,7 @@ manage_etc_hosts: true
 
 # User configuration
 users:
-  - name: pam4ot-admin
+  - name: wallix-admin
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
     lock_passwd: false
@@ -85,7 +85,7 @@ users:
 # Set password (change this!)
 chpasswd:
   list: |
-    pam4ot-admin:Pam4otLab123!
+    wallix-admin:Pam4otLab123!
     root:RootLab123!
   expire: false
 
@@ -140,7 +140,7 @@ generate_terraform() {
     local tf_file="$OUTPUT_DIR/main.tf"
 
     cat > "$tf_file" << 'EOF'
-# main.tf - PAM4OT Lab Infrastructure
+# main.tf - WALLIX Lab Infrastructure
 # Provider: VMware vSphere (adjust for your environment)
 
 terraform {
@@ -205,7 +205,7 @@ data "vsphere_network" "ot_network" {
 # VM definitions
 locals {
   vms = {
-    "pam4ot-node1" = {
+    "wallix-node1" = {
       ip       = "10.10.1.11"
       cpu      = 4
       memory   = 8192
@@ -213,7 +213,7 @@ locals {
       network  = data.vsphere_network.mgmt_network.id
       template = "debian-12-template"
     }
-    "pam4ot-node2" = {
+    "wallix-node2" = {
       ip       = "10.10.1.12"
       cpu      = 4
       memory   = 8192
@@ -304,23 +304,23 @@ generate_ansible_inventory() {
     local inv_file="$OUTPUT_DIR/inventory.yml"
 
     cat > "$inv_file" << EOF
-# inventory.yml - PAM4OT Lab Ansible Inventory
+# inventory.yml - WALLIX Lab Ansible Inventory
 all:
   vars:
-    ansible_user: pam4ot-admin
-    ansible_ssh_private_key_file: ~/.ssh/pam4ot-lab
+    ansible_user: wallix-admin
+    ansible_ssh_private_key_file: ~/.ssh/wallix-lab
     ansible_python_interpreter: /usr/bin/python3
 
   children:
-    pam4ot:
+    wallix:
       hosts:
-        pam4ot-node1:
+        wallix-node1:
           ansible_host: 10.10.1.11
-        pam4ot-node2:
+        wallix-node2:
           ansible_host: 10.10.1.12
       vars:
-        pam4ot_vip: 10.10.1.100
-        pam4ot_cluster_name: pam4ot-cluster
+        wallix_vip: 10.10.1.100
+        wallix_cluster_name: wallix-cluster
 
     infrastructure:
       hosts:
@@ -363,7 +363,7 @@ generate_vagrant() {
     local vf_file="$OUTPUT_DIR/Vagrantfile"
 
     cat > "$vf_file" << 'EOF'
-# Vagrantfile - PAM4OT Lab (for local development/testing)
+# Vagrantfile - WALLIX Lab (for local development/testing)
 # Note: This is for testing purposes. Production should use proper VMs.
 
 Vagrant.configure("2") do |config|
@@ -371,10 +371,10 @@ Vagrant.configure("2") do |config|
   # Common settings
   config.vm.box_check_update = false
 
-  # PAM4OT Node 1
-  config.vm.define "pam4ot-node1" do |node|
+  # WALLIX Node 1
+  config.vm.define "wallix-node1" do |node|
     node.vm.box = "debian/bookworm64"
-    node.vm.hostname = "pam4ot-node1"
+    node.vm.hostname = "wallix-node1"
     node.vm.network "private_network", ip: "10.10.1.11"
     node.vm.provider "virtualbox" do |vb|
       vb.memory = "4096"
@@ -386,10 +386,10 @@ Vagrant.configure("2") do |config|
     SHELL
   end
 
-  # PAM4OT Node 2
-  config.vm.define "pam4ot-node2" do |node|
+  # WALLIX Node 2
+  config.vm.define "wallix-node2" do |node|
     node.vm.box = "debian/bookworm64"
-    node.vm.hostname = "pam4ot-node2"
+    node.vm.hostname = "wallix-node2"
     node.vm.network "private_network", ip: "10.10.1.12"
     node.vm.provider "virtualbox" do |vb|
       vb.memory = "4096"
@@ -466,7 +466,7 @@ print_network_summary() {
 main() {
     echo ""
     echo "============================================================"
-    echo "  PAM4OT Pre-Production Lab - VM Provisioning"
+    echo "  WALLIX Pre-Production Lab - VM Provisioning"
     echo "============================================================"
     echo ""
 

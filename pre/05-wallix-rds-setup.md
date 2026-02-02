@@ -13,18 +13,18 @@ This guide covers deploying and configuring WALLIX RDS (Remote Desktop Session M
 |                    WALLIX RDS ARCHITECTURE                                    |
 +===============================================================================+
 |                                                                               |
-|  Users                PAM4OT Cluster         WALLIX RDS        Windows Targets|
+|  Users                WALLIX Bastion Cluster         WALLIX RDS        Windows Targets|
 |  =====                =============          ===========        ==============|
 |                                                                               |
 |  +------+             +-----------+          +-----------+      +-----------+ |
-|  |Client|---RDP----->| PAM4OT    |---RDP--->| WALLIX    |--RDP> | Windows   | |
+|  |Client|---RDP----->| WALLIX Bastion    |---RDP--->| WALLIX    |--RDP> | Windows   | |
 |  |      |  (3389)    | (Proxy)   | (3390)   | RDS       |(3389) | Server    | |
 |  +------+            |10.10.1.11 |          |10.10.1.30 |       |10.10.2.30 | |
 |                      +-----------+          +-----------+       +-----------+ |
 |                             |                     |                           |
 |                             |                     |                           |
 |                      +-----------+          +-----------+                     |
-|                      | PAM4OT    |          | Features: |                     |
+|                      | WALLIX Bastion    |          | Features: |                     |
 |                      | (Backup)  |          | - OCR     |                     |
 |                      |10.10.1.12 |          | - Video   |                     |
 |                      +-----------+          | - Metadata|                     |
@@ -58,7 +58,7 @@ WALLIX RDS (Remote Desktop Session Manager) is a Windows-based component that pr
 
 - Windows Server 2022 VM
 - WALLIX Bastion cluster operational
-- Network connectivity: PAM4OT <-> RDS <-> Windows Targets
+- Network connectivity: WALLIX Bastion <-> RDS <-> Windows Targets
 - WALLIX Bastion license with RDS support
 - 100GB+ storage for session recordings
 
@@ -229,11 +229,11 @@ STEP 4: Installation Folder
 
 STEP 5: Database Configuration
   Database Type: PostgreSQL
-  Host: 10.10.1.11 (PAM4OT Primary)
+  Host: 10.10.1.11 (WALLIX Bastion Primary)
   Port: 5432
   Database Name: wallix_bastion
   Username: postgres
-  Password: [enter PAM4OT DB password]
+  Password: [enter WALLIX Bastion DB password]
 
   [Test Connection]
   Result: Connection successful
@@ -285,8 +285,8 @@ Get-Service -Name "WallixSessionManager" | Select-Object Status, StartType
 ### Firewall Configuration
 
 ```powershell
-# Allow RDP connections from PAM4OT nodes
-New-NetFirewallRule -DisplayName "WALLIX RDS - RDP from PAM4OT" `
+# Allow RDP connections from WALLIX Bastion nodes
+New-NetFirewallRule -DisplayName "WALLIX RDS - RDP from WALLIX Bastion" `
     -Direction Inbound -LocalPort 3389 -Protocol TCP -Action Allow `
     -RemoteAddress 10.10.1.11,10.10.1.12
 
@@ -297,11 +297,11 @@ New-NetFirewallRule -DisplayName "WALLIX RDS - HTTPS Management" `
 
 ---
 
-## Step 7: Register RDS with PAM4OT
+## Step 7: Register RDS with WALLIX Bastion
 
-### Via PAM4OT Web UI
+### Via WALLIX Bastion Web UI
 
-**Login to PAM4OT Admin: `https://10.10.1.100/admin`**
+**Login to WALLIX Bastion Admin: `https://10.10.1.100/admin`**
 
 1. Navigate to: **Configuration > Session Managers**
 2. Click **Add Session Manager**
@@ -351,7 +351,7 @@ New-NetFirewallRule -DisplayName "WALLIX RDS - HTTPS Management" `
 ### Via REST API
 
 ```bash
-# From Linux client or PAM4OT node
+# From Linux client or WALLIX Bastion node
 curl -k -X POST "https://10.10.1.100/api/sessionmanagers" \
     -H "X-Auth-Token: $API_TOKEN" \
     -H "Content-Type: application/json" \
@@ -373,7 +373,7 @@ curl -k -X POST "https://10.10.1.100/api/sessionmanagers" \
 
 ### Create Connection Policy
 
-**In PAM4OT Web UI:**
+**In WALLIX Bastion Web UI:**
 
 **Navigate to: Configuration > Connection Policies**
 
@@ -414,7 +414,7 @@ curl -k -X POST "https://10.10.1.100/api/sessionmanagers" \
 ### From Windows Client
 
 1. Launch **Remote Desktop Connection** (mstsc.exe)
-2. Computer: `10.10.1.100` (PAM4OT VIP)
+2. Computer: `10.10.1.100` (WALLIX Bastion VIP)
 3. Click **Connect**
 
 **Login prompt:**
@@ -425,13 +425,13 @@ Password: JohnAdmin123!123456
 ```
 
 4. Session will be proxied through:
-   - PAM4OT (10.10.1.11 or .12)
+   - WALLIX Bastion (10.10.1.11 or .12)
    - WALLIX RDS (10.10.1.30)
    - Target Windows Server (10.10.2.30)
 
 ### Verify Session Recording
 
-**In PAM4OT Web UI:**
+**In WALLIX Bastion Web UI:**
 
 1. Navigate to: **Audit > Session Recordings**
 2. Find session: `jadmin @ windows-server01`
@@ -479,7 +479,7 @@ Get-Counter '\PhysicalDisk(_Total)\Disk Reads/sec','\PhysicalDisk(_Total)\Disk W
 
 ### Session Recording Retention
 
-**Configure retention policy in PAM4OT:**
+**Configure retention policy in WALLIX Bastion:**
 
 ```
 Configuration > System > Session Recording
@@ -588,10 +588,10 @@ Get-Counter '\Memory\Available MBytes'
 ### 1. Network Security
 
 ```powershell
-# Restrict RDP access to PAM4OT nodes only
+# Restrict RDP access to WALLIX Bastion nodes only
 Remove-NetFirewallRule -DisplayName "Remote Desktop*"
 
-New-NetFirewallRule -DisplayName "WALLIX RDS - RDP from PAM4OT" `
+New-NetFirewallRule -DisplayName "WALLIX RDS - RDP from WALLIX Bastion" `
     -Direction Inbound -LocalPort 3389 -Protocol TCP -Action Allow `
     -RemoteAddress 10.10.1.11,10.10.1.12
 ```
@@ -639,7 +639,7 @@ reg export "HKLM\SOFTWARE\WALLIX" "$BackupPath\Registry-$Date.reg" /y
 1. Reinstall WALLIX RDS on new server
 2. Restore configuration files from backup
 3. Import registry settings
-4. Re-register with PAM4OT
+4. Re-register with WALLIX Bastion
 5. Test RDP session routing
 ```
 
@@ -694,7 +694,7 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\W
 | Prerequisites installed (.NET, VC++, ODBC) | [ ] |
 | WALLIX RDS software installed | [ ] |
 | Service running and configured | [ ] |
-| Registered with PAM4OT | [ ] |
+| Registered with WALLIX Bastion | [ ] |
 | Connection policy created | [ ] |
 | Test RDP session successful | [ ] |
 | Session recording verified | [ ] |

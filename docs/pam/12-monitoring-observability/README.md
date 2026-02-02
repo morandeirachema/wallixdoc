@@ -19,20 +19,20 @@
 
 ```
 +===============================================================================+
-|                      PAM4OT MONITORING ARCHITECTURE                           |
+|                      WALLIX Bastion MONITORING ARCHITECTURE                           |
 +===============================================================================+
 
-  PAM4OT Cluster                 Monitoring Stack              Visualization
+  WALLIX Bastion Cluster                 Monitoring Stack              Visualization
   ==============                 ================              =============
 
   ┌─────────────┐               ┌─────────────┐              ┌─────────────┐
-  │  PAM4OT     │               │             │              │             │
+  │  WALLIX Bastion     │               │             │              │             │
   │  Node 1     │───metrics────>│  Prometheus │─────────────>│   Grafana   │
   │             │               │             │              │             │
   └─────────────┘               └──────┬──────┘              └─────────────┘
                                        │
   ┌─────────────┐               ┌──────▼──────┐              ┌─────────────┐
-  │  PAM4OT     │               │             │              │             │
+  │  WALLIX Bastion     │               │             │              │             │
   │  Node 2     │───metrics────>│ Alertmanager│─────────────>│ Slack/Teams │
   │             │               │             │              │  PagerDuty  │
   └─────────────┘               └─────────────┘              └─────────────┘
@@ -51,7 +51,7 @@
 | Layer | What to Monitor | Tools |
 |-------|-----------------|-------|
 | **Infrastructure** | CPU, memory, disk, network | Prometheus node_exporter |
-| **Application** | Service status, sessions, auth | PAM4OT metrics exporter |
+| **Application** | Service status, sessions, auth | WALLIX Bastion metrics exporter |
 | **Database** | Connections, replication, queries | MariaDB exporter |
 | **Cluster** | Node status, resources, failover | Pacemaker metrics |
 | **Security** | Auth failures, anomalies, threats | SIEM integration |
@@ -64,19 +64,19 @@
 
 ```bash
 # Basic service health
-curl -sk https://pam4ot.company.com/health
+curl -sk https://wallix.company.com/health
 # Returns: {"status": "healthy", "version": "12.1.x"}
 
 # Detailed health check
-curl -sk https://pam4ot.company.com/api/health/detailed
+curl -sk https://wallix.company.com/api/health/detailed
 # Returns component-level health status
 
 # Readiness probe (for load balancers)
-curl -sk https://pam4ot.company.com/health/ready
+curl -sk https://wallix.company.com/health/ready
 # Returns 200 if ready to accept traffic
 
 # Liveness probe (for orchestrators)
-curl -sk https://pam4ot.company.com/health/live
+curl -sk https://wallix.company.com/health/live
 # Returns 200 if process is alive
 ```
 
@@ -105,7 +105,7 @@ pcs status
 #!/bin/bash
 # /opt/wab/scripts/health-check.sh
 
-echo "=== PAM4OT Health Check ==="
+echo "=== WALLIX Bastion Health Check ==="
 echo "Date: $(date)"
 echo ""
 
@@ -153,9 +153,9 @@ echo "=== Health Check Complete ==="
 
 ## Prometheus Integration
 
-### PAM4OT Metrics Exporter
+### WALLIX Bastion Metrics Exporter
 
-PAM4OT exposes metrics in Prometheus format on port 9100.
+WALLIX Bastion exposes metrics in Prometheus format on port 9100.
 
 ```yaml
 # /etc/prometheus/prometheus.yml
@@ -165,30 +165,30 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  # PAM4OT application metrics
-  - job_name: 'pam4ot'
+  # WALLIX Bastion application metrics
+  - job_name: 'wallix'
     scheme: https
     tls_config:
       insecure_skip_verify: true
     static_configs:
       - targets:
-          - 'pam4ot-node1.company.com:9100'
-          - 'pam4ot-node2.company.com:9100'
+          - 'wallix-node1.company.com:9100'
+          - 'wallix-node2.company.com:9100'
     metrics_path: /metrics
 
   # Node exporter (system metrics)
   - job_name: 'node'
     static_configs:
       - targets:
-          - 'pam4ot-node1.company.com:9100'
-          - 'pam4ot-node2.company.com:9100'
+          - 'wallix-node1.company.com:9100'
+          - 'wallix-node2.company.com:9100'
 
   # MariaDB exporter
   - job_name: 'mariadb'
     static_configs:
       - targets:
-          - 'pam4ot-node1.company.com:9104'
-          - 'pam4ot-node2.company.com:9104'
+          - 'wallix-node1.company.com:9104'
+          - 'wallix-node2.company.com:9104'
 ```
 
 ### Key Metrics
@@ -209,7 +209,7 @@ scrape_configs:
 
 ```python
 #!/usr/bin/env python3
-# /opt/wab/scripts/pam4ot_exporter.py
+# /opt/wab/scripts/wallix_exporter.py
 
 from prometheus_client import start_http_server, Gauge, Counter
 import subprocess
@@ -254,12 +254,12 @@ if __name__ == '__main__':
 
 ## Grafana Dashboards
 
-### PAM4OT Overview Dashboard
+### WALLIX Bastion Overview Dashboard
 
 ```json
 {
   "dashboard": {
-    "title": "PAM4OT Overview",
+    "title": "WALLIX Bastion Overview",
     "panels": [
       {
         "title": "Active Sessions",
@@ -321,8 +321,8 @@ cat > /etc/snmp/snmpd.conf << 'EOF'
 agentAddress udp:161
 
 # SNMPv3 user (recommended)
-createUser pam4otMonitor SHA "AuthPassword123" AES "PrivPassword123"
-rouser pam4otMonitor priv
+createUser wallixMonitor SHA "AuthPassword123" AES "PrivPassword123"
+rouser wallixMonitor priv
 
 # SNMPv2c community (legacy)
 rocommunity public 10.10.1.0/24
@@ -330,11 +330,11 @@ rocommunity public 10.10.1.0/24
 # System information
 sysLocation "Data Center A"
 sysContact "ops@company.com"
-sysName "pam4ot-node1"
+sysName "wallix-node1"
 
 # Extend with custom scripts
-extend pam4ot-sessions /opt/wab/scripts/snmp-sessions.sh
-extend pam4ot-health /opt/wab/scripts/snmp-health.sh
+extend wallix-sessions /opt/wab/scripts/snmp-sessions.sh
+extend wallix-health /opt/wab/scripts/snmp-health.sh
 EOF
 
 # Restart SNMP
@@ -366,7 +366,7 @@ fi
 
 | OID | Description |
 |-----|-------------|
-| `.1.3.6.1.4.1.xxxxx.1.1` | PAM4OT version |
+| `.1.3.6.1.4.1.xxxxx.1.1` | WALLIX Bastion version |
 | `.1.3.6.1.4.1.xxxxx.1.2` | Active sessions |
 | `.1.3.6.1.4.1.xxxxx.1.3` | Health status |
 | `.1.3.6.1.4.1.xxxxx.1.4` | License usage % |
@@ -378,9 +378,9 @@ fi
 ### Syslog Configuration
 
 ```bash
-# /etc/rsyslog.d/50-pam4ot.conf
+# /etc/rsyslog.d/50-wallix.conf
 
-# Forward PAM4OT logs to SIEM
+# Forward WALLIX Bastion logs to SIEM
 if $programname == 'wallix-bastion' then {
     action(type="omfwd"
            target="siem.company.com"
@@ -409,7 +409,7 @@ if $programname == 'wab-audit' then {
 ```
 # CEF format for SIEM integration
 template(name="CEFFormat" type="string"
-  string="CEF:0|WALLIX|PAM4OT|12.1|%msg:R,ERE,0,DFLT:event_id=([^,]+)--end%|%msg:R,ERE,0,DFLT:event_name=([^,]+)--end%|%msg:R,ERE,0,DFLT:severity=([^,]+)--end%|%msg%\n")
+  string="CEF:0|WALLIX|WALLIX Bastion|12.1|%msg:R,ERE,0,DFLT:event_id=([^,]+)--end%|%msg:R,ERE,0,DFLT:event_name=([^,]+)--end%|%msg:R,ERE,0,DFLT:severity=([^,]+)--end%|%msg%\n")
 ```
 
 ### Log Categories
@@ -429,22 +429,22 @@ template(name="CEFFormat" type="string"
 ### Prometheus Alert Rules
 
 ```yaml
-# /etc/prometheus/rules/pam4ot.yml
+# /etc/prometheus/rules/wallix.yml
 
 groups:
-  - name: pam4ot_critical
+  - name: wallix_critical
     rules:
-      - alert: PAM4OTServiceDown
-        expr: up{job="pam4ot"} == 0
+      - alert: WALLIX BastionServiceDown
+        expr: up{job="wallix"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "PAM4OT service down on {{ $labels.instance }}"
-          description: "PAM4OT has been unreachable for more than 1 minute."
-          runbook_url: "https://wiki.company.com/pam4ot/runbooks/service-down"
+          summary: "WALLIX Bastion service down on {{ $labels.instance }}"
+          description: "WALLIX Bastion has been unreachable for more than 1 minute."
+          runbook_url: "https://wiki.company.com/wallix/runbooks/service-down"
 
-      - alert: PAM4OTHighAuthFailures
+      - alert: WALLIX BastionHighAuthFailures
         expr: rate(pam_auth_failure_total[5m]) > 10
         for: 2m
         labels:
@@ -454,18 +454,18 @@ groups:
           summary: "High authentication failure rate"
           description: "More than 10 auth failures per second for 2 minutes."
 
-      - alert: PAM4OTDiskCritical
+      - alert: WALLIX BastionDiskCritical
         expr: pam_disk_usage_percent{mount="/var/wab"} > 90
         for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "PAM4OT disk usage critical"
+          summary: "WALLIX Bastion disk usage critical"
           description: "Disk usage is {{ $value }}% on {{ $labels.instance }}"
 
-  - name: pam4ot_warning
+  - name: wallix_warning
     rules:
-      - alert: PAM4OTReplicationLag
+      - alert: WALLIX BastionReplicationLag
         expr: pam_replication_lag_bytes > 10485760
         for: 5m
         labels:
@@ -474,7 +474,7 @@ groups:
           summary: "MariaDB replication lag high"
           description: "Replication lag is {{ $value | humanize1024 }}B"
 
-      - alert: PAM4OTLicenseWarning
+      - alert: WALLIX BastionLicenseWarning
         expr: pam_license_usage_percent > 80
         for: 1h
         labels:
@@ -483,7 +483,7 @@ groups:
           summary: "License usage above 80%"
           description: "License utilization is {{ $value }}%"
 
-      - alert: PAM4OTCertExpiring
+      - alert: WALLIX BastionCertExpiring
         expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
         for: 1h
         labels:
@@ -532,7 +532,7 @@ receivers:
   - name: 'slack-critical'
     slack_configs:
       - api_url: 'https://hooks.slack.com/services/YOUR_WORKSPACE/YOUR_CHANNEL/YOUR_TOKEN'
-        channel: '#pam4ot-alerts'
+        channel: '#wallix-alerts'
         send_resolved: true
 
   - name: 'security-team'
@@ -582,7 +582,7 @@ rate(pam_api_errors_total[5m]) / rate(pam_api_requests_total[5m]) * 100
 #!/bin/bash
 # /opt/wab/scripts/performance-baseline.sh
 
-echo "=== PAM4OT Performance Baseline ==="
+echo "=== WALLIX Bastion Performance Baseline ==="
 echo "Date: $(date)"
 echo ""
 
@@ -621,12 +621,12 @@ MONITORING SETUP CHECKLIST
 
 Infrastructure Monitoring:
 [ ] Prometheus installed and configured
-[ ] Node exporter on all PAM4OT nodes
+[ ] Node exporter on all WALLIX Bastion nodes
 [ ] MariaDB exporter configured
 [ ] Scrape targets verified
 
 Application Monitoring:
-[ ] PAM4OT metrics endpoint enabled
+[ ] WALLIX Bastion metrics endpoint enabled
 [ ] Custom exporter deployed (if needed)
 [ ] Health check endpoints tested
 
@@ -644,7 +644,7 @@ Log Forwarding:
 
 Dashboards:
 [ ] Grafana installed
-[ ] PAM4OT dashboard imported
+[ ] WALLIX Bastion dashboard imported
 [ ] Team access configured
 ```
 
@@ -661,10 +661,10 @@ curl -s http://prometheus:9090/api/v1/targets | jq '.data.activeTargets[] | {ins
 curl -s http://alertmanager:9093/api/v1/alerts | jq '.data[] | {alertname, status}'
 
 # Test syslog forwarding
-logger -p local0.info -t pam4ot "Test message"
+logger -p local0.info -t wallix "Test message"
 
 # Check SNMP
-snmpwalk -v3 -u pam4otMonitor -l authPriv -a SHA -A "AuthPass" -x AES -X "PrivPass" localhost
+snmpwalk -v3 -u wallixMonitor -l authPriv -a SHA -A "AuthPass" -x AES -X "PrivPass" localhost
 ```
 
 ---

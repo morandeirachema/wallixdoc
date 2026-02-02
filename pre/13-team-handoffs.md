@@ -26,7 +26,7 @@ This guide provides team-specific documentation for handoffs to Networking, SIEM
            +------------------------+------------------------+
                                     |
                           +---------+---------+
-                          |      PAM4OT       |
+                          |      WALLIX Bastion       |
                           |    CORE TEAM      |
                           +---------+---------+
                                     |
@@ -65,7 +65,7 @@ This guide provides team-specific documentation for handoffs to Networking, SIEM
   +------------------+                        +------------------+
 
   +------------------+  +------------------+  +------------------+
-  |  pam4ot-node1    |  |  pam4ot-node2    |  |  windows-test    |
+  |  wallix-node1    |  |  wallix-node2    |  |  windows-test    |
   |  10.10.1.11      |  |  10.10.1.12      |  |  10.10.2.20      |
   +------------------+  +------------------+  +------------------+
           \                     /             +------------------+
@@ -92,30 +92,30 @@ This guide provides team-specific documentation for handoffs to Networking, SIEM
 | Users | VIP 10.10.1.100 | 443 | TCP | Web UI access |
 | Users | VIP 10.10.1.100 | 22 | TCP | SSH proxy |
 | Users | VIP 10.10.1.100 | 3389 | TCP | RDP proxy |
-| pam4ot-node1/2 | dc-lab | 636 | TCP | LDAPS |
-| pam4ot-node1/2 | dc-lab | 88 | TCP/UDP | Kerberos |
-| pam4ot-node1/2 | dc-lab | 389 | TCP | LDAP |
-| pam4ot-node1/2 | dc-lab | 53 | TCP/UDP | DNS |
-| pam4ot-node1 | pam4ot-node2 | 3306/3307 | TCP | MariaDB replication |
-| pam4ot-node1 | pam4ot-node2 | 2224 | TCP | Pacemaker |
-| pam4ot-node1 | pam4ot-node2 | 5405 | UDP | Corosync |
-| pam4ot-node1/2 | siem-lab | 514 | TCP | Syslog |
-| pam4ot-node1/2 | siem-lab | 6514 | TCP | Syslog TLS |
-| monitoring-lab | pam4ot-node1/2 | 9100 | TCP | Node exporter |
-| monitoring-lab | pam4ot-node1/2 | 9104 | TCP | MariaDB exporter |
-| pam4ot-node1/2 | 10.10.2.0/24 | 22 | TCP | SSH to targets |
-| pam4ot-node1/2 | 10.10.2.0/24 | 3389 | TCP | RDP to targets |
-| pam4ot-node1/2 | 10.10.3.0/24 | 22 | TCP | SSH to OT targets |
-| pam4ot-node1/2 | 10.10.3.0/24 | 502 | TCP | Modbus to OT |
+| wallix-node1/2 | dc-lab | 636 | TCP | LDAPS |
+| wallix-node1/2 | dc-lab | 88 | TCP/UDP | Kerberos |
+| wallix-node1/2 | dc-lab | 389 | TCP | LDAP |
+| wallix-node1/2 | dc-lab | 53 | TCP/UDP | DNS |
+| wallix-node1 | wallix-node2 | 3306/3307 | TCP | MariaDB replication |
+| wallix-node1 | wallix-node2 | 2224 | TCP | Pacemaker |
+| wallix-node1 | wallix-node2 | 5405 | UDP | Corosync |
+| wallix-node1/2 | siem-lab | 514 | TCP | Syslog |
+| wallix-node1/2 | siem-lab | 6514 | TCP | Syslog TLS |
+| monitoring-lab | wallix-node1/2 | 9100 | TCP | Node exporter |
+| monitoring-lab | wallix-node1/2 | 9104 | TCP | MariaDB exporter |
+| wallix-node1/2 | 10.10.2.0/24 | 22 | TCP | SSH to targets |
+| wallix-node1/2 | 10.10.2.0/24 | 3389 | TCP | RDP to targets |
+| wallix-node1/2 | 10.10.3.0/24 | 22 | TCP | SSH to OT targets |
+| wallix-node1/2 | 10.10.3.0/24 | 502 | TCP | Modbus to OT |
 
 ### DNS Records Required
 
 ```
 ; Forward zone: lab.local
 dc-lab          A       10.10.1.10
-pam4ot-node1    A       10.10.1.11
-pam4ot-node2    A       10.10.1.12
-pam4ot          A       10.10.1.100     ; VIP
+wallix-node1    A       10.10.1.11
+wallix-node2    A       10.10.1.12
+wallix          A       10.10.1.100     ; VIP
 siem-lab        A       10.10.1.50
 monitoring-lab  A       10.10.1.60
 linux-test      A       10.10.2.10
@@ -125,36 +125,36 @@ plc-sim         A       10.10.3.10
 
 ; Reverse zones
 10.1.10.10.in-addr.arpa.    PTR     dc-lab.lab.local.
-11.1.10.10.in-addr.arpa.    PTR     pam4ot-node1.lab.local.
-12.1.10.10.in-addr.arpa.    PTR     pam4ot-node2.lab.local.
+11.1.10.10.in-addr.arpa.    PTR     wallix-node1.lab.local.
+12.1.10.10.in-addr.arpa.    PTR     wallix-node2.lab.local.
 ```
 
 ### Load Balancer Configuration (If Required)
 
 ```
 ; HAProxy configuration for production
-frontend pam4ot_https
+frontend wallix_https
     bind *:443
     mode tcp
-    default_backend pam4ot_nodes
+    default_backend wallix_nodes
 
-backend pam4ot_nodes
+backend wallix_nodes
     mode tcp
     balance roundrobin
     option tcp-check
-    server pam4ot-node1 10.10.1.11:443 check
-    server pam4ot-node2 10.10.1.12:443 check backup
+    server wallix-node1 10.10.1.11:443 check
+    server wallix-node2 10.10.1.12:443 check backup
 
-frontend pam4ot_ssh
+frontend wallix_ssh
     bind *:22
     mode tcp
-    default_backend pam4ot_ssh_nodes
+    default_backend wallix_ssh_nodes
 
-backend pam4ot_ssh_nodes
+backend wallix_ssh_nodes
     mode tcp
     balance roundrobin
-    server pam4ot-node1 10.10.1.11:22 check
-    server pam4ot-node2 10.10.1.12:22 check backup
+    server wallix-node1 10.10.1.11:22 check
+    server wallix-node2 10.10.1.12:22 check backup
 ```
 
 ### Networking Team Contacts
@@ -173,8 +173,8 @@ backend pam4ot_ssh_nodes
 
 | Source | Type | Protocol | Port | Format |
 |--------|------|----------|------|--------|
-| pam4ot-node1 | PAM Logs | Syslog/TLS | 6514 | CEF |
-| pam4ot-node2 | PAM Logs | Syslog/TLS | 6514 | CEF |
+| wallix-node1 | PAM Logs | Syslog/TLS | 6514 | CEF |
+| wallix-node2 | PAM Logs | Syslog/TLS | 6514 | CEF |
 
 ### Log Categories
 
@@ -189,7 +189,7 @@ backend pam4ot_ssh_nodes
 ### CEF Field Mapping
 
 ```
-CEF:0|WALLIX|PAM4OT|12.1|<signature_id>|<name>|<severity>|<extensions>
+CEF:0|WALLIX|WALLIX Bastion|12.1|<signature_id>|<name>|<severity>|<extensions>
 
 Signature IDs:
 100 - User Login Success
@@ -219,25 +219,25 @@ protocol=<SSH|RDP|HTTP>
 ### Splunk Search Examples
 
 ```spl
-# All PAM4OT events
-index=pam4ot sourcetype=syslog
+# All WALLIX Bastion events
+index=wallix sourcetype=syslog
 
 # Failed logins in last 24h
-index=pam4ot "authentication failed" earliest=-24h
+index=wallix "authentication failed" earliest=-24h
 | stats count by suser, src
 | sort -count
 
 # Sessions by user
-index=pam4ot "session started" earliest=-24h
+index=wallix "session started" earliest=-24h
 | stats count by suser, dhost, protocol
 | sort -count
 
 # Password checkouts
-index=pam4ot "password checked out" earliest=-7d
+index=wallix "password checked out" earliest=-7d
 | timechart count by suser
 
 # Admin changes
-index=pam4ot "configuration changed" earliest=-24h
+index=wallix "configuration changed" earliest=-24h
 | table _time, suser, name, reason
 ```
 
@@ -255,23 +255,23 @@ index=pam4ot "configuration changed" earliest=-24h
 
 ```json
 {
-  "title": "PAM4OT Security Dashboard",
+  "title": "WALLIX Bastion Security Dashboard",
   "panels": [
     {
       "title": "Authentication Events (24h)",
-      "search": "index=pam4ot authentication | timechart count by outcome"
+      "search": "index=wallix authentication | timechart count by outcome"
     },
     {
       "title": "Top Failed Login Sources",
-      "search": "index=pam4ot \"authentication failed\" | top 10 src"
+      "search": "index=wallix \"authentication failed\" | top 10 src"
     },
     {
       "title": "Active Sessions",
-      "search": "index=pam4ot \"session started\" earliest=-1h | stats count"
+      "search": "index=wallix \"session started\" earliest=-1h | stats count"
     },
     {
       "title": "Session by Target",
-      "search": "index=pam4ot \"session started\" | top 10 dhost"
+      "search": "index=wallix \"session started\" | top 10 dhost"
     }
   ]
 }
@@ -292,17 +292,17 @@ index=pam4ot "configuration changed" earliest=-24h
 
 | Target | Endpoint | Port | Exporter |
 |--------|----------|------|----------|
-| pam4ot-node1 | /metrics | 9100 | node_exporter |
-| pam4ot-node1 | /metrics | 9104 | mysqld_exporter |
-| pam4ot-node2 | /metrics | 9100 | node_exporter |
-| pam4ot-node2 | /metrics | 9104 | mysqld_exporter |
+| wallix-node1 | /metrics | 9100 | node_exporter |
+| wallix-node1 | /metrics | 9104 | mysqld_exporter |
+| wallix-node2 | /metrics | 9100 | node_exporter |
+| wallix-node2 | /metrics | 9104 | mysqld_exporter |
 | dc-lab | /metrics | 9182 | windows_exporter |
 
 ### Key Metrics to Monitor
 
 | Metric | Query | Threshold | Action |
 |--------|-------|-----------|--------|
-| Node Up | `up{job="pam4ot"}` | < 2 | Page on-call |
+| Node Up | `up{job="wallix"}` | < 2 | Page on-call |
 | CPU Usage | `100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)` | > 80% | Investigate |
 | Memory | `(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100` | > 85% | Investigate |
 | Disk /var/wab | `(1 - node_filesystem_avail_bytes{mountpoint="/var/wab"} / node_filesystem_size_bytes) * 100` | > 80% | Clean recordings |
@@ -314,7 +314,7 @@ index=pam4ot "configuration changed" earliest=-24h
 
 | Dashboard | ID | Purpose |
 |-----------|---|---------|
-| PAM4OT Overview | 1001 | System health overview |
+| WALLIX Bastion Overview | 1001 | System health overview |
 | MariaDB | 1002 | Database performance |
 | HA Cluster | 1003 | Cluster status |
 | Session Metrics | 1004 | Session activity |
@@ -322,17 +322,17 @@ index=pam4ot "configuration changed" earliest=-24h
 ### Alert Rules
 
 ```yaml
-# /etc/prometheus/rules/pam4ot.yml
+# /etc/prometheus/rules/wallix.yml
 groups:
-  - name: pam4ot-critical
+  - name: wallix-critical
     rules:
-      - alert: PAM4OTNodeDown
-        expr: up{job="pam4ot"} == 0
+      - alert: WALLIX BastionNodeDown
+        expr: up{job="wallix"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "PAM4OT node down"
+          summary: "WALLIX Bastion node down"
 
       - alert: MariaDBDown
         expr: mysql_up == 0
@@ -340,16 +340,16 @@ groups:
         labels:
           severity: critical
 
-  - name: pam4ot-warning
+  - name: wallix-warning
     rules:
       - alert: HighCPU
-        expr: (100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",job="pam4ot"}[5m])) * 100)) > 80
+        expr: (100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",job="wallix"}[5m])) * 100)) > 80
         for: 5m
         labels:
           severity: warning
 
       - alert: HighMemory
-        expr: (1 - (node_memory_MemAvailable_bytes{job="pam4ot"} / node_memory_MemTotal_bytes{job="pam4ot"})) * 100 > 85
+        expr: (1 - (node_memory_MemAvailable_bytes{job="wallix"} / node_memory_MemTotal_bytes{job="wallix"})) * 100 > 85
         for: 5m
         labels:
           severity: warning
@@ -359,7 +359,7 @@ groups:
 
 | Alert | Runbook |
 |-------|---------|
-| PAM4OTNodeDown | See "HA Failover Procedure" |
+| WALLIX BastionNodeDown | See "HA Failover Procedure" |
 | MariaDBDown | See "Database Recovery" |
 | HighCPU | Identify top processes, check for stuck sessions |
 | HighMemory | Clear session cache, check for memory leaks |
@@ -386,15 +386,15 @@ groups:
 | Protocol | LDAPS (port 636) |
 | Service Account | wallix-svc |
 | Base DN | DC=lab,DC=local |
-| User Search Base | OU=Users,OU=PAM4OT,DC=lab,DC=local |
+| User Search Base | OU=Users,OU=WALLIX Bastion,DC=lab,DC=local |
 
 ### AD Groups and Permissions
 
-| AD Group | PAM4OT Group | Permissions |
+| AD Group | WALLIX Bastion Group | Permissions |
 |----------|--------------|-------------|
-| PAM4OT-Admins | LDAP-Admins | Full administration |
-| PAM4OT-Operators | LDAP-Operators | View/operate, no config |
-| PAM4OT-Auditors | LDAP-Auditors | Audit access only |
+| WALLIX Bastion-Admins | LDAP-Admins | Full administration |
+| WALLIX Bastion-Operators | LDAP-Operators | View/operate, no config |
+| WALLIX Bastion-Auditors | LDAP-Auditors | Audit access only |
 | Linux-Admins | LDAP-Linux-Admins | Access to Linux targets |
 | Windows-Admins | LDAP-Windows-Admins | Access to Windows targets |
 | Network-Admins | LDAP-Network-Admins | Access to network devices |
@@ -403,18 +403,18 @@ groups:
 ### User Provisioning Process
 
 ```
-1. Create user in AD under: OU=Users,OU=PAM4OT,DC=lab,DC=local
+1. Create user in AD under: OU=Users,OU=WALLIX Bastion,DC=lab,DC=local
 2. Add to appropriate group(s):
-   - PAM4OT-Admins (for PAM administrators)
+   - WALLIX Bastion-Admins (for PAM administrators)
    - Linux-Admins (for Linux access)
    - Windows-Admins (for Windows access)
    - OT-Engineers (for OT access)
 3. User syncs automatically on next login
-4. PAM4OT inherits group permissions
+4. WALLIX Bastion inherits group permissions
 
 Deprovisioning:
 1. Disable user in AD
-2. Remove from all PAM4OT groups
+2. Remove from all WALLIX Bastion groups
 3. User loses access on next auth attempt
 4. Active sessions remain until timeout
 ```
@@ -425,7 +425,7 @@ Deprovisioning:
 MFA Provider: ____________
 Integration: RADIUS / TOTP / FIDO2
 
-Configuration in PAM4OT:
+Configuration in WALLIX Bastion:
 - System > Authentication > MFA
 - Provider: [configured provider]
 - Required for: All users / Admin only
@@ -437,10 +437,10 @@ Configuration in PAM4OT:
 IdP: ____________
 Protocol: SAML / OIDC
 
-PAM4OT SAML Settings:
-- Entity ID: https://pam4ot.lab.local/saml
-- ACS URL: https://pam4ot.lab.local/saml/acs
-- Metadata: https://pam4ot.lab.local/saml/metadata
+WALLIX Bastion SAML Settings:
+- Entity ID: https://wallix.lab.local/saml
+- ACS URL: https://wallix.lab.local/saml/acs
+- Metadata: https://wallix.lab.local/saml/metadata
 ```
 
 ### Identity Team Contacts
@@ -470,22 +470,22 @@ PAM4OT SAML Settings:
 
 ```
 +===============================================================================+
-|                        OT ACCESS THROUGH PAM4OT                               |
+|                        OT ACCESS THROUGH WALLIX Bastion                               |
 +===============================================================================+
 
-  OT Engineer                  PAM4OT                       PLC/HMI
+  OT Engineer                  WALLIX Bastion                       PLC/HMI
   ===========                  ======                       =======
 
-  1. Engineer authenticates to PAM4OT (MFA)
+  1. Engineer authenticates to WALLIX Bastion (MFA)
   2. Requests session to OT target
   3. Approval workflow (if required)
-  4. PAM4OT creates tunneled connection
+  4. WALLIX Bastion creates tunneled connection
   5. Session recorded (video + commands)
   6. Engineer accesses OT device
   7. Session ends, recording archived
 
   +------------+            +------------+            +------------+
-  |  OT Eng    |    SSH     |   PAM4OT   |   Tunnel   |  PLC-SIM   |
+  |  OT Eng    |    SSH     |   WALLIX Bastion   |   Tunnel   |  PLC-SIM   |
   |    MFA     | ---------> |   Proxy    | ---------> |   Modbus   |
   +------------+            +------------+            +------------+
                                   |
@@ -498,8 +498,8 @@ PAM4OT SAML Settings:
 ### Modbus Access via SSH Tunnel
 
 ```bash
-# Engineer connects to PAM4OT
-ssh ot-engineer@pam4ot.lab.local
+# Engineer connects to WALLIX Bastion
+ssh ot-engineer@wallix.lab.local
 
 # Select: plc-sim / Modbus Tunnel
 
@@ -521,7 +521,7 @@ modbus-cli localhost:502
 ### Emergency Access Procedure
 
 ```
-For emergency OT access when PAM4OT is unavailable:
+For emergency OT access when WALLIX Bastion is unavailable:
 
 1. Contact OT Lead and Security
 2. Use break-glass credentials stored in:
@@ -545,7 +545,7 @@ For emergency OT access when PAM4OT is unavailable:
 
 ### Compliance Requirements
 
-| Standard | Requirement | PAM4OT Feature |
+| Standard | Requirement | WALLIX Bastion Feature |
 |----------|-------------|----------------|
 | IEC 62443 | Access control | RBAC, MFA |
 | IEC 62443 | Audit trail | Session recording |
@@ -579,7 +579,7 @@ For emergency OT access when PAM4OT is unavailable:
 
 ### Incident Response
 
-For security incidents involving PAM4OT:
+For security incidents involving WALLIX Bastion:
 
 1. **Contain**: Disable affected accounts
 2. **Investigate**: Review audit logs, session recordings
@@ -601,7 +601,7 @@ For security incidents involving PAM4OT:
 
 | Team | Primary Contact | Email | Phone |
 |------|-----------------|-------|-------|
-| PAM4OT Core | __________ | __________ | __________ |
+| WALLIX Bastion Core | __________ | __________ | __________ |
 | Networking | __________ | __________ | __________ |
 | SIEM | __________ | __________ | __________ |
 | Observability | __________ | __________ | __________ |

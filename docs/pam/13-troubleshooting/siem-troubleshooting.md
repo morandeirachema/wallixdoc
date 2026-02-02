@@ -2,7 +2,7 @@
 
 ## Diagnosing and Resolving Log Forwarding Issues
 
-This guide covers troubleshooting when PAM4OT logs are not arriving in your SIEM.
+This guide covers troubleshooting when WALLIX Bastion logs are not arriving in your SIEM.
 
 ---
 
@@ -18,12 +18,12 @@ This guide covers troubleshooting when PAM4OT logs are not arriving in your SIEM
             v
   +-------------------+
   | Is syslog service |     NO
-  | running on PAM4OT?|-----------> Start syslog service
+  | running on WALLIX Bastion?|-----------> Start syslog service
   +-------------------+             systemctl start rsyslog
             | YES
             v
   +-------------------+
-  | Can PAM4OT reach  |     NO
+  | Can WALLIX Bastion reach  |     NO
   | SIEM on port 514? |-----------> Check firewall/network
   +-------------------+
             | YES
@@ -36,7 +36,7 @@ This guide covers troubleshooting when PAM4OT logs are not arriving in your SIEM
             v
   +-------------------+
   | Are logs being    |     NO
-  | generated locally?|-----------> Check PAM4OT config
+  | generated locally?|-----------> Check WALLIX Bastion config
   +-------------------+
             | YES
             v
@@ -53,13 +53,13 @@ This guide covers troubleshooting when PAM4OT logs are not arriving in your SIEM
 
 ---
 
-## Step 1: Verify PAM4OT Syslog Configuration
+## Step 1: Verify WALLIX Bastion Syslog Configuration
 
 ### Check Current Configuration
 
 ```bash
-# SSH to PAM4OT node
-ssh admin@pam4ot.company.com
+# SSH to WALLIX Bastion node
+ssh admin@wallix.company.com
 
 # View syslog configuration
 cat /etc/opt/wab/wabengine.conf | grep -A 10 "\[syslog\]"
@@ -84,7 +84,7 @@ systemctl status rsyslog
 systemctl start rsyslog
 systemctl enable rsyslog
 
-# Check PAM4OT audit service
+# Check WALLIX Bastion audit service
 systemctl status wallix-bastion
 
 # View syslog queue
@@ -132,7 +132,7 @@ iptables -L -n | grep 514
 tcpdump -i any port 514 -n
 
 # Send manual test message
-logger -n siem.company.com -P 514 -p local0.info "PAM4OT test message $(date)"
+logger -n siem.company.com -P 514 -p local0.info "WALLIX Bastion test message $(date)"
 ```
 
 ### DNS Resolution
@@ -180,7 +180,7 @@ ss -tlnp | grep 514
 curl -s localhost:9600/_node/stats/pipelines | jq '.pipelines'
 
 # Test Logstash input manually
-echo "CEF:0|WALLIX|PAM4OT|12.1|100|Test|1|msg=test" | nc -w1 localhost 514
+echo "CEF:0|WALLIX|WALLIX Bastion|12.1|100|Test|1|msg=test" | nc -w1 localhost 514
 ```
 
 ### Check Packet Capture on SIEM
@@ -190,7 +190,7 @@ echo "CEF:0|WALLIX|PAM4OT|12.1|100|Test|1|msg=test" | nc -w1 localhost 514
 tcpdump -i any port 514 -A -c 20
 
 # Should see CEF formatted messages:
-# CEF:0|WALLIX|PAM4OT|12.1|100|User Login|5|src=10.10.1.50...
+# CEF:0|WALLIX|WALLIX Bastion|12.1|100|User Login|5|src=10.10.1.50...
 ```
 
 ---
@@ -200,12 +200,12 @@ tcpdump -i any port 514 -A -c 20
 ### Expected CEF Format
 
 ```
-CEF:0|WALLIX|PAM4OT|12.1|<event_id>|<event_name>|<severity>|<extensions>
+CEF:0|WALLIX|WALLIX Bastion|12.1|<event_id>|<event_name>|<severity>|<extensions>
 
 Example events:
-CEF:0|WALLIX|PAM4OT|12.1|100|User Login Success|3|src=10.10.1.100 suser=jadmin outcome=success
-CEF:0|WALLIX|PAM4OT|12.1|101|User Login Failed|7|src=10.10.1.100 suser=baduser outcome=failure reason=invalid_password
-CEF:0|WALLIX|PAM4OT|12.1|200|Session Started|3|src=10.10.1.100 suser=jadmin dhost=linux-test duser=root proto=SSH
+CEF:0|WALLIX|WALLIX Bastion|12.1|100|User Login Success|3|src=10.10.1.100 suser=jadmin outcome=success
+CEF:0|WALLIX|WALLIX Bastion|12.1|101|User Login Failed|7|src=10.10.1.100 suser=baduser outcome=failure reason=invalid_password
+CEF:0|WALLIX|WALLIX Bastion|12.1|200|Session Started|3|src=10.10.1.100 suser=jadmin dhost=linux-test duser=root proto=SSH
 ```
 
 ### Splunk CEF Parsing
@@ -215,7 +215,7 @@ CEF:0|WALLIX|PAM4OT|12.1|200|Session Started|3|src=10.10.1.100 suser=jadmin dhos
 /opt/splunk/bin/splunk display app | grep -i cef
 
 # If not installed:
-/opt/splunk/bin/splunk install app /path/to/Splunk_TA_pam4ot.tgz
+/opt/splunk/bin/splunk install app /path/to/Splunk_TA_wallix.tgz
 
 # Configure props.conf for CEF
 cat >> /opt/splunk/etc/system/local/props.conf << 'EOF'
@@ -224,7 +224,7 @@ TRANSFORMS-cef = cef_header, cef_extension
 TIME_FORMAT = %b %d %H:%M:%S
 MAX_TIMESTAMP_LOOKAHEAD = 32
 
-[pam4ot:cef]
+[wallix:cef]
 SHOULD_LINEMERGE = false
 TIME_FORMAT = %b %d %H:%M:%S
 TRANSFORMS-cef = cef_header, cef_extension
@@ -237,16 +237,16 @@ EOF
 ### Logstash CEF Parsing
 
 ```ruby
-# /etc/logstash/conf.d/pam4ot.conf
+# /etc/logstash/conf.d/wallix.conf
 input {
   tcp {
     port => 514
-    type => "pam4ot"
+    type => "wallix"
   }
 }
 
 filter {
-  if [type] == "pam4ot" {
+  if [type] == "wallix" {
     # Parse syslog header
     grok {
       match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{HOSTNAME:source_host} %{GREEDYDATA:cef_message}" }
@@ -271,7 +271,7 @@ filter {
 output {
   elasticsearch {
     hosts => ["localhost:9200"]
-    index => "pam4ot-%{+YYYY.MM.dd}"
+    index => "wallix-%{+YYYY.MM.dd}"
   }
 }
 ```
@@ -284,7 +284,7 @@ output {
 
 **Diagnosis:**
 ```bash
-# On PAM4OT, check if syslog is being generated
+# On WALLIX Bastion, check if syslog is being generated
 wabadmin syslog status
 # Shows: Syslog queue: 0 messages, Last sent: Never
 
@@ -313,7 +313,7 @@ wabadmin syslog test
 **Diagnosis:**
 ```bash
 # Splunk - check raw events
-index=pam4ot | head 5 | table _raw
+index=wallix | head 5 | table _raw
 
 # If CEF fields not extracted, parsing failed
 ```
@@ -325,7 +325,7 @@ index=pam4ot | head 5 | table _raw
 
 # Or create manual extraction
 cat >> /opt/splunk/etc/system/local/props.conf << 'EOF'
-[pam4ot]
+[wallix]
 REPORT-cef = cef-fields
 EOF
 
@@ -340,7 +340,7 @@ EOF
 
 **Diagnosis:**
 ```bash
-# Check syslog queue on PAM4OT
+# Check syslog queue on WALLIX Bastion
 wabadmin syslog status
 
 # If queue is growing:
@@ -378,7 +378,7 @@ echo | openssl s_client -connect siem.company.com:6514 2>/dev/null | openssl x50
 cp siem-ca.crt /usr/local/share/ca-certificates/
 update-ca-certificates
 
-# Configure PAM4OT for TLS
+# Configure WALLIX Bastion for TLS
 wabadmin config set syslog.protocol tls
 wabadmin config set syslog.port 6514
 wabadmin config set syslog.tls_verify true
@@ -391,13 +391,13 @@ wabadmin syslog test
 
 **Diagnosis:**
 ```bash
-# Compare PAM4OT audit log with SIEM
-# On PAM4OT:
+# Compare WALLIX Bastion audit log with SIEM
+# On WALLIX Bastion:
 wabadmin audit count --last 1h
 # Output: 523 events
 
 # On SIEM (Splunk):
-index=pam4ot earliest=-1h | stats count
+index=wallix earliest=-1h | stats count
 # Output: 498
 
 # Missing 25 events!
@@ -442,14 +442,14 @@ done
 
 **Splunk:**
 ```spl
-index=pam4ot sourcetype=pam4ot:cef earliest=-15m
+index=wallix sourcetype=wallix:cef earliest=-15m
 | stats count by name
 | sort -count
 ```
 
 **Elasticsearch:**
 ```bash
-curl -X GET "localhost:9200/pam4ot-*/_search" -H 'Content-Type: application/json' -d'
+curl -X GET "localhost:9200/wallix-*/_search" -H 'Content-Type: application/json' -d'
 {
   "query": {
     "range": {
@@ -473,11 +473,11 @@ curl -X GET "localhost:9200/pam4ot-*/_search" -H 'Content-Type: application/json
 cat > /usr/local/bin/check-siem-integration.sh << 'EOF'
 #!/bin/bash
 
-# Count events in PAM4OT
+# Count events in WALLIX Bastion
 LOCAL_COUNT=$(wabadmin audit count --last 1h 2>/dev/null)
 
 # Count events in SIEM (adjust for your SIEM)
-SIEM_COUNT=$(curl -s "http://siem:9200/pam4ot-*/_count" | jq '.count')
+SIEM_COUNT=$(curl -s "http://siem:9200/wallix-*/_count" | jq '.count')
 
 # Calculate difference
 DIFF=$((LOCAL_COUNT - SIEM_COUNT))
@@ -487,7 +487,7 @@ if [ $DIFF -gt 10 ]; then
     exit 1
 fi
 
-echo "OK: PAM4OT=$LOCAL_COUNT, SIEM=$SIEM_COUNT, Diff=$DIFF"
+echo "OK: WALLIX Bastion=$LOCAL_COUNT, SIEM=$SIEM_COUNT, Diff=$DIFF"
 exit 0
 EOF
 

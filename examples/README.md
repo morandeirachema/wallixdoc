@@ -1,6 +1,6 @@
-# WALLIX PAM4OT Examples
+# WALLIX WALLIX Bastion Examples
 
-> Practical code examples for automating and integrating with PAM4OT.
+> Practical code examples for automating and integrating with WALLIX Bastion.
 
 ---
 
@@ -33,11 +33,11 @@ ansible-playbook playbooks/health_check.yml
 
 ### Terraform
 
-Deploy PAM4OT resources using Infrastructure as Code.
+Deploy WALLIX Bastion resources using Infrastructure as Code.
 
 ```bash
 cd terraform
-export TF_VAR_bastion_host="pam4ot.company.com"
+export TF_VAR_bastion_host="wallix.company.com"
 export TF_VAR_bastion_user="admin"
 export TF_VAR_bastion_token="your-api-key"
 terraform init && terraform plan
@@ -50,7 +50,7 @@ Use the Python client for programmatic access.
 ```bash
 cd api/python
 pip install requests
-export BASTION_HOST="pam4ot.company.com"
+export BASTION_HOST="wallix.company.com"
 export BASTION_USER="admin"
 export BASTION_API_KEY="your-api-key"
 python list_devices.py
@@ -62,7 +62,7 @@ Quick API calls using shell scripts.
 
 ```bash
 cd api/curl
-export BASTION_HOST="pam4ot.company.com"
+export BASTION_HOST="wallix.company.com"
 export BASTION_USER="admin"
 export BASTION_API_KEY="your-api-key"
 ./get_status.sh
@@ -160,7 +160,7 @@ See [ansible/README.md](./ansible/README.md) for full documentation.
 
 | Tool | Version | Installation |
 |------|---------|--------------|
-| WALLIX Bastion | 12.x | Target PAM4OT system |
+| WALLIX Bastion | 12.x | Target WALLIX Bastion system |
 | Terraform | >= 1.0 | `apt install terraform` |
 | Python | >= 3.8 | `apt install python3` |
 | requests (Python) | latest | `pip install requests` |
@@ -170,7 +170,7 @@ See [ansible/README.md](./ansible/README.md) for full documentation.
 ### API Key Setup
 
 ```bash
-# Generate API key in PAM4OT Web UI:
+# Generate API key in WALLIX Bastion Web UI:
 # Administration → API Keys → Generate
 
 # Or via CLI:
@@ -181,7 +181,7 @@ wabadmin api-key create --user admin --name "automation-key"
 
 ## Compatibility Matrix
 
-| Provider Version | API Version | Terraform | PAM4OT Version |
+| Provider Version | API Version | Terraform | WALLIX Bastion Version |
 |------------------|-------------|-----------|----------------|
 | 0.14.x | v3.12 | >= 1.0 | 12.1.x |
 | 0.13.x | v3.6 | >= 0.14 | 12.0.x |
@@ -247,5 +247,5 @@ done
 </p>
 
 <p align="center">
-  <sub>PAM4OT Examples • Version 2.0 • February 2026</sub>
+  <sub>WALLIX Bastion Examples • Version 2.0 • February 2026</sub>
 </p>

@@ -1,6 +1,6 @@
 #!/bin/bash
 # test-suite.sh
-# Comprehensive Test Suite for PAM4OT Pre-Production Lab
+# Comprehensive Test Suite for WALLIX Pre-Production Lab
 # Run from any Linux management workstation with network access to lab
 
 set -e
@@ -9,14 +9,14 @@ set -e
 # Configuration
 #------------------------------------------------------------------------------
 
-# PAM4OT Configuration
-PAM4OT_VIP="10.10.1.100"
-PAM4OT_NODE1="10.10.1.11"
-PAM4OT_NODE2="10.10.1.12"
-PAM4OT_ADMIN_USER="admin"
-PAM4OT_ADMIN_PASS="Pam4otAdmin123!"
-PAM4OT_LDAP_USER="jadmin@lab.local"
-PAM4OT_LDAP_PASS="JohnAdmin123!"
+# WALLIX Configuration
+WALLIX_VIP="10.10.1.100"
+WALLIX_NODE1="10.10.1.11"
+WALLIX_NODE2="10.10.1.12"
+WALLIX_ADMIN_USER="admin"
+WALLIX_ADMIN_PASS="Pam4otAdmin123!"
+WALLIX_LDAP_USER="jadmin@lab.local"
+WALLIX_LDAP_PASS="JohnAdmin123!"
 
 # Infrastructure
 DC_HOST="10.10.1.10"
@@ -30,8 +30,8 @@ NETWORK_TARGET="10.10.2.30"
 PLC_TARGET="10.10.3.10"
 
 # Test output
-LOG_FILE="/tmp/pam4ot-test-$(date +%Y%m%d-%H%M%S).log"
-RESULTS_FILE="/tmp/pam4ot-results-$(date +%Y%m%d-%H%M%S).txt"
+LOG_FILE="/tmp/wallix-test-$(date +%Y%m%d-%H%M%S).log"
+RESULTS_FILE="/tmp/wallix-results-$(date +%Y%m%d-%H%M%S).txt"
 
 #------------------------------------------------------------------------------
 # Helper Functions
@@ -82,9 +82,9 @@ test_connectivity() {
 
     local hosts=(
         "DC:$DC_HOST"
-        "PAM4OT-Node1:$PAM4OT_NODE1"
-        "PAM4OT-Node2:$PAM4OT_NODE2"
-        "PAM4OT-VIP:$PAM4OT_VIP"
+        "WALLIX-Node1:$WALLIX_NODE1"
+        "WALLIX-Node2:$WALLIX_NODE2"
+        "WALLIX-VIP:$WALLIX_VIP"
         "SIEM:$SIEM_HOST"
         "Monitoring:$MONITORING_HOST"
         "Linux-Target:$LINUX_TARGET"
@@ -106,19 +106,19 @@ test_connectivity() {
 test_ports() {
     header "2. SERVICE PORT TESTS"
 
-    # PAM4OT Services
-    info "Testing PAM4OT services..."
+    # WALLIX Services
+    info "Testing WALLIX services..."
 
-    if nc -zv "$PAM4OT_VIP" 443 2>&1 | grep -q "succeeded\|open"; then
-        pass "PAM4OT HTTPS (443)"
+    if nc -zv "$WALLIX_VIP" 443 2>&1 | grep -q "succeeded\|open"; then
+        pass "WALLIX HTTPS (443)"
     else
-        fail "PAM4OT HTTPS (443)"
+        fail "WALLIX HTTPS (443)"
     fi
 
-    if nc -zv "$PAM4OT_VIP" 22 2>&1 | grep -q "succeeded\|open"; then
-        pass "PAM4OT SSH (22)"
+    if nc -zv "$WALLIX_VIP" 22 2>&1 | grep -q "succeeded\|open"; then
+        pass "WALLIX SSH (22)"
     else
-        fail "PAM4OT SSH (22)"
+        fail "WALLIX SSH (22)"
     fi
 
     # AD Services
@@ -161,15 +161,15 @@ test_ports() {
     fi
 }
 
-test_pam4ot_auth() {
-    header "3. PAM4OT AUTHENTICATION TESTS"
+test_wallix_auth() {
+    header "3. WALLIX AUTHENTICATION TESTS"
 
     # Local admin auth
     info "Testing local admin authentication..."
 
-    response=$(curl -sk -X POST "https://$PAM4OT_VIP/api/auth" \
+    response=$(curl -sk -X POST "https://$WALLIX_VIP/api/auth" \
         -H "Content-Type: application/json" \
-        -d "{\"user\": \"$PAM4OT_ADMIN_USER\", \"password\": \"$PAM4OT_ADMIN_PASS\"}" 2>/dev/null)
+        -d "{\"user\": \"$WALLIX_ADMIN_USER\", \"password\": \"$WALLIX_ADMIN_PASS\"}" 2>/dev/null)
 
     if echo "$response" | grep -q "token"; then
         pass "Local admin authentication"
@@ -183,9 +183,9 @@ test_pam4ot_auth() {
     # LDAP auth
     info "Testing LDAP authentication..."
 
-    response=$(curl -sk -X POST "https://$PAM4OT_VIP/api/auth" \
+    response=$(curl -sk -X POST "https://$WALLIX_VIP/api/auth" \
         -H "Content-Type: application/json" \
-        -d "{\"user\": \"$PAM4OT_LDAP_USER\", \"password\": \"$PAM4OT_LDAP_PASS\"}" 2>/dev/null)
+        -d "{\"user\": \"$WALLIX_LDAP_USER\", \"password\": \"$WALLIX_LDAP_PASS\"}" 2>/dev/null)
 
     if echo "$response" | grep -q "token"; then
         pass "LDAP authentication (jadmin)"
@@ -197,7 +197,7 @@ test_pam4ot_auth() {
     # Invalid auth (should fail)
     info "Testing invalid authentication (should fail)..."
 
-    response=$(curl -sk -X POST "https://$PAM4OT_VIP/api/auth" \
+    response=$(curl -sk -X POST "https://$WALLIX_VIP/api/auth" \
         -H "Content-Type: application/json" \
         -d '{"user": "baduser", "password": "badpass"}' 2>/dev/null)
 
@@ -213,7 +213,7 @@ test_web_ui() {
 
     info "Testing web UI accessibility..."
 
-    http_code=$(curl -sk -o /dev/null -w "%{http_code}" "https://$PAM4OT_VIP/" 2>/dev/null)
+    http_code=$(curl -sk -o /dev/null -w "%{http_code}" "https://$WALLIX_VIP/" 2>/dev/null)
 
     if [ "$http_code" == "200" ] || [ "$http_code" == "302" ]; then
         pass "Web UI accessible (HTTP $http_code)"
@@ -222,7 +222,7 @@ test_web_ui() {
     fi
 
     # Test both nodes directly
-    for node in "$PAM4OT_NODE1" "$PAM4OT_NODE2"; do
+    for node in "$WALLIX_NODE1" "$WALLIX_NODE2"; do
         http_code=$(curl -sk -o /dev/null -w "%{http_code}" "https://$node/" 2>/dev/null)
         if [ "$http_code" == "200" ] || [ "$http_code" == "302" ]; then
             pass "Web UI on $node (HTTP $http_code)"
@@ -238,8 +238,8 @@ test_cluster() {
     info "Testing cluster status..."
 
     # Check both nodes are responding
-    node1_up=$(curl -sk -o /dev/null -w "%{http_code}" "https://$PAM4OT_NODE1/" 2>/dev/null)
-    node2_up=$(curl -sk -o /dev/null -w "%{http_code}" "https://$PAM4OT_NODE2/" 2>/dev/null)
+    node1_up=$(curl -sk -o /dev/null -w "%{http_code}" "https://$WALLIX_NODE1/" 2>/dev/null)
+    node2_up=$(curl -sk -o /dev/null -w "%{http_code}" "https://$WALLIX_NODE2/" 2>/dev/null)
 
     if [ "$node1_up" == "200" ] || [ "$node1_up" == "302" ]; then
         pass "Node 1 is responding"
@@ -254,12 +254,12 @@ test_cluster() {
     fi
 
     # Check VIP is responding
-    vip_up=$(curl -sk -o /dev/null -w "%{http_code}" "https://$PAM4OT_VIP/" 2>/dev/null)
+    vip_up=$(curl -sk -o /dev/null -w "%{http_code}" "https://$WALLIX_VIP/" 2>/dev/null)
 
     if [ "$vip_up" == "200" ] || [ "$vip_up" == "302" ]; then
-        pass "VIP ($PAM4OT_VIP) is responding"
+        pass "VIP ($WALLIX_VIP) is responding"
     else
-        fail "VIP ($PAM4OT_VIP) is not responding"
+        fail "VIP ($WALLIX_VIP) is not responding"
     fi
 }
 
@@ -268,9 +268,9 @@ test_api() {
 
     if [ -z "$API_TOKEN" ]; then
         # Get token
-        response=$(curl -sk -X POST "https://$PAM4OT_VIP/api/auth" \
+        response=$(curl -sk -X POST "https://$WALLIX_VIP/api/auth" \
             -H "Content-Type: application/json" \
-            -d "{\"user\": \"$PAM4OT_ADMIN_USER\", \"password\": \"$PAM4OT_ADMIN_PASS\"}" 2>/dev/null)
+            -d "{\"user\": \"$WALLIX_ADMIN_USER\", \"password\": \"$WALLIX_ADMIN_PASS\"}" 2>/dev/null)
         API_TOKEN=$(echo "$response" | grep -o '"token":"[^"]*' | cut -d'"' -f4)
     fi
 
@@ -282,7 +282,7 @@ test_api() {
     info "Testing API endpoints..."
 
     # Test status endpoint
-    response=$(curl -sk "https://$PAM4OT_VIP/api/status" \
+    response=$(curl -sk "https://$WALLIX_VIP/api/status" \
         -H "X-Auth-Token: $API_TOKEN" 2>/dev/null)
 
     if [ -n "$response" ]; then
@@ -292,7 +292,7 @@ test_api() {
     fi
 
     # Test version endpoint
-    response=$(curl -sk "https://$PAM4OT_VIP/api/version" \
+    response=$(curl -sk "https://$WALLIX_VIP/api/version" \
         -H "X-Auth-Token: $API_TOKEN" 2>/dev/null)
 
     if [ -n "$response" ]; then
@@ -309,7 +309,7 @@ test_ssl() {
     info "Testing SSL certificate..."
 
     # Check certificate
-    cert_info=$(echo | openssl s_client -connect "$PAM4OT_VIP:443" 2>/dev/null | openssl x509 -noout -dates 2>/dev/null)
+    cert_info=$(echo | openssl s_client -connect "$WALLIX_VIP:443" 2>/dev/null | openssl x509 -noout -dates 2>/dev/null)
 
     if [ -n "$cert_info" ]; then
         pass "SSL certificate is valid"
@@ -322,7 +322,7 @@ test_ssl() {
     info "Testing TLS versions..."
 
     for version in tls1_2 tls1_3; do
-        result=$(echo | openssl s_client -connect "$PAM4OT_VIP:443" -"$version" 2>&1)
+        result=$(echo | openssl s_client -connect "$WALLIX_VIP:443" -"$version" 2>&1)
         if echo "$result" | grep -q "Cipher is"; then
             pass "TLS $version supported"
         else
@@ -332,7 +332,7 @@ test_ssl() {
 
     # TLS 1.0 and 1.1 should NOT be supported
     for version in tls1 tls1_1; do
-        result=$(echo | openssl s_client -connect "$PAM4OT_VIP:443" -"$version" 2>&1)
+        result=$(echo | openssl s_client -connect "$WALLIX_VIP:443" -"$version" 2>&1)
         if echo "$result" | grep -q "Cipher is"; then
             warn "TLS $version is supported (should be disabled)"
         else
@@ -355,7 +355,7 @@ test_monitoring() {
         fail "Prometheus health check failed"
     fi
 
-    # Check PAM4OT targets
+    # Check WALLIX targets
     targets=$(curl -s "http://$MONITORING_HOST:9090/api/v1/targets" 2>/dev/null | grep -o '"health":"up"' | wc -l)
 
     if [ "$targets" -gt 0 ]; then
@@ -397,9 +397,9 @@ test_performance() {
     info "Testing API response times..."
 
     # Auth endpoint timing
-    auth_time=$(curl -sk -X POST "https://$PAM4OT_VIP/api/auth" \
+    auth_time=$(curl -sk -X POST "https://$WALLIX_VIP/api/auth" \
         -H "Content-Type: application/json" \
-        -d "{\"user\": \"$PAM4OT_ADMIN_USER\", \"password\": \"$PAM4OT_ADMIN_PASS\"}" \
+        -d "{\"user\": \"$WALLIX_ADMIN_USER\", \"password\": \"$WALLIX_ADMIN_PASS\"}" \
         -o /dev/null -w "%{time_total}" 2>/dev/null)
 
     info "Authentication time: ${auth_time}s"
@@ -411,7 +411,7 @@ test_performance() {
     fi
 
     # Web UI timing
-    ui_time=$(curl -sk "https://$PAM4OT_VIP/" -o /dev/null -w "%{time_total}" 2>/dev/null)
+    ui_time=$(curl -sk "https://$WALLIX_VIP/" -o /dev/null -w "%{time_total}" 2>/dev/null)
 
     info "Web UI load time: ${ui_time}s"
 
@@ -462,19 +462,19 @@ generate_report() {
 main() {
     echo ""
     echo "============================================================"
-    echo "  PAM4OT Pre-Production Lab - Test Suite"
+    echo "  WALLIX Pre-Production Lab - Test Suite"
     echo "  $(date)"
     echo "============================================================"
     echo ""
 
     # Initialize results file
-    echo "PAM4OT Test Results - $(date)" > "$RESULTS_FILE"
+    echo "WALLIX Test Results - $(date)" > "$RESULTS_FILE"
     echo "" >> "$RESULTS_FILE"
 
     # Run all tests
     test_connectivity
     test_ports
-    test_pam4ot_auth
+    test_wallix_auth
     test_web_ui
     test_cluster
     test_api
@@ -491,7 +491,7 @@ main() {
 case "${1:-all}" in
     connectivity)   test_connectivity ;;
     ports)          test_ports ;;
-    auth)           test_pam4ot_auth ;;
+    auth)           test_wallix_auth ;;
     web)            test_web_ui ;;
     cluster)        test_cluster ;;
     api)            test_api ;;

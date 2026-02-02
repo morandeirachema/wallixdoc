@@ -2,7 +2,7 @@
 
 ## Configuring Two-Node Active-Active Cluster
 
-This guide covers setting up PAM4OT in Active-Active high availability mode where both nodes handle traffic simultaneously.
+This guide covers setting up WALLIX Bastion in Active-Active high availability mode where both nodes handle traffic simultaneously.
 
 ---
 
@@ -27,7 +27,7 @@ This guide covers setting up PAM4OT in Active-Active high availability mode wher
                   |                                 |
                   v                                 v
          +------------------+            +------------------+
-         |  PAM4OT NODE 1   |            |  PAM4OT NODE 2   |
+         |  WALLIX Bastion NODE 1   |            |  WALLIX Bastion NODE 2   |
          |  10.10.1.11      |            |  10.10.1.12      |
          |                  |            |                  |
          |  [Active]        |            |  [Active]        |
@@ -55,7 +55,7 @@ This guide covers setting up PAM4OT in Active-Active high availability mode wher
 
 ## Prerequisites
 
-- [ ] Both PAM4OT nodes installed (Step 03)
+- [ ] Both WALLIX Bastion nodes installed (Step 03)
 - [ ] Both nodes can reach each other
 - [ ] SSH keys exchanged between nodes
 - [ ] Same SSL certificates on both nodes
@@ -64,14 +64,14 @@ This guide covers setting up PAM4OT in Active-Active high availability mode wher
 
 ```bash
 # From Node 1:
-ping pam4ot-node2.lab.local
-nc -zv pam4ot-node2.lab.local 22
-nc -zv pam4ot-node2.lab.local 3306
+ping wallix-node2.lab.local
+nc -zv wallix-node2.lab.local 22
+nc -zv wallix-node2.lab.local 3306
 
 # From Node 2:
-ping pam4ot-node1.lab.local
-nc -zv pam4ot-node1.lab.local 22
-nc -zv pam4ot-node1.lab.local 3306
+ping wallix-node1.lab.local
+nc -zv wallix-node1.lab.local 22
+nc -zv wallix-node1.lab.local 3306
 ```
 
 ---
@@ -85,10 +85,10 @@ nc -zv pam4ot-node1.lab.local 3306
 ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N ""
 
 # Copy to Node 2
-ssh-copy-id root@pam4ot-node2.lab.local
+ssh-copy-id root@wallix-node2.lab.local
 
 # Test
-ssh root@pam4ot-node2.lab.local hostname
+ssh root@wallix-node2.lab.local hostname
 ```
 
 ### On Node 2
@@ -98,10 +98,10 @@ ssh root@pam4ot-node2.lab.local hostname
 ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N ""
 
 # Copy to Node 1
-ssh-copy-id root@pam4ot-node1.lab.local
+ssh-copy-id root@wallix-node1.lab.local
 
 # Test
-ssh root@pam4ot-node1.lab.local hostname
+ssh root@wallix-node1.lab.local hostname
 ```
 
 ---
@@ -158,7 +158,7 @@ rm -rf /var/lib/mysql/*
 
 # Clone from primary using mariabackup
 mariabackup --backup --target-dir=/tmp/backup \
-    --host=pam4ot-node1.lab.local \
+    --host=wallix-node1.lab.local \
     --user=replicator \
     --password=ReplicatorPass123!
 
@@ -190,7 +190,7 @@ systemctl start mariadb
 # Configure replication to primary
 sudo mysql << 'SQL'
 CHANGE MASTER TO
-    MASTER_HOST='pam4ot-node1.lab.local',
+    MASTER_HOST='wallix-node1.lab.local',
     MASTER_USER='replicator',
     MASTER_PASSWORD='ReplicatorPass123!',
     MASTER_USE_GTID=slave_pos;
@@ -218,7 +218,7 @@ sudo mysql -e "SHOW SLAVE STATUS\G"
 
 ---
 
-## Step 3: Configure PAM4OT Cluster
+## Step 3: Configure WALLIX Bastion Cluster
 
 ### On Node 1
 
@@ -228,19 +228,19 @@ cat >> /etc/opt/wab/wabengine.conf << 'EOF'
 
 [cluster]
 enabled = true
-node_name = pam4ot-node1
+node_name = wallix-node1
 node_ip = 10.10.1.11
-peer_nodes = pam4ot-node2.lab.local:10.10.1.12
+peer_nodes = wallix-node2.lab.local:10.10.1.12
 cluster_mode = active-active
 vip = 10.10.1.100
 vip_interface = ens192
 
 [replication]
 mode = streaming
-primary_host = pam4ot-node1.lab.local
+primary_host = wallix-node1.lab.local
 EOF
 
-# Restart PAM4OT
+# Restart WALLIX Bastion
 systemctl restart wallix-bastion
 ```
 
@@ -252,19 +252,19 @@ cat >> /etc/opt/wab/wabengine.conf << 'EOF'
 
 [cluster]
 enabled = true
-node_name = pam4ot-node2
+node_name = wallix-node2
 node_ip = 10.10.1.12
-peer_nodes = pam4ot-node1.lab.local:10.10.1.11
+peer_nodes = wallix-node1.lab.local:10.10.1.11
 cluster_mode = active-active
 vip = 10.10.1.100
 vip_interface = ens192
 
 [replication]
 mode = streaming
-primary_host = pam4ot-node1.lab.local
+primary_host = wallix-node1.lab.local
 EOF
 
-# Restart PAM4OT
+# Restart WALLIX Bastion
 systemctl restart wallix-bastion
 ```
 
@@ -290,10 +290,10 @@ systemctl start pcsd
 
 ```bash
 # Authenticate nodes
-pcs host auth pam4ot-node1.lab.local pam4ot-node2.lab.local -u hacluster -p HaCluster123!
+pcs host auth wallix-node1.lab.local wallix-node2.lab.local -u hacluster -p HaCluster123!
 
 # Create cluster
-pcs cluster setup pam4ot-cluster pam4ot-node1.lab.local pam4ot-node2.lab.local
+pcs cluster setup wallix-cluster wallix-node1.lab.local wallix-node2.lab.local
 
 # Start cluster
 pcs cluster start --all
@@ -307,14 +307,14 @@ pcs status
 
 ```bash
 # Create VIP resource
-pcs resource create vip-pam4ot ocf:heartbeat:IPaddr2 \
+pcs resource create vip-wallix ocf:heartbeat:IPaddr2 \
     ip=10.10.1.100 \
     cidr_netmask=24 \
     nic=ens192 \
     op monitor interval=10s
 
 # For Active-Active, allow VIP to run on either node
-pcs resource clone vip-pam4ot clone-max=1 clone-node-max=1
+pcs resource clone vip-wallix clone-max=1 clone-node-max=1
 
 # Or use as floating VIP (preferred for web access)
 # No cloning needed - VIP will float to one node
@@ -324,7 +324,7 @@ pcs resource clone vip-pam4ot clone-max=1 clone-node-max=1
 
 ```bash
 # Prefer Node 1 for VIP (but allow failover)
-pcs constraint location vip-pam4ot prefers pam4ot-node1.lab.local=100
+pcs constraint location vip-wallix prefers wallix-node1.lab.local=100
 
 # Set no quorum policy (2-node cluster)
 pcs property set no-quorum-policy=ignore
@@ -342,14 +342,14 @@ pcs property set stonith-enabled=false
 pcs status
 
 # Expected output:
-# Cluster name: pam4ot-cluster
+# Cluster name: wallix-cluster
 # Status of pacemakerd: active
 #
 # Node List:
-#   * Online: [ pam4ot-node1 pam4ot-node2 ]
+#   * Online: [ wallix-node1 wallix-node2 ]
 #
 # Full List of Resources:
-#   * vip-pam4ot (ocf::heartbeat:IPaddr2): Started pam4ot-node1
+#   * vip-wallix (ocf::heartbeat:IPaddr2): Started wallix-node1
 
 # Check VIP
 ip addr show ens192 | grep 10.10.1.100
@@ -369,19 +369,19 @@ crm_mon -1
 ping 10.10.1.100
 
 # On Node 1 (current VIP holder), simulate failure
-pcs node standby pam4ot-node1
+pcs node standby wallix-node1
 
 # Watch VIP move to Node 2
 # Ping should continue with minimal interruption
 
 # Restore Node 1
-pcs node unstandby pam4ot-node1
+pcs node unstandby wallix-node1
 ```
 
 ### Test 2: Service Failover
 
 ```bash
-# On Node 1, stop PAM4OT service
+# On Node 1, stop WALLIX Bastion service
 systemctl stop wallix-bastion
 
 # Verify web UI still accessible via VIP (served by Node 2)
@@ -416,36 +416,36 @@ If using a load balancer instead of Pacemaker VIP:
 ```bash
 # /etc/haproxy/haproxy.cfg on load balancer
 
-frontend pam4ot_https
+frontend wallix_https
     bind *:443
     mode tcp
-    default_backend pam4ot_nodes
+    default_backend wallix_nodes
 
-backend pam4ot_nodes
+backend wallix_nodes
     mode tcp
     balance roundrobin
     option tcp-check
-    server pam4ot-node1 10.10.1.11:443 check
-    server pam4ot-node2 10.10.1.12:443 check
+    server wallix-node1 10.10.1.11:443 check
+    server wallix-node2 10.10.1.12:443 check
 
-frontend pam4ot_ssh
+frontend wallix_ssh
     bind *:22
     mode tcp
-    default_backend pam4ot_ssh_nodes
+    default_backend wallix_ssh_nodes
 
-backend pam4ot_ssh_nodes
+backend wallix_ssh_nodes
     mode tcp
     balance roundrobin
-    server pam4ot-node1 10.10.1.11:22 check
-    server pam4ot-node2 10.10.1.12:22 check
+    server wallix-node1 10.10.1.11:22 check
+    server wallix-node2 10.10.1.12:22 check
 ```
 
 ### DNS Round Robin (Simple Option)
 
 ```powershell
 # On AD DC, add multiple A records
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "pam4ot" -IPv4Address "10.10.1.11"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "pam4ot" -IPv4Address "10.10.1.12"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix" -IPv4Address "10.10.1.11"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix" -IPv4Address "10.10.1.12"
 ```
 
 ---
@@ -509,13 +509,13 @@ corosync-cfgtool -s
 
 ```bash
 # Check resource status
-pcs resource debug-start vip-pam4ot
+pcs resource debug-start vip-wallix
 
 # Check constraints
 pcs constraint list
 
 # Force move
-pcs resource move vip-pam4ot pam4ot-node2
+pcs resource move vip-wallix wallix-node2
 ```
 
 ### Replication Broken
@@ -533,7 +533,7 @@ rm -rf /var/lib/mysql/*
 
 # Backup from primary
 mariabackup --backup --target-dir=/tmp/backup \
-    --host=pam4ot-node1.lab.local \
+    --host=wallix-node1.lab.local \
     --user=replicator \
     --password=ReplicatorPass123!
 
@@ -547,7 +547,7 @@ systemctl start mariadb
 # Re-configure replication
 sudo mysql << 'SQL'
 CHANGE MASTER TO
-    MASTER_HOST='pam4ot-node1.lab.local',
+    MASTER_HOST='wallix-node1.lab.local',
     MASTER_USER='replicator',
     MASTER_PASSWORD='ReplicatorPass123!',
     MASTER_USE_GTID=slave_pos;
@@ -558,6 +558,6 @@ SQL
 ---
 
 <p align="center">
-  <a href="./07-pam4ot-installation.md">← Previous: PAM4OT Installation</a> •
+  <a href="./07-wallix-installation.md">← Previous: WALLIX Bastion Installation</a> •
   <a href="./09-test-targets.md">Next: Test Targets Setup →</a>
 </p>

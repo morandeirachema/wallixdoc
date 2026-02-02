@@ -5,11 +5,11 @@
 1. [Introduction](#introduction)
 2. [Project Planning](#project-planning)
 3. [Phase 1: Infrastructure Preparation](#phase-1-infrastructure-preparation)
-4. [Phase 2: Site A Primary Installation](#phase-2-site-a-primary-installation)
-5. [Phase 3: Site B Secondary Installation](#phase-3-site-b-secondary-installation)
-6. [Phase 4: Site C Remote Installation](#phase-4-site-c-remote-installation)
+4. [Phase 2: Site 1 Primary Installation](#phase-2-site-1-primary-installation)
+5. [Phase 3: Site 2 Installation](#phase-3-site-2-installation)
+6. [Phase 4: Sites 3 and 4 Installation](#phase-4-sites-3-and-4-installation)
 7. [Phase 5: Multi-Site Synchronization](#phase-5-multi-site-synchronization)
-8. [Phase 6: OT Network Integration](#phase-6-ot-network-integration)
+8. [Phase 6: Fortigate MFA Integration](#phase-6-fortigate-mfa-integration)
 9. [Phase 7: Security Hardening](#phase-7-security-hardening)
 10. [Phase 8: Validation and Go-Live](#phase-8-validation-and-go-live)
 11. [Post-Installation Operations](#post-installation-operations)
@@ -21,13 +21,13 @@
 
 ### Purpose of This Guide
 
-This HOWTO provides a complete, step-by-step walkthrough for deploying WALLIX Bastion 12.x in a production OT (Operational Technology) environment with three interconnected sites. Unlike the reference documentation, this guide follows a strict chronological order and includes every command, configuration, and verification step.
+This HOWTO provides a complete, step-by-step walkthrough for deploying WALLIX Bastion 12.x in a production enterprise environment with four synchronized sites in a single CPD. Unlike the reference documentation, this guide follows a strict chronological order and includes every command, configuration, and verification step.
 
 ### Who Should Use This Guide
 
 - **Infrastructure Engineers** - Server provisioning and networking
 - **Security Engineers** - PAM deployment and hardening
-- **OT Engineers** - Industrial protocol integration
+- **Network Engineers** - Fortigate and HAProxy integration
 - **System Administrators** - Day-to-day operations
 
 ### Time Estimates
@@ -35,11 +35,11 @@ This HOWTO provides a complete, step-by-step walkthrough for deploying WALLIX Ba
 | Phase | Duration | Resources Required |
 |-------|----------|-------------------|
 | Phase 1: Preparation | 5 days | Infrastructure team |
-| Phase 2: Site A | 5 days | 2 engineers |
-| Phase 3: Site B | 3 days | 2 engineers |
-| Phase 4: Site C | 2 days | 1 engineer |
+| Phase 2: Site 1 | 5 days | 2 engineers |
+| Phase 3: Site 2 | 3 days | 2 engineers |
+| Phase 4: Sites 3 + 4 | 4 days | 2 engineers |
 | Phase 5: Multi-Site | 3 days | 1 engineer |
-| Phase 6: OT Integration | 5 days | OT + Security teams |
+| Phase 6: Fortigate MFA | 3 days | Network + Security teams |
 | Phase 7: Security | 3 days | Security team |
 | Phase 8: Validation | 4 days | All teams |
 | **Total** | **30 days** | |
@@ -77,12 +77,12 @@ Before installation, document these decisions:
   1. HIGH AVAILABILITY MODEL
   ==========================
 
-  Decision: Active-Active (Site A) / Active-Passive (Site B) / Standalone (Site C)
+  Decision: Active-Active (All 4 Sites in Single CPD)
 
   Rationale:
-  - Site A: High user load, requires zero-downtime maintenance
-  - Site B: Moderate load, cost optimization with passive node
-  - Site C: Remote location, limited bandwidth, offline capability needed
+  - All Sites: High availability with zero-downtime maintenance
+  - Synchronized: Cross-site replication via HTTPS 443
+  - Fortigate MFA: Centralized FortiAuthenticator for all sites
 
   --------------------------------------------------------------------------
 
@@ -127,14 +127,14 @@ Before installation, document these decisions:
   5. NETWORK SEGMENTATION
   =======================
 
-  Decision: IEC 62443 zone model
+  Decision: Enterprise zone model with Fortigate perimeter
 
   Zones:
-  - Enterprise (Level 4-5): Corporate users
-  - OT DMZ (Level 3.5): WALLIX Bastion location
-  - Operations (Level 3): SCADA, Historians
-  - Control (Level 2): HMIs, Control servers
-  - Field (Level 0-1): PLCs, RTUs, Safety systems
+  - Internet/WAN: External access via Fortigate SSL VPN
+  - Fortigate: Perimeter security with FortiAuthenticator MFA
+  - HAProxy: Load balancing layer
+  - WALLIX: PAM session management
+  - Targets: Windows Server 2022, RHEL 10, RHEL 9
 
 +===============================================================================+
 ```
@@ -1416,9 +1416,18 @@ Site B follows the same process as Site A with these differences:
 
 ---
 
-## Phase 4: Site C Remote Installation
+## Phase 4: Sites 3 and 4 Installation
 
-[Similar detailed steps for Site C standalone installation...]
+Sites 3 and 4 follow the same process as Sites 1 and 2 with appropriate IP addressing:
+
+| Setting | Site 1 | Site 2 | Site 3 | Site 4 |
+|---------|--------|--------|--------|--------|
+| Management IPs | 10.100.1.10, .11 | 10.200.1.10, .11 | 10.300.1.10, .11 | 10.400.1.10, .11 |
+| VIP | 10.100.1.100 | 10.200.1.100 | 10.300.1.100 | 10.400.1.100 |
+| Heartbeat IPs | 10.100.254.1, .2 | 10.200.254.1, .2 | 10.300.254.1, .2 | 10.400.254.1, .2 |
+| Cluster Name | wallix-site-1 | wallix-site-2 | wallix-site-3 | wallix-site-4 |
+
+Repeat the installation steps from Phase 2 for each additional site.
 
 ---
 
@@ -1460,22 +1469,17 @@ wab-admin multisite-sync --full
 wab-admin multisite-status
 ```
 
-### Step 5.3: Configure Site C with Offline Capability
+### Step 5.3: Configure Sites 3 and 4 as Secondary
 
 ```bash
-# On Site C
+# On Sites 3 and 4 (repeat with appropriate site ID)
 wab-admin config-set multisite.enabled true
 wab-admin config-set multisite.role secondary
-wab-admin config-set multisite.instance_id site-c
-wab-admin config-set multisite.primary_url "https://wallix.site-a.company.com"
-wab-admin config-set multisite.api_key "sk_live_site-c_xxxxxxxxxxxxxxxxxxxxxxxxxx"
-wab-admin config-set multisite.sync_interval 3600
-wab-admin config-set multisite.offline_mode true
-wab-admin config-set multisite.cache_enabled true
-wab-admin config-set multisite.cache_ttl 86400
-wab-admin config-set multisite.compression true
-wab-admin config-set multisite.delta_sync true
-wab-admin config-set multisite.sync_schedule "0 2 * * *"
+wab-admin config-set multisite.instance_id site-3  # or site-4
+wab-admin config-set multisite.primary_url "https://wallix.site-1.company.com"
+wab-admin config-set multisite.api_key "sk_live_site-3_xxxxxxxxxxxxxxxxxxxxxxxxxx"
+wab-admin config-set multisite.sync_interval 300
+wab-admin config-set multisite.sync_on_startup true
 
 # Test and sync
 wab-admin multisite-test
@@ -1484,9 +1488,61 @@ wab-admin multisite-sync --full
 
 ---
 
-## Phase 6: OT Network Integration
+## Phase 6: Fortigate MFA Integration
 
-[Detailed OT integration steps...]
+### Step 6.1: Configure FortiAuthenticator
+
+```bash
+# FortiAuthenticator settings (via GUI or CLI)
+# 1. Create RADIUS client for WALLIX
+# 2. Configure FortiToken Mobile push
+# 3. Set up user directory sync with AD
+
+# RADIUS client configuration:
+# Client Name: wallix-bastion
+# Client IP: 10.100.1.100 (VIP)
+# Secret: <strong RADIUS secret>
+# Auth Port: 1812
+# Acct Port: 1813
+```
+
+### Step 6.2: Configure WALLIX for FortiAuthenticator
+
+```bash
+# Add FortiAuthenticator as external authentication
+wab-admin external-auth-add \
+    --name "FortiAuthenticator" \
+    --type radius \
+    --host "10.100.5.10" \
+    --port 1812 \
+    --secret "<RADIUS_SECRET>" \
+    --timeout 30 \
+    --retries 3
+
+# Enable MFA for user groups
+wab-admin policy-update --group "Administrators" --mfa-required true
+wab-admin policy-update --group "Operators" --mfa-required true
+```
+
+### Step 6.3: Configure Fortigate Firewall Policies
+
+```bash
+# Fortigate CLI configuration (example)
+config firewall policy
+    edit 100
+        set name "WALLIX-Access"
+        set srcintf "wan"
+        set dstintf "internal"
+        set srcaddr "all"
+        set dstaddr "WALLIX-VIP"
+        set action accept
+        set schedule "always"
+        set service "HTTPS" "SSH" "RDP"
+        set fsso enable
+        set groups "WALLIX-Users"
+    next
+end
+```
 
 ---
 

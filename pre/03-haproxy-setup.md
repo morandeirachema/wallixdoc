@@ -1,6 +1,6 @@
 # 03 - HAProxy Load Balancer Setup
 
-## High Availability Load Balancing for PAM4OT
+## High Availability Load Balancing for WALLIX Bastion
 
 This guide covers setting up two HAProxy load balancers in an active/standby configuration using Keepalived for VIP failover.
 
@@ -32,7 +32,7 @@ This guide covers setting up two HAProxy load balancers in an active/standby con
 |                    +-------------+-------------+                              |
 |                    |                           |                              |
 |              +----------+               +----------+                          |
-|              | PAM4OT   |               | PAM4OT   |                          |
+|              | WALLIX Bastion   |               | WALLIX Bastion   |                          |
 |              | Node 1   |               | Node 2   |                          |
 |              |10.10.1.11|               |10.10.1.12|                          |
 |              +----------+               +----------+                          |
@@ -78,9 +78,9 @@ systemctl restart networking
 cat >> /etc/hosts << 'EOF'
 10.10.1.5   haproxy-1.lab.local haproxy-1
 10.10.1.6   haproxy-2.lab.local haproxy-2
-10.10.1.11  pam4ot-node1.lab.local pam4ot-node1
-10.10.1.12  pam4ot-node2.lab.local pam4ot-node2
-10.10.1.100 pam4ot.lab.local pam4ot
+10.10.1.11  wallix-node1.lab.local wallix-node1
+10.10.1.12  wallix-node2.lab.local wallix-node2
+10.10.1.100 wallix.lab.local wallix
 EOF
 ```
 
@@ -157,75 +157,75 @@ listen stats
     stats auth admin:HAProxyStats2026!
 
 #---------------------------------------------------------------------
-# PAM4OT HTTPS Frontend (Web UI)
+# WALLIX Bastion HTTPS Frontend (Web UI)
 #---------------------------------------------------------------------
-frontend pam4ot_https
+frontend wallix_https
     bind 10.10.1.100:443
     mode tcp
     option tcplog
-    default_backend pam4ot_https_backend
+    default_backend wallix_https_backend
 
     # Connection limits
     maxconn 2000
 
-backend pam4ot_https_backend
+backend wallix_https_backend
     mode tcp
     balance roundrobin
     option tcp-check
     option log-health-checks
 
     # Active-Active: both nodes serve traffic
-    server pam4ot-node1 10.10.1.11:443 check inter 5s rise 2 fall 3 maxconn 1000
-    server pam4ot-node2 10.10.1.12:443 check inter 5s rise 2 fall 3 maxconn 1000
+    server wallix-node1 10.10.1.11:443 check inter 5s rise 2 fall 3 maxconn 1000
+    server wallix-node2 10.10.1.12:443 check inter 5s rise 2 fall 3 maxconn 1000
 
 #---------------------------------------------------------------------
-# PAM4OT SSH Proxy Frontend
+# WALLIX Bastion SSH Proxy Frontend
 #---------------------------------------------------------------------
-frontend pam4ot_ssh
+frontend wallix_ssh
     bind 10.10.1.100:22
     mode tcp
     option tcplog
-    default_backend pam4ot_ssh_backend
+    default_backend wallix_ssh_backend
 
     # SSH connection limits
     maxconn 500
 
-backend pam4ot_ssh_backend
+backend wallix_ssh_backend
     mode tcp
     balance leastconn
     option tcp-check
     option log-health-checks
 
     # Active-Active SSH
-    server pam4ot-node1 10.10.1.11:22 check inter 5s rise 2 fall 3
-    server pam4ot-node2 10.10.1.12:22 check inter 5s rise 2 fall 3
+    server wallix-node1 10.10.1.11:22 check inter 5s rise 2 fall 3
+    server wallix-node2 10.10.1.12:22 check inter 5s rise 2 fall 3
 
 #---------------------------------------------------------------------
-# PAM4OT RDP Proxy Frontend
+# WALLIX Bastion RDP Proxy Frontend
 #---------------------------------------------------------------------
-frontend pam4ot_rdp
+frontend wallix_rdp
     bind 10.10.1.100:3389
     mode tcp
     option tcplog
-    default_backend pam4ot_rdp_backend
+    default_backend wallix_rdp_backend
 
     # RDP connection limits
     maxconn 500
 
-backend pam4ot_rdp_backend
+backend wallix_rdp_backend
     mode tcp
     balance leastconn
     option tcp-check
     option log-health-checks
 
     # Active-Active RDP
-    server pam4ot-node1 10.10.1.11:3389 check inter 5s rise 2 fall 3
-    server pam4ot-node2 10.10.1.12:3389 check inter 5s rise 2 fall 3
+    server wallix-node1 10.10.1.11:3389 check inter 5s rise 2 fall 3
+    server wallix-node2 10.10.1.12:3389 check inter 5s rise 2 fall 3
 
 #---------------------------------------------------------------------
-# PAM4OT HTTP Redirect
+# WALLIX Bastion HTTP Redirect
 #---------------------------------------------------------------------
-frontend pam4ot_http
+frontend wallix_http
     bind 10.10.1.100:80
     mode http
     http-request redirect scheme https code 301
@@ -351,9 +351,9 @@ systemctl restart networking
 cat >> /etc/hosts << 'EOF'
 10.10.1.5   haproxy-1.lab.local haproxy-1
 10.10.1.6   haproxy-2.lab.local haproxy-2
-10.10.1.11  pam4ot-node1.lab.local pam4ot-node1
-10.10.1.12  pam4ot-node2.lab.local pam4ot-node2
-10.10.1.100 pam4ot.lab.local pam4ot
+10.10.1.11  wallix-node1.lab.local wallix-node1
+10.10.1.12  wallix-node2.lab.local wallix-node2
+10.10.1.100 wallix.lab.local wallix
 EOF
 ```
 
@@ -524,11 +524,11 @@ For production, configure SSL termination:
 
 ```bash
 # Combine certificate and key
-cat /etc/ssl/certs/pam4ot.crt /etc/ssl/private/pam4ot.key > /etc/haproxy/pam4ot.pem
+cat /etc/ssl/certs/wallix.crt /etc/ssl/private/wallix.key > /etc/haproxy/wallix.pem
 
 # Update frontend to use SSL
-frontend pam4ot_https
-    bind *:443 ssl crt /etc/haproxy/pam4ot.pem
+frontend wallix_https
+    bind *:443 ssl crt /etc/haproxy/wallix.pem
     mode http
     # ... rest of config
 ```
@@ -541,7 +541,7 @@ frontend pam4ot_https
 |-------|-------|----------|
 | VIP not assigned | `ip addr show` | Check Keepalived config, priority |
 | HAProxy not starting | `journalctl -u haproxy` | Check config syntax: `haproxy -c -f /etc/haproxy/haproxy.cfg` |
-| Backends down | Stats page | Check PAM4OT nodes are running |
+| Backends down | Stats page | Check WALLIX Bastion nodes are running |
 | Failover not working | Keepalived logs | Check VRRP auth, interface name |
 
 ---
@@ -557,7 +557,7 @@ frontend pam4ot_https
 
 | Port | Service |
 |------|---------|
-| 22 | SSH Proxy (to PAM4OT) |
+| 22 | SSH Proxy (to WALLIX Bastion) |
 | 80 | HTTP Redirect |
 | 443 | HTTPS Web UI |
 | 3389 | RDP Proxy |

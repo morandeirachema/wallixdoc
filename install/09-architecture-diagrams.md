@@ -7,9 +7,8 @@
 ## Table of Contents
 
 - [Complete Infrastructure Overview](#complete-infrastructure-overview)
-- [Site A - Primary HA Cluster](#site-a---primary-ha-cluster)
-- [Site B - Secondary HA Cluster](#site-b---secondary-ha-cluster)
-- [Site C - Remote Standalone](#site-c---remote-standalone)
+- [Single Site Architecture](#single-site-architecture)
+- [Fortigate MFA Authentication Flow](#fortigate-mfa-authentication-flow)
 - [Network Flow Diagrams](#network-flow-diagrams)
 - [Service Architecture](#service-architecture)
 - [Port Reference Matrix](#port-reference-matrix)
@@ -19,130 +18,100 @@
 
 ## Complete Infrastructure Overview
 
-### Multi-Site Topology
+### 4-Site Synchronized Topology (Single CPD)
 
 ```
-                                    CORPORATE WAN / MPLS NETWORK
-    =================================================================================================
-                        |                           |                           |
-                        |                           |                           |
-                        v                           v                           v
-    +-----------------------------------+-----------------------------------+-----------------------------------+
-    |           SITE A - PRIMARY        |       SITE B - SECONDARY          |        SITE C - REMOTE            |
-    |            Headquarters           |       Manufacturing Plant         |          Field Office             |
-    +-----------------------------------+-----------------------------------+-----------------------------------+
-    |                                   |                                   |                                   |
-    |   +---------------------------+   |   +---------------------------+   |   +---------------------------+   |
-    |   |      HA CLUSTER           |   |   |      HA CLUSTER           |   |   |       STANDALONE          |   |
-    |   |    (Active-Active)        |   |   |   (Active-Passive)        |   |   |   (Offline-Capable)       |   |
-    |   |                           |   |   |                           |   |   |                           |   |
-    |   |  +---------+ +---------+  |   |   |  +---------+ +---------+  |   |   |      +---------+          |   |
-    |   |  |wallix-a1| |wallix-a2|  |   |   |  |wallix-b1| |wallix-b2|  |   |   |      |wallix-c1|          |   |
-    |   |  | Active  | | Active  |  |   |   |  | Active  | | Standby |  |   |   |      | Primary |          |   |
-    |   |  |10.0.1.10| |10.0.1.11|  |   |   |  |10.0.2.10| |10.0.2.11|  |   |   |      |10.0.3.10|          |   |
-    |   |  +----+----+ +----+----+  |   |   |  +----+----+ +----+----+  |   |   |      +----+----+          |   |
-    |   |       |           |       |   |   |       |           |       |   |   |           |               |   |
-    |   |       +-----+-----+       |   |   |       +-----+-----+       |   |   |           |               |   |
-    |   |             |             |   |   |             |             |   |   |           |               |   |
-    |   |        +----+----+        |   |   |        +----+----+        |   |   |      +----+----+          |   |
-    |   |        |   VIP   |        |   |   |        |   VIP   |        |   |   |      |  Direct |          |   |
-    |   |        |10.0.1.20|        |   |   |        |10.0.2.20|        |   |   |      |  Access |          |   |
-    |   |        +----+----+        |   |   |        +----+----+        |   |   |      +----+----+          |   |
-    |   +-------------|-----------+   |   +-------------|-----------+   |   +-----------|--------------+   |
-    |                 |               |                 |               |               |                   |
-    |   ==============|===============|   ==============|===============|   ============|==================|
-    |             FIREWALL            |             FIREWALL            |            FIREWALL              |
-    |   ==============|===============|   ==============|===============|   ============|==================|
-    |                 |               |                 |               |               |                   |
-    |   +-------------+-------------+ |   +-------------+-------------+ |   +-----------+---------------+   |
-    |   |        OT NETWORK         | |   |        OT NETWORK         | |   |        OT NETWORK         |   |
-    |   |       10.0.10.0/24        | |   |       10.0.20.0/24        | |   |       10.0.30.0/24        |   |
-    |   |                           | |   |                           | |   |                           |   |
-    |   | +-----+ +-----+ +-----+   | |   | +-----+ +-----+ +-----+   | |   | +-----+ +-----+           |   |
-    |   | | PLC | | HMI | |SCADA|   | |   | | DCS | | PLC | | RTU |   | |   | | RTU | | PLC |           |   |
-    |   | +-----+ +-----+ +-----+   | |   | +-----+ +-----+ +-----+   | |   | +-----+ +-----+           |   |
-    |   +---------------------------+ |   +---------------------------+ |   +---------------------------+   |
-    +-----------------------------------+-----------------------------------+-----------------------------------+
-                        |                           |                           |
-                        |<-------- Multi-Site Sync (HTTPS 443) ---------------->|
++===============================================================================+
+|  4-SITE SYNCHRONIZED ARCHITECTURE (Single CPD)                                |
++===============================================================================+
+|                                                                               |
+|                            +------------------+                               |
+|                            | FortiAuthenticator|                              |
+|                            |   (MFA Server)   |                               |
+|                            +--------+---------+                               |
+|                                     | RADIUS 1812/1813                        |
+|        +-------------+-------------+-------------+-------------+              |
+|        |             |             |             |             |              |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | Fortigate | | Fortigate | | Fortigate | | Fortigate |                      |
+|  |  Site 1   | |  Site 2   | |  Site 3   | |  Site 4   |                      |
+|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
+|        |             |             |             |                            |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | HAProxy   | | HAProxy   | | HAProxy   | | HAProxy   |                      |
+|  | 1a + 1b   | | 2a + 2b   | | 3a + 3b   | | 4a + 4b   |                      |
+|  | (HA/VRRP) | | (HA/VRRP) | | (HA/VRRP) | | (HA/VRRP) |                      |
+|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
+|        |             |             |             |                            |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | WALLIX    | | WALLIX    | | WALLIX    | | WALLIX    |                      |
+|  | Bastion   | | Bastion   | | Bastion   | | Bastion   |                      |
+|  | 1a + 1b   | | 2a + 2b   | | 3a + 3b   | | 4a + 4b   |                      |
+|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
+|        |             |             |             |                            |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | WALLIX    | | WALLIX    | | WALLIX    | | WALLIX    |                      |
+|  |   RDS     | |   RDS     | |   RDS     | |   RDS     |                      |
+|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
+|        |             |             |             |                            |
+|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
+|  | Windows   | | Windows   | | Windows   | | Windows   |                      |
+|  | RHEL 10/9 | | RHEL 10/9 | | RHEL 10/9 | | RHEL 10/9 |                      |
+|  +-----------+ +-----------+ +-----------+ +-----------+                      |
+|                                                                               |
+|  <====================== MULTI-SITE SYNC (HTTPS 443) ======================>  |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Site Configuration Summary
 
-| Site | Location | Configuration | Nodes | HA Mode | Connectivity | Primary Use Case |
-|------|----------|---------------|-------|---------|--------------|------------------|
-| **A** | Headquarters | HA Cluster | 2 | Active-Active | Always Online | Central management |
-| **B** | Manufacturing | HA Cluster | 2 | Active-Passive | Always Online | Regional access |
-| **C** | Field Office | Standalone | 1 | N/A | Intermittent | Edge access |
+| Site | Configuration | Nodes | HA Mode | Target Systems |
+|------|---------------|-------|---------|----------------|
+| **1** | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
+| **2** | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
+| **3** | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
+| **4** | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
 
 ---
 
-## Site A - Primary HA Cluster
+## Single Site Architecture
 
-### Detailed Node Architecture
+### Detailed Site Architecture (x4 identical sites)
 
 ```
-+=====================================================================================+
-|                        SITE A - PRIMARY HA CLUSTER (Active-Active)                  |
-+=====================================================================================+
-|                                                                                     |
-|   MANAGEMENT NETWORK: 10.0.1.0/24              CLUSTER NETWORK: 192.168.100.0/24   |
-|                                                                                     |
-|   +------------------------------- LOAD BALANCER / VIP ----------------------------+|
-|   |                                                                                ||
-|   |                              +---------------+                                 ||
-|   |                              | Virtual IP    |                                 ||
-|   |                              | 10.0.1.20     |                                 ||
-|   |                              | (Pacemaker)   |                                 ||
-|   |                              +-------+-------+                                 ||
-|   |                                      |                                         ||
-|   |                           +----------+----------+                              ||
-|   |                           |   Round-Robin LB    |                              ||
-|   |                           +----------+----------+                              ||
-|   |                                      |                                         ||
-|   +--------------------------------------+----------------------------------------+|
-|                                          |                                          |
-|            +-----------------------------+-----------------------------+            |
-|            |                                                           |            |
-|            v                                                           v            |
-|   +----------------------------------+    +----------------------------------+      |
-|   |       NODE 1: wallix-a1          |    |       NODE 2: wallix-a2          |      |
-|   |           (ACTIVE)               |    |           (ACTIVE)               |      |
-|   +----------------------------------+    +----------------------------------+      |
-|   |                                  |    |                                  |      |
-|   | Management IP: 10.0.1.10         |    | Management IP: 10.0.1.11         |      |
-|   | Cluster IP:    192.168.100.10    |    | Cluster IP:    192.168.100.11    |      |
-|   |                                  |    |                                  |      |
-|   | +------------------------------+ |    | +------------------------------+ |      |
-|   | |         SERVICES             | |    | |         SERVICES             | |      |
-|   | +------------------------------+ |    | +------------------------------+ |      |
-|   | | wallix-bastion    (main)     | |    | | wallix-bastion    (main)     | |      |
-|   | | mariadb        (primary)  |<======>| mariadb        (replica)  | |      |
-|   | | nginx             (web)      | | PG | | nginx             (web)      | |      |
-|   | | sshd              (access)   | |Stream| sshd              (access)   | |      |
-|   | | wabproxy          (sessions) | |    | | wabproxy          (sessions) | |      |
-|   | | pacemaker         (cluster)  | |    | | pacemaker         (cluster)  | |      |
-|   | | corosync          (comm)     | |    | | corosync          (comm)     | |      |
-|   | +------------------------------+ |    | +------------------------------+ |      |
-|   |                                  |    |                                  |      |
-|   | +------------------------------+ |    | +------------------------------+ |      |
-|   | |         STORAGE              | |    | |         STORAGE              | |      |
-|   | +------------------------------+ |    | +------------------------------+ |      |
-|   | | /              (LUKS)        |<======>| /              (LUKS)        | |      |
-|   | | /var/lib/wallix (NFS shared) | | NFS| | /var/lib/wallix (NFS shared) | |      |
-|   | | /var/lib/mysql  (streaming)  | |    | | /var/lib/mysql  (replica)    | |      |
-|   | +------------------------------+ |    | +------------------------------+ |      |
-|   +----------------------------------+    +----------------------------------+      |
-|                                                                                     |
-|   +------------------------------- CLUSTER INTERCONNECT ---------------------------+|
-|   |                                                                                ||
-|   |   Node 1 (192.168.100.10)  <========================>  Node 2 (192.168.100.11)||
-|   |                                                                                ||
-|   |   Corosync:   UDP 5404-5406  (Cluster communication, heartbeat)               ||
-|   |   MariaDB: TCP 3306       (Database streaming replication)                 ||
-|   |                                                                                ||
-|   +--------------------------------------------------------------------------------+|
-+=====================================================================================+
++===============================================================================+
+|  SINGLE SITE ARCHITECTURE (x4 identical)                                      |
++===============================================================================+
+|                                                                               |
+|  INTERNET/WAN                                                                 |
+|       |                                                                       |
+|  +----v-----------------+                                                     |
+|  |     Fortigate FW     |  Firewall + SSL VPN                                 |
+|  |  (FortiAuth RADIUS)  |  MFA: FortiToken Mobile/Push                        |
+|  +----+-----------------+                                                     |
+|       |                                                                       |
+|  +----v-----------------+     +--------------------+                          |
+|  |    HAProxy-1 (VIP)   |<--->|    HAProxy-2       |  Keepalived VRRP         |
+|  |    10.x.1.5          |     |    10.x.1.6        |  VIP: 10.x.1.100         |
+|  +----+-----------------+     +--------------------+                          |
+|       |                                                                       |
+|  +----v-----------------+     +--------------------+                          |
+|  |  WALLIX Bastion-1    |<--->|  WALLIX Bastion-2  |  Active-Active HA        |
+|  |    10.x.1.11         |     |    10.x.1.12       |  MariaDB Replication     |
+|  +----+-----------------+     +--------------------+                          |
+|       |                                                                       |
+|  +----v-----------------+                                                     |
+|  |    WALLIX RDS        |  Windows Session Manager                            |
+|  |    10.x.1.30         |  RDP Recording, OCR, Keystroke                      |
+|  +----+-----------------+                                                     |
+|       |                                                                       |
+|  +----v-----------------+     +--------------------+                          |
+|  | Windows Server 2022  |     |  RHEL 10 / RHEL 9  |  Target Systems          |
+|  |  (RDP, WinRM)        |     |  (SSH)             |                          |
+|  +----------------------+     +--------------------+                          |
+|                                                                               |
++===============================================================================+
 ```
 
 ### Service Stack (Per Node)
@@ -219,127 +188,95 @@
 
 ---
 
-## Site B - Secondary HA Cluster
+## Fortigate MFA Authentication Flow
 
-### Active-Passive Configuration
-
-```
-+===========================================================================+
-|                SITE B - SECONDARY HA CLUSTER (Active-Passive)              |
-+===========================================================================+
-|                                                                            |
-|   MANAGEMENT NETWORK: 10.0.2.0/24          CLUSTER NETWORK: 192.168.200.0/24
-|                                                                            |
-|                              +---------------+                             |
-|                              | Virtual IP    |                             |
-|                              | 10.0.2.20     |                             |
-|                              | Points to     |                             |
-|                              | ACTIVE only   |                             |
-|                              +-------+-------+                             |
-|                                      |                                     |
-|                                      | (Failover only)                     |
-|                                      |                                     |
-|            +-------------------------+-------------------------+           |
-|            |                                                   |           |
-|            v                                                   v           |
-|   +----------------------------------+    +----------------------------------+
-|   |       NODE 1: wallix-b1          |    |       NODE 2: wallix-b2          |
-|   |         ** ACTIVE **             |    |           STANDBY                |
-|   +----------------------------------+    +----------------------------------+
-|   |                                  |    |                                  |
-|   | Management IP: 10.0.2.10         |    | Management IP: 10.0.2.11         |
-|   | Cluster IP:    192.168.200.10    |    | Cluster IP:    192.168.200.11    |
-|   |                                  |    |                                  |
-|   | +------------------------------+ |    | +------------------------------+ |
-|   | |    SERVICES (RUNNING)        | |    | |    SERVICES (STANDBY)        | |
-|   | +------------------------------+ |    | +------------------------------+ |
-|   | | wallix-bastion  [*] ACTIVE   | |    | | wallix-bastion  [ ] STOPPED  | |
-|   | | mariadb      [*] PRIMARY  |<======>| mariadb      [*] STANDBY  | |
-|   | | nginx           [*] RUNNING  | | PG | | nginx           [ ] STOPPED  | |
-|   | | wabproxy        [*] RUNNING  | |Stream| wabproxy        [ ] STOPPED  | |
-|   | | pacemaker       [*] RUNNING  | |    | | pacemaker       [*] RUNNING  | |
-|   | | corosync        [*] RUNNING  | |    | | corosync        [*] RUNNING  | |
-|   | +------------------------------+ |    | +------------------------------+ |
-|   |                                  |    |                                  |
-|   | Storage: READ-WRITE              |    | Storage: READ-ONLY (sync)        |
-|   +----------------------------------+    +----------------------------------+
-|                                                                            |
-|   +-----------------------------------------------------------------------+
-|   |                        FAILOVER BEHAVIOR                               |
-|   +-----------------------------------------------------------------------+
-|   |                                                                        |
-|   |   NORMAL OPERATION:                    AFTER FAILOVER:                 |
-|   |   -----------------                    ---------------                 |
-|   |                                                                        |
-|   |   VIP --> Node 1 (Active)              VIP --> Node 2 (Now Active)     |
-|   |           Node 2 (Standby)                     Node 1 (Failed)         |
-|   |                                                                        |
-|   |   Failover Time: 30-60 seconds                                         |
-|   |   Data Loss: None (synchronous replication)                            |
-|   |                                                                        |
-|   +-----------------------------------------------------------------------+
-+===========================================================================+
-```
-
----
-
-## Site C - Remote Standalone
-
-### Standalone with Offline Capability
+### Authentication Flow Diagram
 
 ```
-+===========================================================================+
-|                 SITE C - REMOTE STANDALONE (Offline-Capable)               |
-+===========================================================================+
-|                                                                            |
-|   MANAGEMENT NETWORK: 10.0.3.0/24                                          |
-|                                                                            |
-|   +-----------------------------------------------------------------------+
-|   |                       SINGLE NODE DEPLOYMENT                           |
-|   |                                                                        |
-|   |                       +-------------------+                            |
-|   |                       |    wallix-c1      |                            |
-|   |                       |    10.0.3.10      |                            |
-|   |                       +-------------------+                            |
-|   |                       |                   |                            |
-|   |                       |  +-------------+  |                            |
-|   |                       |  |  SERVICES   |  |                            |
-|   |                       |  +-------------+  |                            |
-|   |                       |  |wallix-bastion| |                            |
-|   |                       |  |mariadb    | |                            |
-|   |                       |  |nginx         | |                            |
-|   |                       |  |wabproxy      | |                            |
-|   |                       |  |sshd          | |                            |
-|   |                       |  +-------------+  |                            |
-|   |                       |                   |                            |
-|   |                       |  +-------------+  |                            |
-|   |                       |  | LOCAL CACHE |  |                            |
-|   |                       |  +-------------+  |                            |
-|   |                       |  | Credentials | |                           |
-|   |                       |  | Policies    | |                           |
-|   |                       |  | Users       | |                           |
-|   |                       |  | 24h TTL     | |                           |
-|   |                       |  +-------------+  |                            |
-|   |                       +-------------------+                            |
-|   +-----------------------------------------------------------------------+
-|                                                                            |
-|   +-----------------------------------------------------------------------+
-|   |                      OFFLINE OPERATION MODE                            |
-|   +-----------------------------------------------------------------------+
-|   |                                                                        |
-|   |   ONLINE (Connected):                  OFFLINE (Disconnected):         |
-|   |   -------------------                  ----------------------          |
-|   |   * Real-time sync with primary        * Uses cached credentials       |
-|   |   * Policy updates received            * Cached policies enforced      |
-|   |   * Audit logs uploaded                * Audit logs queued locally     |
-|   |   * Full functionality                 * Limited to cached users       |
-|   |                                        * Sessions still recorded       |
-|   |                                        * Auto-reconnect attempts       |
-|   |                                                                        |
-|   |   Sync Interval: 5 minutes             Cache TTL: 24 hours             |
-|   |                                                                        |
-|   +-----------------------------------------------------------------------+
-+===========================================================================+
++===============================================================================+
+|  FORTIGATE MFA AUTHENTICATION FLOW                                            |
++===============================================================================+
+|                                                                               |
+|  1. USER LOGIN                                                                |
+|     +--------+     HTTPS/SSH/RDP      +------------+                          |
+|     |  User  | ---------------------->| Fortigate  |                          |
+|     +--------+                        +-----+------+                          |
+|                                             |                                 |
+|  2. MFA CHALLENGE                           v                                 |
+|     +--------+     Push Notification  +------------+                          |
+|     |  User  | <---------------------| FortiAuth  |                           |
+|     | Mobile |                        | (RADIUS)   |                          |
+|     +---+----+                        +-----+------+                          |
+|         |                                   |                                 |
+|  3. MFA RESPONSE                            |                                 |
+|         | Approve                           |                                 |
+|         +---------------------------------->|                                 |
+|                                             |                                 |
+|  4. ACCESS GRANTED                          v                                 |
+|     +--------+     Session Proxied    +------------+                          |
+|     |  User  | <---------------------| HAProxy    |                           |
+|     +--------+                        +-----+------+                          |
+|                                             |                                 |
+|  5. SESSION ESTABLISHED                     v                                 |
+|                                       +------------+                          |
+|                                       |  WALLIX    |                          |
+|                                       |  Bastion   |                          |
+|                                       +-----+------+                          |
+|                                             |                                 |
+|  6. TARGET ACCESS                           v                                 |
+|                                       +------------+                          |
+|                                       | WALLIX RDS |  (for RDP)               |
+|                                       +-----+------+                          |
+|                                             |                                 |
+|                                             v                                 |
+|                                       +------------+                          |
+|                                       |  Target    |  Windows/RHEL            |
+|                                       +------------+                          |
+|                                                                               |
++===============================================================================+
+```
+
+### FortiAuthenticator Integration
+
+```
++===============================================================================+
+|  FORTIGATE + FORTIAUTHENTICATOR ARCHITECTURE                                  |
++===============================================================================+
+|                                                                               |
+|                         +----------------------+                              |
+|                         |  FortiAuthenticator  |                              |
+|                         |    (Central MFA)     |                              |
+|                         +----------+-----------+                              |
+|                                    |                                          |
+|                         RADIUS 1812/1813                                      |
+|                                    |                                          |
+|      +-------------+---------------+---------------+-------------+            |
+|      |             |               |               |             |            |
+|      v             v               v               v             v            |
+|  +-------+    +-------+       +-------+       +-------+    +-------+          |
+|  | FG-1  |    | FG-2  |       | FG-3  |       | FG-4  |    | FortiAP|         |
+|  |Site 1 |    |Site 2 |       |Site 3 |       |Site 4 |    | (WiFi) |         |
+|  +---+---+    +---+---+       +---+---+       +---+---+    +--------+         |
+|      |            |               |               |                           |
+|      v            v               v               v                           |
+|  +---------+ +---------+     +---------+     +---------+                      |
+|  | HAProxy | | HAProxy |     | HAProxy |     | HAProxy |                      |
+|  |  Site 1 | |  Site 2 |     |  Site 3 |     |  Site 4 |                      |
+|  +----+----+ +----+----+     +----+----+     +----+----+                      |
+|       |           |               |               |                           |
+|       v           v               v               v                           |
+|  +---------+ +---------+     +---------+     +---------+                      |
+|  | WALLIX  | | WALLIX  |     | WALLIX  |     | WALLIX  |                      |
+|  | Site 1  | | Site 2  |     | Site 3  |     | Site 4  |                      |
+|  +---------+ +---------+     +---------+     +---------+                      |
+|                                                                               |
+|  MFA METHODS SUPPORTED:                                                       |
+|  - FortiToken Mobile (Push notification)                                      |
+|  - FortiToken Hardware (OTP)                                                  |
+|  - SMS/Email OTP                                                              |
+|  - FIDO2/WebAuthn                                                             |
+|                                                                               |
++===============================================================================+
 ```
 
 ---
@@ -612,19 +549,19 @@
 |                                                                            |
 +===========================================================================+
 
-+=================================== OT PROTOCOL PORTS =====================+
++=================================== FORTIGATE MFA PORTS ====================+
 |                                                                            |
 |   Port    Protocol   Service          Direction    Description             |
 |   ----    --------   -------          ---------    -----------             |
-|   102     TCP        S7comm           Outbound     Siemens S7 PLC          |
-|   502     TCP        Modbus TCP       Outbound     Modbus industrial       |
-|   4840    TCP        OPC UA           Outbound     OPC Unified Arch        |
-|   20000   TCP        DNP3             Outbound     DNP3 (SCADA)            |
-|   44818   TCP/UDP    EtherNet/IP      Outbound     Allen-Bradley/Rockwell  |
-|   2222    TCP        EtherNet/IP      Outbound     EtherNet/IP explicit    |
-|   102     TCP        IEC 61850 MMS    Outbound     Power systems           |
+|   1812    UDP        RADIUS Auth      Bidirect     FortiAuthenticator Auth |
+|   1813    UDP        RADIUS Acct      Outbound     FortiAuthenticator Acct |
+|   8443    TCP        FortiAuth Admin  Outbound     FortiAuthenticator GUI  |
+|   443     TCP        SSL VPN          Inbound      Fortigate SSL VPN       |
+|   10443   TCP        FortiGate Admin  Outbound     FortiGate Management    |
+|   389     TCP        LDAP Sync        Outbound     FortiAuth -> AD Sync    |
+|   636     TCP        LDAPS Sync       Outbound     FortiAuth -> AD (SSL)   |
 |                                                                            |
-|   Note: OT ports accessed via Universal Tunneling through WALLIX           |
+|   Note: FortiAuthenticator serves as central MFA for all 4 sites           |
 |                                                                            |
 +===========================================================================+
 

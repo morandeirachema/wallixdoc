@@ -1,6 +1,6 @@
 # Certificate Management and Troubleshooting
 
-## SSL/TLS Certificate Operations for PAM4OT
+## SSL/TLS Certificate Operations for WALLIX Bastion
 
 This guide covers certificate management, renewal procedures, and troubleshooting certificate issues.
 
@@ -10,10 +10,10 @@ This guide covers certificate management, renewal procedures, and troubleshootin
 
 ```
 +===============================================================================+
-|                      PAM4OT CERTIFICATE ARCHITECTURE                          |
+|                      WALLIX Bastion CERTIFICATE ARCHITECTURE                          |
 +===============================================================================+
 
-  Certificate Authority                 PAM4OT                    Clients
+  Certificate Authority                 WALLIX Bastion                    Clients
   =====================                 ======                    =======
 
   ┌─────────────────┐              ┌─────────────────┐
@@ -38,7 +38,7 @@ This guide covers certificate management, renewal procedures, and troubleshootin
 
 ## Section 1: Certificate Inventory
 
-### Standard PAM4OT Certificates
+### Standard WALLIX Bastion Certificates
 
 | Certificate | Purpose | Location | Validity |
 |-------------|---------|----------|----------|
@@ -53,9 +53,9 @@ This guide covers certificate management, renewal procedures, and troubleshootin
 
 ```bash
 #!/bin/bash
-# check-certificates.sh - Check expiration of all PAM4OT certificates
+# check-certificates.sh - Check expiration of all WALLIX Bastion certificates
 
-echo "=== PAM4OT Certificate Status ==="
+echo "=== WALLIX Bastion Certificate Status ==="
 echo ""
 
 # Web server certificate
@@ -108,8 +108,8 @@ openssl req -new -x509 \
     -key /etc/ssl/wab/server.key \
     -out /etc/ssl/wab/server.crt \
     -days 365 \
-    -subj "/C=US/ST=State/L=City/O=Company/CN=pam4ot.company.com" \
-    -addext "subjectAltName=DNS:pam4ot.company.com,DNS:pam4ot-node1.company.com,DNS:pam4ot-node2.company.com,IP:10.10.1.100"
+    -subj "/C=US/ST=State/L=City/O=Company/CN=wallix.company.com" \
+    -addext "subjectAltName=DNS:wallix.company.com,DNS:wallix-node1.company.com,DNS:wallix-node2.company.com,IP:10.10.1.100"
 
 # Set permissions
 chmod 600 /etc/ssl/wab/server.key
@@ -138,15 +138,15 @@ ST = State
 L = City
 O = Company Name
 OU = IT Security
-CN = pam4ot.company.com
+CN = wallix.company.com
 
 [req_ext]
 subjectAltName = @alt_names
 
 [alt_names]
-DNS.1 = pam4ot.company.com
-DNS.2 = pam4ot-node1.company.com
-DNS.3 = pam4ot-node2.company.com
+DNS.1 = wallix.company.com
+DNS.2 = wallix-node1.company.com
+DNS.3 = wallix-node2.company.com
 IP.1 = 10.10.1.100
 IP.2 = 10.10.1.101
 IP.3 = 10.10.1.102
@@ -172,17 +172,17 @@ apt install certbot
 
 # Generate certificate (standalone mode)
 certbot certonly --standalone \
-    -d pam4ot.company.com \
+    -d wallix.company.com \
     --agree-tos \
     --email admin@company.com
 
 # Certificates will be in:
-# /etc/letsencrypt/live/pam4ot.company.com/fullchain.pem
-# /etc/letsencrypt/live/pam4ot.company.com/privkey.pem
+# /etc/letsencrypt/live/wallix.company.com/fullchain.pem
+# /etc/letsencrypt/live/wallix.company.com/privkey.pem
 
-# Link to PAM4OT location
-ln -sf /etc/letsencrypt/live/pam4ot.company.com/fullchain.pem /etc/ssl/wab/server.crt
-ln -sf /etc/letsencrypt/live/pam4ot.company.com/privkey.pem /etc/ssl/wab/server.key
+# Link to WALLIX Bastion location
+ln -sf /etc/letsencrypt/live/wallix.company.com/fullchain.pem /etc/ssl/wab/server.crt
+ln -sf /etc/letsencrypt/live/wallix.company.com/privkey.pem /etc/ssl/wab/server.key
 
 # Setup auto-renewal
 systemctl enable certbot.timer
@@ -195,7 +195,7 @@ systemctl enable certbot.timer
 ### Install Web Server Certificate
 
 ```bash
-# Stop PAM4OT service
+# Stop WALLIX Bastion service
 systemctl stop wallix-bastion
 
 # Backup existing certificates
@@ -217,11 +217,11 @@ chown wabuser:wabgroup /etc/ssl/wab/server.*
 # Verify certificate
 openssl verify -CAfile /etc/ssl/wab/ca-chain.crt /etc/ssl/wab/server.crt
 
-# Start PAM4OT service
+# Start WALLIX Bastion service
 systemctl start wallix-bastion
 
 # Verify HTTPS
-curl -v https://pam4ot.company.com/ 2>&1 | grep "SSL certificate"
+curl -v https://wallix.company.com/ 2>&1 | grep "SSL certificate"
 ```
 
 ### Install MariaDB Certificate
@@ -282,7 +282,7 @@ cp new-server.crt /etc/ssl/wab/server.crt
 systemctl start wallix-bastion
 
 # 7. Verify
-curl -sk https://pam4ot.company.com/ -o /dev/null -w "%{http_code}\n"
+curl -sk https://wallix.company.com/ -o /dev/null -w "%{http_code}\n"
 ```
 
 ### Automated Renewal Monitoring
@@ -303,11 +303,11 @@ NOW_EPOCH=$(date +%s)
 DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
 
 if [ ${DAYS_LEFT} -lt ${CRIT_DAYS} ]; then
-    echo "CRITICAL: PAM4OT certificate expires in ${DAYS_LEFT} days!" | \
-        mail -s "[CRITICAL] PAM4OT Certificate Expiring" ${EMAIL}
+    echo "CRITICAL: WALLIX Bastion certificate expires in ${DAYS_LEFT} days!" | \
+        mail -s "[CRITICAL] WALLIX Bastion Certificate Expiring" ${EMAIL}
 elif [ ${DAYS_LEFT} -lt ${WARN_DAYS} ]; then
-    echo "WARNING: PAM4OT certificate expires in ${DAYS_LEFT} days." | \
-        mail -s "[WARNING] PAM4OT Certificate Expiring" ${EMAIL}
+    echo "WARNING: WALLIX Bastion certificate expires in ${DAYS_LEFT} days." | \
+        mail -s "[WARNING] WALLIX Bastion Certificate Expiring" ${EMAIL}
 fi
 ```
 
@@ -317,21 +317,21 @@ fi
 groups:
   - name: certificate_alerts
     rules:
-      - alert: PAM4OTCertExpiring
+      - alert: WALLIX BastionCertExpiring
         expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 30
         for: 1h
         labels:
           severity: warning
         annotations:
-          description: "PAM4OT certificate expires in {{ $value | humanizeDuration }}"
+          description: "WALLIX Bastion certificate expires in {{ $value | humanizeDuration }}"
 
-      - alert: PAM4OTCertCritical
+      - alert: WALLIX BastionCertCritical
         expr: (probe_ssl_earliest_cert_expiry - time()) / 86400 < 7
         for: 1h
         labels:
           severity: critical
         annotations:
-          description: "PAM4OT certificate expires in {{ $value | humanizeDuration }}"
+          description: "WALLIX Bastion certificate expires in {{ $value | humanizeDuration }}"
 ```
 
 ---
@@ -353,7 +353,7 @@ groups:
 
 ```bash
 # View full certificate chain
-openssl s_client -connect pam4ot.company.com:443 -showcerts
+openssl s_client -connect wallix.company.com:443 -showcerts
 
 # Check certificate details
 openssl x509 -in /etc/ssl/wab/server.crt -noout -text
@@ -362,11 +362,11 @@ openssl x509 -in /etc/ssl/wab/server.crt -noout -text
 openssl verify -verbose -CAfile ca-chain.crt server.crt
 
 # Test SSL/TLS connection
-openssl s_client -connect pam4ot.company.com:443 \
+openssl s_client -connect wallix.company.com:443 \
     -CAfile /etc/ssl/certs/ca-certificates.crt
 
 # Check supported TLS versions
-nmap --script ssl-enum-ciphers -p 443 pam4ot.company.com
+nmap --script ssl-enum-ciphers -p 443 wallix.company.com
 ```
 
 ### Certificate Chain Issues
@@ -413,7 +413,7 @@ update-ca-certificates
 openssl verify -CApath /etc/ssl/certs/ /path/to/server.crt
 
 # For specific applications, may need to specify CA path
-curl --cacert /etc/ssl/certs/company-ca.crt https://pam4ot.company.com/
+curl --cacert /etc/ssl/certs/company-ca.crt https://wallix.company.com/
 ```
 
 ---
@@ -426,15 +426,15 @@ curl --cacert /etc/ssl/certs/company-ca.crt https://pam4ot.company.com/
 # Certificates must be identical on both nodes
 
 # On primary node, after certificate update:
-scp /etc/ssl/wab/server.crt root@pam4ot-node2:/etc/ssl/wab/
-scp /etc/ssl/wab/server.key root@pam4ot-node2:/etc/ssl/wab/
-scp /etc/ssl/wab/ca-chain.crt root@pam4ot-node2:/etc/ssl/wab/
+scp /etc/ssl/wab/server.crt root@wallix-node2:/etc/ssl/wab/
+scp /etc/ssl/wab/server.key root@wallix-node2:/etc/ssl/wab/
+scp /etc/ssl/wab/ca-chain.crt root@wallix-node2:/etc/ssl/wab/
 
 # Restart services on secondary
-ssh root@pam4ot-node2 "systemctl restart wallix-bastion"
+ssh root@wallix-node2 "systemctl restart wallix-bastion"
 
 # Verify both nodes
-for node in pam4ot-node1 pam4ot-node2; do
+for node in wallix-node1 wallix-node2; do
     echo "=== ${node} ==="
     ssh root@${node} "openssl x509 -in /etc/ssl/wab/server.crt -noout -fingerprint"
 done

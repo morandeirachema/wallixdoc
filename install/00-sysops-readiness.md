@@ -1,6 +1,6 @@
 # Sysops Readiness Checklist
 
-## Pre-Deployment Verification for WALLIX PAM4OT
+## Pre-Deployment Verification for WALLIX WALLIX Bastion
 
 Complete this checklist BEFORE starting WALLIX installation. Each item prevents common deployment failures.
 

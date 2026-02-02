@@ -2,7 +2,7 @@
 
 ## Comprehensive Test Suite for Pre-Production Lab
 
-This guide covers all validation tests to verify the PAM4OT lab environment is working correctly.
+This guide covers all validation tests to verify the WALLIX Bastion lab environment is working correctly.
 
 ---
 
@@ -13,7 +13,7 @@ This guide covers all validation tests to verify the PAM4OT lab environment is w
 |                        VALIDATION TEST CATEGORIES                             |
 +===============================================================================+
 
-  1. INFRASTRUCTURE TESTS            2. PAM4OT FUNCTIONAL TESTS
+  1. INFRASTRUCTURE TESTS            2. WALLIX Bastion FUNCTIONAL TESTS
   =======================            ==========================
   - VM connectivity                  - Authentication (local/LDAP)
   - DNS resolution                   - Session management
@@ -52,8 +52,8 @@ echo "=== Infrastructure Connectivity Tests ==="
 # Define hosts
 declare -A HOSTS=(
     ["dc-lab.lab.local"]="10.10.1.10"
-    ["pam4ot-node1.lab.local"]="10.10.1.11"
-    ["pam4ot-node2.lab.local"]="10.10.1.12"
+    ["wallix-node1.lab.local"]="10.10.1.11"
+    ["wallix-node2.lab.local"]="10.10.1.12"
     ["siem-lab.lab.local"]="10.10.1.50"
     ["monitoring-lab.lab.local"]="10.10.1.60"
     ["linux-test.lab.local"]="10.10.2.10"
@@ -77,7 +77,7 @@ done
 ```bash
 echo "=== DNS Resolution Tests ==="
 
-for host in dc-lab pam4ot-node1 pam4ot-node2 pam4ot siem-lab monitoring-lab; do
+for host in dc-lab wallix-node1 wallix-node2 wallix siem-lab monitoring-lab; do
     result=$(nslookup "${host}.lab.local" 2>/dev/null | grep "Address" | tail -1)
     if [ -n "$result" ]; then
         echo "[PASS] ${host}.lab.local resolves"
@@ -92,9 +92,9 @@ done
 ```bash
 echo "=== Service Port Tests ==="
 
-# PAM4OT services
-nc -zv pam4ot.lab.local 443 2>&1 | grep -q "succeeded" && echo "[PASS] PAM4OT HTTPS" || echo "[FAIL] PAM4OT HTTPS"
-nc -zv pam4ot.lab.local 22 2>&1 | grep -q "succeeded" && echo "[PASS] PAM4OT SSH" || echo "[FAIL] PAM4OT SSH"
+# WALLIX Bastion services
+nc -zv wallix.lab.local 443 2>&1 | grep -q "succeeded" && echo "[PASS] WALLIX Bastion HTTPS" || echo "[FAIL] WALLIX Bastion HTTPS"
+nc -zv wallix.lab.local 22 2>&1 | grep -q "succeeded" && echo "[PASS] WALLIX Bastion SSH" || echo "[FAIL] WALLIX Bastion SSH"
 
 # AD services
 nc -zv dc-lab.lab.local 636 2>&1 | grep -q "succeeded" && echo "[PASS] LDAPS" || echo "[FAIL] LDAPS"
@@ -110,7 +110,7 @@ nc -zv monitoring-lab.lab.local 3000 2>&1 | grep -q "succeeded" && echo "[PASS] 
 
 ---
 
-## Test 2: PAM4OT Functional Tests
+## Test 2: WALLIX Bastion Functional Tests
 
 ### 2.1 Local Admin Authentication
 
@@ -118,7 +118,7 @@ nc -zv monitoring-lab.lab.local 3000 2>&1 | grep -q "succeeded" && echo "[PASS] 
 echo "=== Local Admin Authentication Test ==="
 
 # Test via API
-response=$(curl -sk -X POST "https://pam4ot.lab.local/api/auth" \
+response=$(curl -sk -X POST "https://wallix.lab.local/api/auth" \
     -H "Content-Type: application/json" \
     -d '{"user": "admin", "password": "Pam4otAdmin123!"}')
 
@@ -138,7 +138,7 @@ fi
 echo "=== LDAP Authentication Test ==="
 
 # Test AD user via API
-response=$(curl -sk -X POST "https://pam4ot.lab.local/api/auth" \
+response=$(curl -sk -X POST "https://wallix.lab.local/api/auth" \
     -H "Content-Type: application/json" \
     -d '{"user": "jadmin@lab.local", "password": "JohnAdmin123!"}')
 
@@ -159,8 +159,8 @@ echo "=== SSH Session Test ==="
 # Note: This requires sshpass for automation
 apt install -y sshpass 2>/dev/null
 
-# Connect as jadmin to linux-test via PAM4OT
-sshpass -p 'JohnAdmin123!' ssh -o StrictHostKeyChecking=no jadmin@pam4ot.lab.local << 'EOF'
+# Connect as jadmin to linux-test via WALLIX Bastion
+sshpass -p 'JohnAdmin123!' ssh -o StrictHostKeyChecking=no jadmin@wallix.lab.local << 'EOF'
 # Select target: linux-test / root
 whoami
 hostname
@@ -168,9 +168,9 @@ exit
 EOF
 
 if [ $? -eq 0 ]; then
-    echo "[PASS] SSH session through PAM4OT successful"
+    echo "[PASS] SSH session through WALLIX Bastion successful"
 else
-    echo "[FAIL] SSH session through PAM4OT failed"
+    echo "[FAIL] SSH session through WALLIX Bastion failed"
 fi
 ```
 
@@ -180,7 +180,7 @@ fi
 echo "=== Web UI Access Test ==="
 
 # Test HTTPS access
-http_code=$(curl -sk -o /dev/null -w "%{http_code}" "https://pam4ot.lab.local/")
+http_code=$(curl -sk -o /dev/null -w "%{http_code}" "https://wallix.lab.local/")
 
 if [ "$http_code" == "200" ] || [ "$http_code" == "302" ]; then
     echo "[PASS] Web UI accessible (HTTP $http_code)"
@@ -195,7 +195,7 @@ fi
 echo "=== Password Checkout Test ==="
 
 # Checkout password via API
-response=$(curl -sk -X POST "https://pam4ot.lab.local/api/passwords/checkout" \
+response=$(curl -sk -X POST "https://wallix.lab.local/api/passwords/checkout" \
     -H "X-Auth-Token: $API_TOKEN" \
     -H "Content-Type: application/json" \
     -d '{"device": "linux-test", "account": "root"}')
@@ -203,7 +203,7 @@ response=$(curl -sk -X POST "https://pam4ot.lab.local/api/passwords/checkout" \
 if echo "$response" | grep -q "password"; then
     echo "[PASS] Password checkout successful"
     # Immediately check in
-    curl -sk -X POST "https://pam4ot.lab.local/api/passwords/checkin" \
+    curl -sk -X POST "https://wallix.lab.local/api/passwords/checkin" \
         -H "X-Auth-Token: $API_TOKEN" \
         -H "Content-Type: application/json" \
         -d '{"device": "linux-test", "account": "root"}'
@@ -222,10 +222,10 @@ fi
 ```bash
 echo "=== Cluster Status Test ==="
 
-# On either PAM4OT node
-ssh root@pam4ot-node1.lab.local << 'EOF'
+# On either WALLIX Bastion node
+ssh root@wallix-node1.lab.local << 'EOF'
 echo "Pacemaker Status:"
-pcs status | grep -E "(Online|Offline|vip-pam4ot)"
+pcs status | grep -E "(Online|Offline|vip-wallix)"
 
 echo ""
 echo "VIP Location:"
@@ -239,7 +239,7 @@ EOF
 echo "=== Replication Status Test ==="
 
 # On Node 1 (Primary)
-ssh root@pam4ot-node1.lab.local << 'EOF'
+ssh root@wallix-node1.lab.local << 'EOF'
 echo "Replication Status (from primary):"
 sudo mysql -e "SHOW MASTER STATUS\G"
 sudo mysql -e "SHOW SLAVE HOSTS;"
@@ -250,7 +250,7 @@ sudo mysql -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master
 EOF
 
 # On Node 2 (Replica)
-ssh root@pam4ot-node2.lab.local << 'EOF'
+ssh root@wallix-node2.lab.local << 'EOF'
 echo "Recovery Status (from replica):"
 sudo mysql -e "SHOW SLAVE STATUS\G"
 EOF
@@ -262,7 +262,7 @@ EOF
 echo "=== VIP Failover Test ==="
 
 # Find which node has VIP
-vip_node=$(ssh root@pam4ot-node1.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'node1' || echo 'node2'")
+vip_node=$(ssh root@wallix-node1.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'node1' || echo 'node2'")
 
 echo "VIP currently on: $vip_node"
 
@@ -273,22 +273,22 @@ PING_PID=$!
 # Trigger failover
 if [ "$vip_node" == "node1" ]; then
     echo "Putting node1 in standby..."
-    ssh root@pam4ot-node1.lab.local "pcs node standby pam4ot-node1"
+    ssh root@wallix-node1.lab.local "pcs node standby wallix-node1"
     sleep 10
 
     # Check VIP moved
-    new_vip=$(ssh root@pam4ot-node2.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
+    new_vip=$(ssh root@wallix-node2.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
 
     # Restore
-    ssh root@pam4ot-node1.lab.local "pcs node unstandby pam4ot-node1"
+    ssh root@wallix-node1.lab.local "pcs node unstandby wallix-node1"
 else
     echo "Putting node2 in standby..."
-    ssh root@pam4ot-node2.lab.local "pcs node standby pam4ot-node2"
+    ssh root@wallix-node2.lab.local "pcs node standby wallix-node2"
     sleep 10
 
-    new_vip=$(ssh root@pam4ot-node1.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
+    new_vip=$(ssh root@wallix-node1.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
 
-    ssh root@pam4ot-node2.lab.local "pcs node unstandby pam4ot-node2"
+    ssh root@wallix-node2.lab.local "pcs node unstandby wallix-node2"
 fi
 
 # Wait for ping to complete
@@ -327,14 +327,14 @@ done
 echo "=== AD Group Mapping Test ==="
 
 # Login as jadmin and verify groups
-response=$(curl -sk -X POST "https://pam4ot.lab.local/api/auth" \
+response=$(curl -sk -X POST "https://wallix.lab.local/api/auth" \
     -H "Content-Type: application/json" \
     -d '{"user": "jadmin@lab.local", "password": "JohnAdmin123!"}')
 
 token=$(echo "$response" | jq -r '.token')
 
 # Get user details
-user_info=$(curl -sk "https://pam4ot.lab.local/api/users/jadmin" \
+user_info=$(curl -sk "https://wallix.lab.local/api/users/jadmin" \
     -H "X-Auth-Token: $token")
 
 echo "User info:"
@@ -353,7 +353,7 @@ fi
 echo "=== SIEM Log Forwarding Test ==="
 
 # Generate authentication event
-curl -sk -X POST "https://pam4ot.lab.local/api/auth" \
+curl -sk -X POST "https://wallix.lab.local/api/auth" \
     -H "Content-Type: application/json" \
     -d '{"user": "testuser", "password": "wrongpassword"}' &>/dev/null
 
@@ -364,10 +364,10 @@ sleep 5
 # Note: Adjust query based on your SIEM
 ssh root@siem-lab.lab.local << 'EOF'
 # For Splunk
-/opt/splunk/bin/splunk search 'index=pam4ot "authentication" earliest=-5m' -auth admin:SplunkAdmin123! 2>/dev/null | head -5
+/opt/splunk/bin/splunk search 'index=wallix "authentication" earliest=-5m' -auth admin:SplunkAdmin123! 2>/dev/null | head -5
 
 # For ELK
-curl -s "http://localhost:9200/pam4ot-*/_search?q=authentication&size=5" | jq '.hits.hits[]._source.message' 2>/dev/null | head -5
+curl -s "http://localhost:9200/wallix-*/_search?q=authentication&size=5" | jq '.hits.hits[]._source.message' 2>/dev/null | head -5
 EOF
 
 echo "[INFO] Check SIEM manually for authentication event"
@@ -379,15 +379,15 @@ echo "[INFO] Check SIEM manually for authentication event"
 echo "=== Prometheus Metrics Test ==="
 
 # Check targets
-targets=$(curl -s "http://monitoring-lab.lab.local:9090/api/v1/targets" | jq -r '.data.activeTargets[] | select(.labels.job=="pam4ot") | "\(.labels.instance): \(.health)"')
+targets=$(curl -s "http://monitoring-lab.lab.local:9090/api/v1/targets" | jq -r '.data.activeTargets[] | select(.labels.job=="wallix") | "\(.labels.instance): \(.health)"')
 
-echo "PAM4OT targets:"
+echo "WALLIX Bastion targets:"
 echo "$targets"
 
 if echo "$targets" | grep -q "up"; then
-    echo "[PASS] Prometheus collecting PAM4OT metrics"
+    echo "[PASS] Prometheus collecting WALLIX Bastion metrics"
 else
-    echo "[FAIL] Prometheus not collecting PAM4OT metrics"
+    echo "[FAIL] Prometheus not collecting WALLIX Bastion metrics"
 fi
 ```
 
@@ -397,13 +397,13 @@ fi
 echo "=== Alert Trigger Test ==="
 
 # Temporarily stop node_exporter to trigger alert
-ssh root@pam4ot-node1.lab.local "systemctl stop node_exporter"
+ssh root@wallix-node1.lab.local "systemctl stop node_exporter"
 
 echo "Waiting 2 minutes for alert to fire..."
 sleep 120
 
 # Check for alert
-alerts=$(curl -s "http://monitoring-lab.lab.local:9090/api/v1/alerts" | jq '.data.alerts[] | select(.labels.alertname=="PAM4OTNodeDown")')
+alerts=$(curl -s "http://monitoring-lab.lab.local:9090/api/v1/alerts" | jq '.data.alerts[] | select(.labels.alertname=="WALLIX BastionNodeDown")')
 
 if [ -n "$alerts" ]; then
     echo "[PASS] Alert triggered successfully"
@@ -413,7 +413,7 @@ else
 fi
 
 # Restore
-ssh root@pam4ot-node1.lab.local "systemctl start node_exporter"
+ssh root@wallix-node1.lab.local "systemctl start node_exporter"
 ```
 
 ---
@@ -426,13 +426,13 @@ ssh root@pam4ot-node1.lab.local "systemctl start node_exporter"
 echo "=== Certificate Validation Test ==="
 
 # Check certificate
-cert_info=$(echo | openssl s_client -connect pam4ot.lab.local:443 2>/dev/null | openssl x509 -noout -dates -subject 2>/dev/null)
+cert_info=$(echo | openssl s_client -connect wallix.lab.local:443 2>/dev/null | openssl x509 -noout -dates -subject 2>/dev/null)
 
 echo "Certificate Info:"
 echo "$cert_info"
 
 # Check expiry
-expiry=$(echo | openssl s_client -connect pam4ot.lab.local:443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
+expiry=$(echo | openssl s_client -connect wallix.lab.local:443 2>/dev/null | openssl x509 -noout -enddate 2>/dev/null | cut -d= -f2)
 expiry_epoch=$(date -d "$expiry" +%s)
 now_epoch=$(date +%s)
 days_left=$(( (expiry_epoch - now_epoch) / 86400 ))
@@ -451,7 +451,7 @@ echo "=== TLS Configuration Test ==="
 
 # Test TLS versions
 for version in tls1 tls1_1 tls1_2 tls1_3; do
-    result=$(echo | openssl s_client -connect pam4ot.lab.local:443 -$version 2>&1)
+    result=$(echo | openssl s_client -connect wallix.lab.local:443 -$version 2>&1)
     if echo "$result" | grep -q "Cipher is"; then
         cipher=$(echo "$result" | grep "Cipher is" | head -1)
         echo "[INFO] $version: $cipher"
@@ -468,14 +468,14 @@ echo "=== Account Lockout Test ==="
 
 # Attempt multiple failed logins
 for i in {1..6}; do
-    response=$(curl -sk -X POST "https://pam4ot.lab.local/api/auth" \
+    response=$(curl -sk -X POST "https://wallix.lab.local/api/auth" \
         -H "Content-Type: application/json" \
         -d '{"user": "jadmin@lab.local", "password": "wrongpassword"}')
     echo "Attempt $i: $(echo $response | jq -r '.error // "No error"')"
 done
 
 # Try valid login - should be locked
-response=$(curl -sk -X POST "https://pam4ot.lab.local/api/auth" \
+response=$(curl -sk -X POST "https://wallix.lab.local/api/auth" \
     -H "Content-Type: application/json" \
     -d '{"user": "jadmin@lab.local", "password": "JohnAdmin123!"}')
 
@@ -492,7 +492,7 @@ fi
 echo "=== Audit Log Test ==="
 
 # Check audit logs exist
-ssh root@pam4ot-node1.lab.local << 'EOF'
+ssh root@wallix-node1.lab.local << 'EOF'
 echo "Recent audit entries:"
 wabadmin audit --last 10
 
@@ -513,7 +513,7 @@ echo "=== Concurrent Authentication Test ==="
 
 # Run 10 concurrent authentications
 for i in {1..10}; do
-    curl -sk -X POST "https://pam4ot.lab.local/api/auth" \
+    curl -sk -X POST "https://wallix.lab.local/api/auth" \
         -H "Content-Type: application/json" \
         -d '{"user": "admin", "password": "Pam4otAdmin123!"}' &
 done
@@ -529,7 +529,7 @@ echo "=== API Response Time Test ==="
 
 # Measure response times
 for endpoint in "/" "/api/status" "/api/version"; do
-    time=$(curl -sk -o /dev/null -w "%{time_total}" "https://pam4ot.lab.local${endpoint}")
+    time=$(curl -sk -o /dev/null -w "%{time_total}" "https://wallix.lab.local${endpoint}")
     echo "GET $endpoint: ${time}s"
 done
 ```
@@ -539,7 +539,7 @@ done
 ```bash
 echo "=== Database Performance Test ==="
 
-ssh root@pam4ot-node1.lab.local << 'EOF'
+ssh root@wallix-node1.lab.local << 'EOF'
 # Simple query timing
 echo "Query performance:"
 sudo mysql wabdb -c "EXPLAIN ANALYZE SELECT count(*) FROM sessions WHERE created > NOW() - interval '1 day';"
@@ -565,7 +565,7 @@ EOF
   [ ] DNS Resolution             [PASS/FAIL]
   [ ] Port Connectivity          [PASS/FAIL]
 
-  PAM4OT FUNCTIONAL TESTS
+  WALLIX Bastion FUNCTIONAL TESTS
   -----------------------
   [ ] Local Authentication       [PASS/FAIL]
   [ ] LDAP Authentication        [PASS/FAIL]
@@ -618,11 +618,11 @@ Save as `/pre/scripts/run-all-tests.sh`:
 
 ```bash
 #!/bin/bash
-# PAM4OT Pre-Production Lab - Full Test Suite
+# WALLIX Bastion Pre-Production Lab - Full Test Suite
 
-LOG_FILE="/tmp/pam4ot-test-$(date +%Y%m%d-%H%M%S).log"
+LOG_FILE="/tmp/wallix-test-$(date +%Y%m%d-%H%M%S).log"
 
-echo "PAM4OT Test Suite - $(date)" | tee "$LOG_FILE"
+echo "WALLIX Bastion Test Suite - $(date)" | tee "$LOG_FILE"
 echo "================================" | tee -a "$LOG_FILE"
 
 # Source test functions
@@ -666,11 +666,11 @@ echo "Tests completed. Log saved to: $LOG_FILE" | tee -a "$LOG_FILE"
 | Infrastructure | All VMs reachable | [ ] | |
 | Infrastructure | DNS resolving | [ ] | |
 | Infrastructure | Required ports open | [ ] | |
-| PAM4OT | Local admin login | [ ] | |
-| PAM4OT | LDAP user login | [ ] | |
-| PAM4OT | SSH session works | [ ] | |
-| PAM4OT | RDP session works | [ ] | |
-| PAM4OT | Password checkout | [ ] | |
+| WALLIX Bastion | Local admin login | [ ] | |
+| WALLIX Bastion | LDAP user login | [ ] | |
+| WALLIX Bastion | SSH session works | [ ] | |
+| WALLIX Bastion | RDP session works | [ ] | |
+| WALLIX Bastion | Password checkout | [ ] | |
 | HA | Cluster healthy | [ ] | |
 | HA | VIP failover < 30s | [ ] | |
 | HA | Replication lag < 1MB | [ ] | |

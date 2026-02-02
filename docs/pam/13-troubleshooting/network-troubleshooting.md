@@ -2,7 +2,7 @@
 
 ## Diagnosing Connectivity and Network Issues
 
-This guide covers troubleshooting network-related problems with PAM4OT.
+This guide covers troubleshooting network-related problems with WALLIX Bastion.
 
 ---
 
@@ -13,7 +13,7 @@ This guide covers troubleshooting network-related problems with PAM4OT.
 |                    NETWORK TROUBLESHOOTING FLOWCHART                          |
 +===============================================================================+
 
-  Users cannot reach PAM4OT?
+  Users cannot reach WALLIX Bastion?
             |
             v
   +-------------------+
@@ -24,12 +24,12 @@ This guide covers troubleshooting network-related problems with PAM4OT.
             v
   +-------------------+
   | Is HTTPS (443)    |     NO
-  | responding?       |-----------> Check PAM4OT service/firewall
+  | responding?       |-----------> Check WALLIX Bastion service/firewall
   +-------------------+
             | YES
             v
   +-------------------+
-  | Can PAM4OT reach  |     NO
+  | Can WALLIX Bastion reach  |     NO
   | target systems?   |-----------> Check routing/target firewall
   +-------------------+
             | YES
@@ -53,11 +53,11 @@ ip addr show | grep 10.10.1.100
 pcs status
 
 # Step 3: Check which node should have VIP
-pcs resource show vip-pam4ot
+pcs resource show vip-wallix
 
 # Step 4: If VIP stuck, force move
-pcs resource move vip-pam4ot [node-name]
-pcs resource clear vip-pam4ot  # Remove constraint after move
+pcs resource move vip-wallix [node-name]
+pcs resource clear vip-wallix  # Remove constraint after move
 ```
 
 ### Load Balancer Health Check Failing
@@ -67,16 +67,16 @@ pcs resource clear vip-pam4ot  # Remove constraint after move
 # Common: GET / or GET /health
 
 # Test health endpoint
-curl -sk https://pam4ot-node1.company.com/
-curl -sk https://pam4ot-node1.company.com/health
+curl -sk https://wallix-node1.company.com/
+curl -sk https://wallix-node1.company.com/health
 
-# If returns error, check PAM4OT service
+# If returns error, check WALLIX Bastion service
 systemctl status wallix-bastion
 
 # Check LB can reach backend
 # On LB:
-nc -zv pam4ot-node1.company.com 443
-nc -zv pam4ot-node2.company.com 443
+nc -zv wallix-node1.company.com 443
+nc -zv wallix-node2.company.com 443
 ```
 
 ---
@@ -86,7 +86,7 @@ nc -zv pam4ot-node2.company.com 443
 ### Verify Firewall Rules
 
 ```bash
-# On PAM4OT nodes, check iptables
+# On WALLIX Bastion nodes, check iptables
 iptables -L -n --line-numbers
 
 # Check if traffic is being dropped
@@ -101,14 +101,14 @@ iptables -L -n | grep 22
 
 | Source | Destination | Port | Protocol | Test Command |
 |--------|-------------|------|----------|--------------|
-| Users | PAM4OT VIP | 443 | TCP | `curl -sk https://10.10.1.100/` |
-| Users | PAM4OT VIP | 22 | TCP | `nc -zv 10.10.1.100 22` |
-| PAM4OT | AD DC | 636 | TCP | `nc -zv dc-lab 636` |
-| PAM4OT | AD DC | 88 | TCP/UDP | `nc -zv dc-lab 88` |
-| PAM4OT | FortiAuth | 1812 | UDP | `nc -zuv fortiauth 1812` |
-| PAM4OT | SIEM | 514 | TCP | `nc -zv siem-lab 514` |
-| PAM4OT | Targets | 22 | TCP | `nc -zv linux-test 22` |
-| PAM4OT | Targets | 3389 | TCP | `nc -zv windows-test 3389` |
+| Users | WALLIX Bastion VIP | 443 | TCP | `curl -sk https://10.10.1.100/` |
+| Users | WALLIX Bastion VIP | 22 | TCP | `nc -zv 10.10.1.100 22` |
+| WALLIX Bastion | AD DC | 636 | TCP | `nc -zv dc-lab 636` |
+| WALLIX Bastion | AD DC | 88 | TCP/UDP | `nc -zv dc-lab 88` |
+| WALLIX Bastion | FortiAuth | 1812 | UDP | `nc -zuv fortiauth 1812` |
+| WALLIX Bastion | SIEM | 514 | TCP | `nc -zv siem-lab 514` |
+| WALLIX Bastion | Targets | 22 | TCP | `nc -zv linux-test 22` |
+| WALLIX Bastion | Targets | 3389 | TCP | `nc -zv windows-test 3389` |
 | Node1 | Node2 | 3306 | TCP | `nc -zv node2 3306` |
 | Node1 | Node2 | 5405 | UDP | `nc -zuv node2 5405` |
 
@@ -116,9 +116,9 @@ iptables -L -n | grep 22
 
 ```bash
 #!/bin/bash
-# test-ports.sh - Test all required PAM4OT ports
+# test-ports.sh - Test all required WALLIX Bastion ports
 
-echo "=== Testing PAM4OT Network Connectivity ==="
+echo "=== Testing WALLIX Bastion Network Connectivity ==="
 
 # VIP
 echo -n "VIP HTTPS (443): "
@@ -144,7 +144,7 @@ nc -zv -w2 siem.company.com 514 2>&1 | grep -q succeeded && echo "OK" || echo "F
 
 # Cluster
 echo -n "MariaDB Replication: "
-nc -zv -w2 pam4ot-node2.company.com 3306 2>&1 | grep -q succeeded && echo "OK" || echo "FAILED"
+nc -zv -w2 wallix-node2.company.com 3306 2>&1 | grep -q succeeded && echo "OK" || echo "FAILED"
 
 # Targets
 echo -n "Linux Target (22): "
@@ -162,10 +162,10 @@ nc -zv -w2 windows-test.company.com 3389 2>&1 | grep -q succeeded && echo "OK" |
 
 ```bash
 # Test DNS resolution
-nslookup pam4ot.company.com
-dig pam4ot.company.com
+nslookup wallix.company.com
+dig wallix.company.com
 
-# Test from PAM4OT node
+# Test from WALLIX Bastion node
 nslookup dc-lab.company.com
 nslookup fortiauth.company.com
 
@@ -173,7 +173,7 @@ nslookup fortiauth.company.com
 cat /etc/resolv.conf
 
 # Test specific DNS server
-nslookup pam4ot.company.com 10.10.1.10
+nslookup wallix.company.com 10.10.1.10
 ```
 
 ### Common DNS Problems
@@ -196,7 +196,7 @@ nslookup 10.10.1.100
 dig -x 10.10.1.100
 
 # If DNS unreliable, add to /etc/hosts temporarily
-echo "10.10.1.100 pam4ot.company.com pam4ot" >> /etc/hosts
+echo "10.10.1.100 wallix.company.com wallix" >> /etc/hosts
 ```
 
 ---
@@ -207,7 +207,7 @@ echo "10.10.1.100 pam4ot.company.com pam4ot" >> /etc/hosts
 
 ```bash
 # Test SSH proxy
-ssh -v jadmin@pam4ot.company.com
+ssh -v jadmin@wallix.company.com
 
 # If connection refused, check:
 # 1. SSH service running
@@ -216,18 +216,18 @@ systemctl status wallix-bastion | grep ssh
 # 2. SSH port open
 ss -tlnp | grep :22
 
-# 3. Test from PAM4OT to target
-# (On PAM4OT node)
+# 3. Test from WALLIX Bastion to target
+# (On WALLIX Bastion node)
 ssh -v root@linux-test.company.com
 ```
 
 ### RDP Sessions Failing
 
 ```bash
-# Test RDP port on PAM4OT
-nc -zv pam4ot.company.com 3389
+# Test RDP port on WALLIX Bastion
+nc -zv wallix.company.com 3389
 
-# Test from PAM4OT to target
+# Test from WALLIX Bastion to target
 nc -zv windows-test.company.com 3389
 
 # Check RDP service on target
@@ -239,13 +239,13 @@ netstat -an | findstr 3389
 
 ```bash
 # Check for network instability
-ping -c 100 pam4ot.company.com | grep -E "loss|time"
+ping -c 100 wallix.company.com | grep -E "loss|time"
 
 # Check MTU issues
-ping -M do -s 1472 pam4ot.company.com
+ping -M do -s 1472 wallix.company.com
 
 # If MTU issue (packet too large)
-# Reduce MTU on PAM4OT interface
+# Reduce MTU on WALLIX Bastion interface
 ip link set dev ens192 mtu 1400
 ```
 
@@ -257,14 +257,14 @@ ip link set dev ens192 mtu 1400
 
 ```bash
 # Check certificate
-echo | openssl s_client -connect pam4ot.company.com:443 2>/dev/null | \
+echo | openssl s_client -connect wallix.company.com:443 2>/dev/null | \
   openssl x509 -noout -subject -dates -issuer
 
 # Check certificate chain
-echo | openssl s_client -connect pam4ot.company.com:443 -showcerts 2>/dev/null
+echo | openssl s_client -connect wallix.company.com:443 -showcerts 2>/dev/null
 
 # Check specific errors
-echo | openssl s_client -connect pam4ot.company.com:443 2>&1 | grep -i error
+echo | openssl s_client -connect wallix.company.com:443 2>&1 | grep -i error
 ```
 
 ### Common Certificate Issues
@@ -295,14 +295,14 @@ openssl verify -CApath /etc/ssl/certs/ /path/to/server.crt
 
 ```bash
 # Test network latency
-ping -c 20 pam4ot.company.com
-mtr pam4ot.company.com
+ping -c 20 wallix.company.com
+mtr wallix.company.com
 
 # Test application response time
-curl -sk -o /dev/null -w "Connect: %{time_connect}s, TTFB: %{time_starttransfer}s, Total: %{time_total}s\n" https://pam4ot.company.com/
+curl -sk -o /dev/null -w "Connect: %{time_connect}s, TTFB: %{time_starttransfer}s, Total: %{time_total}s\n" https://wallix.company.com/
 
 # Compare node performance
-for node in pam4ot-node1 pam4ot-node2; do
+for node in wallix-node1 wallix-node2; do
   echo -n "$node: "
   curl -sk -o /dev/null -w "%{time_total}s\n" https://$node.company.com/
 done
@@ -311,8 +311,8 @@ done
 ### Bandwidth Issues
 
 ```bash
-# Test bandwidth to PAM4OT
-iperf3 -c pam4ot-node1.company.com -p 5201
+# Test bandwidth to WALLIX Bastion
+iperf3 -c wallix-node1.company.com -p 5201
 
 # Check network interface stats
 ip -s link show ens192
@@ -408,7 +408,7 @@ LAYER 4 - TRANSPORT
 [ ] TCP connections establishing
 
 LAYER 7 - APPLICATION
-[ ] PAM4OT service running
+[ ] WALLIX Bastion service running
 [ ] HTTPS responding
 [ ] Authentication working
 [ ] Sessions establishing

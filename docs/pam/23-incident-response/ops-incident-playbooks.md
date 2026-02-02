@@ -17,10 +17,10 @@ Real-world scenarios with step-by-step resolution procedures.
 
 ```bash
 # 1. Check service status
-systemctl status wallix-pam4ot
+systemctl status wallix-wallix
 
 # 2. Check for obvious errors
-journalctl -u wallix-pam4ot --since "10 min ago" | tail -50
+journalctl -u wallix-wallix --since "10 min ago" | tail -50
 
 # 3. Check disk space (common cause)
 df -h
@@ -50,7 +50,7 @@ sudo mysql -e "SELECT 1;"
   |
   +-- "Failed" or "Inactive"
   |   |
-  |   +-- Check logs: journalctl -u wallix-pam4ot -n 100
+  |   +-- Check logs: journalctl -u wallix-wallix -n 100
   |   |
   |   +-- Common errors:
   |       |
@@ -71,7 +71,7 @@ sudo mysql -e "SELECT 1;"
   |
   +-- Service won't start after restart
       |
-      +-- Try: systemctl restart wallix-pam4ot
+      +-- Try: systemctl restart wallix-wallix
       +-- If fails: Check disk space, memory, database
       +-- If still fails: Boot to safe mode / restore backup
 
@@ -93,7 +93,7 @@ find /var/log/wallix/ -name "*.log.*" -mtime +7 -delete
 find /var/lib/wallix/recordings/ -mtime +30 -exec mv {} /backup/ \;
 
 # Restart service
-systemctl restart wallix-pam4ot
+systemctl restart wallix-wallix
 ```
 
 **If memory exhausted:**
@@ -102,7 +102,7 @@ systemctl restart wallix-pam4ot
 ps aux --sort=-%mem | head -10
 
 # Restart service (frees memory)
-systemctl restart wallix-pam4ot
+systemctl restart wallix-wallix
 
 # If recurring, increase RAM or optimize config
 ```
@@ -116,7 +116,7 @@ wabadmin config --verify
 wabadmin config --restore /var/backup/wallix/config-YYYYMMDD.tar.gz
 
 # Restart service
-systemctl restart wallix-pam4ot
+systemctl restart wallix-wallix
 ```
 
 ### Post-Incident
@@ -232,7 +232,7 @@ sudo mysql_upgrade --force
 **If data corruption:**
 ```bash
 # Stop WALLIX to prevent more writes
-systemctl stop wallix-pam4ot
+systemctl stop wallix-wallix
 
 # Check database consistency
 mysqldump wallix > /dev/null
@@ -242,7 +242,7 @@ mysqldump wallix > /dev/null
 systemctl stop mariadb
 sudo mysql wallix < /var/backup/wallix/database.sql
 systemctl start mariadb
-systemctl start wallix-pam4ot
+systemctl start wallix-wallix
 ```
 
 ---
@@ -907,9 +907,9 @@ sudo mysql wallix -e "OPTIMIZE TABLE users, sessions, audit_log;"
 
 ```bash
 # Service control
-systemctl status wallix-pam4ot
-systemctl restart wallix-pam4ot
-systemctl stop wallix-pam4ot
+systemctl status wallix-wallix
+systemctl restart wallix-wallix
+systemctl stop wallix-wallix
 
 # Session management
 wabadmin sessions --status active
@@ -930,7 +930,7 @@ crm resource cleanup <resource>
 crm node standby <node>
 
 # Logs
-journalctl -u wallix-pam4ot --since "1 hour ago"
+journalctl -u wallix-wallix --since "1 hour ago"
 tail -f /var/log/wallix/application.log
 ```
 

@@ -2,7 +2,7 @@
 
 ## Diagnosing and Resolving Active Directory Integration Issues
 
-This guide covers troubleshooting LDAP/AD authentication and sync problems with PAM4OT.
+This guide covers troubleshooting LDAP/AD authentication and sync problems with WALLIX Bastion.
 
 ---
 
@@ -17,7 +17,7 @@ This guide covers troubleshooting LDAP/AD authentication and sync problems with 
             |
             v
   +-------------------+
-  | Can PAM4OT reach  |     NO
+  | Can WALLIX Bastion reach  |     NO
   | AD on port 636?   |-----------> Check network/firewall
   +-------------------+
             | YES
@@ -97,7 +97,7 @@ openssl s_client -connect dc-lab.company.com:636 -CApath /etc/ssl/certs/ </dev/n
 ```bash
 # Test LDAP bind with service account
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
     "(sAMAccountName=wallix-svc)"
@@ -115,7 +115,7 @@ ldapsearch -x -H ldaps://dc-lab.company.com:636 \
 | `ldap_bind: Can't contact LDAP server (-1)` | Network/TLS issue | Check connectivity/cert |
 | `ldap_bind: Strong(er) authentication required (8)` | LDAPS required | Use port 636 with TLS |
 
-### Verify in PAM4OT
+### Verify in WALLIX Bastion
 
 ```bash
 # Check LDAP configuration
@@ -136,9 +136,9 @@ wabadmin ldap test "LAB.LOCAL"
 ```bash
 # Search for specific user
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
-    -b "OU=Users,OU=PAM4OT,DC=company,DC=com" \
+    -b "OU=Users,OU=WALLIX Bastion,DC=company,DC=com" \
     "(sAMAccountName=jadmin)"
 
 # Should return user's DN and attributes
@@ -152,7 +152,7 @@ ldapsearch -x -H ldaps://dc-lab.company.com:636 \
 ```bash
 # Check if user is in correct OU
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
     "(sAMAccountName=jadmin)" dn
@@ -162,7 +162,7 @@ ldapsearch -x -H ldaps://dc-lab.company.com:636 \
 
 **Solution:**
 ```bash
-# Option 1: Expand search base in PAM4OT
+# Option 1: Expand search base in WALLIX Bastion
 wabadmin ldap modify "LAB.LOCAL" \
     --base-dn "DC=company,DC=com"
 
@@ -175,7 +175,7 @@ wabadmin ldap modify "LAB.LOCAL" \
 ```bash
 # Check for duplicate usernames
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
     "(sAMAccountName=jadmin)" dn | grep "dn:"
@@ -184,16 +184,16 @@ ldapsearch -x -H ldaps://dc-lab.company.com:636 \
 ### Verify Search Filter
 
 ```bash
-# Check PAM4OT search filter
+# Check WALLIX Bastion search filter
 wabadmin ldap show "LAB.LOCAL" | grep filter
 
 # Default filter: (&(objectClass=user)(sAMAccountName=%s))
 
 # Test filter manually
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
-    -b "OU=Users,OU=PAM4OT,DC=company,DC=com" \
+    -b "OU=Users,OU=WALLIX Bastion,DC=company,DC=com" \
     "(&(objectClass=user)(sAMAccountName=jadmin))"
 ```
 
@@ -206,17 +206,17 @@ ldapsearch -x -H ldaps://dc-lab.company.com:636 \
 ```bash
 # Get user's group membership
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
     "(sAMAccountName=jadmin)" memberOf
 
 # Returns:
-# memberOf: CN=PAM4OT-Admins,OU=Groups,OU=PAM4OT,DC=company,DC=com
-# memberOf: CN=Linux-Admins,OU=Groups,OU=PAM4OT,DC=company,DC=com
+# memberOf: CN=WALLIX Bastion-Admins,OU=Groups,OU=WALLIX Bastion,DC=company,DC=com
+# memberOf: CN=Linux-Admins,OU=Groups,OU=WALLIX Bastion,DC=company,DC=com
 ```
 
-### Check Group Mapping in PAM4OT
+### Check Group Mapping in WALLIX Bastion
 
 ```bash
 # List group mappings
@@ -224,8 +224,8 @@ wabadmin ldap groups "LAB.LOCAL"
 
 # Add missing mapping
 wabadmin ldap group-map "LAB.LOCAL" \
-    --ad-group "CN=PAM4OT-Admins,OU=Groups,OU=PAM4OT,DC=company,DC=com" \
-    --pam4ot-group "LDAP-Admins"
+    --ad-group "CN=WALLIX Bastion-Admins,OU=Groups,OU=WALLIX Bastion,DC=company,DC=com" \
+    --wallix-group "LDAP-Admins"
 ```
 
 ### Nested Group Issues
@@ -236,12 +236,12 @@ wabadmin ldap group-map "LAB.LOCAL" \
 
 # Get all groups (including nested)
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
-    "(&(objectClass=group)(member:1.2.840.113556.1.4.1941:=CN=jadmin,OU=Users,OU=PAM4OT,DC=company,DC=com))"
+    "(&(objectClass=group)(member:1.2.840.113556.1.4.1941:=CN=jadmin,OU=Users,OU=WALLIX Bastion,DC=company,DC=com))"
 
-# If nested groups not resolving in PAM4OT:
+# If nested groups not resolving in WALLIX Bastion:
 wabadmin ldap modify "LAB.LOCAL" --nested-groups true
 ```
 
@@ -268,7 +268,7 @@ ldapsearch -x -H ldaps://dc-lab.company.com:636 \
 ```bash
 # Check if account is enabled/locked
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
     "(sAMAccountName=jadmin)" userAccountControl lockoutTime
@@ -309,7 +309,7 @@ Get-ADUser jadmin -Properties Enabled,LockedOut,PasswordExpired,PasswordLastSet
 
 # Or via ldapsearch
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
     "(sAMAccountName=jadmin)" \
@@ -327,12 +327,12 @@ ldapsearch -x -H ldaps://dc-lab.company.com:636 \
 ```bash
 # Search entire directory
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
     "(sAMAccountName=jadmin)" dn
 
-# If found, update PAM4OT search base
+# If found, update WALLIX Bastion search base
 wabadmin ldap modify "LAB.LOCAL" \
     --search-base "DC=company,DC=com"
 ```
@@ -374,12 +374,12 @@ wabadmin ldap modify "LAB.LOCAL" --tls-verify false
 ```bash
 # Get exact group DN from AD
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
-    "(sAMAccountName=PAM4OT-Admins)" dn
+    "(sAMAccountName=WALLIX Bastion-Admins)" dn
 
-# Verify mapping in PAM4OT uses exact DN
+# Verify mapping in WALLIX Bastion uses exact DN
 wabadmin ldap groups "LAB.LOCAL"
 ```
 
@@ -410,7 +410,7 @@ tail -f /var/log/wabengine/ldap-sync.log
 ```bash
 # When service account password changes in AD:
 
-# 1. Update in PAM4OT
+# 1. Update in WALLIX Bastion
 wabadmin ldap modify "LAB.LOCAL" \
     --bind-password "NewPassword123!"
 
@@ -424,7 +424,7 @@ wabadmin ldap sync "LAB.LOCAL"
 ### Emergency: All LDAP Users Locked Out
 
 ```bash
-# Use local admin account to access PAM4OT
+# Use local admin account to access WALLIX Bastion
 # Login with: admin / [local password]
 
 # Temporarily allow local auth fallback
@@ -447,28 +447,28 @@ wabadmin auth local disable
 ```bash
 # Find all users in OU
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
-    -b "OU=Users,OU=PAM4OT,DC=company,DC=com" \
+    -b "OU=Users,OU=WALLIX Bastion,DC=company,DC=com" \
     "(objectClass=user)" sAMAccountName
 
 # Find all groups
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
-    -b "OU=Groups,OU=PAM4OT,DC=company,DC=com" \
+    -b "OU=Groups,OU=WALLIX Bastion,DC=company,DC=com" \
     "(objectClass=group)" sAMAccountName
 
 # Find users in specific group
 ldapsearch -x -H ldaps://dc-lab.company.com:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=company,DC=com" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=company,DC=com" \
     -W \
     -b "DC=company,DC=com" \
-    "(&(objectClass=user)(memberOf=CN=PAM4OT-Admins,OU=Groups,OU=PAM4OT,DC=company,DC=com))" \
+    "(&(objectClass=user)(memberOf=CN=WALLIX Bastion-Admins,OU=Groups,OU=WALLIX Bastion,DC=company,DC=com))" \
     sAMAccountName
 ```
 
-### PAM4OT Commands
+### WALLIX Bastion Commands
 
 ```bash
 # List LDAP domains

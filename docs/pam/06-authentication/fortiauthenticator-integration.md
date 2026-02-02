@@ -1,8 +1,8 @@
 # FortiAuthenticator MFA Integration
 
-## Configuring FortiAuthenticator as MFA Provider for WALLIX PAM4OT
+## Configuring FortiAuthenticator as MFA Provider for WALLIX Bastion
 
-This guide covers complete integration of FortiAuthenticator with PAM4OT for multi-factor authentication.
+This guide covers complete integration of FortiAuthenticator with WALLIX Bastion for multi-factor authentication.
 
 ---
 
@@ -13,14 +13,14 @@ This guide covers complete integration of FortiAuthenticator with PAM4OT for mul
 |                    FORTIAUTHENTICATOR INTEGRATION                             |
 +===============================================================================+
 
-  User Login                 PAM4OT                    FortiAuthenticator
-  ==========                 ======                    ==================
+  User Login            WALLIX Bastion            FortiAuthenticator
+  ==========            ==============            ==================
 
-  1. User enters         2. PAM4OT sends         3. FortiAuth validates
+  1. User enters         2. WALLIX sends         3. FortiAuth validates
      username/password      RADIUS request           and sends push/OTP
 
   +------------+         +----------------+         +-------------------+
-  |   User     |  --->   |    PAM4OT      |  --->   | FortiAuthenticator|
+  |   User     |  --->   |    WALLIX      |  --->   | FortiAuthenticator|
   | username   |         |                |         |                   |
   | password   |         | RADIUS Client  |         | RADIUS Server     |
   +------------+         +----------------+         | Push/SMS/Token    |
@@ -57,24 +57,24 @@ This guide covers complete integration of FortiAuthenticator with PAM4OT for mul
 |------|-------------|
 | FortiAuthenticator Version | 6.4+ recommended |
 | License | Base + FortiToken licenses for users |
-| Network Access | PAM4OT nodes must reach FortiAuth on RADIUS port |
+| Network Access | WALLIX nodes must reach FortiAuth on RADIUS port |
 | Users | Synced from AD or local |
 
 ### Network Requirements
 
 | Source | Destination | Port | Protocol | Description |
 |--------|-------------|------|----------|-------------|
-| pam4ot-node1 | FortiAuthenticator | 1812 | UDP | RADIUS Auth |
-| pam4ot-node2 | FortiAuthenticator | 1812 | UDP | RADIUS Auth |
-| pam4ot-node1 | FortiAuthenticator | 1813 | UDP | RADIUS Accounting |
-| pam4ot-node2 | FortiAuthenticator | 1813 | UDP | RADIUS Accounting |
+| wallix-node1 | FortiAuthenticator | 1812 | UDP | RADIUS Auth |
+| wallix-node2 | FortiAuthenticator | 1812 | UDP | RADIUS Auth |
+| wallix-node1 | FortiAuthenticator | 1813 | UDP | RADIUS Accounting |
+| wallix-node2 | FortiAuthenticator | 1813 | UDP | RADIUS Accounting |
 | FortiAuthenticator | AD DC | 636 | TCP | LDAPS (user sync) |
 
 ---
 
 ## Step 1: Configure FortiAuthenticator
 
-### 1.1 Create RADIUS Client for PAM4OT
+### 1.1 Create RADIUS Client for WALLIX
 
 **Via FortiAuthenticator Web UI:**
 
@@ -87,10 +87,10 @@ This guide covers complete integration of FortiAuthenticator with PAM4OT for mul
 3. Click "Create New"
 
 4. Configure RADIUS Client:
-   Name:           PAM4OT-Cluster
+   Name:           WALLIX-Cluster
    Client IP/Name: 10.10.1.11
    Secret:         [Strong shared secret - save this!]
-   Description:    WALLIX PAM4OT Primary Node
+   Description:    WALLIX WALLIX Primary Node
 
    Authentication:
    [x] Enable
@@ -101,7 +101,7 @@ This guide covers complete integration of FortiAuthenticator with PAM4OT for mul
 5. Click OK
 
 6. Repeat for second node:
-   Name:           PAM4OT-Node2
+   Name:           WALLIX-Node2
    Client IP/Name: 10.10.1.12
    Secret:         [Same shared secret]
 ```
@@ -112,10 +112,10 @@ This guide covers complete integration of FortiAuthenticator with PAM4OT for mul
 1. Navigate to: Authentication > RADIUS Service > Policies
 
 2. Create new policy:
-   Name:           PAM4OT-MFA-Policy
+   Name:           WALLIX-MFA-Policy
 
    Matching Rules:
-   - RADIUS Client: PAM4OT-Cluster, PAM4OT-Node2
+   - RADIUS Client: WALLIX-Cluster, WALLIX-Node2
 
    Authentication:
    - First Factor:  LDAP (or Local)
@@ -137,10 +137,10 @@ This guide covers complete integration of FortiAuthenticator with PAM4OT for mul
 1. Navigate to: Authentication > User Management > Remote Users
 
 2. Configure LDAP Remote User Sync:
-   Name:           AD-PAM4OT-Users
+   Name:           AD-WALLIX-Users
    Server:         dc-lab.company.com
    Port:           636 (LDAPS)
-   Base DN:        OU=Users,OU=PAM4OT,DC=company,DC=com
+   Base DN:        OU=Users,OU=WALLIX,DC=company,DC=com
    Bind DN:        CN=fortiauth-svc,OU=Service Accounts,DC=company,DC=com
    Bind Password:  [Service account password]
 
@@ -190,15 +190,15 @@ This guide covers complete integration of FortiAuthenticator with PAM4OT for mul
 
 ---
 
-## Step 2: Configure PAM4OT
+## Step 2: Configure WALLIX
 
 ### 2.1 Configure RADIUS Authentication
 
-**Via PAM4OT Web UI:**
+**Via WALLIX Web UI:**
 
 ```
-1. Login to PAM4OT Admin
-   URL: https://pam4ot.company.com/admin
+1. Login to WALLIX Admin
+   URL: https://wallix.company.com/admin
 
 2. Navigate to: Configuration > Authentication > External Auth
 
@@ -301,7 +301,7 @@ wabadmin auth radius failover \
 
 ## Step 3: Test MFA Integration
 
-### 3.1 Test from PAM4OT
+### 3.1 Test from WALLIX
 
 ```bash
 # Test RADIUS authentication
@@ -320,7 +320,7 @@ wabadmin auth test \
 ### 3.2 Test User Login
 
 ```
-1. Open browser to https://pam4ot.company.com
+1. Open browser to https://wallix.company.com
 
 2. Enter credentials:
    Username: jadmin
@@ -343,7 +343,7 @@ wabadmin auth test \
 
 ```bash
 # Connect via SSH
-ssh jadmin@pam4ot.company.com
+ssh jadmin@wallix.company.com
 
 # Enter password when prompted
 Password: [AD password]
@@ -384,11 +384,11 @@ Configure FortiAuthenticator for self-service:
 **User Enrollment Email Template:**
 
 ```
-Subject: Enable Multi-Factor Authentication for PAM4OT
+Subject: Enable Multi-Factor Authentication for WALLIX
 
 Dear [User],
 
-Multi-factor authentication (MFA) is now required for PAM4OT access.
+Multi-factor authentication (MFA) is now required for WALLIX access.
 
 ENROLLMENT STEPS:
 
@@ -402,7 +402,7 @@ ENROLLMENT STEPS:
    - FortiToken app opens and registers automatically
 
 3. Test your login:
-   - Go to https://pam4ot.company.com
+   - Go to https://wallix.company.com
    - Enter username and password
    - Approve push notification on phone
 
@@ -422,7 +422,7 @@ IT Security Team
 2. Token > Provision FortiToken Mobile
 3. Send activation email
 
-# On PAM4OT, verify user can authenticate:
+# On WALLIX, verify user can authenticate:
 wabadmin auth test --user "[username]" --provider radius
 ```
 
@@ -442,11 +442,11 @@ nc -zvu fortiauth.company.com 1812
 iptables -L -n | grep 1812
 
 # Verify shared secret matches
-# On PAM4OT:
+# On WALLIX:
 wabadmin auth radius show "FortiAuth-Primary"
 
 # On FortiAuthenticator:
-# Authentication > RADIUS Service > Clients > PAM4OT-Cluster
+# Authentication > RADIUS Service > Clients > WALLIX-Cluster
 ```
 
 #### "MFA timeout - no response"
@@ -468,9 +468,9 @@ wabadmin auth mfa set-timeout 90
 
 ```bash
 # Check time synchronization
-# FortiAuthenticator and PAM4OT must have synchronized time
+# FortiAuthenticator and WALLIX must have synchronized time
 
-# On PAM4OT:
+# On WALLIX:
 chronyc tracking
 
 # On FortiAuthenticator:
@@ -495,7 +495,7 @@ chronyc tracking
 ### Debug Mode
 
 ```bash
-# Enable RADIUS debug logging on PAM4OT
+# Enable RADIUS debug logging on WALLIX
 wabadmin log level radius debug
 
 # View real-time logs
@@ -560,7 +560,7 @@ FortiAuth Primary:    fortiauth.company.com     (10.10.1.70)
 FortiAuth Secondary:  fortiauth-dr.company.com  (10.10.1.71)
 ```
 
-### PAM4OT RADIUS Failover
+### WALLIX RADIUS Failover
 
 ```bash
 # Configure both FortiAuth servers
@@ -603,7 +603,7 @@ wabadmin auth radius failover enable \
 ```
 1. Use strong shared secrets (32+ characters)
 2. Enable RADIUS accounting for audit trail
-3. Limit RADIUS clients to PAM4OT IPs only
+3. Limit RADIUS clients to WALLIX IPs only
 4. Use separate VLAN for RADIUS traffic
 5. Monitor for RADIUS authentication failures
 ```
@@ -637,7 +637,7 @@ wabadmin report schedule \
 | Self-Service Portal | https://fortiauth.company.com/self-service |
 | RADIUS Port | 1812/UDP |
 
-### PAM4OT MFA Commands
+### WALLIX MFA Commands
 
 ```bash
 # Check MFA status

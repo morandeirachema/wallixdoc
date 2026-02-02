@@ -2,7 +2,7 @@
 
 ## Multi-Factor Authentication with FortiAuthenticator
 
-This guide covers deploying and configuring FortiAuthenticator to provide MFA (RADIUS + TOTP/FortiToken Mobile) for PAM4OT users.
+This guide covers deploying and configuring FortiAuthenticator to provide MFA (RADIUS + TOTP/FortiToken Mobile) for WALLIX Bastion users.
 
 ---
 
@@ -13,16 +13,16 @@ This guide covers deploying and configuring FortiAuthenticator to provide MFA (R
 |                    FORTIAUTHENTICATOR MFA ARCHITECTURE                        |
 +===============================================================================+
 |                                                                               |
-|  PAM4OT Nodes                FortiAuthenticator           Active Directory   |
+|  WALLIX Bastion Nodes                FortiAuthenticator           Active Directory   |
 |  =============                ====================         =================  |
 |                                                                               |
 |  +-----------+                +-----------------+          +-----------+      |
-|  | PAM4OT-1  |----RADIUS----->| FortiAuth       |---LDAP-->|    AD     |      |
+|  | WALLIX Bastion-1  |----RADIUS----->| FortiAuth       |---LDAP-->|    AD     |      |
 |  |10.10.1.11 |    (1812)      | 10.10.1.50      |  (389)   |10.10.0.10 |      |
 |  +-----------+                |                 |          +-----------+      |
 |                               | MFA Validation: |                             |
 |  +-----------+                | - LDAP Auth     |                             |
-|  | PAM4OT-2  |----RADIUS----->| - TOTP/Token    |                             |
+|  | WALLIX Bastion-2  |----RADIUS----->| - TOTP/Token    |                             |
 |  |10.10.1.12 |                | - Push Notify   |                             |
 |  +-----------+                +-----------------+                             |
 |                                       |                                       |
@@ -42,7 +42,7 @@ This guide covers deploying and configuring FortiAuthenticator to provide MFA (R
 
 - FortiAuthenticator VM image (download from Fortinet Support Portal)
 - Active Directory configured and accessible
-- Network connectivity from PAM4OT nodes to FortiAuth (port 1812/UDP)
+- Network connectivity from WALLIX Bastion nodes to FortiAuth (port 1812/UDP)
 - Users created in Active Directory
 
 ---
@@ -82,13 +82,13 @@ DNS: 10.10.0.10
 
 DEPLOYMENT WIZARD:
 - Name: fortiauth
-- Folder: PAM4OT
+- Folder: WALLIX Bastion
 - Compute Resource: Select cluster/host
 - Review Details: Verify publisher (Fortinet)
 - Storage: Select datastore
 - Network Mapping:
   - Source Network: VM Network
-  - Destination Network: PAM4OT-OT-DMZ (VLAN 110)
+  - Destination Network: WALLIX Bastion-OT-DMZ (VLAN 110)
 - Customize template:
   - Admin Password: FortiAuth2026!
   - IP Address: 10.10.1.50
@@ -110,13 +110,13 @@ export GOVC_PASSWORD=YourPassword
 export GOVC_INSECURE=true
 export GOVC_DATACENTER=Datacenter1
 export GOVC_DATASTORE=Datastore1
-export GOVC_NETWORK="PAM4OT-OT-DMZ"
+export GOVC_NETWORK="WALLIX Bastion-OT-DMZ"
 
 # Import OVA
 govc import.ova \
   -name=fortiauth \
   -ds=Datastore1 \
-  -net="PAM4OT-OT-DMZ" \
+  -net="WALLIX Bastion-OT-DMZ" \
   -pool=/Datacenter1/host/Cluster1/Resources \
   FortiAuthenticator_VM64.ova
 
@@ -143,7 +143,7 @@ Connect-VIServer -Server vcenter.company.com
 $ovfConfig = Get-OvfConfiguration -Ovf "C:\Downloads\FortiAuthenticator_VM64.ova"
 
 # Configure network properties
-$ovfConfig.NetworkMapping.VM_Network.Value = "PAM4OT-OT-DMZ"
+$ovfConfig.NetworkMapping.VM_Network.Value = "WALLIX Bastion-OT-DMZ"
 $ovfConfig.Common.ip0.Value = "10.10.1.50"
 $ovfConfig.Common.netmask0.Value = "255.255.255.0"
 $ovfConfig.Common.gateway.Value = "10.10.1.1"
@@ -267,14 +267,14 @@ Click **Create New** and configure:
 |  AUTHENTICATION                                                               |
 |  --------------                                                               |
 |  Bind Type:             Regular                                               |
-|  Username:              CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=lab,   |
+|  Username:              CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=lab,   |
 |                         DC=local                                              |
 |  Password:              WallixSvc123!                                         |
 |                                                                               |
 |  SEARCH OPTIONS                                                               |
 |  --------------                                                               |
-|  User Search Base:      OU=Users,OU=PAM4OT,DC=lab,DC=local                    |
-|  Group Search Base:     OU=Groups,OU=PAM4OT,DC=lab,DC=local                   |
+|  User Search Base:      OU=Users,OU=WALLIX Bastion,DC=lab,DC=local                    |
+|  Group Search Base:     OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local                   |
 |                                                                               |
 |  [x] Enable LDAP Server                                                       |
 |                                                                               |
@@ -302,10 +302,10 @@ Click **Create New**:
 
 ```
 +===============================================================================+
-|  RADIUS CLIENT CONFIGURATION - PAM4OT NODE 1                                  |
+|  RADIUS CLIENT CONFIGURATION - WALLIX Bastion NODE 1                                  |
 +===============================================================================+
 |                                                                               |
-|  Name:                  PAM4OT-Node1                                          |
+|  Name:                  WALLIX Bastion-Node1                                          |
 |  IP/Netmask:            10.10.1.11/32                                         |
 |  Secret:                WallixRadius2026!                                     |
 |  Authentication Type:   PAP                                                   |
@@ -317,10 +317,10 @@ Click **Create New** again for Node 2:
 
 ```
 +===============================================================================+
-|  RADIUS CLIENT CONFIGURATION - PAM4OT NODE 2                                  |
+|  RADIUS CLIENT CONFIGURATION - WALLIX Bastion NODE 2                                  |
 +===============================================================================+
 |                                                                               |
-|  Name:                  PAM4OT-Node2                                          |
+|  Name:                  WALLIX Bastion-Node2                                          |
 |  IP/Netmask:            10.10.1.12/32                                         |
 |  Secret:                WallixRadius2026!                                     |
 |  Authentication Type:   PAP                                                   |
@@ -339,7 +339,7 @@ Click **Create New**:
 |  RADIUS POLICY CONFIGURATION                                                  |
 +===============================================================================+
 |                                                                               |
-|  Name:                  PAM4OT-MFA-Policy                                     |
+|  Name:                  WALLIX Bastion-MFA-Policy                                     |
 |  Authentication Method: Local user database or remote authentication          |
 |                                                                               |
 |  LDAP SETTINGS                                                                |
@@ -376,7 +376,7 @@ Click **Import > LDAP**:
 |                                                                               |
 |  LDAP Server:           LAB-AD                                                |
 |  Search Filter:         (objectClass=user)                                    |
-|  Base DN:               OU=Users,OU=PAM4OT,DC=lab,DC=local                    |
+|  Base DN:               OU=Users,OU=WALLIX Bastion,DC=lab,DC=local                    |
 |                                                                               |
 |  USERS TO IMPORT:                                                             |
 |  ----------------                                                             |
@@ -461,7 +461,7 @@ Click **Test Authentication**:
 |                                                                               |
 |  Username:              jadmin                                                |
 |  Password:              JohnAdmin123!                                         |
-|  RADIUS Client:         PAM4OT-Node1                                          |
+|  RADIUS Client:         WALLIX Bastion-Node1                                          |
 |                                                                               |
 |  [Test Authentication]                                                        |
 |                                                                               |
@@ -469,15 +469,15 @@ Click **Test Authentication**:
 |  -------                                                                      |
 |  Status: Success (Access-Accept)                                              |
 |  Authentication Method: LDAP + FortiToken Mobile                              |
-|  User Groups: PAM4OT-Admins, Linux-Admins, Windows-Admins                     |
+|  User Groups: WALLIX Bastion-Admins, Linux-Admins, Windows-Admins                     |
 |                                                                               |
 +===============================================================================+
 ```
 
-### Test from PAM4OT Node
+### Test from WALLIX Bastion Node
 
 ```bash
-# SSH to PAM4OT node
+# SSH to WALLIX Bastion node
 ssh root@10.10.1.11
 
 # Install RADIUS test client
@@ -504,14 +504,14 @@ radtest jadmin "JohnAdmin123!123456" 10.10.1.50 0 WallixRadius2026!
 |  MFA AUTHENTICATION FLOW                                                      |
 +===============================================================================+
 
-1. User accesses PAM4OT Web UI (https://10.10.1.100)
+1. User accesses WALLIX Bastion Web UI (https://10.10.1.100)
 
 2. Login page prompts:
    Username: jadmin
    Password: JohnAdmin123!123456
             └─ AD Password ─┘└─ TOTP ─┘
 
-3. PAM4OT sends RADIUS Access-Request to FortiAuth (10.10.1.50:1812)
+3. WALLIX Bastion sends RADIUS Access-Request to FortiAuth (10.10.1.50:1812)
    - Username: jadmin
    - Password: JohnAdmin123!123456
 
@@ -521,10 +521,10 @@ radtest jadmin "JohnAdmin123!123456" 10.10.1.50 0 WallixRadius2026!
    c. Validates TOTP code against FortiToken Mobile seed
 
 5. FortiAuth returns RADIUS Access-Accept with user attributes:
-   - User Groups: PAM4OT-Admins, Linux-Admins
+   - User Groups: WALLIX Bastion-Admins, Linux-Admins
    - Session-Timeout: 28800 (8 hours)
 
-6. PAM4OT grants access based on RADIUS response
+6. WALLIX Bastion grants access based on RADIUS response
 
 +===============================================================================+
 ```
@@ -538,11 +538,11 @@ radtest jadmin "JohnAdmin123!123456" 10.10.1.50 0 WallixRadius2026!
 **Send to users:**
 
 ```
-Subject: Set up Multi-Factor Authentication for PAM4OT
+Subject: Set up Multi-Factor Authentication for WALLIX Bastion
 
 Dear User,
 
-To access PAM4OT, you must configure two-factor authentication using FortiToken Mobile.
+To access WALLIX Bastion, you must configure two-factor authentication using FortiToken Mobile.
 
 STEP 1: Install FortiToken Mobile App
   - iOS: https://apps.apple.com/app/fortitoken-mobile/id500007723
@@ -554,8 +554,8 @@ STEP 2: Scan QR Code
   3. Tap "Scan QR Code"
   4. Scan the QR code attached to this email
 
-STEP 3: Login to PAM4OT
-  1. Go to https://pam4ot.lab.local
+STEP 3: Login to WALLIX Bastion
+  1. Go to https://wallix.lab.local
   2. Username: <your AD username>
   3. Password: <your AD password><6-digit code from app>
      Example: If your AD password is "MyPass123!" and FortiToken shows "456789"
@@ -576,10 +576,10 @@ Need help? Contact IT Support.
 +===============================================================================+
 | Time       | User      | Client        | Result        | Reason              |
 +===============================================================================+
-| 10:23:45   | jadmin    | PAM4OT-Node1  | Success       | LDAP + Token OK     |
-| 10:22:13   | soperator | PAM4OT-Node2  | Success       | LDAP + Token OK     |
-| 10:20:05   | totengineer| PAM4OT-Node1 | Failed        | Invalid token       |
-| 10:18:32   | lnetwork  | PAM4OT-Node2  | Success       | LDAP + Token OK     |
+| 10:23:45   | jadmin    | WALLIX Bastion-Node1  | Success       | LDAP + Token OK     |
+| 10:22:13   | soperator | WALLIX Bastion-Node2  | Success       | LDAP + Token OK     |
+| 10:20:05   | totengineer| WALLIX Bastion-Node1 | Failed        | Invalid token       |
+| 10:18:32   | lnetwork  | WALLIX Bastion-Node2  | Success       | LDAP + Token OK     |
 +===============================================================================+
 ```
 
@@ -756,7 +756,7 @@ Encryption Password: FortiAuthBackup2026!
 |-------|--------|
 | FortiAuth accessible via HTTPS | [ ] |
 | LDAP connection to AD successful | [ ] |
-| RADIUS clients configured for PAM4OT nodes | [ ] |
+| RADIUS clients configured for WALLIX Bastion nodes | [ ] |
 | Users imported from AD | [ ] |
 | FortiToken Mobile tokens activated | [ ] |
 | Test RADIUS authentication successful | [ ] |

@@ -2,7 +2,7 @@
 
 ## Validating High Availability and Disaster Recovery
 
-This document provides comprehensive procedures for testing PAM4OT cluster failover capabilities.
+This document provides comprehensive procedures for testing WALLIX Bastion cluster failover capabilities.
 
 ---
 
@@ -22,7 +22,7 @@ This document provides comprehensive procedures for testing PAM4OT cluster failo
 
   3. NETWORK FAILOVER                   4. APPLICATION FAILOVER
   ===================                   =======================
-  - Load balancer failover              - PAM4OT service restart
+  - Load balancer failover              - WALLIX Bastion service restart
   - VIP failover (Pacemaker)            - MariaDB failover
   - DNS failover                        - Session continuity
   - Multi-site failover                 - Authentication continuity
@@ -57,7 +57,7 @@ PRE-TEST CHECKLIST
 Verify VIP moves cleanly between nodes during planned maintenance.
 
 ### Prerequisites
-- Both PAM4OT nodes healthy
+- Both WALLIX Bastion nodes healthy
 - Pacemaker cluster running
 - No active sessions (or users warned)
 
@@ -68,10 +68,10 @@ Verify VIP moves cleanly between nodes during planned maintenance.
 pcs status
 
 # Expected output:
-# Cluster name: pam4ot-cluster
-# Online: [ pam4ot-node1 pam4ot-node2 ]
+# Cluster name: wallix-cluster
+# Online: [ wallix-node1 wallix-node2 ]
 # Resources:
-#   * vip-pam4ot (ocf::heartbeat:IPaddr2): Started pam4ot-node1
+#   * vip-wallix (ocf::heartbeat:IPaddr2): Started wallix-node1
 
 # Step 2: Identify which node has VIP
 ip addr show | grep 10.10.1.100
@@ -91,7 +91,7 @@ while true; do
 done
 
 # Step 4: Initiate failover - put node1 in standby
-pcs node standby pam4ot-node1
+pcs node standby wallix-node1
 
 # Step 5: Observe failover
 # - VIP should move to node2
@@ -100,7 +100,7 @@ pcs node standby pam4ot-node1
 
 # Step 6: Verify new state
 pcs status
-# vip-pam4ot should show: Started pam4ot-node2
+# vip-wallix should show: Started wallix-node2
 
 # Step 7: Test functionality
 # - Login to web UI
@@ -108,7 +108,7 @@ pcs status
 # - Start a test session
 
 # Step 8: Restore node1
-pcs node unstandby pam4ot-node1
+pcs node unstandby wallix-node1
 
 # Step 9: Verify both nodes online
 pcs status
@@ -169,20 +169,20 @@ Verify automatic failover when a node becomes unavailable.
 
 ```bash
 # Step 1: Identify current VIP holder
-pcs status | grep vip-pam4ot
+pcs status | grep vip-wallix
 
 # Step 2: Start monitoring (same as Test 1)
 
 # Step 3: Simulate node failure (choose one method)
 
 # Method A: Stop Pacemaker service
-ssh pam4ot-node1 "systemctl stop pacemaker"
+ssh wallix-node1 "systemctl stop pacemaker"
 
 # Method B: Network disconnect (if VM)
 # Disconnect network adapter from vSphere/Hyper-V
 
 # Method C: Kernel panic (aggressive)
-ssh pam4ot-node1 "echo c > /proc/sysrq-trigger"
+ssh wallix-node1 "echo c > /proc/sysrq-trigger"
 
 # Step 4: Observe automatic failover
 # Pacemaker should detect failure within 15-30 seconds
@@ -241,7 +241,7 @@ sudo mysql wabdb -e "SELECT * FROM failover_test;"
 
 # Step 3: Simulate primary failure
 # Stop MariaDB on primary
-ssh pam4ot-node1 "systemctl stop mariadb"
+ssh wallix-node1 "systemctl stop mariadb"
 
 # Step 4: Promote replica (if not automatic)
 # On node2:
@@ -257,14 +257,14 @@ sudo mysql wabdb -e "SELECT * FROM failover_test;"
 rm -rf /var/lib/mysql/*
 
 # 2. Backup from new primary
-mariabackup --backup --target-dir=/tmp/backup --host=pam4ot-node2 --user=replicator --password=xxx
+mariabackup --backup --target-dir=/tmp/backup --host=wallix-node2 --user=replicator --password=xxx
 mariabackup --prepare --target-dir=/tmp/backup
 mariabackup --copy-back --target-dir=/tmp/backup
 chown -R mysql:mysql /var/lib/mysql
 
 # 3. Start MariaDB and configure replication
 systemctl start mariadb
-sudo mysql -e "CHANGE MASTER TO MASTER_HOST='pam4ot-node2', MASTER_USER='replicator', MASTER_PASSWORD='xxx', MASTER_AUTO_POSITION=1;"
+sudo mysql -e "CHANGE MASTER TO MASTER_HOST='wallix-node2', MASTER_USER='replicator', MASTER_PASSWORD='xxx', MASTER_AUTO_POSITION=1;"
 sudo mysql -e "START SLAVE;"
 
 # Step 7: Verify replication restored
@@ -286,23 +286,23 @@ Verify load balancer handles backend failures correctly.
 
 ```bash
 # Step 1: Check current backend status
-echo "show stat" | socat stdio /var/run/haproxy/admin.sock | grep pam4ot
+echo "show stat" | socat stdio /var/run/haproxy/admin.sock | grep wallix
 
 # Step 2: Take one backend offline
-echo "disable server pam4ot_nodes/pam4ot-node1" | socat stdio /var/run/haproxy/admin.sock
+echo "disable server wallix_nodes/wallix-node1" | socat stdio /var/run/haproxy/admin.sock
 
 # Step 3: Verify traffic goes to remaining node
 for i in {1..10}; do
-  curl -sk https://pam4ot.company.com/ -o /dev/null -w "%{http_code}\n"
+  curl -sk https://wallix.company.com/ -o /dev/null -w "%{http_code}\n"
 done
 # All should return 200
 
 # Step 4: Re-enable backend
-echo "enable server pam4ot_nodes/pam4ot-node1" | socat stdio /var/run/haproxy/admin.sock
+echo "enable server wallix_nodes/wallix-node1" | socat stdio /var/run/haproxy/admin.sock
 
 # Step 5: Verify both backends serving traffic
 for i in {1..10}; do
-  curl -sk https://pam4ot.company.com/ -o /dev/null -w "%{http_code}\n"
+  curl -sk https://wallix.company.com/ -o /dev/null -w "%{http_code}\n"
 done
 ```
 
@@ -322,14 +322,14 @@ Verify failover to secondary site works correctly.
 
 ```bash
 # Step 1: Verify secondary site health
-ssh admin@pam4ot-dr.company.com "wabadmin status"
+ssh admin@wallix-dr.company.com "wabadmin status"
 
 # Step 2: Check replication lag
 # On DR site:
 wabadmin sync-status
 
 # Step 3: Simulate primary site failure
-# - Stop all PAM4OT services at primary
+# - Stop all WALLIX Bastion services at primary
 # - Or: Disconnect primary site network
 
 # Step 4: Activate DR site
@@ -337,10 +337,10 @@ wabadmin sync-status
 wabadmin dr activate --force
 
 # Step 5: Update DNS (if applicable)
-# Change pam4ot.company.com to point to DR site IP
+# Change wallix.company.com to point to DR site IP
 
 # Step 6: Verify DR site is operational
-curl -sk https://pam4ot-dr.company.com/
+curl -sk https://wallix-dr.company.com/
 wabadmin status
 
 # Step 7: Test user authentication
@@ -361,8 +361,8 @@ Verify active sessions survive failover.
 ### Procedure
 
 ```bash
-# Step 1: Start a session through PAM4OT
-ssh jadmin@pam4ot.company.com
+# Step 1: Start a session through WALLIX Bastion
+ssh jadmin@wallix.company.com
 # Select target: linux-test / root
 
 # Step 2: In the session, start a long-running command
@@ -419,10 +419,10 @@ Q4 - October
 
 ```bash
 # Force VIP back to preferred node
-pcs resource move vip-pam4ot pam4ot-node1
+pcs resource move vip-wallix wallix-node1
 
 # Clear location constraint after move
-pcs resource clear vip-pam4ot
+pcs resource clear vip-wallix
 ```
 
 ### MariaDB Split-Brain
@@ -444,7 +444,7 @@ systemctl stop mariadb
 ```bash
 # Reset cluster completely
 pcs cluster destroy --all
-pcs cluster setup pam4ot-cluster pam4ot-node1 pam4ot-node2
+pcs cluster setup wallix-cluster wallix-node1 wallix-node2
 pcs cluster start --all
 pcs cluster enable --all
 ```

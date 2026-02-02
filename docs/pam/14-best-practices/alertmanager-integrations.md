@@ -40,10 +40,10 @@ This guide covers integrating Alertmanager with common notification platforms.
 
 1. Go to https://api.slack.com/apps
 2. Click "Create New App" > "From scratch"
-3. Name: "PAM4OT Alerts", Workspace: [Your workspace]
+3. Name: "WALLIX Bastion Alerts", Workspace: [Your workspace]
 4. Go to "Incoming Webhooks" > Enable
 5. Click "Add New Webhook to Workspace"
-6. Select channel: #pam4ot-alerts
+6. Select channel: #wallix-alerts
 7. Copy webhook URL
 
 ### Step 2: Configure Alertmanager
@@ -74,7 +74,7 @@ route:
 receivers:
   - name: 'slack-default'
     slack_configs:
-      - channel: '#pam4ot-alerts'
+      - channel: '#wallix-alerts'
         send_resolved: true
         title: '{{ .Status | toUpper }}: {{ .CommonLabels.alertname }}'
         text: |
@@ -85,7 +85,7 @@ receivers:
 
   - name: 'slack-critical'
     slack_configs:
-      - channel: '#pam4ot-critical'
+      - channel: '#wallix-critical'
         send_resolved: true
         color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
         title: ':rotating_light: CRITICAL: {{ .CommonLabels.alertname }}'
@@ -98,14 +98,14 @@ receivers:
         actions:
           - type: button
             text: 'View in Grafana'
-            url: 'https://grafana.company.com/d/pam4ot'
+            url: 'https://grafana.company.com/d/wallix'
           - type: button
             text: 'Silence Alert'
             url: 'https://alertmanager.company.com/#/silences/new'
 
   - name: 'slack-high'
     slack_configs:
-      - channel: '#pam4ot-alerts'
+      - channel: '#wallix-alerts'
         send_resolved: true
         color: '{{ if eq .Status "firing" }}warning{{ else }}good{{ end }}'
         title: ':warning: HIGH: {{ .CommonLabels.alertname }}'
@@ -127,7 +127,7 @@ curl -X POST http://localhost:9093/api/v1/alerts \
     "labels": {
       "alertname": "TestAlert",
       "severity": "critical",
-      "instance": "pam4ot-node1:9100"
+      "instance": "wallix-node1:9100"
     },
     "annotations": {
       "description": "This is a test alert",
@@ -135,7 +135,7 @@ curl -X POST http://localhost:9093/api/v1/alerts \
     }
   }]'
 
-# Should see message in #pam4ot-critical channel
+# Should see message in #wallix-critical channel
 ```
 
 ---
@@ -148,7 +148,7 @@ curl -X POST http://localhost:9093/api/v1/alerts \
 2. Click "..." > "Connectors"
 3. Search for "Incoming Webhook"
 4. Click "Configure"
-5. Name: "PAM4OT Alerts"
+5. Name: "WALLIX Bastion Alerts"
 6. Copy webhook URL
 
 ### Step 2: Configure Alertmanager with Webhook
@@ -230,7 +230,7 @@ cat > /etc/prometheus-msteams/card.tmpl << 'EOF'
       "@type": "OpenUri",
       "name": "View in Grafana",
       "targets": [
-        { "os": "default", "uri": "https://grafana.company.com/d/pam4ot" }
+        { "os": "default", "uri": "https://grafana.company.com/d/wallix" }
       ]
     }
   ]
@@ -273,7 +273,7 @@ systemctl start prometheus-msteams
 
 1. Login to PagerDuty
 2. Go to Services > New Service
-3. Name: "PAM4OT Production"
+3. Name: "WALLIX Bastion Production"
 4. Integration: "Events API v2"
 5. Copy Integration Key (routing key)
 
@@ -445,7 +445,7 @@ inhibit_rules:
       severity: high
     equal: ['alertname', 'instance']
   - source_match:
-      alertname: PAM4OTNodeDown
+      alertname: WALLIX BastionNodeDown
     target_match:
       alertname: HighCPU
     equal: ['instance']
@@ -453,18 +453,18 @@ inhibit_rules:
 receivers:
   - name: 'slack-default'
     slack_configs:
-      - channel: '#pam4ot-alerts'
+      - channel: '#wallix-alerts'
         send_resolved: true
 
   - name: 'slack-critical'
     slack_configs:
-      - channel: '#pam4ot-critical'
+      - channel: '#wallix-critical'
         send_resolved: true
         color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
 
   - name: 'slack-high'
     slack_configs:
-      - channel: '#pam4ot-alerts'
+      - channel: '#wallix-alerts'
         send_resolved: true
         color: 'warning'
 
@@ -528,7 +528,7 @@ curl -X POST http://localhost:9093/api/v1/alerts \
     "labels": {
       "alertname": "TestCritical",
       "severity": "critical",
-      "instance": "pam4ot-node1:9100"
+      "instance": "wallix-node1:9100"
     },
     "annotations": {
       "description": "Test critical alert",
@@ -545,7 +545,7 @@ curl -X POST http://localhost:9093/api/v1/alerts \
     "labels": {
       "alertname": "TestHigh",
       "severity": "high",
-      "instance": "pam4ot-node1:9100"
+      "instance": "wallix-node1:9100"
     },
     "annotations": {
       "description": "Test high alert"
@@ -562,7 +562,7 @@ curl -X POST http://localhost:9093/api/v1/alerts \
       "alertname": "TestSecurity",
       "severity": "high",
       "category": "security",
-      "instance": "pam4ot-node1:9100"
+      "instance": "wallix-node1:9100"
     },
     "annotations": {
       "description": "Test security alert"

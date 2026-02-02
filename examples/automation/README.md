@@ -1,8 +1,8 @@
 # DevOps Automation Examples
 
-## Infrastructure as Code for WALLIX PAM4OT
+## Infrastructure as Code for WALLIX WALLIX Bastion
 
-This directory contains automation examples for deploying and managing WALLIX PAM4OT using modern DevOps practices.
+This directory contains automation examples for deploying and managing WALLIX WALLIX Bastion using modern DevOps practices.
 
 ---
 
@@ -45,7 +45,7 @@ all:
 # playbooks/onboard-devices.yml
 
 ---
-- name: Onboard devices to WALLIX PAM4OT
+- name: Onboard devices to WALLIX WALLIX Bastion
   hosts: localhost
   gather_facts: false
 
@@ -255,14 +255,14 @@ all:
 
 terraform {
   required_providers {
-    wallix-pam4ot = {
-      source  = "wallix/wallix-pam4ot"
+    wallix-wallix = {
+      source  = "wallix/wallix-wallix"
       version = "~> 0.14.0"
     }
   }
 }
 
-provider "wallix-pam4ot" {
+provider "wallix-wallix" {
   ip        = var.wallix_host
   port      = 443
   user      = var.wallix_user
@@ -277,7 +277,7 @@ provider "wallix-pam4ot" {
 # terraform/variables.tf
 
 variable "wallix_host" {
-  description = "WALLIX PAM4OT hostname or IP"
+  description = "WALLIX WALLIX Bastion hostname or IP"
   type        = string
 }
 
@@ -305,22 +305,22 @@ variable "environment" {
 # terraform/main.tf
 
 # Create domain
-resource "wallix-pam4ot_domain" "linux_production" {
+resource "wallix-wallix_domain" "linux_production" {
   domain_name = "Linux-Production"
   description = "Production Linux servers"
 }
 
 # Create device
-resource "wallix-pam4ot_device" "web_server" {
+resource "wallix-wallix_device" "web_server" {
   device_name = "srv-web-01"
   host        = "10.1.10.10"
-  domain      = wallix-pam4ot_domain.linux_production.domain_name
+  domain      = wallix-wallix_domain.linux_production.domain_name
   description = "Production web server"
 }
 
 # Add SSH service
-resource "wallix-pam4ot_device_service" "web_server_ssh" {
-  device_id     = wallix-pam4ot_device.web_server.id
+resource "wallix-wallix_device_service" "web_server_ssh" {
+  device_id     = wallix-wallix_device.web_server.id
   service_name  = "ssh"
   protocol      = "SSH"
   port          = 22
@@ -328,8 +328,8 @@ resource "wallix-pam4ot_device_service" "web_server_ssh" {
 }
 
 # Add account
-resource "wallix-pam4ot_device_local_account" "web_server_root" {
-  device_id          = wallix-pam4ot_device.web_server.id
+resource "wallix-wallix_device_local_account" "web_server_root" {
+  device_id          = wallix-wallix_device.web_server.id
   account_name       = "root"
   account_login      = "root"
   auto_change_password = true
@@ -347,29 +347,29 @@ resource "wallix-pam4ot_device_local_account" "web_server_root" {
 # terraform/authorizations.tf
 
 # User group
-resource "wallix-pam4ot_usergroup" "linux_admins" {
+resource "wallix-wallix_usergroup" "linux_admins" {
   group_name  = "Linux-Admins"
   description = "Linux system administrators"
 }
 
 # Target group
-resource "wallix-pam4ot_targetgroup" "linux_root" {
+resource "wallix-wallix_targetgroup" "linux_root" {
   group_name  = "Linux-Prod-Root"
   description = "Root accounts on production Linux"
 }
 
 # Add device to target group
-resource "wallix-pam4ot_targetgroup_member" "web_server_root" {
-  targetgroup_id = wallix-pam4ot_targetgroup.linux_root.id
+resource "wallix-wallix_targetgroup_member" "web_server_root" {
+  targetgroup_id = wallix-wallix_targetgroup.linux_root.id
   member_type    = "account"
-  member_id      = wallix-pam4ot_device_local_account.web_server_root.id
+  member_id      = wallix-wallix_device_local_account.web_server_root.id
 }
 
 # Authorization
-resource "wallix-pam4ot_authorization" "linux_admins_root" {
+resource "wallix-wallix_authorization" "linux_admins_root" {
   authorization_name = "linux-admins-root-access"
-  user_group         = wallix-pam4ot_usergroup.linux_admins.group_name
-  target_group       = wallix-pam4ot_targetgroup.linux_root.group_name
+  user_group         = wallix-wallix_usergroup.linux_admins.group_name
+  target_group       = wallix-wallix_targetgroup.linux_root.group_name
 
   subprotocols = [
     "SSH_SHELL_SESSION",
@@ -392,17 +392,17 @@ resource "wallix-pam4ot_authorization" "linux_admins_root" {
 variable "environment" {}
 variable "devices" {}
 
-resource "wallix-pam4ot_domain" "env_domain" {
+resource "wallix-wallix_domain" "env_domain" {
   domain_name = "${var.environment}-servers"
   description = "${var.environment} environment servers"
 }
 
-resource "wallix-pam4ot_device" "servers" {
+resource "wallix-wallix_device" "servers" {
   for_each = { for d in var.devices : d.name => d }
 
   device_name = each.value.name
   host        = each.value.host
-  domain      = wallix-pam4ot_domain.env_domain.domain_name
+  domain      = wallix-wallix_domain.env_domain.domain_name
   description = each.value.description
 }
 

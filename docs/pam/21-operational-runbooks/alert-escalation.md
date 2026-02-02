@@ -35,7 +35,7 @@ This document defines response procedures for each alert type and escalation pat
 
 | Alert | Severity | Response Time | Primary | Escalation |
 |-------|----------|---------------|---------|------------|
-| PAM4OTNodeDown | Critical | 15 min | On-call SRE | OT Manager |
+| WALLIX BastionNodeDown | Critical | 15 min | On-call SRE | OT Manager |
 | MariaDBDown | Critical | 15 min | DBA On-call | OT Manager |
 | VIPNotResponding | Critical | 15 min | Network Team | SRE Lead |
 | HighCPU (>90%) | High | 1 hour | On-call SRE | SRE Lead |
@@ -48,24 +48,24 @@ This document defines response procedures for each alert type and escalation pat
 
 ---
 
-## Alert: PAM4OTNodeDown
+## Alert: WALLIX BastionNodeDown
 
 ### Definition
-One or more PAM4OT nodes are not responding to health checks.
+One or more WALLIX Bastion nodes are not responding to health checks.
 
 ### Immediate Actions (0-5 minutes)
 
 ```bash
 # Step 1: Verify alert is real
-ping pam4ot-node1.company.com
-curl -sk https://pam4ot-node1.company.com/
+ping wallix-node1.company.com
+curl -sk https://wallix-node1.company.com/
 
 # Step 2: Check if VIP is still responding
-curl -sk https://pam4ot.company.com/
+curl -sk https://wallix.company.com/
 # If VIP works, HA is functioning
 
 # Step 3: Check cluster status
-ssh admin@pam4ot-node2 "pcs status"
+ssh admin@wallix-node2 "pcs status"
 ```
 
 ### Investigation (5-15 minutes)
@@ -77,7 +77,7 @@ ssh admin@pam4ot-node2 "pcs status"
 # - Check network switch ports
 
 # If node reachable but service down:
-ssh admin@pam4ot-node1
+ssh admin@wallix-node1
 
 # Check service status
 systemctl status wallix-bastion
@@ -163,7 +163,7 @@ tail -100 /var/log/mysql/error.log
 # Rebuild from primary
 systemctl stop mariadb
 rm -rf /var/lib/mysql/*
-mariabackup --backup --target-dir=/tmp/backup --host=pam4ot-node1 --user=replicator --password=xxx
+mariabackup --backup --target-dir=/tmp/backup --host=wallix-node1 --user=replicator --password=xxx
 mariabackup --prepare --target-dir=/tmp/backup
 mariabackup --copy-back --target-dir=/tmp/backup
 chown -R mysql:mysql /var/lib/mysql
@@ -291,7 +291,7 @@ MariaDB replication lag exceeds threshold (default: 60 seconds).
 sudo mysql -e "SHOW SLAVE STATUS\G" | grep -E "(Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Master_Log_File|Read_Master_Log_Pos)"
 
 # Check network latency
-ping pam4ot-node2 -c 10
+ping wallix-node2 -c 10
 ```
 
 ### Resolution Actions
@@ -299,7 +299,7 @@ ping pam4ot-node2 -c 10
 **Network congestion:**
 ```bash
 # Check network throughput
-iperf3 -c pam4ot-node2 -t 10
+iperf3 -c wallix-node2 -t 10
 
 # If bandwidth issue, work with network team
 ```
@@ -307,8 +307,8 @@ iperf3 -c pam4ot-node2 -t 10
 **Replica under load:**
 ```bash
 # Check replica CPU/IO
-ssh pam4ot-node2 "top -bn1 | head -10"
-ssh pam4ot-node2 "iostat -x 1 5"
+ssh wallix-node2 "top -bn1 | head -10"
+ssh wallix-node2 "iostat -x 1 5"
 
 # If replica overloaded, reduce queries
 ```
@@ -318,7 +318,7 @@ ssh pam4ot-node2 "iostat -x 1 5"
 # On replica:
 systemctl stop mariadb
 rm -rf /var/lib/mysql/*
-mariabackup --backup --target-dir=/tmp/backup --host=pam4ot-node1 --user=replicator --password=xxx
+mariabackup --backup --target-dir=/tmp/backup --host=wallix-node1 --user=replicator --password=xxx
 mariabackup --prepare --target-dir=/tmp/backup
 mariabackup --copy-back --target-dir=/tmp/backup
 chown -R mysql:mysql /var/lib/mysql
@@ -350,7 +350,7 @@ wabadmin audit search --type auth-failure --last 15m | \
 # Block offending IP
 iptables -A INPUT -s [ATTACKER-IP] -j DROP
 
-# Or via PAM4OT
+# Or via WALLIX Bastion
 wabadmin blacklist add [ATTACKER-IP] --duration 24h
 
 # Alert security team
@@ -437,7 +437,7 @@ receivers:
   - name: 'high-slack'
     slack_configs:
       - api_url: 'https://hooks.slack.com/services/xxx/xxx/xxx'
-        channel: '#pam4ot-alerts'
+        channel: '#wallix-alerts'
 
   - name: 'security-team'
     email_configs:

@@ -76,13 +76,13 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 
 ---
 
-### WALLIX PAM4OT (This Documentation)
+### WALLIX WALLIX Bastion (This Documentation)
 
 **Privileged Access Management for Operational Technology** — WALLIX's unified PAM solution specifically designed for OT/industrial environments.
 
 ```
 +===============================================================================+
-|                            WALLIX PAM4OT                                      |
+|                            WALLIX WALLIX Bastion                                      |
 |                  (Built on WALLIX Bastion Technology)                         |
 +===============================================================================+
 |                                                                               |
@@ -122,7 +122,7 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 - Smart cities and infrastructure
 - Healthcare facilities
 
-> **Product Website**: https://www.wallix.com/ot-security/ot-products/ot-pam4ot/
+> **Product Website**: https://www.wallix.com/ot-security/ot-products/ot-wallix/
 
 ---
 

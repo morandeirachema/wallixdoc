@@ -1,8 +1,8 @@
 # 06 - Active Directory Integration with MFA
 
-## Configuring LDAP/AD Authentication and Multi-Factor Authentication for PAM4OT
+## Configuring LDAP/AD Authentication and Multi-Factor Authentication for WALLIX Bastion
 
-This guide covers integrating PAM4OT with Active Directory for user authentication and FortiAuthenticator for MFA.
+This guide covers integrating WALLIX Bastion with Active Directory for user authentication and FortiAuthenticator for MFA.
 
 ---
 
@@ -13,15 +13,15 @@ This guide covers integrating PAM4OT with Active Directory for user authenticati
 |                    AD + MFA AUTHENTICATION FLOW                               |
 +===============================================================================+
 
-  User Login              PAM4OT           FortiAuth         Active Directory
+  User Login              WALLIX Bastion           FortiAuth         Active Directory
   ==========              ======           =========         ================
 
-  1. User enters     2. PAM4OT sends  3. FortiAuth    4. FortiAuth
+  1. User enters     2. WALLIX Bastion sends  3. FortiAuth    4. FortiAuth
      credentials        RADIUS req       validates        queries AD
                                          TOTP code
 
   +----------+       +----------+      +----------+      +-------------+
-  |  jadmin  |------>| PAM4OT   |----->|FortiAuth |----->|   DC-LAB    |
+  |  jadmin  |------>| WALLIX Bastion   |----->|FortiAuth |----->|   DC-LAB    |
   | password |HTTPS  |          |RADIUS|          | LDAP |             |
   | + TOTP   |       |10.10.1.11|:1812 |10.10.1.50|:389  | 10.10.0.10  |
   +----------+       +----------+      +----------+      +-------------+
@@ -42,7 +42,7 @@ This guide covers integrating PAM4OT with Active Directory for user authenticati
 - [ ] AD DC running and accessible (dc-lab.lab.local)
 - [ ] LDAPS enabled (port 636)
 - [ ] Service account created (wallix-svc)
-- [ ] AD CA certificate imported to PAM4OT
+- [ ] AD CA certificate imported to WALLIX Bastion
 - [ ] Test users created in AD
 - [ ] FortiAuthenticator configured (see [04-fortiauthenticator-setup.md](./04-fortiauthenticator-setup.md))
 - [ ] Users imported into FortiAuth with MFA tokens activated
@@ -50,12 +50,12 @@ This guide covers integrating PAM4OT with Active Directory for user authenticati
 ### Verify Connectivity
 
 ```bash
-# Test LDAPS from PAM4OT node
+# Test LDAPS from WALLIX Bastion node
 openssl s_client -connect dc-lab.lab.local:636 -CApath /etc/ssl/certs/
 
 # Test LDAP bind
 ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=lab,DC=local" \
     -W \
     -b "DC=lab,DC=local" \
     "(sAMAccountName=jadmin)"
@@ -63,11 +63,11 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 
 ---
 
-## Step 1: Configure LDAP Authentication in PAM4OT
+## Step 1: Configure LDAP Authentication in WALLIX Bastion
 
 ### Via Web UI
 
-1. Login to PAM4OT Admin: `https://pam4ot.lab.local/admin`
+1. Login to WALLIX Bastion Admin: `https://wallix.lab.local/admin`
 2. Navigate to: **Configuration > Authentication > LDAP**
 3. Click **Add LDAP Domain**
 
@@ -91,7 +91,7 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 |                                                                               |
 |  BIND CREDENTIALS                                                             |
 |  ----------------                                                             |
-|  Bind DN:               CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,          |
+|  Bind DN:               CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,          |
 |                         DC=lab,DC=local                                       |
 |  Bind Password:         WallixSvc123!                                         |
 |                                                                               |
@@ -99,7 +99,7 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 |  ---------------                                                              |
 |  Base DN:               DC=lab,DC=local                                       |
 |  User Search Filter:    (&(objectClass=user)(sAMAccountName=%s))              |
-|  User Search Base:      OU=Users,OU=PAM4OT,DC=lab,DC=local                    |
+|  User Search Base:      OU=Users,OU=WALLIX Bastion,DC=lab,DC=local                    |
 |                                                                               |
 |  ATTRIBUTE MAPPING                                                            |
 |  -----------------                                                            |
@@ -120,7 +120,7 @@ wabadmin ldap add \
     --server "dc-lab.lab.local" \
     --port 636 \
     --ssl \
-    --bind-dn "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local" \
+    --bind-dn "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=lab,DC=local" \
     --bind-password "WallixSvc123!" \
     --base-dn "DC=lab,DC=local" \
     --user-filter "(&(objectClass=user)(sAMAccountName=%s))" \
@@ -130,7 +130,7 @@ wabadmin ldap add \
 ### Via REST API
 
 ```bash
-curl -k -X POST "https://pam4ot.lab.local/api/ldapdomains" \
+curl -k -X POST "https://wallix.lab.local/api/ldapdomains" \
     -H "X-Auth-Token: $API_TOKEN" \
     -H "Content-Type: application/json" \
     -d '{
@@ -139,7 +139,7 @@ curl -k -X POST "https://pam4ot.lab.local/api/ldapdomains" \
         "host": "dc-lab.lab.local",
         "port": 636,
         "use_ssl": true,
-        "bind_dn": "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local",
+        "bind_dn": "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=lab,DC=local",
         "bind_password": "WallixSvc123!",
         "base_dn": "DC=lab,DC=local",
         "user_filter": "(&(objectClass=user)(sAMAccountName=%s))",
@@ -152,7 +152,7 @@ curl -k -X POST "https://pam4ot.lab.local/api/ldapdomains" \
 ## Step 2: Test LDAP Connection
 
 ```
-In PAM4OT Web UI:
+In WALLIX Bastion Web UI:
 
 Configuration > Authentication > LDAP > LAB.LOCAL > Test Connection
 
@@ -171,21 +171,21 @@ wabadmin ldap search LAB.LOCAL "jadmin"
 
 ## Step 3: Configure Group Mapping
 
-Map AD groups to PAM4OT user groups for authorization.
+Map AD groups to WALLIX Bastion user groups for authorization.
 
-### Create PAM4OT User Groups
+### Create WALLIX Bastion User Groups
 
 ```
 Configuration > User Groups > Add
 
 1. Group: LDAP-Admins
-   Description: Mapped from PAM4OT-Admins AD group
+   Description: Mapped from WALLIX Bastion-Admins AD group
 
 2. Group: LDAP-Operators
-   Description: Mapped from PAM4OT-Operators AD group
+   Description: Mapped from WALLIX Bastion-Operators AD group
 
 3. Group: LDAP-Auditors
-   Description: Mapped from PAM4OT-Auditors AD group
+   Description: Mapped from WALLIX Bastion-Auditors AD group
 
 4. Group: LDAP-Linux-Admins
    Description: Mapped from Linux-Admins AD group
@@ -200,14 +200,14 @@ Configuration > User Groups > Add
 Configuration > Authentication > LDAP > LAB.LOCAL > Group Mapping
 
 +===============================================================================+
-| AD Group (DN)                                       | PAM4OT Group            |
+| AD Group (DN)                                       | WALLIX Bastion Group            |
 +===============================================================================+
-| CN=PAM4OT-Admins,OU=Groups,OU=PAM4OT,DC=lab,DC=local| LDAP-Admins             |
-| CN=PAM4OT-Operators,OU=Groups,OU=PAM4OT,DC=lab,...  | LDAP-Operators          |
-| CN=PAM4OT-Auditors,OU=Groups,OU=PAM4OT,DC=lab,...   | LDAP-Auditors           |
-| CN=Linux-Admins,OU=Groups,OU=PAM4OT,DC=lab,DC=local | LDAP-Linux-Admins       |
-| CN=Windows-Admins,OU=Groups,OU=PAM4OT,DC=lab,...    | LDAP-Windows-Admins     |
-| CN=OT-Engineers,OU=Groups,OU=PAM4OT,DC=lab,DC=local | LDAP-OT-Engineers       |
+| CN=WALLIX Bastion-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local| LDAP-Admins             |
+| CN=WALLIX Bastion-Operators,OU=Groups,OU=WALLIX Bastion,DC=lab,...  | LDAP-Operators          |
+| CN=WALLIX Bastion-Auditors,OU=Groups,OU=WALLIX Bastion,DC=lab,...   | LDAP-Auditors           |
+| CN=Linux-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local | LDAP-Linux-Admins       |
+| CN=Windows-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,...    | LDAP-Windows-Admins     |
+| CN=OT-Engineers,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local | LDAP-OT-Engineers       |
 +===============================================================================+
 ```
 
@@ -215,18 +215,18 @@ Configuration > Authentication > LDAP > LAB.LOCAL > Group Mapping
 
 ```bash
 # Add group mapping
-curl -k -X POST "https://pam4ot.lab.local/api/ldapdomains/LAB.LOCAL/groupmappings" \
+curl -k -X POST "https://wallix.lab.local/api/ldapdomains/LAB.LOCAL/groupmappings" \
     -H "X-Auth-Token: $API_TOKEN" \
     -H "Content-Type: application/json" \
     -d '{
-        "ldap_group": "CN=PAM4OT-Admins,OU=Groups,OU=PAM4OT,DC=lab,DC=local",
+        "ldap_group": "CN=WALLIX Bastion-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local",
         "usergroup": "LDAP-Admins"
     }'
 ```
 
 ---
 
-## Step 4: Configure PAM4OT Profiles for LDAP Groups
+## Step 4: Configure WALLIX Bastion Profiles for LDAP Groups
 
 ### Admin Profile
 
@@ -291,8 +291,8 @@ Permissions:
 ### Test Login via SSH Proxy
 
 ```bash
-# SSH to PAM4OT using AD credentials
-ssh jadmin@pam4ot.lab.local
+# SSH to WALLIX Bastion using AD credentials
+ssh jadmin@wallix.lab.local
 
 # When prompted:
 # Password: JohnAdmin123!
@@ -314,7 +314,7 @@ Should show:
 
 ## Step 6: Configure RADIUS for MFA
 
-### Enable RADIUS Authentication in PAM4OT
+### Enable RADIUS Authentication in WALLIX Bastion
 
 **Navigate to: Configuration > Authentication > RADIUS**
 
@@ -354,7 +354,7 @@ Click **Add RADIUS Server**:
 ### Test RADIUS Connection
 
 ```bash
-# From PAM4OT node
+# From WALLIX Bastion node
 apt install -y freeradius-utils
 
 # Test RADIUS authentication with MFA
@@ -456,15 +456,15 @@ Configuration > Authentication > Settings
 4. Verify successful authentication
 
 **Expected behavior:**
-- PAM4OT validates AD password via LDAP
-- PAM4OT sends full credential to FortiAuth via RADIUS
+- WALLIX Bastion validates AD password via LDAP
+- WALLIX Bastion sends full credential to FortiAuth via RADIUS
 - FortiAuth validates TOTP code
 - User logged in with correct AD group permissions
 
 ### SSH Login Test
 
 ```bash
-# SSH to PAM4OT
+# SSH to WALLIX Bastion
 ssh jadmin@10.10.1.100
 
 # Enter password when prompted:
@@ -481,7 +481,7 @@ Password: JohnAdmin123!456789
 # Username: jadmin@windows-server01
 # Password: JohnAdmin123!456789
 
-# Should connect through PAM4OT with MFA
+# Should connect through WALLIX Bastion with MFA
 ```
 
 ---
@@ -490,7 +490,7 @@ Password: JohnAdmin123!456789
 
 For single sign-on with Kerberos:
 
-### On PAM4OT Node
+### On WALLIX Bastion Node
 
 ```bash
 # Install Kerberos client
@@ -522,7 +522,7 @@ klist
 # Should show valid ticket
 ```
 
-### Configure PAM4OT for Kerberos
+### Configure WALLIX Bastion for Kerberos
 
 ```
 Configuration > Authentication > Kerberos
@@ -538,11 +538,11 @@ Keytab: (upload keytab file from AD)
 
 ## User Authentication Matrix
 
-| User | AD Groups | PAM4OT Groups | MFA | Access Level |
+| User | AD Groups | WALLIX Bastion Groups | MFA | Access Level |
 |------|-----------|---------------|-----|--------------|
-| jadmin | PAM4OT-Admins, Linux-Admins, Windows-Admins | LDAP-Admins, LDAP-Linux-Admins | Required | Full Admin |
-| soperator | PAM4OT-Operators, Linux-Admins | LDAP-Operators, LDAP-Linux-Admins | Required | Operator |
-| mauditor | PAM4OT-Auditors | LDAP-Auditors | Required | Audit Only |
+| jadmin | WALLIX Bastion-Admins, Linux-Admins, Windows-Admins | LDAP-Admins, LDAP-Linux-Admins | Required | Full Admin |
+| soperator | WALLIX Bastion-Operators, Linux-Admins | LDAP-Operators, LDAP-Linux-Admins | Required | Operator |
+| mauditor | WALLIX Bastion-Auditors | LDAP-Auditors | Required | Audit Only |
 | lnetwork | Network-Admins | LDAP-Network-Admins | Required | Network Access |
 | totengineer | OT-Engineers | LDAP-OT-Engineers | Required | OT Access |
 
@@ -570,7 +570,7 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 ```bash
 # Check search filter and base DN
 ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=lab,DC=local" \
     -W \
     -b "DC=lab,DC=local" \
     "(&(objectClass=user)(sAMAccountName=jadmin))"
@@ -584,12 +584,12 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 ```bash
 # Check user's group membership in AD
 ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
-    -D "CN=wallix-svc,OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local" \
+    -D "CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,DC=lab,DC=local" \
     -W \
     -b "DC=lab,DC=local" \
     "(sAMAccountName=jadmin)" memberOf
 
-# Verify group DN matches exactly in PAM4OT mapping
+# Verify group DN matches exactly in WALLIX Bastion mapping
 ```
 
 ### Certificate Error
@@ -629,5 +629,5 @@ update-ca-certificates
 
 <p align="center">
   <a href="./05-wallix-rds-setup.md">← Previous: WALLIX RDS Setup</a> •
-  <a href="./07-pam4ot-installation.md">Next: PAM4OT Installation →</a>
+  <a href="./07-wallix-installation.md">Next: WALLIX Bastion Installation →</a>
 </p>

@@ -531,4 +531,4 @@ wab-admin multisite-lag
 
 ---
 
-**Next Step**: [06-ot-network-config.md](./06-ot-network-config.md) - OT Network Configuration
+**Next Step**: [07-security-hardening.md](./07-security-hardening.md) - Security Hardening

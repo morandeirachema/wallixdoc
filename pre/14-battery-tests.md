@@ -1,8 +1,8 @@
 # 11 - Battery Tests for Client Demonstrations
 
-## PAM4OT Comprehensive Test Suite
+## WALLIX Bastion Comprehensive Test Suite
 
-This document provides a complete battery of tests to demonstrate WALLIX PAM4OT capabilities to clients. Each test includes expected results, success criteria, and talking points for client presentations.
+This document provides a complete battery of tests to demonstrate WALLIX WALLIX Bastion capabilities to clients. Each test includes expected results, success criteria, and talking points for client presentations.
 
 ---
 
@@ -31,7 +31,7 @@ This document provides a complete battery of tests to demonstrate WALLIX PAM4OT 
 
 Before starting battery tests, verify:
 
-[ ] PAM4OT cluster is healthy
+[ ] WALLIX Bastion cluster is healthy
     Command: wabadmin status
     Expected: All services running
 
@@ -68,7 +68,7 @@ Before starting battery tests, verify:
 OBJECTIVE: Verify local admin authentication works
 
 STEPS:
-1. Open browser to https://pam4ot.lab.local
+1. Open browser to https://wallix.lab.local
 2. Enter credentials: admin / Pam4otAdmin123!
 3. Click "Sign In"
 
@@ -99,7 +99,7 @@ services are unavailable. These accounts have full audit logging."
 OBJECTIVE: Verify AD/LDAP user authentication
 
 STEPS:
-1. Open browser to https://pam4ot.lab.local
+1. Open browser to https://wallix.lab.local
 2. Enter credentials: lab\pam-user / UserPass123!
 3. Click "Sign In"
 
@@ -131,7 +131,7 @@ OBJECTIVE: Verify seamless SSO for domain-joined workstations
 
 STEPS:
 1. From a domain-joined Windows workstation
-2. Open browser to https://pam4ot.lab.local
+2. Open browser to https://wallix.lab.local
 3. Observe automatic authentication
 
 EXPECTED RESULT:
@@ -226,7 +226,7 @@ failed attempts, accounts are locked and security is alerted."
 OBJECTIVE: Verify idle session termination
 
 STEPS:
-1. Login to PAM4OT
+1. Login to WALLIX Bastion
 2. Leave session idle for configured timeout (e.g., 15 minutes)
 3. Attempt to perform an action
 
@@ -254,7 +254,7 @@ OBJECTIVE: Verify client certificate authentication
 
 STEPS:
 1. Install user certificate in browser
-2. Navigate to PAM4OT with certificate auth enabled
+2. Navigate to WALLIX Bastion with certificate auth enabled
 3. Select certificate when prompted
 
 EXPECTED RESULT:
@@ -320,7 +320,7 @@ This provides a dual-control mechanism for privileged access."
 OBJECTIVE: Demonstrate SSH session recording and playback
 
 STEPS:
-1. Login to PAM4OT Web UI
+1. Login to WALLIX Bastion Web UI
 2. Select SSH target (linux-test)
 3. Connect to session
 4. Execute commands:
@@ -365,7 +365,7 @@ DEMO COMMANDS TO SHOW:
 OBJECTIVE: Demonstrate RDP session recording
 
 STEPS:
-1. Login to PAM4OT Web UI
+1. Login to WALLIX Bastion Web UI
 2. Select RDP target (windows-test)
 3. Connect via HTML5 or native RDP
 4. Perform actions:
@@ -908,7 +908,7 @@ OBJECTIVE: Demonstrate planned maintenance failover
 STEPS:
 1. Note which node has VIP (e.g., node1)
 2. Start active session through VIP
-3. Initiate failover: pcs resource move wallix-vip pam4ot-node2
+3. Initiate failover: pcs resource move wallix-vip wallix-node2
 4. Observe VIP migration
 5. Verify session continues
 
@@ -1212,7 +1212,7 @@ EXPECTED RESULT:
 COMMANDS:
 # Example benchmark
 curl -w "%{time_total}\n" -o /dev/null -s \
-  "https://pam4ot.lab.local/api/devices"
+  "https://wallix.lab.local/api/devices"
 
 SUCCESS CRITERIA:
 [ ] < 500ms average response
@@ -1265,10 +1265,10 @@ OBJECTIVE: Verify strong TLS configuration
 
 COMMANDS:
 # Test TLS version and ciphers
-nmap --script ssl-enum-ciphers -p 443 pam4ot.lab.local
+nmap --script ssl-enum-ciphers -p 443 wallix.lab.local
 
 # Or use testssl.sh
-./testssl.sh https://pam4ot.lab.local
+./testssl.sh https://wallix.lab.local
 
 EXPECTED RESULT:
 - TLS 1.2/1.3 only
@@ -1452,11 +1452,11 @@ when, and why. Reports can be scheduled and sent automatically."
 |  TEST 7.1: MODBUS PROTOCOL PROXYING                                           |
 +===============================================================================+
 
-OBJECTIVE: Demonstrate Modbus session through PAM4OT
+OBJECTIVE: Demonstrate Modbus session through WALLIX Bastion
 
 STEPS:
 1. Configure Modbus target (plc-sim)
-2. Connect through PAM4OT
+2. Connect through WALLIX Bastion
 3. Read holding registers
 4. Write coil values
 5. Verify session recorded
@@ -1485,11 +1485,11 @@ Every PLC access is fully audited, meeting IEC 62443 requirements."
 |  TEST 7.2: OPC UA CONNECTION                                                  |
 +===============================================================================+
 
-OBJECTIVE: Demonstrate OPC UA session through PAM4OT
+OBJECTIVE: Demonstrate OPC UA session through WALLIX Bastion
 
 STEPS:
 1. Configure OPC UA endpoint
-2. Connect through PAM4OT
+2. Connect through WALLIX Bastion
 3. Browse address space
 4. Read node values
 5. Verify recording
@@ -1518,7 +1518,7 @@ OBJECTIVE: Demonstrate serial console recording
 
 STEPS:
 1. Configure serial console target
-2. Connect through PAM4OT
+2. Connect through WALLIX Bastion
 3. Execute commands on serial device
 4. Verify recording
 
@@ -1549,7 +1549,7 @@ No protocol is too old or specialized to audit."
 OBJECTIVE: Demonstrate offline credential cache for OT
 
 STEPS:
-1. Simulate network isolation from PAM4OT
+1. Simulate network isolation from WALLIX Bastion
 2. Access cached credentials on local agent
 3. Connect to target using cached creds
 4. Verify audit sync when reconnected
@@ -1618,7 +1618,7 @@ specific timeframes, full recording, and automatic expiration."
 
   Date:           _______________
   Tester:         _______________
-  PAM4OT Version: _______________
+  WALLIX Bastion Version: _______________
   Client:         _______________
 
   CATEGORY                          PASSED    FAILED    SKIPPED

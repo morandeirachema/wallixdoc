@@ -2,7 +2,7 @@
 
 ## Health Metrics, Dashboards, and Alert Configuration
 
-This guide covers proactive monitoring of WALLIX PAM4OT to ensure high availability and rapid issue detection.
+This guide covers proactive monitoring of WALLIX WALLIX Bastion to ensure high availability and rapid issue detection.
 
 ---
 
@@ -295,7 +295,7 @@ if __name__ == '__main__':
 scrape_configs:
   - job_name: 'wallix'
     static_configs:
-      - targets: ['wallix-pam4ot:9100']
+      - targets: ['wallix-wallix:9100']
     scrape_interval: 30s
 
   # If using WALLIX HA cluster
@@ -314,7 +314,7 @@ scrape_configs:
 
 ```json
 {
-  "title": "WALLIX PAM4OT Health",
+  "title": "WALLIX WALLIX Bastion Health",
   "panels": [
     {
       "title": "Active Sessions",

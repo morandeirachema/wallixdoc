@@ -1,6 +1,6 @@
 # 00 - Quick Start Guide
 
-## Your First 30 Minutes with WALLIX PAM4OT
+## Your First 30 Minutes with WALLIX WALLIX Bastion
 
 This guide gets you operational quickly. Read this first, then explore deeper sections.
 
@@ -197,7 +197,7 @@ This guide gets you operational quickly. Read this first, then explore deeper se
 
 ```bash
 # Is WALLIX running?
-systemctl status wallix-pam4ot
+systemctl status wallix-wallix
 
 # Quick health check
 wabadmin status
@@ -211,7 +211,7 @@ crm status
 
 **Expected output:**
 ```
-WALLIX PAM4OT Status: Running
+WALLIX WALLIX Bastion Status: Running
   - Access Manager: OK
   - Session Manager: OK
   - Password Manager: OK
@@ -356,19 +356,19 @@ wabadmin sessions --user jsmith --kill-all
 
 ```bash
 # 1. Check service status
-systemctl status wallix-pam4ot
+systemctl status wallix-wallix
 
 # 2. Check logs for errors
-journalctl -u wallix-pam4ot --since "10 min ago" | tail -50
+journalctl -u wallix-wallix --since "10 min ago" | tail -50
 
 # 3. Check database
 sudo mysql -e "SELECT 1;"
 
 # 4. Try restart
-systemctl restart wallix-pam4ot
+systemctl restart wallix-wallix
 
 # 5. If clustered, check other node
-ssh wallix-node2 "systemctl status wallix-pam4ot"
+ssh wallix-node2 "systemctl status wallix-wallix"
 ```
 
 ### Need Emergency Access to Critical System
@@ -425,7 +425,7 @@ wabadmin audit --export --output /tmp/audit-export.json
   ==================
 
   Health Check:
-    systemctl status wallix-pam4ot
+    systemctl status wallix-wallix
     wabadmin status
     wabadmin health-check
 

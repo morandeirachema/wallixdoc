@@ -1,8 +1,8 @@
 # 02 - Active Directory Setup
 
-## Domain Controller Configuration for PAM4OT Lab
+## Domain Controller Configuration for WALLIX Bastion Lab
 
-This guide covers setting up Active Directory for PAM4OT authentication and testing.
+This guide covers setting up Active Directory for WALLIX Bastion authentication and testing.
 
 ---
 
@@ -52,13 +52,13 @@ Install-ADDSForest `
 ## Step 2: Create Organizational Units
 
 ```powershell
-# Create OU structure for PAM4OT lab
+# Create OU structure for WALLIX Bastion lab
 $OUs = @(
-    "OU=PAM4OT,DC=lab,DC=local",
-    "OU=Users,OU=PAM4OT,DC=lab,DC=local",
-    "OU=Groups,OU=PAM4OT,DC=lab,DC=local",
-    "OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local",
-    "OU=Servers,OU=PAM4OT,DC=lab,DC=local"
+    "OU=WALLIX Bastion,DC=lab,DC=local",
+    "OU=Users,OU=WALLIX Bastion,DC=lab,DC=local",
+    "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local",
+    "OU=Service Accounts,OU=WALLIX Bastion,DC=lab,DC=local",
+    "OU=Servers,OU=WALLIX Bastion,DC=lab,DC=local"
 )
 
 foreach ($OU in $OUs) {
@@ -75,22 +75,22 @@ Get-ADOrganizationalUnit -Filter * | Select-Object Name, DistinguishedName
 
 ---
 
-## Step 3: Create PAM4OT Service Account
+## Step 3: Create WALLIX Bastion Service Account
 
 ```powershell
-# Create service account for PAM4OT LDAP binding
+# Create service account for WALLIX Bastion LDAP binding
 $ServiceAccountPassword = ConvertTo-SecureString "WallixSvc123!" -AsPlainText -Force
 
 New-ADUser `
     -Name "wallix-svc" `
     -SamAccountName "wallix-svc" `
     -UserPrincipalName "wallix-svc@lab.local" `
-    -Path "OU=Service Accounts,OU=PAM4OT,DC=lab,DC=local" `
+    -Path "OU=Service Accounts,OU=WALLIX Bastion,DC=lab,DC=local" `
     -AccountPassword $ServiceAccountPassword `
     -PasswordNeverExpires $true `
     -CannotChangePassword $true `
     -Enabled $true `
-    -Description "PAM4OT LDAP Service Account"
+    -Description "WALLIX Bastion LDAP Service Account"
 
 # Grant read access to user objects (for authentication)
 # The service account needs to read user attributes
@@ -113,56 +113,56 @@ Set-Acl "AD:DC=lab,DC=local" $acl
 ## Step 4: Create Security Groups
 
 ```powershell
-# Create groups for PAM4OT authorization
+# Create groups for WALLIX Bastion authorization
 
 # Admin groups
-New-ADGroup -Name "PAM4OT-Admins" `
+New-ADGroup -Name "WALLIX Bastion-Admins" `
     -GroupScope Global `
     -GroupCategory Security `
-    -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
-    -Description "PAM4OT Full Administrators"
+    -Path "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" `
+    -Description "WALLIX Bastion Full Administrators"
 
-New-ADGroup -Name "PAM4OT-Operators" `
+New-ADGroup -Name "WALLIX Bastion-Operators" `
     -GroupScope Global `
     -GroupCategory Security `
-    -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
-    -Description "PAM4OT Operators (read-only)"
+    -Path "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" `
+    -Description "WALLIX Bastion Operators (read-only)"
 
-New-ADGroup -Name "PAM4OT-Auditors" `
+New-ADGroup -Name "WALLIX Bastion-Auditors" `
     -GroupScope Global `
     -GroupCategory Security `
-    -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
-    -Description "PAM4OT Audit Access"
+    -Path "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" `
+    -Description "WALLIX Bastion Audit Access"
 
 # Target access groups
 New-ADGroup -Name "Linux-Admins" `
     -GroupScope Global `
     -GroupCategory Security `
-    -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
+    -Path "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" `
     -Description "Linux server root access"
 
 New-ADGroup -Name "Windows-Admins" `
     -GroupScope Global `
     -GroupCategory Security `
-    -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
+    -Path "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" `
     -Description "Windows server admin access"
 
 New-ADGroup -Name "Network-Admins" `
     -GroupScope Global `
     -GroupCategory Security `
-    -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
+    -Path "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" `
     -Description "Network device access"
 
 New-ADGroup -Name "OT-Engineers" `
     -GroupScope Global `
     -GroupCategory Security `
-    -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
+    -Path "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" `
     -Description "OT/Industrial system access"
 
 New-ADGroup -Name "External-Vendors" `
     -GroupScope Global `
     -GroupCategory Security `
-    -Path "OU=Groups,OU=PAM4OT,DC=lab,DC=local" `
+    -Path "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" `
     -Description "Third-party vendor access"
 ```
 
@@ -189,7 +189,7 @@ function New-LabUser {
         -Surname $LastName `
         -SamAccountName $Username `
         -UserPrincipalName "$Username@lab.local" `
-        -Path "OU=Users,OU=PAM4OT,DC=lab,DC=local" `
+        -Path "OU=Users,OU=WALLIX Bastion,DC=lab,DC=local" `
         -AccountPassword $SecurePassword `
         -PasswordNeverExpires $true `
         -Enabled $true
@@ -203,13 +203,13 @@ function New-LabUser {
 
 # Create test users
 New-LabUser -FirstName "John" -LastName "Admin" -Password "JohnAdmin123!" `
-    -Groups @("PAM4OT-Admins", "Linux-Admins", "Windows-Admins")
+    -Groups @("WALLIX Bastion-Admins", "Linux-Admins", "Windows-Admins")
 
 New-LabUser -FirstName "Sarah" -LastName "Operator" -Password "SarahOp123!" `
-    -Groups @("PAM4OT-Operators", "Linux-Admins")
+    -Groups @("WALLIX Bastion-Operators", "Linux-Admins")
 
 New-LabUser -FirstName "Mike" -LastName "Auditor" -Password "MikeAudit123!" `
-    -Groups @("PAM4OT-Auditors")
+    -Groups @("WALLIX Bastion-Auditors")
 
 New-LabUser -FirstName "Lisa" -LastName "Network" -Password "LisaNet123!" `
     -Groups @("Network-Admins")
@@ -259,17 +259,17 @@ $LdapConnection.Bind()
 Write-Host "LDAPS connection successful!"
 ```
 
-### Export CA Certificate (for PAM4OT)
+### Export CA Certificate (for WALLIX Bastion)
 
 ```powershell
-# Export the CA certificate for import into PAM4OT
+# Export the CA certificate for import into WALLIX Bastion
 $CACert = Get-ChildItem -Path Cert:\LocalMachine\CA | Where-Object { $_.Subject -like "*lab-DC-LAB-CA*" }
 Export-Certificate -Cert $CACert -FilePath C:\lab-ca.cer -Type CERT
 
 # Convert to PEM format (run in PowerShell)
 certutil -encode C:\lab-ca.cer C:\lab-ca.pem
 
-# Copy this file to PAM4OT nodes
+# Copy this file to WALLIX Bastion nodes
 ```
 
 ---
@@ -278,9 +278,9 @@ certutil -encode C:\lab-ca.cer C:\lab-ca.pem
 
 ```powershell
 # Add DNS records for lab infrastructure
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "pam4ot-node1" -IPv4Address "10.10.1.11"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "pam4ot-node2" -IPv4Address "10.10.1.12"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "pam4ot" -IPv4Address "10.10.1.100"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix-node1" -IPv4Address "10.10.1.11"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix-node2" -IPv4Address "10.10.1.12"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix" -IPv4Address "10.10.1.100"
 Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "siem-lab" -IPv4Address "10.10.1.50"
 Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "monitor-lab" -IPv4Address "10.10.1.60"
 Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "linux-test" -IPv4Address "10.10.2.10"
@@ -300,9 +300,9 @@ Get-DnsServerResourceRecord -ZoneName "lab.local" | Where-Object { $_.RecordType
 
 | Username | Full Name | Groups | Password |
 |----------|-----------|--------|----------|
-| jadmin | John Admin | PAM4OT-Admins, Linux-Admins, Windows-Admins | JohnAdmin123! |
-| soperator | Sarah Operator | PAM4OT-Operators, Linux-Admins | SarahOp123! |
-| mauditor | Mike Auditor | PAM4OT-Auditors | MikeAudit123! |
+| jadmin | John Admin | WALLIX Bastion-Admins, Linux-Admins, Windows-Admins | JohnAdmin123! |
+| soperator | Sarah Operator | WALLIX Bastion-Operators, Linux-Admins | SarahOp123! |
+| mauditor | Mike Auditor | WALLIX Bastion-Auditors | MikeAudit123! |
 | lnetwork | Lisa Network | Network-Admins | LisaNet123! |
 | totengineer | Tom OTEngineer | OT-Engineers | TomOT123! |
 | vsupport | Vendor Support | External-Vendors | Vendor123! |
@@ -311,9 +311,9 @@ Get-DnsServerResourceRecord -ZoneName "lab.local" | Where-Object { $_.RecordType
 
 | Group | Purpose |
 |-------|---------|
-| PAM4OT-Admins | Full PAM4OT administration |
-| PAM4OT-Operators | Read-only PAM4OT access |
-| PAM4OT-Auditors | Session review only |
+| WALLIX Bastion-Admins | Full WALLIX Bastion administration |
+| WALLIX Bastion-Operators | Read-only WALLIX Bastion access |
+| WALLIX Bastion-Auditors | Session review only |
 | Linux-Admins | SSH access to Linux servers |
 | Windows-Admins | RDP access to Windows servers |
 | Network-Admins | Network device access |
@@ -324,7 +324,7 @@ Get-DnsServerResourceRecord -ZoneName "lab.local" | Where-Object { $_.RecordType
 
 | Account | Purpose | Password |
 |---------|---------|----------|
-| wallix-svc | LDAP bind for PAM4OT | WallixSvc123! |
+| wallix-svc | LDAP bind for WALLIX Bastion | WallixSvc123! |
 
 ---
 
@@ -337,13 +337,13 @@ Get-DnsServerResourceRecord -ZoneName "lab.local" | Where-Object { $_.RecordType
 Get-ADDomain | Select-Object Name, DNSRoot, DomainMode
 
 # Check users
-Get-ADUser -Filter * -SearchBase "OU=Users,OU=PAM4OT,DC=lab,DC=local" | Select-Object Name, SamAccountName, Enabled
+Get-ADUser -Filter * -SearchBase "OU=Users,OU=WALLIX Bastion,DC=lab,DC=local" | Select-Object Name, SamAccountName, Enabled
 
 # Check groups
-Get-ADGroup -Filter * -SearchBase "OU=Groups,OU=PAM4OT,DC=lab,DC=local" | Select-Object Name
+Get-ADGroup -Filter * -SearchBase "OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local" | Select-Object Name
 
 # Check group membership
-Get-ADGroupMember -Identity "PAM4OT-Admins" | Select-Object Name
+Get-ADGroupMember -Identity "WALLIX Bastion-Admins" | Select-Object Name
 
 # Test LDAP bind with service account
 $cred = Get-Credential -UserName "LAB\wallix-svc" -Message "Enter service account password"
@@ -384,5 +384,5 @@ Set-ADAccountPassword -Identity "jadmin" -NewPassword (ConvertTo-SecureString "N
 
 <p align="center">
   <a href="./01-infrastructure-setup.md">← Previous</a> •
-  <a href="./03-pam4ot-installation.md">Next: PAM4OT Installation →</a>
+  <a href="./03-wallix-installation.md">Next: WALLIX Bastion Installation →</a>
 </p>

@@ -1,8 +1,8 @@
 # Kerberos Configuration Guide
 
-## Configuring Kerberos Authentication for PAM4OT
+## Configuring Kerberos Authentication for WALLIX Bastion
 
-This guide covers integrating PAM4OT with Active Directory using Kerberos for seamless single sign-on.
+This guide covers integrating WALLIX Bastion with Active Directory using Kerberos for seamless single sign-on.
 
 ---
 
@@ -13,13 +13,13 @@ This guide covers integrating PAM4OT with Active Directory using Kerberos for se
 |                      KERBEROS AUTHENTICATION FLOW                             |
 +===============================================================================+
 
-  User Workstation            PAM4OT                     AD Domain Controller
+  User Workstation            WALLIX Bastion                     AD Domain Controller
   ================            ======                     ====================
 
        1. User opens browser
           │
           ▼
-       2. Request https://pam4ot.company.com/
+       2. Request https://wallix.company.com/
           │
           ├──────────────────────────────────────────────────────────────────>
           │                    3. 401 Negotiate                               │
@@ -32,7 +32,7 @@ This guide covers integrating PAM4OT with Active Directory using Kerberos for se
           │<───────────────────────────────────────────────────────────────────
           │
           │                    6. Service Ticket Request (TGS-REQ)
-          │                       for HTTP/pam4ot.company.com
+          │                       for HTTP/wallix.company.com
           ├───────────────────────────────────────────────────────────────────>
           │
           │                    7. Service Ticket (TGS-REP)
@@ -40,7 +40,7 @@ This guide covers integrating PAM4OT with Active Directory using Kerberos for se
           │
           │     8. Request with Service Ticket (Authorization: Negotiate)
           ├──────────────────────────────────────────────────────────────────>
-          │                                           PAM4OT validates ticket
+          │                                           WALLIX Bastion validates ticket
           │                    9. Access granted
           │<──────────────────────────────────────────────────────────────────
 
@@ -55,22 +55,22 @@ This guide covers integrating PAM4OT with Active Directory using Kerberos for se
 
 | Source | Destination | Port | Protocol | Purpose |
 |--------|-------------|------|----------|---------|
-| PAM4OT | AD DC | 88 | TCP/UDP | Kerberos KDC |
-| PAM4OT | AD DC | 464 | TCP/UDP | Kerberos password change |
-| PAM4OT | AD DC | 389 | TCP | LDAP |
-| PAM4OT | AD DC | 636 | TCP | LDAPS |
-| Clients | PAM4OT | 443 | TCP | HTTPS |
+| WALLIX Bastion | AD DC | 88 | TCP/UDP | Kerberos KDC |
+| WALLIX Bastion | AD DC | 464 | TCP/UDP | Kerberos password change |
+| WALLIX Bastion | AD DC | 389 | TCP | LDAP |
+| WALLIX Bastion | AD DC | 636 | TCP | LDAPS |
+| Clients | WALLIX Bastion | 443 | TCP | HTTPS |
 
 ### DNS Requirements
 
 ```bash
-# Forward lookup - PAM4OT hostname must resolve
-nslookup pam4ot.company.com
+# Forward lookup - WALLIX Bastion hostname must resolve
+nslookup wallix.company.com
 # Must return: 10.10.1.100 (VIP)
 
 # Reverse lookup - recommended
 nslookup 10.10.1.100
-# Should return: pam4ot.company.com
+# Should return: wallix.company.com
 
 # SRV records for Kerberos
 nslookup -type=SRV _kerberos._tcp.company.com
@@ -109,54 +109,54 @@ timedatectl timesync-status
 # PowerShell on Domain Controller
 
 # Create service account
-New-ADUser -Name "svc-pam4ot" `
-    -SamAccountName "svc-pam4ot" `
-    -UserPrincipalName "svc-pam4ot@COMPANY.COM" `
-    -Description "PAM4OT Service Account" `
+New-ADUser -Name "svc-wallix" `
+    -SamAccountName "svc-wallix" `
+    -UserPrincipalName "svc-wallix@COMPANY.COM" `
+    -Description "WALLIX Bastion Service Account" `
     -PasswordNeverExpires $true `
     -CannotChangePassword $true `
     -Enabled $true `
     -AccountPassword (ConvertTo-SecureString "SecurePassword123!" -AsPlainText -Force)
 
 # Set account options
-Set-ADUser "svc-pam4ot" -KerberosEncryptionType AES128,AES256
+Set-ADUser "svc-wallix" -KerberosEncryptionType AES128,AES256
 ```
 
 ### Create SPN (Service Principal Name)
 
 ```powershell
-# Register SPNs for PAM4OT
+# Register SPNs for WALLIX Bastion
 # Format: HTTP/hostname@REALM
 
-setspn -S HTTP/pam4ot.company.com svc-pam4ot
-setspn -S HTTP/pam4ot svc-pam4ot
+setspn -S HTTP/wallix.company.com svc-wallix
+setspn -S HTTP/wallix svc-wallix
 
 # If using VIP with different name:
-setspn -S HTTP/pam4ot-node1.company.com svc-pam4ot
-setspn -S HTTP/pam4ot-node2.company.com svc-pam4ot
+setspn -S HTTP/wallix-node1.company.com svc-wallix
+setspn -S HTTP/wallix-node2.company.com svc-wallix
 
 # Verify SPNs
-setspn -L svc-pam4ot
+setspn -L svc-wallix
 ```
 
 ### Generate Keytab
 
 ```powershell
 # Generate keytab file on DC
-ktpass -princ HTTP/pam4ot.company.com@COMPANY.COM `
-    -mapuser COMPANY\svc-pam4ot `
+ktpass -princ HTTP/wallix.company.com@COMPANY.COM `
+    -mapuser COMPANY\svc-wallix `
     -pass "SecurePassword123!" `
     -crypto AES256-SHA1 `
     -ptype KRB5_NT_PRINCIPAL `
-    -out C:\keytabs\pam4ot.keytab
+    -out C:\keytabs\wallix.keytab
 
-# Copy keytab to PAM4OT server securely
+# Copy keytab to WALLIX Bastion server securely
 # (Use SCP or secure file transfer)
 ```
 
 ---
 
-## Section 2: PAM4OT Configuration
+## Section 2: WALLIX Bastion Configuration
 
 ### Install Kerberos Packages
 
@@ -199,8 +199,8 @@ EOF
 ### Install Keytab
 
 ```bash
-# Copy keytab to PAM4OT
-scp user@dc-lab:/path/to/pam4ot.keytab /etc/wab/krb5.keytab
+# Copy keytab to WALLIX Bastion
+scp user@dc-lab:/path/to/wallix.keytab /etc/wab/krb5.keytab
 
 # Set permissions
 chmod 600 /etc/wab/krb5.keytab
@@ -210,27 +210,27 @@ chown wabuser:wabgroup /etc/wab/krb5.keytab
 klist -kt /etc/wab/krb5.keytab
 
 # Test authentication with keytab
-kinit -kt /etc/wab/krb5.keytab HTTP/pam4ot.company.com@COMPANY.COM
+kinit -kt /etc/wab/krb5.keytab HTTP/wallix.company.com@COMPANY.COM
 klist
 ```
 
-### Configure PAM4OT for Kerberos
+### Configure WALLIX Bastion for Kerberos
 
 ```bash
-# Enable Kerberos SSO in PAM4OT
+# Enable Kerberos SSO in WALLIX Bastion
 wabadmin config set auth.kerberos.enabled true
 wabadmin config set auth.kerberos.realm "COMPANY.COM"
 wabadmin config set auth.kerberos.keytab "/etc/wab/krb5.keytab"
-wabadmin config set auth.kerberos.service_principal "HTTP/pam4ot.company.com@COMPANY.COM"
+wabadmin config set auth.kerberos.service_principal "HTTP/wallix.company.com@COMPANY.COM"
 
 # Configure LDAP for group mapping
 wabadmin config set auth.ldap.enabled true
 wabadmin config set auth.ldap.server "ldaps://dc-lab.company.com:636"
 wabadmin config set auth.ldap.base_dn "DC=company,DC=com"
-wabadmin config set auth.ldap.bind_dn "CN=svc-pam4ot,OU=Service Accounts,DC=company,DC=com"
+wabadmin config set auth.ldap.bind_dn "CN=svc-wallix,OU=Service Accounts,DC=company,DC=com"
 wabadmin config set auth.ldap.bind_password "[password]"
 
-# Restart PAM4OT
+# Restart WALLIX Bastion
 systemctl restart wallix-bastion
 ```
 
@@ -247,7 +247,7 @@ Group Policy settings for Kerberos SSO:
    > Internet Explorer > Internet Control Panel > Security Page
 
 2. Site to Zone Assignment List:
-   - https://pam4ot.company.com = 1 (Intranet)
+   - https://wallix.company.com = 1 (Intranet)
 
 3. User Configuration > Administrative Templates > Windows Components
    > Internet Explorer > Internet Control Panel > Security Page
@@ -278,18 +278,18 @@ EOF
 # Firefox about:config settings
 
 # network.negotiate-auth.trusted-uris
-# Value: https://pam4ot.company.com
+# Value: https://wallix.company.com
 
 # network.negotiate-auth.delegation-uris
-# Value: https://pam4ot.company.com
+# Value: https://wallix.company.com
 
 # Or via enterprise policy:
 cat > /usr/lib/firefox/distribution/policies.json << 'EOF'
 {
   "policies": {
     "Authentication": {
-      "SPNEGO": ["https://pam4ot.company.com"],
-      "Delegated": ["https://pam4ot.company.com"]
+      "SPNEGO": ["https://wallix.company.com"],
+      "Delegated": ["https://wallix.company.com"]
     }
   }
 }
@@ -310,17 +310,17 @@ klist -kt /etc/wab/krb5.keytab
 # Keytab name: FILE:/etc/wab/krb5.keytab
 # KVNO Timestamp           Principal
 # ---- ------------------- ----------------------------------------------
-#    2 01/28/25 10:00:00   HTTP/pam4ot.company.com@COMPANY.COM
+#    2 01/28/25 10:00:00   HTTP/wallix.company.com@COMPANY.COM
 
 # Test 2: Authenticate with keytab
-kinit -kt /etc/wab/krb5.keytab HTTP/pam4ot.company.com@COMPANY.COM
+kinit -kt /etc/wab/krb5.keytab HTTP/wallix.company.com@COMPANY.COM
 klist
 
 # Test 3: Verify Kerberos connectivity to DC
 kinit testuser@COMPANY.COM
 # Enter password when prompted
 
-# Test 4: Check PAM4OT Kerberos status
+# Test 4: Check WALLIX Bastion Kerberos status
 wabadmin auth kerberos status
 ```
 
@@ -333,11 +333,11 @@ wabadmin auth kerberos status
 klist
 
 # Test 2: Request service ticket manually
-klist get HTTP/pam4ot.company.com
+klist get HTTP/wallix.company.com
 
 # Test 3: Test with curl (from Linux with Kerberos)
 kinit username@COMPANY.COM
-curl -v --negotiate -u : https://pam4ot.company.com/
+curl -v --negotiate -u : https://wallix.company.com/
 
 # Expected: 200 OK with user authenticated
 ```
@@ -378,7 +378,7 @@ tcpdump -i any port 88 -w /tmp/kerberos.pcap
 export KRB5_TRACE=/tmp/krb5_trace.log
 
 # Run test
-kinit -kt /etc/wab/krb5.keytab HTTP/pam4ot.company.com@COMPANY.COM
+kinit -kt /etc/wab/krb5.keytab HTTP/wallix.company.com@COMPANY.COM
 
 # Review trace
 cat /tmp/krb5_trace.log
@@ -394,11 +394,11 @@ journalctl -u wallix-bastion | grep -i kerb
 setspn -X
 
 # Check SPN is associated with correct account
-setspn -Q HTTP/pam4ot.company.com
+setspn -Q HTTP/wallix.company.com
 
 # If SPN on wrong account, remove and re-add
-setspn -D HTTP/pam4ot.company.com wrong-account
-setspn -S HTTP/pam4ot.company.com svc-pam4ot
+setspn -D HTTP/wallix.company.com wrong-account
+setspn -S HTTP/wallix.company.com svc-wallix
 ```
 
 ### Keytab Issues
@@ -406,16 +406,16 @@ setspn -S HTTP/pam4ot.company.com svc-pam4ot
 ```bash
 # Regenerate keytab if corrupted
 # On DC:
-ktpass -princ HTTP/pam4ot.company.com@COMPANY.COM `
-    -mapuser COMPANY\svc-pam4ot `
+ktpass -princ HTTP/wallix.company.com@COMPANY.COM `
+    -mapuser COMPANY\svc-wallix `
     -pass "NewPassword!" `
     -crypto AES256-SHA1 `
     -ptype KRB5_NT_PRINCIPAL `
-    -out pam4ot-new.keytab
+    -out wallix-new.keytab
 
-# On PAM4OT:
+# On WALLIX Bastion:
 # Update password for service account first, then:
-cp pam4ot-new.keytab /etc/wab/krb5.keytab
+cp wallix-new.keytab /etc/wab/krb5.keytab
 chmod 600 /etc/wab/krb5.keytab
 chown wabuser:wabgroup /etc/wab/krb5.keytab
 systemctl restart wallix-bastion
@@ -431,7 +431,7 @@ systemctl restart wallix-bastion
 # Both HA nodes must have identical keytab
 
 # On primary node:
-scp /etc/wab/krb5.keytab root@pam4ot-node2:/etc/wab/krb5.keytab
+scp /etc/wab/krb5.keytab root@wallix-node2:/etc/wab/krb5.keytab
 
 # On secondary node:
 chmod 600 /etc/wab/krb5.keytab
@@ -442,11 +442,11 @@ chown wabuser:wabgroup /etc/wab/krb5.keytab
 
 ```powershell
 # Register SPN for VIP hostname
-setspn -S HTTP/pam4ot.company.com svc-pam4ot
+setspn -S HTTP/wallix.company.com svc-wallix
 
 # Also register for individual nodes if needed
-setspn -S HTTP/pam4ot-node1.company.com svc-pam4ot
-setspn -S HTTP/pam4ot-node2.company.com svc-pam4ot
+setspn -S HTTP/wallix-node1.company.com svc-wallix
+setspn -S HTTP/wallix-node2.company.com svc-wallix
 ```
 
 ### DNS Round-Robin Considerations
@@ -494,8 +494,8 @@ auditctl -w /etc/wab/krb5.keytab -p rwa -k keytab_access
 
 ```powershell
 # Protect service account
-Set-ADUser svc-pam4ot -AccountNotDelegated $true
-Add-ADGroupMember "Protected Users" svc-pam4ot
+Set-ADUser svc-wallix -AccountNotDelegated $true
+Add-ADGroupMember "Protected Users" svc-wallix
 ```
 
 ---
@@ -514,7 +514,7 @@ kdestroy                        # Destroy tickets
 klist -kt /path/to/keytab       # List keytab entries
 kinit -kt /path/to/keytab SPN   # Auth with keytab
 
-# PAM4OT Kerberos
+# WALLIX Bastion Kerberos
 wabadmin auth kerberos status   # Check Kerberos status
 wabadmin auth kerberos test     # Test Kerberos auth
 
@@ -534,12 +534,12 @@ Active Directory:
 [ ] Keytab generated
 [ ] Strong encryption enabled
 
-PAM4OT:
+WALLIX Bastion:
 [ ] Kerberos packages installed
 [ ] /etc/krb5.conf configured
 [ ] Keytab installed (600 permissions)
 [ ] Time synchronized with DC
-[ ] PAM4OT Kerberos enabled
+[ ] WALLIX Bastion Kerberos enabled
 
 Client:
 [ ] Browser configured for SSO

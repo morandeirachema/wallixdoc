@@ -1,6 +1,6 @@
 # Learning Paths
 
-## Role-Based Learning for WALLIX PAM4OT
+## Role-Based Learning for WALLIX Bastion
 
 Choose your role to get a customized learning path. Each path includes estimated time and competency checkpoints.
 
@@ -120,7 +120,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   | [_] Read: 07-authorization/README.md                                   |
   | [_] Practice: Create domain, devices, accounts                         |
   | [_] Practice: Configure LDAP authentication                            |
-  | [_] Practice: Set up MFA (TOTP)                                        |
+  | [_] Practice: Set up MFA (FortiToken)                                  |
   | [_] Practice: Create user groups and target groups                     |
   | [_] Practice: Create authorizations with policies                      |
   +------------------------------------------------------------------------+
@@ -220,7 +220,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   Module 3: Audit & Compliance (2 hours)
   +------------------------------------------------------------------------+
   | [_] Read: 24-compliance-audit/README.md                                |
-  | [_] Read: 20-iec62443-compliance/README.md (if OT relevant)            |
+  | [_] Read: 37-compliance-evidence/README.md                             |
   | [_] Practice: Generate compliance report                               |
   | [_] Practice: Export audit logs for SIEM                               |
   | [_] Practice: Review access certification report                       |
@@ -237,7 +237,7 @@ Choose your role to get a customized learning path. Each path includes estimated
 
   Module 5: SIEM Integration (1.5 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: 22-ot-integration/README.md (SIEM sections)                  |
+  | [_] Read: 12-monitoring-observability/README.md (SIEM sections)        |
   | [_] Practice: Configure syslog forwarding                              |
   | [_] Practice: Create SIEM dashboard for WALLIX                         |
   | [_] Practice: Set up alerting rules                                    |
@@ -261,9 +261,84 @@ Choose your role to get a customized learning path. Each path includes estimated
 
 ---
 
-## Path 4: OT Security Specialist (20-30 hours)
+## Path 4: Fortigate MFA Specialist (6-8 hours)
+
+**Goal**: Configure and manage Fortigate MFA integration
+
+```
++===============================================================================+
+|                   FORTIGATE MFA SPECIALIST LEARNING PATH                      |
++===============================================================================+
+
+  WHO IS THIS FOR?
+  ================
+  - Network security engineers
+  - MFA administrators
+  - Fortinet specialists
+  - Identity and access management (IAM) professionals
+
+  --------------------------------------------------------------------------
+
+  LEARNING MODULES
+  ================
+
+  Module 1: WALLIX Fundamentals (2 hours)
+  +------------------------------------------------------------------------+
+  | [_] Read: 01-quick-start/README.md                                     |
+  | [_] Read: 03-architecture/README.md                                    |
+  | [_] Read: 06-authentication/README.md                                  |
+  +------------------------------------------------------------------------+
+
+  Module 2: FortiAuthenticator Configuration (2 hours)
+  +------------------------------------------------------------------------+
+  | [_] Read: 06-authentication/fortiauthenticator-integration.md          |
+  | [_] Read: 47-fortigate-integration/README.md                           |
+  | [_] Practice: Configure RADIUS client on FortiAuthenticator            |
+  | [_] Practice: Sync users from Active Directory                         |
+  | [_] Practice: Provision FortiToken Mobile to users                     |
+  +------------------------------------------------------------------------+
+
+  Module 3: WALLIX MFA Integration (2 hours)
+  +------------------------------------------------------------------------+
+  | [_] Read: pre/04-fortiauthenticator-setup.md                           |
+  | [_] Practice: Configure RADIUS server in WALLIX                        |
+  | [_] Practice: Enable MFA policy for all users                          |
+  | [_] Practice: Test MFA authentication                                  |
+  | [_] Practice: Configure MFA bypass procedures                          |
+  +------------------------------------------------------------------------+
+
+  Module 4: Fortigate Firewall Integration (2 hours)
+  +------------------------------------------------------------------------+
+  | [_] Read: 47-fortigate-integration/README.md                           |
+  | [_] Practice: Configure SSL VPN with FortiAuth                         |
+  | [_] Practice: Set up firewall policies for WALLIX                      |
+  | [_] Practice: Configure VIP for WALLIX access                          |
+  | [_] Practice: Test end-to-end VPN + MFA + WALLIX flow                  |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  COMPETENCY CHECKPOINT
+  =====================
+
+  Can you:
+  [_] Configure FortiAuthenticator as RADIUS server?
+  [_] Provision FortiToken Mobile to users?
+  [_] Integrate WALLIX with FortiAuthenticator MFA?
+  [_] Configure Fortigate firewall policies for WALLIX?
+  [_] Troubleshoot MFA authentication failures?
+  [_] Set up emergency MFA bypass procedures?
+
++===============================================================================+
+```
+
+---
+
+## Path 5: OT Security Specialist (20-30 hours)
 
 **Goal**: Secure industrial environments with PAM
+
+> **Note**: This learning path references OT/Industrial content. Contact WALLIX professional services for OT-specific deployment guidance.
 
 ```
 +===============================================================================+
@@ -292,64 +367,41 @@ Choose your role to get a customized learning path. Each path includes estimated
 
   Module 2: OT Security Fundamentals (6 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: ot/01-ot-fundamentals.md                                     |
-  | [_] Read: ot/02-control-systems-101.md                                 |
-  | [_] Read: ot/03-ot-vs-it-security.md                                   |
-  | [_] Read: ot/04-industrial-protocols.md                                |
-  | [_] Read: ot/05-ot-network-architecture.md                             |
-  | [_] Read: ot/06-legacy-systems.md                                      |
+  | [_] External: IEC 62443 standards documentation                        |
+  | [_] External: NIST 800-82 Guide to ICS Security                        |
+  | [_] External: SANS ICS security resources                              |
+  | [_] Read: 14-best-practices/README.md (Security hardening)             |
   +------------------------------------------------------------------------+
 
-  Module 3: OT Threat Landscape (4 hours)
+  Module 3: OT Network Architecture (4 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: ot/07-ot-threat-landscape.md                                 |
-  | [_] Read: ot/08-ot-threat-modeling.md                                  |
-  | [_] Read: ot/09-ot-incident-response.md                                |
-  | [_] Read: 15-industrial-overview/README.md                             |
+  | [_] External: Purdue Model / IEC 62443 zone architecture               |
+  | [_] Read: 03-architecture/README.md (Zone deployment)                  |
+  | [_] Practice: Design WALLIX deployment for industrial zones            |
   +------------------------------------------------------------------------+
 
-  Module 4: WALLIX for OT (4 hours)
+  Module 4: Industrial Protocol Access (4 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: 16-ot-architecture/README.md                                 |
-  | [_] Read: 17-industrial-protocols/README.md                            |
-  | [_] Read: 18-scada-ics-access/README.md                                |
-  | [_] Read: 19-airgapped-environments/README.md                          |
-  | [_] Practice: Design WALLIX deployment for IEC 62443 zones             |
+  | [_] Read: 09-session-management/README.md                              |
+  | [_] Read: 27-vendor-integration/README.md                              |
+  | [_] Practice: Configure Universal Tunneling for industrial protocols   |
+  | [_] Practice: Set up secure vendor remote access                       |
   +------------------------------------------------------------------------+
 
   Module 5: Compliance & Standards (4 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: ot/10-iec62443-deep-dive.md                                  |
-  | [_] Read: ot/11-regulatory-landscape.md                                |
-  | [_] Read: 20-iec62443-compliance/README.md                             |
-  | [_] Read: 24-compliance-audit/README.md (IEC 62443 sections)           |
+  | [_] Read: 24-compliance-audit/README.md                                |
+  | [_] Read: 37-compliance-evidence/README.md                             |
+  | [_] External: IEC 62443-3-3 security requirements                      |
   | [_] Practice: Map WALLIX controls to IEC 62443 requirements            |
   +------------------------------------------------------------------------+
 
   Module 6: OT Deployment & Operations (4 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: install/06-ot-network-config.md                              |
-  | [_] Read: install/appliance-setup-guide.md (OT sections)               |
-  | [_] Read: 21-industrial-use-cases/README.md                            |
-  | [_] Read: 22-ot-integration/README.md                                  |
-  | [_] Read: 23-industrial-best-practices/README.md                       |
-  | [_] Practice: Configure Universal Tunneling for OT protocol            |
-  +------------------------------------------------------------------------+
-
-  Module 7: Vendor & Risk Management (3 hours)
-  +------------------------------------------------------------------------+
-  | [_] Read: ot/12-vendor-risk-management.md                              |
-  | [_] Read: 21-operational-runbooks/README.md (Vendor sections)          |
-  | [_] Practice: Set up time-limited vendor access                        |
-  | [_] Practice: Monitor vendor session in real-time                      |
-  +------------------------------------------------------------------------+
-
-  Module 8: Hands-On Labs (4 hours)
-  +------------------------------------------------------------------------+
-  | [_] Read: ot/14-hands-on-labs.md                                       |
-  | [_] Practice: Set up home lab with OT simulation                       |
-  | [_] Practice: Configure Modbus access through WALLIX                   |
-  | [_] Practice: Incident response drill with OT target                   |
+  | [_] Read: install/README.md                                            |
+  | [_] Read: install/appliance-setup-guide.md                             |
+  | [_] Read: 21-operational-runbooks/README.md                            |
+  | [_] Practice: Deploy WALLIX in air-gapped test environment             |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -360,18 +412,17 @@ Choose your role to get a customized learning path. Each path includes estimated
   Can you:
   [_] Explain OT vs IT security differences?
   [_] Design WALLIX architecture for IEC 62443 zones?
-  [_] Configure access to industrial protocols (Modbus, OPC UA)?
+  [_] Configure access to industrial protocols?
   [_] Set up secure vendor remote access?
   [_] Map WALLIX capabilities to compliance requirements?
-  [_] Respond to OT-specific security incidents?
-  [_] Deploy WALLIX in air-gapped environment?
+  [_] Deploy WALLIX in isolated/air-gapped environment?
 
 +===============================================================================+
 ```
 
 ---
 
-## Path 5: DevOps Engineer (6-8 hours)
+## Path 6: DevOps Engineer (6-8 hours)
 
 **Goal**: Automate WALLIX deployment and management
 
@@ -384,7 +435,7 @@ Choose your role to get a customized learning path. Each path includes estimated
   ================
   - Infrastructure automation engineers
   - CI/CD pipeline developers
-  - Cloud infrastructure teams
+  - Infrastructure teams
   - Site reliability engineers (SRE)
 
   --------------------------------------------------------------------------
@@ -411,7 +462,6 @@ Choose your role to get a customized learning path. Each path includes estimated
   Module 3: Infrastructure as Code (2 hours)
   +------------------------------------------------------------------------+
   | [_] Read: 16-cloud-deployment/README.md (On-premises deployment)       |
-  | [_] Note: 25-container-deployment/ (Not recommended for OT)            |
   | [_] Review: Terraform provider documentation                           |
   | [_] Practice: Deploy WALLIX resources with Terraform                   |
   | [_] Practice: Create Ansible playbook for configuration                |
@@ -419,8 +469,8 @@ Choose your role to get a customized learning path. Each path includes estimated
 
   Module 4: CI/CD Integration (1.5 hours)
   +------------------------------------------------------------------------+
-  | [_] Review: examples/devops/ (when created)                            |
-  | [_] Practice: Auto-onboard servers from cloud provider                 |
+  | [_] Review: examples/ansible/ playbooks                                |
+  | [_] Practice: Auto-onboard servers from inventory                      |
   | [_] Practice: Integrate WALLIX provisioning in deployment pipeline     |
   | [_] Practice: Set up GitOps workflow for WALLIX config                 |
   +------------------------------------------------------------------------+
@@ -461,9 +511,15 @@ Choose your role to get a customized learning path. Each path includes estimated
 - Create automation for full deployment
 - Lead DR test successfully
 
-### Level 4: OT PAM Specialist
+### Level 4: Fortigate MFA Expert
+- Complete Fortigate MFA Specialist Path
+- Deploy WALLIX with Fortigate integration
+- Configure SSL VPN + MFA authentication
+- Document MFA procedures and runbooks
+
+### Level 5: OT PAM Specialist
 - Complete OT Security Specialist Path
-- Deploy WALLIX in OT environment
+- Deploy WALLIX in OT/industrial environment
 - Achieve IEC 62443 compliance mapping
 - Conduct vendor access security review
 
@@ -487,7 +543,7 @@ If you only have 2 hours, read these in order:
 |----------|-----|
 | WALLIX Documentation | https://pam.wallix.one/documentation |
 | WALLIX Support | https://support.wallix.com |
-| OT Security Training | /ot/15-resources.md |
+| Fortigate MFA Integration | 47-fortigate-integration/README.md |
 | API Samples | https://github.com/wallix/wbrest_samples |
 | Terraform Provider | https://registry.terraform.io/providers/wallix/wallix-bastion |
 
