@@ -218,7 +218,7 @@ wabadmin user show jsmith
 # Email:           jsmith@company.com
 # Status:          active
 # Auth Type:       ldap
-# MFA Enabled:     Yes (TOTP)
+# MFA Enabled:     Yes (FortiToken)
 # Groups:          engineers, ot_operators
 # Created:         2025-06-15 08:00:00 UTC
 # Last Login:      2026-01-31 10:30:00 UTC

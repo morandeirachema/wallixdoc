@@ -35,8 +35,8 @@ The WALLIX Bastion Self-Service Portal empowers end users to manage their own ac
 |  |   PASSWORD        |   |   MFA             |   |   PROFILE         |        |
 |  |   MANAGEMENT      |   |   ENROLLMENT      |   |   SETTINGS        |        |
 |  |                   |   |                   |   |                   |        |
-|  |   * Reset         |   |   * TOTP setup    |   |   * Contact info  |        |
-|  |   * Change        |   |   * FIDO2 keys    |   |   * Preferences   |        |
+|  |   * Reset         |   |   * FortiToken setup    |   |   * Contact info  |        |
+|  |   * Change        |   |   * FortiToken keys    |   |   * Preferences   |        |
 |  |   * History       |   |   * Backup codes  |   |   * Timezone      |        |
 |  +-------------------+   +-------------------+   +-------------------+        |
 |                                                                               |
@@ -406,13 +406,13 @@ Authenticated users can proactively change their password.
 
 ## MFA Self-Enrollment
 
-### TOTP Enrollment
+### FortiToken Enrollment
 
-Users can self-enroll TOTP authenticator apps (Google Authenticator, Microsoft Authenticator, Authy, etc.).
+Users can self-enroll FortiToken apps (Google Authenticator, Microsoft Authenticator, Authy, etc.).
 
 ```
 +===============================================================================+
-|                    TOTP ENROLLMENT WORKFLOW                                   |
+|                    FORTITOKEN ENROLLMENT WORKFLOW                                   |
 +===============================================================================+
 |                                                                               |
 |  SELF-SERVICE PORTAL > SECURITY > MFA > ENROLL AUTHENTICATOR                 |
@@ -462,7 +462,7 @@ Users can self-enroll TOTP authenticator apps (Google Authenticator, Microsoft A
 |                                                                               |
 |  +-----------------------------------------------------------------------+   |
 |  |                                                                       |   |
-|  |   TOTP authenticator successfully enrolled!                           |   |
+|  |   FortiToken successfully enrolled!                           |   |
 |  |                                                                       |   |
 |  |   Device Name: My Authenticator                                       |   |
 |  |   Enrolled: 2026-01-28 14:32:15                                       |   |
@@ -477,13 +477,13 @@ Users can self-enroll TOTP authenticator apps (Google Authenticator, Microsoft A
 +===============================================================================+
 ```
 
-### FIDO2/WebAuthn Enrollment
+### FortiToken Enrollment
 
-Hardware security keys provide phishing-resistant authentication.
+Hardware FortiTokens provide phishing-resistant authentication.
 
 ```
 +===============================================================================+
-|                    FIDO2/WEBAUTHN ENROLLMENT                                  |
+|                    FORTITOKEN ENROLLMENT                                  |
 +===============================================================================+
 |                                                                               |
 |  SELF-SERVICE PORTAL > SECURITY > MFA > ENROLL SECURITY KEY                  |
@@ -495,16 +495,16 @@ Hardware security keys provide phishing-resistant authentication.
 |  |   =====================                                               |   |
 |  |                                                                       |   |
 |  |   Supported devices:                                                  |   |
-|  |   * YubiKey 5 Series                                                  |   |
-|  |   * YubiKey Security Key                                              |   |
-|  |   * Google Titan Key                                                  |   |
-|  |   * Feitian ePass                                                     |   |
+|  |   * FortiToken Mobile App                                                  |   |
+|  |   * FortiToken Hardware                                              |   |
+|  |   * FortiToken 200                                                  |   |
+|  |   * FortiToken 300                                                     |   |
 |  |   * Windows Hello (biometric)                                         |   |
 |  |   * macOS Touch ID                                                    |   |
 |  |                                                                       |   |
 |  |   Device Name:                                                        |   |
 |  |   +-------------------------------------------------------+           |   |
-|  |   | YubiKey 5 NFC - Work                                  |           |   |
+|  |   | FortiToken - Primary                                  |           |   |
 |  |   +-------------------------------------------------------+           |   |
 |  |                                                                       |   |
 |  |   [Begin Registration]                                                |   |
@@ -516,15 +516,15 @@ Hardware security keys provide phishing-resistant authentication.
 |                                                                               |
 |  +-----------------------------------------------------------------------+   |
 |  |                                                                       |   |
-|  |   wallix-bastion.company.com wants to register a security key         |   |
+|  |   wallix-bastion.company.com wants to register a FortiToken         |   |
 |  |                                                                       |   |
-|  |   Insert your security key and touch it, or use Windows Hello         |   |
+|  |   Insert your FortiToken and touch it, or use Windows Hello         |   |
 |  |                                                                       |   |
 |  |   +-------------------------------------------+                       |   |
 |  |   |                                           |                       |   |
-|  |   |      [Security Key Icon]                  |                       |   |
+|  |   |      [FortiToken Icon]                  |                       |   |
 |  |   |                                           |                       |   |
-|  |   |      Touch your security key              |                       |   |
+|  |   |      Touch your FortiToken              |                       |   |
 |  |   |                                           |                       |   |
 |  |   +-------------------------------------------+                       |   |
 |  |                                                                       |   |
@@ -539,8 +539,8 @@ Hardware security keys provide phishing-resistant authentication.
 |  |                                                                       |   |
 |  |   Security key registered successfully!                               |   |
 |  |                                                                       |   |
-|  |   Name: YubiKey 5 NFC - Work                                          |   |
-|  |   Type: USB Security Key (FIDO2)                                      |   |
+|  |   Name: FortiToken - Primary                                          |   |
+|  |   Type: USB FortiToken (FortiToken)                                      |   |
 |  |   Registered: 2026-01-28 14:45:22                                     |   |
 |  |   Credential ID: 8f4a2b...                                            |   |
 |  |                                                                       |   |
@@ -567,7 +567,7 @@ Hardware security keys provide phishing-resistant authentication.
 |  |   ============                                                        |   |
 |  |                                                                       |   |
 |  |   Use these codes if you lose access to your authenticator app        |   |
-|  |   or security key. Each code can only be used once.                   |   |
+|  |   or FortiToken. Each code can only be used once.                   |   |
 |  |                                                                       |   |
 |  |   +-----------------------------------------------------------+       |   |
 |  |   |                                                           |       |   |
@@ -653,8 +653,8 @@ Hardware security keys provide phishing-resistant authentication.
 |  |  Device Name          | Type      | Status   | Last Used  | Actions   |   |
 |  +-----------------------+-----------+----------+------------+-----------+   |
 |  |  Google Authenticator | TOTP      | Active   | Today      | [Remove]  |   |
-|  |  YubiKey 5 NFC Work   | FIDO2     | Active   | Yesterday  | [Remove]  |   |
-|  |  YubiKey 5 Backup     | FIDO2     | Active   | 2025-12-01 | [Remove]  |   |
+|  |  FortiToken Primary   | FortiToken     | Active   | Yesterday  | [Remove]  |   |
+|  |  FortiToken Backup     | FortiToken     | Active   | 2025-12-01 | [Remove]  |   |
 |  |  Work Phone           | Push      | Active   | Today      | [Remove]  |   |
 |  |  Backup Codes (9/10)  | Recovery  | Active   | 2026-01-15 | [Manage]  |   |
 |  +-----------------------+-----------+----------+------------+-----------+   |
@@ -2033,16 +2033,16 @@ timedatectl set-ntp true
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
-|  ISSUE: FIDO2 Security Key Not Recognized                                     |
+|  ISSUE: FortiToken FortiToken Not Recognized                                     |
 |  ========================================                                     |
 |                                                                               |
 |  Symptoms:                                                                    |
-|  * Browser not detecting security key                                         |
-|  * "No security key found" error                                              |
+|  * Browser not detecting FortiToken                                         |
+|  * "No FortiToken found" error                                              |
 |  * Key blinks but authentication fails                                        |
 |                                                                               |
 |  Checks:                                                                      |
-|  [ ] Verify browser supports WebAuthn (Chrome 67+, Firefox 60+, Edge 79+)     |
+|  [ ] Verify browser supports FortiToken (Chrome 67+, Firefox 60+, Edge 79+)     |
 |  [ ] Try different USB port                                                   |
 |  [ ] Check if key requires PIN setup first                                    |
 |  [ ] Verify key is registered for this account                                |
@@ -2052,7 +2052,7 @@ timedatectl set-ntp true
 
 # Open browser developer console (F12) and run:
 navigator.credentials.get({publicKey: {challenge: new Uint8Array(32)}})
-# Should prompt for security key if WebAuthn is working
+# Should prompt for FortiToken if FortiToken is working
 
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
@@ -2277,7 +2277,7 @@ curl -X GET "https://bastion.company.com/api/v1/selfservice/sessions?days=7" \
 | [Authorization](../07-authorization/README.md) | RBAC and approval workflows |
 | [Password Management](../08-password-management/README.md) | Credential vault and rotation |
 | [Session Management](../09-session-management/README.md) | Session recording and monitoring |
-| [FIDO2 Hardware MFA](../40-fido2-hardware-mfa/README.md) | Hardware token configuration |
+| [FortiToken Hardware MFA](../40-fido2-hardware-mfa/README.md) | Hardware token configuration |
 | [JIT Access](../25-jit-access/README.md) | Just-in-time access workflows |
 
 ---
@@ -2289,7 +2289,7 @@ curl -X GET "https://bastion.company.com/api/v1/selfservice/sessions?days=7" \
 | WALLIX Documentation Portal | https://pam.wallix.one/documentation |
 | WALLIX User Guide | https://pam.wallix.one/documentation/user-doc/bastion_en_user_guide.pdf |
 | WALLIX Admin Guide | https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf |
-| WebAuthn Specification | https://www.w3.org/TR/webauthn-2/ |
+| FortiToken Specification | https://www.w3.org/TR/webauthn-2/ |
 | FIDO Alliance | https://fidoalliance.org/ |
 
 ---

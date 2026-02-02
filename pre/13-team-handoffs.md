@@ -423,7 +423,7 @@ Deprovisioning:
 
 ```
 MFA Provider: ____________
-Integration: RADIUS / TOTP / FIDO2
+Integration: RADIUS / FortiToken
 
 Configuration in WALLIX Bastion:
 - System > Authentication > MFA

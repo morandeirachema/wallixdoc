@@ -11,7 +11,7 @@ This file provides context for AI assistants (Claude, Copilot, etc.) working wit
 | **Focus** | Privileged Access Management (PAM) with Fortigate MFA |
 | **Deployment** | On-premises only (bare metal and VMs, no cloud/SaaS) |
 | **Version** | WALLIX Bastion 12.1.x |
-| **Content** | 47 PAM documentation sections |
+| **Content** | 46 PAM documentation sections |
 
 ## Directory Structure
 
@@ -20,10 +20,10 @@ wallixdoc/
 ├── CLAUDE.md              # This file - AI assistant context
 ├── README.md              # Repository overview and navigation
 │
-├── docs/                  # Product documentation (47 sections)
+├── docs/                  # Product documentation (46 sections)
 │   ├── README.md          # Documentation index with learning paths
 │   │
-│   └── pam/               # PAM/WALLIX Core Documentation (47 sections)
+│   └── pam/               # PAM/WALLIX Core Documentation (46 sections)
 │       │
 │       │   # Getting Started (00-05)
 │       ├── 00-official-resources/     # Official WALLIX documentation links
@@ -82,7 +82,6 @@ wallixdoc/
 │       ├── 37-compliance-evidence/    # Evidence collection, attestation
 │       ├── 38-command-filtering/      # Command whitelist/blacklist
 │       ├── 39-session-recording-playback/ # Playback, OCR, forensics
-│       ├── 40-fido2-hardware-mfa/     # FIDO2/WebAuthn, YubiKey
 │       │
 │       │   # Advanced Features (41-47)
 │       ├── 41-account-discovery/      # Discovery scanning, bulk import
@@ -183,7 +182,7 @@ Targets: Windows Server 2022, RHEL 10, RHEL 9
 ## Key Topics Covered
 
 ### Core PAM (docs/pam/)
-- Multi-factor authentication (TOTP, FIDO2/WebAuthn, FortiAuthenticator, LDAP/AD, Kerberos, OIDC, SAML)
+- Multi-factor authentication (FortiAuthenticator with FortiToken, LDAP/AD, Kerberos)
 - Fortigate firewall integration with FortiToken MFA
 - Role-based access control with approval workflows
 - Session recording with OCR and keystroke logging
@@ -377,7 +376,7 @@ wabadmin sync-status
 
 | Category | Sections | Location | Focus |
 |----------|----------|----------|-------|
-| **PAM Core** | 47 | `docs/pam/` | Authentication, authorization, password management, session recording, API, deployment, operations, compliance, Fortigate integration |
+| **PAM Core** | 46 | `docs/pam/` | Authentication, authorization, password management, session recording, API, deployment, operations, compliance, Fortigate integration |
 | **Installation** | 9 | `install/` | Multi-site deployment, HA configuration, security hardening |
 | **Pre-Production Lab** | 13 | `pre/` | VMware vSphere/ESXi lab setup, FortiAuthenticator MFA, WALLIX RDS, test targets, validation |
 | **Automation** | 3 | `examples/` | Ansible playbooks, Terraform IaC, API samples |

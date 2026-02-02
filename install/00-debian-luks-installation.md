@@ -64,7 +64,7 @@ This guide provides step-by-step instructions for installing **Debian 12 (Bookwo
 | **Header Size** | 2 MB | 16 MB (more metadata) |
 | **Key Derivation** | PBKDF2 | Argon2id (default) |
 | **Authenticated Encryption** | No | Yes (AEAD) |
-| **Token Support** | No | Yes (TPM2, FIDO2) |
+| **Token Support** | No | Yes (TPM2, FortiToken) |
 | **Online Reencryption** | Limited | Full support |
 | **Debian 12 Default** | No | Yes |
 

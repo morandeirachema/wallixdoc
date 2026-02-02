@@ -558,10 +558,10 @@
   | LDAP (remote)             | 150 ms   | 400 ms   | Latency sensitive    |
   | Active Directory          | 100 ms   | 250 ms   | Kerberos adds 50ms   |
   | RADIUS                    | 90 ms    | 220 ms   | Network dependent    |
-  | TOTP (Time-based OTP)     | 50 ms    | 120 ms   | Local validation     |
-  | FIDO2/WebAuthn            | 150 ms   | 350 ms   | Client dependent     |
+  | FortiToken     | 50 ms    | 120 ms   | Local validation     |
+  | FortiAuthenticator            | 150 ms   | 350 ms   | Client dependent     |
   | Smart Card (X.509)        | 200 ms   | 450 ms   | PKI lookup           |
-  | Combined (LDAP + TOTP)    | 130 ms   | 300 ms   | Parallel possible    |
+  | Combined (LDAP + FortiToken)    | 130 ms   | 300 ms   | Parallel possible    |
   +---------------------------+----------+----------+----------------------+
 
 +==============================================================================+

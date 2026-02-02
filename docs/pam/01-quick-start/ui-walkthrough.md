@@ -214,7 +214,7 @@ This guide walks through both the Administrator and User interfaces with detaile
 |  ========                          | ==============                           |
 |                                    |                                          |
 |  Username: jsmith                  | Primary: LDAP (Active Directory)         |
-|  Full Name: John Smith             | Secondary: TOTP (Configured)             |
+|  Full Name: John Smith             | Secondary: FortiToken (Configured)             |
 |  Email: jsmith@company.com         |                                          |
 |  Phone: +1-555-0123                | [ ] Force password change                |
 |  Source: LDAP                      | [x] Account enabled                      |

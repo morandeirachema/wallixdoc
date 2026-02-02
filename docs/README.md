@@ -1,6 +1,6 @@
 # WALLIX Bastion Documentation
 
-> Complete reference for **WALLIX Bastion** with Fortigate MFA — 47 sections covering PAM fundamentals, authentication, session management, deployment, operations, and compliance.
+> Complete reference for **WALLIX Bastion** with Fortigate MFA — 46 sections covering PAM fundamentals, authentication, session management, deployment, operations, and compliance.
 >
 > Built on WALLIX Bastion 12.x technology with integrated Fortinet multi-factor authentication.
 
@@ -12,7 +12,7 @@ This documentation is organized in a single PAM category:
 
 ```
 docs/
-└── pam/    # PAM/WALLIX Core (47 sections)
+└── pam/    # PAM/WALLIX Core (46 sections)
             # Authentication, authorization, password management,
             # session recording, API, deployment, operations,
             # Fortigate MFA integration
@@ -106,7 +106,6 @@ docs/
 | 37 | [Compliance Evidence](./pam/37-compliance-evidence/README.md) | Evidence collection, audit artifacts, attestation |
 | 38 | [Command Filtering](./pam/38-command-filtering/README.md) | Command whitelisting/blacklisting, regex patterns |
 | 39 | [Session Recording Playback](./pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics, export |
-| 40 | [FIDO2 & Hardware MFA](./pam/40-fido2-hardware-mfa/README.md) | FIDO2/WebAuthn, YubiKey, smart cards, passwordless |
 
 ### Advanced Features (41-47)
 
@@ -188,5 +187,5 @@ Compliance      → pam/24 → pam/25 → pam/09 → pam/39 → pam/07
 ---
 
 <p align="center">
-  <sub>47 Sections • PAM with Fortigate MFA • February 2026</sub>
+  <sub>46 Sections • PAM with Fortigate MFA • February 2026</sub>
 </p>

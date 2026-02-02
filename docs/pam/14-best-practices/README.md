@@ -176,7 +176,7 @@
   |   User Identity                                                        |
   |   +--------------------+                                               |
   |   | 1. Primary Auth    | AD/LDAP, Local, SAML, OIDC                    |
-  |   | 2. MFA Required    | TOTP, FIDO2, Push, SMS                        |
+  |   | 2. MFA Required    | TOTP, FortiToken Push                        |
   |   | 3. Device Trust    | Certificate, compliance check                 |
   |   | 4. Context Check   | Location, time, behavior                      |
   |   +--------------------+                                               |
@@ -335,7 +335,6 @@
   [ ] Implement strong password policies
   [ ] Configure account lockout policies
   [ ] Enable adaptive authentication (risk-based)
-  [ ] Deploy FIDO2/WebAuthn for high-security users
 
   PHASE 2: NETWORK
   ================

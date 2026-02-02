@@ -274,7 +274,7 @@
 |  - FortiToken Mobile (Push notification)                                      |
 |  - FortiToken Hardware (OTP)                                                  |
 |  - SMS/Email OTP                                                              |
-|  - FIDO2/WebAuthn                                                             |
+|  - FortiToken Push                                                             |
 |                                                                               |
 +===============================================================================+
 ```

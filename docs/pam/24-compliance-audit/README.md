@@ -617,7 +617,7 @@ wabadmin users --with-roles --export > nis2/user-roles.csv
   SL 3 - High Protection:
   +------------------------------------------------------------------------+
   | [ ] All SL 2 requirements PLUS:                                        |
-  | [ ] Hardware MFA (FIDO2/smartcard)                                     |
+  | [ ] Hardware MFA (FortiToken)                                     |
   | [ ] HA cluster deployment                                              |
   | [ ] Session recording with OCR/keystroke logging                       |
   | [ ] Time-based access restrictions                                     |

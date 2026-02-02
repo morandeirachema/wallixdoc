@@ -25,7 +25,7 @@
 
 - **Secure Remote Access** - Controlled access to critical systems through a single gateway
 - **Fortigate MFA Integration** - FortiAuthenticator with FortiToken Mobile/Push authentication
-- **Strong Authentication** - MFA with FIDO2, LDAP/AD, Kerberos, SAML/OIDC
+- **Strong Authentication** - FortiAuthenticator MFA with LDAP/AD integration
 - **Session Recording** - Full audit trail with video replay, OCR, and keystroke logging
 - **Password Management** - Encrypted vault with automatic credential rotation
 
@@ -65,8 +65,8 @@
 ```
 wallixdoc/
 │
-├── docs/                         # Technical Documentation (47 sections)
-│   └── pam/                      # PAM/WALLIX Core (47 sections, 00-47)
+├── docs/                         # Technical Documentation (46 sections)
+│   └── pam/                      # PAM/WALLIX Core (46 sections, 00-47)
 │       ├── 00-05  Getting Started & Configuration
 │       ├── 06-09  Authentication, Authorization & Sessions
 │       ├── 10-15  API, HA, Monitoring & Best Practices
@@ -102,7 +102,7 @@ wallixdoc/
 |------|------------------|
 | **New to WALLIX** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) → [Core Components](./docs/pam/04-core-components/README.md) |
 | **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) → [Troubleshooting](./docs/pam/13-troubleshooting/README.md) |
-| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate Integration](./docs/pam/47-fortigate-integration/README.md) → [FIDO2 MFA](./docs/pam/40-fido2-hardware-mfa/README.md) → [Best Practices](./docs/pam/14-best-practices/README.md) |
+| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate Integration](./docs/pam/47-fortigate-integration/README.md) → [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) → [Best Practices](./docs/pam/14-best-practices/README.md) |
 | **DevOps/Automation** | [API Reference](./docs/pam/17-api-reference/README.md) → [Deployment](./docs/pam/16-cloud-deployment/README.md) → [Ansible Examples](./examples/ansible/README.md) |
 | **Compliance Officer** | [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence Collection](./docs/pam/37-compliance-evidence/README.md) |
 
@@ -122,7 +122,7 @@ wallixdoc/
 
 | Category | Capabilities |
 |----------|-------------|
-| **Authentication** | MFA (FIDO2/WebAuthn, TOTP, YubiKey, FortiAuthenticator), LDAP/AD, Kerberos SSO, OIDC/SAML, X.509 Certificates |
+| **Authentication** | FortiAuthenticator MFA (FortiToken Mobile/Push), LDAP/AD, Kerberos SSO |
 | **Fortigate Integration** | FortiToken Mobile/Push, RADIUS authentication, SSL VPN integration, Fortigate firewall policies |
 | **Authorization** | RBAC, approval workflows, time-based access, JIT privileged access |
 | **Session Management** | Video recording, OCR search, real-time monitoring, keystroke logging, session sharing |
@@ -330,7 +330,6 @@ Explore [Examples](./examples/README.md) for automation:
 | [37 - Compliance Evidence](./docs/pam/37-compliance-evidence/README.md) | Evidence collection, attestation |
 | [38 - Command Filtering](./docs/pam/38-command-filtering/README.md) | Command whitelisting/blacklisting |
 | [39 - Session Recording Playback](./docs/pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics |
-| [40 - FIDO2 & Hardware MFA](./docs/pam/40-fido2-hardware-mfa/README.md) | FIDO2/WebAuthn, YubiKey, passwordless |
 
 ### Advanced Features (41-47)
 
@@ -347,5 +346,5 @@ Explore [Examples](./examples/README.md) for automation:
 ---
 
 <p align="center">
-  <sub>47 Sections • PAM with Fortigate MFA • Pre-Production Lab • February 2026</sub>
+  <sub>46 Sections • PAM with Fortigate MFA • Pre-Production Lab • February 2026</sub>
 </p>

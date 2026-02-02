@@ -614,8 +614,8 @@ WALLIX consolidates all PAM functions into a single appliance:
 |  | OpenID Connect (OIDC)          | Yes              | Yes              |  |
 |  | Kerberos                       | Yes              | Yes              |  |
 |  | Smart cards / X.509            | Yes              | Yes              |  |
-|  | TOTP (Google Auth, etc.)       | Yes              | Yes              |  |
-|  | FIDO2 / WebAuthn               | Yes              | Yes              |  |
+|  | FortiToken Mobile       | Yes              | Yes              |  |
+|  | FortiToken MFA               | Yes              | Yes              |  |
 |  +--------------------------------+------------------+------------------+  |
 |                                                                            |
 |  PASSWORD MANAGEMENT                                                       |

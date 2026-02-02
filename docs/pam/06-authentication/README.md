@@ -48,7 +48,7 @@ WALLIX Bastion supports multiple authentication layers:
 |   |                    SECOND FACTOR                                    |   |
 |   |                                                                     |   |
 |   |  +---------+  +---------+  +---------+  +---------+  +---------+    |   |
-|   |  |  TOTP   |  |  RADIUS |  |   SMS   |  |  Push   |  |  X.509  |    |   |
+|   |  |FortiToken|  |  RADIUS |  |   SMS   |  |  Push   |  |  X.509  |    |   |
 |   |  |         |  |  (OTP)  |  |         |  |         |  |  Cert   |    |   |
 |   |  +---------+  +---------+  +---------+  +---------+  +---------+    |   |
 |   |                                                                     |   |
@@ -68,7 +68,7 @@ WALLIX Bastion supports multiple authentication layers:
 
 | Method | Primary Auth | MFA Capable | SSO | Use Case |
 |--------|-------------|-------------|-----|----------|
-| **Local** | Yes | Via TOTP | No | Small deployments |
+| **Local** | Yes | Via FortiToken | No | Small deployments |
 | **LDAP/AD** | Yes | Via external | No | Enterprise standard |
 | **RADIUS** | Yes | Native | No | MFA integration |
 | **Kerberos** | Yes | Via external | Yes | Windows SSO |
@@ -95,7 +95,7 @@ User Settings:
 +-- Password Policy: Strong (12+ chars, complexity)
 +-- Password Expiry: 90 days
 +-- Account Lockout: 5 failed attempts
-+-- MFA: TOTP enabled
++-- MFA: FortiToken enabled
 ```
 
 ### Password Policy Configuration
@@ -345,7 +345,7 @@ WALLIX supports multiple MFA methods for enhanced security.
 +=============================================================================+
 |                                                                             |
 |   +-----------------+  +-----------------+  +-----------------+             |
-|   |      TOTP       |  |     RADIUS      |  |   PUSH/SMS      |             |
+|   |      FortiToken       |  |     RADIUS      |  |   PUSH/SMS      |             |
 |   |                 |  |     (OTP)       |  |                 |             |
 |   |  * Google Auth  |  |  * RSA SecurID  |  |  * Trustelem    |             |
 |   |  * Microsoft    |  |  * Duo          |  |  * External     |             |
@@ -356,8 +356,8 @@ WALLIX supports multiple MFA methods for enhanced security.
 |                                                                             |
 |   +-----------------+  +-----------------+                                  |
 |   |   CERTIFICATE   |  |    WEBAUTHN     |                                  |
-|   |                 |  |    (FIDO2)      |                                  |
-|   |  * Smart cards  |  |  * YubiKey      |                                  |
+|   |                 |  |    FortiToken      |                                  |
+|   |  * FortiToken  |  |  * FortiToken      |                                  |
 |   |  * PKI certs    |  |  * Windows      |                                  |
 |   |                 |  |    Hello        |                                  |
 |   +-----------------+  +-----------------+                                  |
@@ -365,9 +365,9 @@ WALLIX supports multiple MFA methods for enhanced security.
 +=============================================================================+
 ```
 
-### TOTP Configuration
+### FortiToken Configuration
 
-#### Enable TOTP for User
+#### Enable FortiToken for User
 
 ```json
 {
@@ -384,13 +384,13 @@ WALLIX supports multiple MFA methods for enhanced security.
 }
 ```
 
-#### TOTP Enrollment Flow
+#### FortiToken Enrollment Flow
 
 ```
-TOTP Enrollment
+FortiToken Enrollment
 ===============
 
-1. Admin enables TOTP for user
+1. Admin enables FortiToken for user
            |
            v
 2. User logs in (redirected to enrollment)
@@ -405,7 +405,7 @@ TOTP Enrollment
 5. User enters verification code
            |
            v
-6. TOTP enrolled successfully
+6. FortiToken enrolled successfully
 ```
 
 ### MFA Policy Configuration
@@ -745,7 +745,7 @@ X.509 certificate authentication provides strong authentication using PKI.
 
 | Scenario | Configuration |
 |----------|---------------|
-| Smart cards | Certificate + PIN |
+| FortiToken | Certificate + PIN |
 | Mutual TLS | Client certificate |
 | PIV/CAC | Government PKI |
 
