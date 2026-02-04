@@ -107,7 +107,7 @@ docs/
 | 38 | [Command Filtering](./pam/38-command-filtering/README.md) | Command whitelisting/blacklisting, regex patterns |
 | 39 | [Session Recording Playback](./pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics, export |
 
-### Advanced Features (40-46)
+### Advanced Features (40-48)
 
 | # | Section | Description |
 |---|---------|-------------|
@@ -183,8 +183,8 @@ Compliance      → pam/24 → pam/25 → pam/09 → pam/39 → pam/07
 
 | Category | Sections | Location | Status |
 |----------|----------|----------|--------|
-| PAM Core | 47 | docs/pam/ | Complete |
-| **Total** | **47** | | **Complete** |
+| PAM Core | 48 | docs/pam/ | Complete |
+| **Total** | **48** | | **Complete** |
 
 ---
 
@@ -206,7 +206,7 @@ Current documentation state:
 
 | Metric | Status | Details |
 |--------|--------|---------|
-| **Cross-reference coverage** | 47/47 (100%) | All sections fully linked |
+| **Cross-reference coverage** | 48/48 (100%) | All sections fully linked |
 | **Terminology consistency** | Standardized | Via glossary in section 15 |
 | **Port documentation** | Complete | 30+ ports documented |
 | **Missing protocols** | 0 | WinRM added, all protocols covered |
@@ -229,7 +229,7 @@ Guidelines for maintaining documentation quality:
 This documentation achieves A++ quality through:
 
 - **Complete cross-references**: Every section links to related topics
-- **No missing topics**: 47 sections cover all PAM aspects end-to-end
+- **No missing topics**: 48 sections cover all PAM aspects end-to-end
 - **Practical examples**: Real-world scenarios with working code
 - **Comprehensive troubleshooting**: Error codes, logs, remediation steps
 - **Integration-ready configs**: Production-ready Fortigate, HAProxy, AD configs
@@ -242,5 +242,5 @@ This documentation achieves A++ quality through:
 ---
 
 <p align="center">
-  <sub>46 Sections • PAM with Fortigate MFA • February 2026</sub>
+  <sub>48 Sections • PAM with Fortigate MFA • February 2026</sub>
 </p>

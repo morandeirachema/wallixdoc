@@ -25,7 +25,7 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 | **Architecture** | 4 synchronized sites in single CPD |
 | **High Availability** | Active-Active clustering per site |
 | **Target Systems** | Windows Server 2022, RHEL 10, RHEL 9 |
-| **Documentation** | 46 comprehensive sections |
+| **Documentation** | 48 comprehensive sections |
 
 ---
 

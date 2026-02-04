@@ -660,7 +660,7 @@ To ensure consistency across all 47 documentation sections, use these standardiz
 ## See Also
 
 **Quick Navigation:**
-- [Cross-Reference Index](cross-reference-index.md) - Master topic index for all 47 sections
+- [Cross-Reference Index](cross-reference-index.md) - Master topic index for all 48 sections
 
 **Related Sections:**
 - [31 - wabadmin Reference](../31-wabadmin-reference/README.md) - Complete CLI command reference
