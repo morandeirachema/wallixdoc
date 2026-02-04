@@ -203,7 +203,27 @@
 +===============================================================================+
 ```
 
-### 3.2 Target Access Ports (Outbound from WALLIX)
+### 3.2 WALLIX Access Manager Ports (Inbound to WALLIX)
+
+```
++===============================================================================+
+|  WALLIX ACCESS MANAGER PORTS (Inbound to WALLIX Bastion)                     |
++===============================================================================+
+|                                                                               |
+|  Port    Protocol   Service          Direction    Description                |
+|  ----    --------   -------          ---------    -----------                |
+|  443     TCP        HTTPS            Inbound      Access Manager API/UI      |
+|  22      TCP        SSH              Inbound      Access Manager connections |
+|  3389    TCP        RDP              Inbound      Access Manager RDP proxy   |
+|  5900    TCP        VNC              Inbound      Access Manager VNC proxy   |
+|                                                                               |
+|  Note: WALLIX Access Manager provides web-based access to WALLIX Bastion     |
+|  These ports must be accessible from Access Manager servers                  |
+|                                                                               |
++===============================================================================+
+```
+
+### 3.3 Target Access Ports (Outbound from WALLIX)
 
 ```
 +===============================================================================+
@@ -233,7 +253,7 @@
 +===============================================================================+
 ```
 
-### 3.3 FortiAuthenticator MFA Ports
+### 3.4 FortiAuthenticator MFA Ports
 
 ```
 +===============================================================================+
@@ -254,14 +274,13 @@
 |  ----    --------   -------          ---------    -----------                |
 |  389     TCP        LDAP             Outbound     FortiAuth → AD user sync   |
 |  636     TCP        LDAPS            Outbound     FortiAuth → AD (SSL)       |
-|  88      TCP/UDP    Kerberos         Outbound     Kerberos auth (optional)   |
 |                                                                               |
 |  Note: FortiAuthenticator serves as central MFA provider for all sites        |
 |                                                                               |
 +===============================================================================+
 ```
 
-### 3.4 Fortigate Firewall Ports
+### 3.5 Fortigate Firewall Ports
 
 ```
 +===============================================================================+
@@ -285,7 +304,7 @@
 +===============================================================================+
 ```
 
-### 3.5 HA Cluster Ports (Internal - Between WALLIX Nodes)
+### 3.6 HA Cluster Ports (Internal - Between WALLIX Nodes)
 
 ```
 +===============================================================================+
@@ -315,7 +334,7 @@
 +===============================================================================+
 ```
 
-### 3.6 HAProxy Load Balancer Ports
+### 3.7 HAProxy Load Balancer Ports
 
 ```
 +===============================================================================+
@@ -353,7 +372,7 @@
 +===============================================================================+
 ```
 
-### 3.7 Authentication Ports (LDAP/AD)
+### 3.8 Authentication Ports (LDAP/AD)
 
 ```
 +===============================================================================+
@@ -369,13 +388,6 @@
 |  3268    TCP        Global Catalog   Outbound     Multi-domain forests       |
 |  3269    TCP        GC SSL           Outbound     GC with SSL                |
 |                                                                               |
-|  KERBEROS AUTHENTICATION                                                      |
-|  ========================                                                     |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  88      TCP/UDP    Kerberos         Outbound     WALLIX → Kerberos KDC      |
-|  464     TCP/UDP    Kpasswd          Outbound     Kerberos password change   |
-|                                                                               |
 |  SMB (For Domain Join, Optional)                                              |
 |  ================================                                             |
 |  Port    Protocol   Service          Direction    Description                |
@@ -385,7 +397,7 @@
 +===============================================================================+
 ```
 
-### 3.8 Management & Monitoring Ports
+### 3.9 Management & Monitoring Ports
 
 ```
 +===============================================================================+
@@ -440,7 +452,7 @@
 +===============================================================================+
 ```
 
-### 3.9 Cross-Site Synchronization Ports
+### 3.10 Cross-Site Synchronization Ports
 
 ```
 +===============================================================================+
@@ -477,6 +489,9 @@
 | 443 | TCP | HTTPS | Users, API clients | Web UI, REST API |
 | 3389 | TCP | RDP Proxy | Users | RDP session access |
 | 5900 | TCP | VNC Proxy | Users | VNC session access (optional) |
+| 443 | TCP | HTTPS | Access Manager | Access Manager API/UI |
+| 22 | TCP | SSH | Access Manager | Access Manager connections |
+| 3389 | TCP | RDP | Access Manager | Access Manager RDP proxy |
 | 22 | TCP | SSH Admin | Admins | SSH to WALLIX OS |
 | 161 | UDP | SNMP | NMS | SNMP monitoring |
 | 9100 | TCP | Prometheus | Monitoring | Metrics collection |
@@ -494,8 +509,8 @@
 | 5986 | TCP | WinRM HTTPS | Windows targets | Password rotation (SSL) |
 | 389 | TCP | LDAP | Active Directory | LDAP authentication |
 | 636 | TCP | LDAPS | Active Directory | LDAPS authentication |
-| 88 | TCP/UDP | Kerberos | KDC | Kerberos authentication |
-| 464 | TCP/UDP | Kpasswd | KDC | Kerberos password change |
+| 3268 | TCP | Global Catalog | Active Directory | Multi-domain forests |
+| 3269 | TCP | GC SSL | Active Directory | GC with SSL |
 | 1812 | UDP | RADIUS Auth | FortiAuthenticator | MFA authentication |
 | 1813 | UDP | RADIUS Acct | FortiAuthenticator | MFA accounting |
 | 123 | UDP | NTP | NTP servers | Time synchronization |
@@ -970,10 +985,6 @@ iptables -A OUTPUT -d ${AD_SERVER} -p tcp --dport 389 -j ACCEPT  # LDAP
 iptables -A OUTPUT -d ${AD_SERVER} -p tcp --dport 636 -j ACCEPT  # LDAPS
 iptables -A OUTPUT -d ${AD_SERVER} -p tcp --dport 3268 -j ACCEPT # GC
 iptables -A OUTPUT -d ${AD_SERVER} -p tcp --dport 3269 -j ACCEPT # GC SSL
-iptables -A OUTPUT -d ${AD_SERVER} -p tcp --dport 88 -j ACCEPT   # Kerberos TCP
-iptables -A OUTPUT -d ${AD_SERVER} -p udp --dport 88 -j ACCEPT   # Kerberos UDP
-iptables -A OUTPUT -d ${AD_SERVER} -p tcp --dport 464 -j ACCEPT  # Kpasswd TCP
-iptables -A OUTPUT -d ${AD_SERVER} -p udp --dport 464 -j ACCEPT  # Kpasswd UDP
 
 # FortiAuthenticator (RADIUS MFA)
 FORTIAUTH_PRIMARY="10.10.0.61"
@@ -1994,7 +2005,7 @@ nc -zv $WALLIX_VIP 3389 && echo "✓ RDP OK" || echo "✗ RDP FAILED"
 
 echo "=== Testing Active Directory ==="
 nc -zv $AD_SERVER 636 && echo "✓ LDAPS OK" || echo "✗ LDAPS FAILED"
-nc -zuv $AD_SERVER 88 && echo "✓ Kerberos OK" || echo "✗ Kerberos FAILED"
+nc -zv $AD_SERVER 389 && echo "✓ LDAP OK" || echo "✗ LDAP FAILED"
 
 echo "=== Testing FortiAuthenticator ==="
 nc -zuv $FORTIAUTH 1812 && echo "✓ RADIUS Auth OK" || echo "✗ RADIUS Auth FAILED"
@@ -2042,7 +2053,7 @@ ping -M do -s 1400 wallix.company.com
 | WALLIX Node 1 | WALLIX Node 2 | 5404-5406 | UDP | ☐ | Corosync cluster |
 | WALLIX Node 1 | WALLIX Node 2 | 2224 | TCP | ☐ | Pacemaker PCSD |
 | WALLIX Node 1 | Active Directory | 636 | TCP | ☐ | LDAPS |
-| WALLIX Node 1 | Active Directory | 88 | TCP/UDP | ☐ | Kerberos |
+| WALLIX Node 1 | Active Directory | 389 | TCP | ☐ | LDAP |
 | WALLIX Node 1 | FortiAuth Primary | 1812 | UDP | ☐ | RADIUS Auth |
 | WALLIX Node 1 | FortiAuth Primary | 1813 | UDP | ☐ | RADIUS Acct |
 | WALLIX Node 1 | FortiAuth Secondary | 1812 | UDP | ☐ | RADIUS Auth (failover) |
@@ -2155,9 +2166,8 @@ echo
 echo "=== Testing Active Directory ==="
 test_tcp_port $AD_SERVER 636 "LDAPS"
 test_tcp_port $AD_SERVER 389 "LDAP"
-test_tcp_port $AD_SERVER 88 "Kerberos TCP"
-test_udp_port $AD_SERVER 88 "Kerberos UDP"
-test_tcp_port $AD_SERVER 464 "Kerberos password change"
+test_tcp_port $AD_SERVER 3268 "Global Catalog"
+test_tcp_port $AD_SERVER 3269 "Global Catalog SSL"
 echo
 
 echo "=== Testing FortiAuthenticator MFA ==="
