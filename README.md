@@ -1,14 +1,9 @@
 # WALLIX Bastion + FortiAuthenticator MFA
 
 <p align="center">
-  <img src="https://www.wallix.com/wp-content/uploads/2021/03/wallix-logo.svg" alt="WALLIX" width="180"/>
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Fortinet_logo.svg" alt="Fortinet" width="180"/>
-</p>
-
-<p align="center">
   <strong>Enterprise Privileged Access Management</strong><br/>
-  <em>4-Site Synchronized Architecture with Fortinet MFA Integration</em>
+  <em>4-Site Synchronized Architecture with Fortinet MFA Integration</em><br/><br/>
+  <strong>WALLIX BASTION</strong> + <strong>FORTINET</strong>
 </p>
 
 <p align="center">
