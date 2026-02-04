@@ -1,6 +1,6 @@
 # WALLIX Bastion Documentation
 
-> Complete reference for **WALLIX Bastion** with Fortigate MFA — 47 sections covering PAM fundamentals, authentication, session management, deployment, operations, and compliance.
+> Complete reference for **WALLIX Bastion** with Fortigate MFA — 48 sections covering PAM fundamentals, authentication, session management, deployment, operations, compliance, and licensing.
 >
 > Built on WALLIX Bastion 12.x technology with integrated Fortinet multi-factor authentication and Access Manager.
 
@@ -12,10 +12,10 @@ This documentation is organized in a single PAM category:
 
 ```
 docs/
-└── pam/    # PAM/WALLIX Core (47 sections)
+└── pam/    # PAM/WALLIX Core (48 sections)
             # Authentication, authorization, password management,
             # session recording, API, deployment, operations,
-            # Fortigate MFA integration, Access Manager
+            # Fortigate MFA integration, Access Manager, licensing
 ```
 
 ---
@@ -119,6 +119,7 @@ docs/
 | 45 | [Privileged Task Automation](./pam/45-privileged-task-automation/README.md) | Automated privileged tasks, service accounts, runbooks |
 | 46 | [Fortigate Integration](./pam/46-fortigate-integration/README.md) | Fortigate firewall, FortiAuthenticator MFA, SSL VPN |
 | 47 | [Access Manager Setup](./pam/47-access-manager/README.md) | WALLIX Access Manager installation, configuration, integration |
+| 48 | [Licensing Guide](./pam/48-licensing/README.md) | Licensing models, HA licensing, multi-site scenarios, activation |
 
 ---
 
