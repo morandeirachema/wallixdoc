@@ -55,7 +55,7 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 |                                                                               |
 |    Each Site:                                                                 |
 |    +-----------------------------------------------------------------------+  |
-|    |  Fortigate FW --> HAProxy (2x HA) --> WALLIX (2x HA) --> WALLIX RDS  |  |
+|    |  Fortigate FW --> HAProxy (2x HA) --> WALLIX (2x HA) --> WALLIX RDS   |  |
 |    +-----------------------------------------------------------------------+  |
 |                                    |                                          |
 |                          +---------v----------+                               |
