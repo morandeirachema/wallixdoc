@@ -2055,6 +2055,20 @@ wabadmin logs --filter "component=jit" --level error --last 24h
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [07 - Authorization](../07-authorization/README.md) - RBAC and approval workflows
+- [44 - User Self-Service](../44-user-self-service/README.md) - Self-service portal configuration
+
+**Related Documentation:**
+- [Pre-Production Lab](/pre/README.md) - JIT access testing
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [06 - Authorization](../07-authorization/README.md) for detailed authorization configuration, or see [33 - Compliance & Audit](../24-compliance-audit/README.md) for compliance reporting.

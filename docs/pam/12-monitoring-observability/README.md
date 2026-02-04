@@ -669,6 +669,20 @@ snmpwalk -v3 -u wallixMonitor -l authPriv -a SHA -A "AuthPass" -x AES -X "PrivPa
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [26 - Performance Benchmarks](../26-performance-benchmarks/README.md) - Capacity planning and metrics
+- [21 - Operational Runbooks](../21-operational-runbooks/README.md) - Daily operations procedures
+
+**Related Documentation:**
+- [Pre-Production Lab: Observability](/pre/11-observability.md) - Monitoring setup guide
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [12 - Troubleshooting](../13-troubleshooting/README.md) for diagnostics and common issues.

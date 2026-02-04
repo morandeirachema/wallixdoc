@@ -799,6 +799,18 @@ When contacting support, provide:
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [13 - Troubleshooting](../13-troubleshooting/README.md) - Diagnostics and problem resolution
+- [18 - Error Reference](../18-error-reference/README.md) - Error codes and remediation
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+- [WALLIX Support Portal](https://support.wallix.com)
+
+---
+
 ## Next Steps
 
 Continue to [32 - Incident Response](../23-incident-response/README.md) for security incident playbooks and procedures.

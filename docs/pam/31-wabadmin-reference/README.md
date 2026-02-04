@@ -1263,6 +1263,586 @@ echo "=== Health Check Complete ==="
 
 ---
 
+## Real-World Usage Scenarios
+
+This section provides practical, production-ready examples for common administrative tasks.
+
+### Scenario 1: Daily Password Rotation Health Check
+
+**Use Case:** Automated cron job to verify password rotation status and alert on failures.
+
+```bash
+#!/bin/bash
+# /opt/scripts/wallix-rotation-check.sh
+# Daily password rotation health check
+# Run via cron: 0 8 * * * /opt/scripts/wallix-rotation-check.sh
+
+LOG_FILE="/var/log/wallix/rotation-check.log"
+ALERT_EMAIL="sysadmin@company.com"
+FAILED_ROTATIONS=0
+
+echo "=== WALLIX Password Rotation Check ===" | tee -a "$LOG_FILE"
+echo "Date: $(date)" | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
+
+# Check rotation status for last 24 hours
+echo "Checking accounts rotated in last 24 hours..." | tee -a "$LOG_FILE"
+ROTATED=$(wabadmin account list --filter "last_rotation>=$(date -d '1 day ago' +%Y-%m-%d)" --format json)
+
+if [ -z "$ROTATED" ]; then
+    echo "WARNING: No password rotations in last 24 hours" | tee -a "$LOG_FILE"
+fi
+
+# Check for failed rotations
+echo "" | tee -a "$LOG_FILE"
+echo "Checking for failed rotations..." | tee -a "$LOG_FILE"
+FAILED=$(wabadmin account list --filter "rotation_status=failed" --format json)
+
+if [ -n "$FAILED" ]; then
+    FAILED_COUNT=$(echo "$FAILED" | jq '. | length')
+    echo "CRITICAL: $FAILED_COUNT accounts with failed rotation" | tee -a "$LOG_FILE"
+    echo "$FAILED" | jq -r '.[] | "  - \(.device_name):\(.account_name) - \(.rotation_error)"' | tee -a "$LOG_FILE"
+    FAILED_ROTATIONS=1
+fi
+
+# Check accounts overdue for rotation
+echo "" | tee -a "$LOG_FILE"
+echo "Checking for overdue rotations (>90 days)..." | tee -a "$LOG_FILE"
+OVERDUE=$(wabadmin account list --filter "days_since_rotation>90" --format json)
+
+if [ -n "$OVERDUE" ]; then
+    OVERDUE_COUNT=$(echo "$OVERDUE" | jq '. | length')
+    echo "WARNING: $OVERDUE_COUNT accounts overdue for rotation" | tee -a "$LOG_FILE"
+    echo "$OVERDUE" | jq -r '.[] | "  - \(.device_name):\(.account_name) - \(.days_since_rotation) days"' | tee -a "$LOG_FILE"
+fi
+
+# Send alert if failures detected
+if [ $FAILED_ROTATIONS -eq 1 ]; then
+    echo "" | tee -a "$LOG_FILE"
+    echo "Sending alert email..." | tee -a "$LOG_FILE"
+    mail -s "WALLIX: Password Rotation Failures Detected" "$ALERT_EMAIL" < "$LOG_FILE"
+fi
+
+echo "" | tee -a "$LOG_FILE"
+echo "=== Check Complete ===" | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
+```
+
+**Cron Configuration:**
+```bash
+# Add to /etc/cron.d/wallix-checks
+0 8 * * * root /opt/scripts/wallix-rotation-check.sh
+```
+
+**Expected Output:**
+```
+=== WALLIX Password Rotation Check ===
+Date: 2026-02-04 08:00:15
+
+Checking accounts rotated in last 24 hours...
+Found 45 accounts rotated
+
+Checking for failed rotations...
+CRITICAL: 2 accounts with failed rotation
+  - srv-db-01:oracle - Connection timeout
+  - srv-web-05:root - Authentication failed
+
+Checking for overdue rotations (>90 days)...
+WARNING: 3 accounts overdue for rotation
+  - legacy-server:admin - 125 days
+  - test-vm:root - 95 days
+  - backup-nas:service - 110 days
+
+Sending alert email...
+
+=== Check Complete ===
+```
+
+### Scenario 2: Emergency Session Termination
+
+**Use Case:** Immediately kill a suspicious active session and lock the user account.
+
+```bash
+#!/bin/bash
+# /opt/scripts/wallix-kill-session.sh <session-id>
+# Emergency session termination with user lockout
+
+SESSION_ID="$1"
+
+if [ -z "$SESSION_ID" ]; then
+    echo "Usage: $0 <session-id>"
+    exit 1
+fi
+
+echo "=== Emergency Session Termination ==="
+echo "Session ID: $SESSION_ID"
+echo ""
+
+# Get session details
+echo "1. Retrieving session information..."
+SESSION_INFO=$(wabadmin session show "$SESSION_ID" --format json)
+
+if [ -z "$SESSION_INFO" ]; then
+    echo "ERROR: Session not found"
+    exit 1
+fi
+
+USERNAME=$(echo "$SESSION_INFO" | jq -r '.username')
+TARGET=$(echo "$SESSION_INFO" | jq -r '.target_device')
+PROTOCOL=$(echo "$SESSION_INFO" | jq -r '.protocol')
+
+echo "   User: $USERNAME"
+echo "   Target: $TARGET"
+echo "   Protocol: $PROTOCOL"
+echo ""
+
+# Kill the session
+echo "2. Terminating session..."
+wabadmin session kill "$SESSION_ID" --reason "Security incident - unauthorized activity detected"
+
+if [ $? -eq 0 ]; then
+    echo "   ✓ Session terminated successfully"
+else
+    echo "   ✗ Failed to terminate session"
+    exit 1
+fi
+echo ""
+
+# Lock the user account
+echo "3. Locking user account..."
+wabadmin user disable "$USERNAME" --reason "Account locked due to security incident"
+
+if [ $? -eq 0 ]; then
+    echo "   ✓ User account locked"
+else
+    echo "   ✗ Failed to lock account"
+fi
+echo ""
+
+# Create incident report
+INCIDENT_FILE="/var/log/wallix/incidents/incident-$(date +%Y%m%d-%H%M%S).txt"
+mkdir -p /var/log/wallix/incidents
+
+cat > "$INCIDENT_FILE" <<EOF
+WALLIX Security Incident Report
+================================
+
+Timestamp: $(date)
+Incident ID: INC-$(date +%Y%m%d-%H%M%S)
+
+Session Details:
+  Session ID: $SESSION_ID
+  Username: $USERNAME
+  Target Device: $TARGET
+  Protocol: $PROTOCOL
+
+Actions Taken:
+  1. Session terminated
+  2. User account disabled
+
+Next Steps:
+  - Review session recording
+  - Investigate user activity
+  - Contact security team
+  - Review target system for compromise
+
+---
+Generated by: wallix-kill-session.sh
+EOF
+
+echo "4. Incident report created: $INCIDENT_FILE"
+echo ""
+echo "=== Termination Complete ==="
+echo ""
+echo "NEXT STEPS:"
+echo "  1. Review session recording:"
+echo "     wabadmin session recording $SESSION_ID"
+echo "  2. View full audit trail:"
+echo "     wabadmin audit --user $USERNAME --last 24h"
+echo "  3. Check target system logs on: $TARGET"
+echo "  4. Contact: security@company.com"
+```
+
+**Usage Example:**
+```bash
+# Terminate session SES-2026-0204-ABC123
+/opt/scripts/wallix-kill-session.sh SES-2026-0204-ABC123
+```
+
+### Scenario 3: Bulk Device Onboarding from CSV
+
+**Use Case:** Import 100+ servers from CSV file with automatic account discovery.
+
+```bash
+#!/bin/bash
+# /opt/scripts/wallix-bulk-import.sh <csv-file>
+# Bulk import devices from CSV with validation
+
+CSV_FILE="$1"
+LOG_FILE="/var/log/wallix/bulk-import-$(date +%Y%m%d-%H%M%S).log"
+SUCCESS_COUNT=0
+FAILED_COUNT=0
+
+if [ -z "$CSV_FILE" ] || [ ! -f "$CSV_FILE" ]; then
+    echo "Usage: $0 <csv-file>"
+    echo "CSV Format: hostname,ip_address,os_type,domain,description"
+    exit 1
+fi
+
+echo "=== WALLIX Bulk Device Import ===" | tee -a "$LOG_FILE"
+echo "CSV File: $CSV_FILE" | tee -a "$LOG_FILE"
+echo "Started: $(date)" | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
+
+# Validate CSV header
+HEADER=$(head -n1 "$CSV_FILE")
+EXPECTED="hostname,ip_address,os_type,domain,description"
+
+if [ "$HEADER" != "$EXPECTED" ]; then
+    echo "ERROR: Invalid CSV header" | tee -a "$LOG_FILE"
+    echo "Expected: $EXPECTED" | tee -a "$LOG_FILE"
+    echo "Got: $HEADER" | tee -a "$LOG_FILE"
+    exit 1
+fi
+
+# Process each device
+echo "Processing devices..." | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
+
+tail -n +2 "$CSV_FILE" | while IFS=',' read -r hostname ip_address os_type domain description; do
+    echo "[$((SUCCESS_COUNT + FAILED_COUNT + 1))] Processing: $hostname ($ip_address)" | tee -a "$LOG_FILE"
+
+    # Validate IP address
+    if ! echo "$ip_address" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$'; then
+        echo "   ✗ FAILED: Invalid IP address" | tee -a "$LOG_FILE"
+        ((FAILED_COUNT++))
+        continue
+    fi
+
+    # Test connectivity
+    if ! ping -c 1 -W 2 "$ip_address" &>/dev/null; then
+        echo "   ⚠ WARNING: Device not reachable (continuing anyway)" | tee -a "$LOG_FILE"
+    fi
+
+    # Create device
+    wabadmin device add \
+        --name "$hostname" \
+        --host "$ip_address" \
+        --type "$os_type" \
+        --domain "$domain" \
+        --description "$description" \
+        --auto-discover-accounts \
+        >> "$LOG_FILE" 2>&1
+
+    if [ $? -eq 0 ]; then
+        echo "   ✓ SUCCESS: Device created" | tee -a "$LOG_FILE"
+        ((SUCCESS_COUNT++))
+
+        # Trigger account discovery
+        echo "   → Triggering account discovery..." | tee -a "$LOG_FILE"
+        wabadmin device discover-accounts "$hostname" >> "$LOG_FILE" 2>&1
+    else
+        echo "   ✗ FAILED: Device creation failed (see log)" | tee -a "$LOG_FILE"
+        ((FAILED_COUNT++))
+    fi
+
+    echo "" | tee -a "$LOG_FILE"
+
+    # Rate limiting to avoid overwhelming the system
+    sleep 1
+done
+
+# Summary
+echo "=== Import Complete ===" | tee -a "$LOG_FILE"
+echo "Finished: $(date)" | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
+echo "Summary:" | tee -a "$LOG_FILE"
+echo "  Success: $SUCCESS_COUNT devices" | tee -a "$LOG_FILE"
+echo "  Failed:  $FAILED_COUNT devices" | tee -a "$LOG_FILE"
+echo "  Total:   $((SUCCESS_COUNT + FAILED_COUNT)) devices" | tee -a "$LOG_FILE"
+echo "" | tee -a "$LOG_FILE"
+echo "Log file: $LOG_FILE" | tee -a "$LOG_FILE"
+```
+
+**Example CSV File (devices.csv):**
+```csv
+hostname,ip_address,os_type,domain,description
+srv-web-01,10.10.2.10,linux,Production,Web Server - Apache
+srv-web-02,10.10.2.11,linux,Production,Web Server - Nginx
+srv-db-01,10.10.2.20,linux,Production,Database Server - PostgreSQL
+srv-db-02,10.10.2.21,linux,Production,Database Server - MySQL
+win-dc-01,10.10.0.10,windows,Management,Active Directory DC
+win-app-01,10.10.2.30,windows,Production,Windows App Server
+```
+
+**Usage:**
+```bash
+/opt/scripts/wallix-bulk-import.sh /tmp/devices.csv
+```
+
+### Scenario 4: Weekly Compliance Report Generation
+
+**Use Case:** Automated weekly compliance report for audit purposes.
+
+```bash
+#!/bin/bash
+# /opt/scripts/wallix-compliance-report.sh
+# Weekly compliance report generation
+# Run via cron: 0 9 * * 1 /opt/scripts/wallix-compliance-report.sh
+
+REPORT_DIR="/var/reports/wallix"
+REPORT_DATE=$(date +%Y-%m-%d)
+REPORT_FILE="$REPORT_DIR/compliance-report-$REPORT_DATE.txt"
+WEEK_AGO=$(date -d '7 days ago' +%Y-%m-%d)
+
+mkdir -p "$REPORT_DIR"
+
+cat > "$REPORT_FILE" <<EOF
+================================================================================
+                    WALLIX BASTION COMPLIANCE REPORT
+================================================================================
+
+Report Date: $REPORT_DATE
+Period: $WEEK_AGO to $REPORT_DATE
+Generated: $(date)
+
+================================================================================
+1. SESSION ACTIVITY SUMMARY
+================================================================================
+
+EOF
+
+# Session statistics
+echo "Total sessions this week:" >> "$REPORT_FILE"
+wabadmin sessions --filter "start_date>=$WEEK_AGO" --count >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Sessions by protocol:" >> "$REPORT_FILE"
+wabadmin sessions --filter "start_date>=$WEEK_AGO" --group-by protocol --count >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Top 10 users by session count:" >> "$REPORT_FILE"
+wabadmin sessions --filter "start_date>=$WEEK_AGO" --group-by username --count --limit 10 >> "$REPORT_FILE"
+
+cat >> "$REPORT_FILE" <<EOF
+
+================================================================================
+2. PASSWORD ROTATION COMPLIANCE
+================================================================================
+
+EOF
+
+echo "Accounts with successful rotation:" >> "$REPORT_FILE"
+wabadmin account list --filter "rotation_status=success,last_rotation>=$WEEK_AGO" --count >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Accounts with failed rotation:" >> "$REPORT_FILE"
+wabadmin account list --filter "rotation_status=failed" --format table >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Accounts overdue for rotation (>90 days):" >> "$REPORT_FILE"
+wabadmin account list --filter "days_since_rotation>90" --format table >> "$REPORT_FILE"
+
+cat >> "$REPORT_FILE" <<EOF
+
+================================================================================
+3. USER ACCOUNT AUDIT
+================================================================================
+
+EOF
+
+echo "Total active users:" >> "$REPORT_FILE"
+wabadmin users --filter "status=active" --count >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "New users created this week:" >> "$REPORT_FILE"
+wabadmin users --filter "created>=$WEEK_AGO" --format table >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Disabled users:" >> "$REPORT_FILE"
+wabadmin users --filter "status=disabled" --format table >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Users with MFA enabled:" >> "$REPORT_FILE"
+MFA_ENABLED=$(wabadmin users --filter "mfa_enabled=true" --count)
+TOTAL_USERS=$(wabadmin users --count)
+MFA_PERCENT=$((MFA_ENABLED * 100 / TOTAL_USERS))
+echo "  $MFA_ENABLED / $TOTAL_USERS ($MFA_PERCENT%)" >> "$REPORT_FILE"
+
+cat >> "$REPORT_FILE" <<EOF
+
+================================================================================
+4. SECURITY EVENTS
+================================================================================
+
+EOF
+
+echo "Failed login attempts:" >> "$REPORT_FILE"
+wabadmin audit --filter "event_type=login_failed,timestamp>=$WEEK_AGO" --count >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Emergency session terminations:" >> "$REPORT_FILE"
+wabadmin audit --filter "event_type=session_killed,timestamp>=$WEEK_AGO" --format table >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Administrative changes:" >> "$REPORT_FILE"
+wabadmin audit --filter "event_type=config_change,timestamp>=$WEEK_AGO" --format table >> "$REPORT_FILE"
+
+cat >> "$REPORT_FILE" <<EOF
+
+================================================================================
+5. SYSTEM HEALTH
+================================================================================
+
+EOF
+
+echo "Cluster status:" >> "$REPORT_FILE"
+wabadmin ha-status >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Database replication lag:" >> "$REPORT_FILE"
+wabadmin db-replication-status >> "$REPORT_FILE"
+
+echo "" >> "$REPORT_FILE"
+echo "Storage usage:" >> "$REPORT_FILE"
+wabadmin storage-status >> "$REPORT_FILE"
+
+cat >> "$REPORT_FILE" <<EOF
+
+================================================================================
+END OF REPORT
+================================================================================
+
+Report generated by: wallix-compliance-report.sh
+For questions, contact: compliance@company.com
+
+EOF
+
+# Send report via email
+echo "Compliance report generated: $REPORT_FILE"
+echo "Sending report via email..."
+
+mail -s "WALLIX Compliance Report - $REPORT_DATE" \
+     -a "$REPORT_FILE" \
+     compliance@company.com,soc@company.com \
+     <<< "Weekly WALLIX compliance report attached. Please review."
+
+echo "Report sent successfully"
+```
+
+**Cron Configuration:**
+```bash
+# Run every Monday at 9 AM
+0 9 * * 1 root /opt/scripts/wallix-compliance-report.sh
+```
+
+### Scenario 5: Credential Checkout with Auto-Checkin
+
+**Use Case:** Temporary credential checkout for maintenance window with automatic return.
+
+```bash
+#!/bin/bash
+# /opt/scripts/wallix-checkout-credential.sh <device> <account> <duration-minutes>
+# Checkout credential with automatic checkin after specified duration
+
+DEVICE="$1"
+ACCOUNT="$2"
+DURATION="${3:-60}"  # Default 60 minutes
+
+if [ -z "$DEVICE" ] || [ -z "$ACCOUNT" ]; then
+    echo "Usage: $0 <device> <account> [duration-minutes]"
+    echo "Example: $0 srv-db-01 oracle 120"
+    exit 1
+fi
+
+echo "=== WALLIX Credential Checkout ==="
+echo "Device: $DEVICE"
+echo "Account: $ACCOUNT"
+echo "Duration: $DURATION minutes"
+echo ""
+
+# Checkout credential
+echo "Checking out credential..."
+CHECKOUT_RESULT=$(wabadmin account checkout "$DEVICE:$ACCOUNT" --format json)
+
+if [ $? -ne 0 ]; then
+    echo "ERROR: Checkout failed"
+    exit 1
+fi
+
+PASSWORD=$(echo "$CHECKOUT_RESULT" | jq -r '.password')
+CHECKOUT_ID=$(echo "$CHECKOUT_RESULT" | jq -r '.checkout_id')
+
+echo "✓ Credential checked out successfully"
+echo ""
+echo "Checkout ID: $CHECKOUT_ID"
+echo "Password: $PASSWORD"
+echo ""
+echo "⚠ IMPORTANT: Credential will auto-checkin in $DURATION minutes"
+echo ""
+
+# Schedule automatic checkin
+(
+    sleep $((DURATION * 60))
+    echo "Auto-checkin at $(date)..."
+    wabadmin account checkin "$CHECKOUT_ID"
+    echo "Credential returned to vault"
+) &
+
+echo "Auto-checkin scheduled (PID: $!)"
+echo ""
+echo "To manually checkin before timeout:"
+echo "  wabadmin account checkin $CHECKOUT_ID"
+```
+
+**Usage Examples:**
+```bash
+# Checkout for 60 minutes (default)
+/opt/scripts/wallix-checkout-credential.sh srv-db-01 oracle
+
+# Checkout for 2 hours
+/opt/scripts/wallix-checkout-credential.sh srv-db-01 oracle 120
+
+# Checkout for emergency (4 hours)
+/opt/scripts/wallix-checkout-credential.sh srv-web-01 root 240
+```
+
+### Quick Reference Command Cheatsheet
+
+```bash
+# Daily Operations
+wabadmin status                                    # System health check
+wabadmin sessions --active                          # View active sessions
+wabadmin account list --filter rotation_status=failed  # Check rotation failures
+
+# User Management
+wabadmin user disable jsmith --reason "Terminated"  # Disable user
+wabadmin user reset-mfa jsmith                      # Reset MFA for user
+wabadmin users --filter last_login<$(date -d '90 days ago' +%Y-%m-%d)  # Inactive users
+
+# Emergency Operations
+wabadmin session kill SES-123 --reason "Security incident"  # Kill session
+wabadmin user unlock jsmith                         # Unlock locked account
+wabadmin ha-failover                                # Force HA failover
+
+# Reporting
+wabadmin sessions --filter "start_date>=2026-02-01" --count  # Monthly sessions
+wabadmin audit --user jsmith --last 7d               # User activity last week
+wabadmin account list --filter days_since_rotation>90  # Overdue rotations
+
+# Bulk Operations
+wabadmin device import devices.csv                   # Import devices from CSV
+wabadmin account rotate --filter "auto_rotate=true"  # Rotate all auto-rotate accounts
+wabadmin user export users.csv                       # Export all users
+
+# Troubleshooting
+wabadmin health-check                                # Comprehensive health check
+wabadmin db-replication-status                       # Check DB replication
+wabadmin logs --tail 100 --follow                    # Tail system logs
+```
+
+---
+
 ## External References
 
 - [WALLIX Documentation Portal](https://pam.wallix.one/documentation)
@@ -1270,6 +1850,18 @@ echo "=== Health Check Complete ==="
 - [REST API Reference](../17-api-reference/README.md)
 - [Operational Runbooks](../21-operational-runbooks/README.md)
 - [WALLIX Support Portal](https://support.wallix.com)
+
+---
+
+## See Also
+
+**Related Sections:**
+- [17 - API Reference](../17-api-reference/README.md) - REST API documentation
+- [10 - API & Automation](../10-api-automation/README.md) - API usage and automation
+- [13 - Troubleshooting](../13-troubleshooting/README.md) - Diagnostics using CLI
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
 
 ---
 

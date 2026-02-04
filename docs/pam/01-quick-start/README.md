@@ -490,6 +490,25 @@ wabadmin audit --export --output /tmp/audit-export.json
 
 ---
 
+---
+
+## See Also
+
+**Related Sections:**
+- [02 - Introduction](../02-introduction/README.md) - Comprehensive product overview
+- [03 - Architecture](../03-architecture/README.md) - System architecture and deployment models
+- [06 - Authentication](../06-authentication/README.md) - Authentication setup and MFA
+- [09 - Session Management](../09-session-management/README.md) - Session recording and monitoring
+
+**Related Documentation:**
+- [Install Guide](/install/HOWTO.md) - Step-by-step installation walkthrough
+- [Pre-Production Lab](/pre/README.md) - Lab environment setup guide
+
+**Official Resources:**
+- [WALLIX Getting Started](https://pam.wallix.one/documentation/user/getting-started/documentation.html)
+
+---
+
 <p align="center">
   <a href="./learning-paths.md">Learning Paths</a> •
   <a href="../02-introduction/README.md">Deep Dive</a> •

@@ -1902,6 +1902,17 @@ wabadmin recording archive --older-than 90 --destination /archive
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [09 - Session Management](../09-session-management/README.md) - Session recording configuration
+- [12 - Monitoring & Observability](../12-monitoring-observability/README.md) - Real-time monitoring
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 *Document Version: 1.0*
 *Last Updated: February 2026*
 *Applies to: WALLIX Bastion 12.x*

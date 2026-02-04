@@ -999,6 +999,18 @@ IT Security Team
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [24 - Compliance & Audit](../24-compliance-audit/README.md) - Compliance standards and audit preparation
+- [09 - Session Management](../09-session-management/README.md) - Session recording and forensics
+- [37 - Compliance Evidence](../37-compliance-evidence/README.md) - Evidence collection procedures
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [33 - Compliance & Audit](../24-compliance-audit/README.md) for compliance standards and audit preparation.

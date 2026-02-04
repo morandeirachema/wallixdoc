@@ -1023,6 +1023,18 @@ This upgrade guide covers:
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [30 - Backup & Restore](../30-backup-restore/README.md) - Backup strategies before upgrades
+- [11 - High Availability](../11-high-availability/README.md) - HA cluster upgrade procedures
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+- [WALLIX Release Notes](https://pam.wallix.one/documentation/release-notes)
+
+---
+
 ## Next Steps
 
 Continue to [30 - Operational Runbooks](../21-operational-runbooks/README.md) for day-to-day operational procedures.

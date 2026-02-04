@@ -2298,5 +2298,19 @@ sudo -u postgres psql -c "SELECT * FROM pg_stat_archiver;"
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [29 - Disaster Recovery](../29-disaster-recovery/README.md) - DR runbooks and RTO/RPO
+- [11 - High Availability](../11-high-availability/README.md) - HA architecture
+
+**Related Documentation:**
+- [Install Guide](/install/HOWTO.md) - Backup configuration during deployment
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 *Document Version: 1.0*
 *Last Updated: January 2026*

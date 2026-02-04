@@ -2025,6 +2025,1137 @@ wabadmin ldap pool-status Corporate-AD
 
 ---
 
+## Group Mapping Configuration Examples
+
+Group mapping is essential for automating user access control by linking Active Directory groups to WALLIX Bastion profiles. This section provides comprehensive configuration examples for common scenarios.
+
+### Scenario 1: Map AD Groups to WALLIX Profiles
+
+Map Active Directory security groups to WALLIX Bastion user profiles for role-based access control.
+
+#### Configuration Overview
+
+```
+AD Groups                    WALLIX Profiles
+-----------                  ----------------
+PAM-Admins        ------>    admin
+PAM-DBAdmins      ------>    database_admin
+PAM-WindowsOps    ------>    windows_operator
+PAM-LinuxOps      ------>    linux_operator
+PAM-Auditors      ------>    auditor (read-only)
+```
+
+#### JSON Configuration
+
+```json
+{
+  "ldap_domain": "Corporate-AD",
+  "group_mappings": [
+    {
+      "ldap_group": "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+      "wallix_profile": "admin",
+      "priority": 100,
+      "enabled": true,
+      "description": "Full administrative access"
+    },
+    {
+      "ldap_group": "CN=PAM-DBAdmins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+      "wallix_profile": "database_admin",
+      "priority": 90,
+      "enabled": true,
+      "description": "Database server management"
+    },
+    {
+      "ldap_group": "CN=PAM-WindowsOps,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+      "wallix_profile": "windows_operator",
+      "priority": 80,
+      "enabled": true,
+      "description": "Windows server operations"
+    },
+    {
+      "ldap_group": "CN=PAM-LinuxOps,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+      "wallix_profile": "linux_operator",
+      "priority": 80,
+      "enabled": true,
+      "description": "Linux server operations"
+    },
+    {
+      "ldap_group": "CN=PAM-Auditors,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+      "wallix_profile": "auditor",
+      "priority": 70,
+      "enabled": true,
+      "description": "Read-only audit access"
+    }
+  ],
+
+  "mapping_options": {
+    "update_on_login": true,
+    "remove_unmapped_groups": false,
+    "sync_interval_minutes": 15,
+    "conflict_resolution": "highest_priority"
+  }
+}
+```
+
+#### CLI Configuration Commands
+
+```bash
+# Add group mapping for PAM-Admins
+wabadmin ldap group-mapping add \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --profile "admin" \
+  --priority 100 \
+  --description "Full administrative access"
+
+# Add group mapping for PAM-DBAdmins
+wabadmin ldap group-mapping add \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-DBAdmins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --profile "database_admin" \
+  --priority 90 \
+  --description "Database server management"
+
+# Add group mapping for PAM-WindowsOps
+wabadmin ldap group-mapping add \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-WindowsOps,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --profile "windows_operator" \
+  --priority 80 \
+  --description "Windows server operations"
+
+# Add group mapping for PAM-LinuxOps
+wabadmin ldap group-mapping add \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-LinuxOps,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --profile "linux_operator" \
+  --priority 80 \
+  --description "Linux server operations"
+
+# Add group mapping for PAM-Auditors
+wabadmin ldap group-mapping add \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Auditors,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --profile "auditor" \
+  --priority 70 \
+  --description "Read-only audit access"
+
+# List all group mappings
+wabadmin ldap group-mapping list --domain "Corporate-AD"
+
+# Expected output:
+# Priority | LDAP Group DN                                           | Profile          | Enabled
+# ---------|--------------------------------------------------------|------------------|--------
+# 100      | CN=PAM-Admins,OU=Security Groups,...                    | admin            | Yes
+# 90       | CN=PAM-DBAdmins,OU=Security Groups,...                  | database_admin   | Yes
+# 80       | CN=PAM-WindowsOps,OU=Security Groups,...                | windows_operator | Yes
+# 80       | CN=PAM-LinuxOps,OU=Security Groups,...                  | linux_operator   | Yes
+# 70       | CN=PAM-Auditors,OU=Security Groups,...                  | auditor          | Yes
+```
+
+#### Testing Group Mappings
+
+```bash
+# Test user group resolution
+wabadmin ldap test-user-groups \
+  --domain "Corporate-AD" \
+  --username "john.doe"
+
+# Expected output:
+# User: john.doe@corp.company.com
+# Distinguished Name: CN=John Doe,OU=Users,OU=PAM,DC=corp,DC=company,DC=com
+# Member Of:
+#   - CN=PAM-DBAdmins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com
+#   - CN=PAM-Auditors,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com
+#
+# Resolved Profile Mappings:
+#   Priority 90: database_admin (from PAM-DBAdmins)
+#   Priority 70: auditor (from PAM-Auditors)
+#
+# Active Profile: database_admin (highest priority)
+
+# Force group synchronization
+wabadmin ldap sync-groups --domain "Corporate-AD"
+
+# Expected output:
+# Synchronizing groups for domain: Corporate-AD
+# Groups processed: 5
+# Users updated: 47
+# Mappings applied: 52
+# Errors: 0
+# Duration: 2.3 seconds
+
+# Verify user profile assignment
+wabadmin user show john.doe
+
+# Expected output:
+# Username: john.doe
+# Full Name: John Doe
+# Email: john.doe@corp.company.com
+# Authentication: LDAP (Corporate-AD)
+# Profile: database_admin
+# Status: Active
+# Last Login: 2026-02-04 14:32:17
+# Group Memberships: PAM-DBAdmins, PAM-Auditors
+```
+
+### Scenario 2: Nested Group Resolution
+
+Configure WALLIX Bastion to resolve nested Active Directory groups for complex organizational structures.
+
+#### Nested Group Structure
+
+```
+AD Group Hierarchy:
++---------------------------+
+| PAM-Global-Admins         |  <-- Top-level group mapped to WALLIX
+|  - Contains:              |
+|    - PAM-NA-Admins        |  <-- Regional group
+|    - PAM-EU-Admins        |  <-- Regional group
+|      - Contains:          |
+|        - PAM-UK-Admins    |  <-- Country-level group
+|        - PAM-DE-Admins    |  <-- Country-level group
++---------------------------+
+
+User memberships are evaluated recursively through the nested hierarchy.
+```
+
+#### Configuration with Nested Groups
+
+```json
+{
+  "ldap_domain": "Corporate-AD",
+  "nested_group_resolution": {
+    "enabled": true,
+    "max_depth": 10,
+    "cache_ttl_seconds": 900,
+    "resolution_strategy": "breadth_first"
+  },
+
+  "group_mappings": [
+    {
+      "ldap_group": "CN=PAM-Global-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+      "wallix_profile": "global_admin",
+      "priority": 100,
+      "enabled": true,
+      "resolve_nested": true,
+      "description": "Global administrators (includes all regional admins)"
+    },
+    {
+      "ldap_group": "CN=PAM-NA-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+      "wallix_profile": "regional_admin_na",
+      "priority": 90,
+      "enabled": true,
+      "resolve_nested": true,
+      "description": "North America regional administrators"
+    },
+    {
+      "ldap_group": "CN=PAM-EU-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+      "wallix_profile": "regional_admin_eu",
+      "priority": 90,
+      "enabled": true,
+      "resolve_nested": true,
+      "description": "Europe regional administrators"
+    }
+  ]
+}
+```
+
+#### CLI Configuration for Nested Groups
+
+```bash
+# Enable nested group resolution globally
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --nested-groups-enabled true \
+  --nested-groups-max-depth 10
+
+# Add group mapping with nested resolution
+wabadmin ldap group-mapping add \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Global-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --profile "global_admin" \
+  --priority 100 \
+  --resolve-nested true \
+  --description "Global administrators (includes all regional admins)"
+
+# Test nested group resolution for specific user
+wabadmin ldap test-nested-groups \
+  --domain "Corporate-AD" \
+  --username "jane.smith"
+
+# Expected output:
+# User: jane.smith@corp.company.com
+# Distinguished Name: CN=Jane Smith,OU=Users,OU=UK,OU=EU,DC=corp,DC=company,DC=com
+#
+# Direct Group Memberships:
+#   - CN=PAM-UK-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com
+#
+# Nested Group Resolution (depth: 3):
+#   Level 1: PAM-UK-Admins
+#   Level 2: PAM-EU-Admins (via PAM-UK-Admins)
+#   Level 3: PAM-Global-Admins (via PAM-EU-Admins)
+#
+# Resolved Profile Mappings:
+#   Priority 100: global_admin (from PAM-Global-Admins)
+#   Priority 90:  regional_admin_eu (from PAM-EU-Admins)
+#
+# Active Profile: global_admin (highest priority)
+# Resolution Time: 0.34 seconds
+
+# Verify nested group chain
+wabadmin ldap trace-group-membership \
+  --domain "Corporate-AD" \
+  --user "jane.smith" \
+  --target-group "PAM-Global-Admins"
+
+# Expected output:
+# Membership Chain:
+# User: jane.smith
+#   -> Member of: PAM-UK-Admins
+#      -> Member of: PAM-EU-Admins
+#         -> Member of: PAM-Global-Admins [MAPPED: global_admin]
+```
+
+#### LDAP Query for Nested Groups
+
+```bash
+# Test nested group membership with ldapsearch
+# Using LDAP_MATCHING_RULE_IN_CHAIN (1.2.840.113556.1.4.1941)
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "DC=corp,DC=company,DC=com" \
+  "(&(objectClass=user)(memberOf:1.2.840.113556.1.4.1941:=CN=PAM-Global-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com))" \
+  sAMAccountName memberOf
+
+# This query returns all users who are members of PAM-Global-Admins,
+# including those with nested membership through child groups.
+```
+
+### Scenario 3: Dynamic Group Assignment with Filters
+
+Use LDAP attribute filters to dynamically assign WALLIX profiles based on user attributes like department, title, or location.
+
+#### Configuration with Attribute Filters
+
+```json
+{
+  "ldap_domain": "Corporate-AD",
+  "dynamic_group_mappings": [
+    {
+      "name": "database_admins_by_department",
+      "ldap_filter": "(&(objectClass=user)(department=Database Operations)(title=*DBA*))",
+      "wallix_profile": "database_admin",
+      "priority": 85,
+      "enabled": true,
+      "description": "Automatic assignment for Database Operations department"
+    },
+    {
+      "name": "helpdesk_by_title",
+      "ldap_filter": "(&(objectClass=user)(|(title=Help Desk*)(title=Service Desk*)))",
+      "wallix_profile": "helpdesk_operator",
+      "priority": 70,
+      "enabled": true,
+      "description": "Automatic assignment for help desk staff"
+    },
+    {
+      "name": "contractors_limited_access",
+      "ldap_filter": "(&(objectClass=user)(employeeType=Contractor))",
+      "wallix_profile": "contractor_limited",
+      "priority": 60,
+      "enabled": true,
+      "description": "Restricted access for contractors"
+    },
+    {
+      "name": "executives_privileged",
+      "ldap_filter": "(&(objectClass=user)(|(title=*VP*)(title=*Director*)(title=*Chief*)))",
+      "wallix_profile": "executive_privileged",
+      "priority": 95,
+      "enabled": true,
+      "description": "Executive privileged access"
+    },
+    {
+      "name": "security_team",
+      "ldap_filter": "(&(objectClass=user)(department=Information Security)(!(employeeType=Contractor)))",
+      "wallix_profile": "security_analyst",
+      "priority": 90,
+      "enabled": true,
+      "description": "Security team members (excluding contractors)"
+    }
+  ],
+
+  "dynamic_mapping_options": {
+    "evaluation_order": "filters_before_groups",
+    "update_frequency_minutes": 30,
+    "allow_multiple_matches": true,
+    "conflict_resolution": "highest_priority"
+  }
+}
+```
+
+#### CLI Configuration for Dynamic Mappings
+
+```bash
+# Add dynamic mapping based on department
+wabadmin ldap dynamic-mapping add \
+  --domain "Corporate-AD" \
+  --name "database_admins_by_department" \
+  --filter "(&(objectClass=user)(department=Database Operations)(title=*DBA*))" \
+  --profile "database_admin" \
+  --priority 85 \
+  --description "Automatic assignment for Database Operations department"
+
+# Add dynamic mapping based on title
+wabadmin ldap dynamic-mapping add \
+  --domain "Corporate-AD" \
+  --name "helpdesk_by_title" \
+  --filter "(&(objectClass=user)(|(title=Help Desk*)(title=Service Desk*)))" \
+  --profile "helpdesk_operator" \
+  --priority 70 \
+  --description "Automatic assignment for help desk staff"
+
+# Add dynamic mapping for contractors
+wabadmin ldap dynamic-mapping add \
+  --domain "Corporate-AD" \
+  --name "contractors_limited_access" \
+  --filter "(&(objectClass=user)(employeeType=Contractor))" \
+  --profile "contractor_limited" \
+  --priority 60 \
+  --description "Restricted access for contractors"
+
+# List all dynamic mappings
+wabadmin ldap dynamic-mapping list --domain "Corporate-AD"
+
+# Expected output:
+# Name                            | Filter                                  | Profile              | Priority | Enabled
+# --------------------------------|----------------------------------------|----------------------|----------|--------
+# database_admins_by_department   | (&(objectClass=user)(department=...))  | database_admin       | 85       | Yes
+# helpdesk_by_title               | (&(objectClass=user)(|(title=...)))    | helpdesk_operator    | 70       | Yes
+# contractors_limited_access      | (&(objectClass=user)(employeeType=...))| contractor_limited   | 60       | Yes
+# executives_privileged           | (&(objectClass=user)(|(title=...)))    | executive_privileged | 95       | Yes
+# security_team                   | (&(objectClass=user)(department=...))  | security_analyst     | 90       | Yes
+
+# Test dynamic mapping for specific user
+wabadmin ldap test-dynamic-mapping \
+  --domain "Corporate-AD" \
+  --username "mike.johnson"
+
+# Expected output:
+# User: mike.johnson@corp.company.com
+# LDAP Attributes:
+#   sAMAccountName: mike.johnson
+#   displayName: Mike Johnson
+#   department: Database Operations
+#   title: Senior DBA
+#   employeeType: Employee
+#   mail: mike.johnson@corp.company.com
+#
+# Dynamic Mapping Evaluation:
+#   Rule: database_admins_by_department
+#     Filter: (&(objectClass=user)(department=Database Operations)(title=*DBA*))
+#     Result: MATCH
+#     Profile: database_admin
+#     Priority: 85
+#
+#   Rule: contractors_limited_access
+#     Filter: (&(objectClass=user)(employeeType=Contractor))
+#     Result: NO MATCH (employeeType is 'Employee')
+#
+#   Rule: executives_privileged
+#     Filter: (&(objectClass=user)(|(title=*VP*)(title=*Director*)(title=*Chief*)))
+#     Result: NO MATCH (title does not match pattern)
+#
+# Final Assignment: database_admin (Priority 85)
+
+# Force dynamic mapping re-evaluation
+wabadmin ldap sync-dynamic-mappings --domain "Corporate-AD"
+
+# Expected output:
+# Evaluating dynamic mappings for domain: Corporate-AD
+# Rules evaluated: 5
+# Users matched: 234
+# Profile assignments updated: 12
+# Profile assignments unchanged: 222
+# Errors: 0
+# Duration: 4.7 seconds
+```
+
+#### Testing Dynamic Filters with ldapsearch
+
+```bash
+# Test filter for database admins
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "DC=corp,DC=company,DC=com" \
+  "(&(objectClass=user)(department=Database Operations)(title=*DBA*))" \
+  sAMAccountName displayName department title
+
+# Test filter for contractors
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "DC=corp,DC=company,DC=com" \
+  "(&(objectClass=user)(employeeType=Contractor))" \
+  sAMAccountName displayName employeeType accountExpires
+
+# Test complex filter with multiple conditions
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "DC=corp,DC=company,DC=com" \
+  "(&(objectClass=user)(department=Information Security)(!(employeeType=Contractor)))" \
+  sAMAccountName department employeeType
+```
+
+### Scenario 4: Multi-Domain Group Mapping
+
+Configure group mappings across multiple Active Directory domains or forests with trust relationships.
+
+#### Multi-Domain Architecture
+
+```
+Forest Trust Relationship:
++-------------------------------+           +-------------------------------+
+| CORP.COMPANY.COM (Primary)    |  <----->  | SUBSIDIARY.COMPANY.COM        |
+| - PAM-Admins                   |  Trust    | - SUB-PAM-Admins              |
+| - PAM-DBAdmins                 |           | - SUB-PAM-Operators           |
++-------------------------------+           +-------------------------------+
+         |                                            |
+         v                                            v
+    WALLIX Bastion (maps groups from both domains)
+```
+
+#### Multi-Domain Configuration
+
+```json
+{
+  "ldap_domains": [
+    {
+      "name": "Corporate-AD",
+      "connection": {
+        "ldaps_uri": "ldaps://dc01.corp.company.com:636",
+        "backup_uris": ["ldaps://dc02.corp.company.com:636"],
+        "bind_dn": "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com",
+        "base_dn": "DC=corp,DC=company,DC=com"
+      },
+      "group_mappings": [
+        {
+          "ldap_group": "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+          "wallix_profile": "admin",
+          "priority": 100,
+          "domain_qualifier": "CORP"
+        },
+        {
+          "ldap_group": "CN=PAM-DBAdmins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com",
+          "wallix_profile": "database_admin",
+          "priority": 90,
+          "domain_qualifier": "CORP"
+        }
+      ]
+    },
+
+    {
+      "name": "Subsidiary-AD",
+      "connection": {
+        "ldaps_uri": "ldaps://dc01.subsidiary.company.com:636",
+        "backup_uris": ["ldaps://dc02.subsidiary.company.com:636"],
+        "bind_dn": "CN=svc_wallix,OU=Service Accounts,DC=subsidiary,DC=company,DC=com",
+        "base_dn": "DC=subsidiary,DC=company,DC=com"
+      },
+      "group_mappings": [
+        {
+          "ldap_group": "CN=SUB-PAM-Admins,OU=Security Groups,DC=subsidiary,DC=company,DC=com",
+          "wallix_profile": "subsidiary_admin",
+          "priority": 95,
+          "domain_qualifier": "SUB"
+        },
+        {
+          "ldap_group": "CN=SUB-PAM-Operators,OU=Security Groups,DC=subsidiary,DC=company,DC=com",
+          "wallix_profile": "subsidiary_operator",
+          "priority": 80,
+          "domain_qualifier": "SUB"
+        }
+      ]
+    }
+  ],
+
+  "multi_domain_options": {
+    "cross_domain_groups_enabled": true,
+    "trust_validation": true,
+    "universal_group_support": true,
+    "domain_priority_order": ["Corporate-AD", "Subsidiary-AD"]
+  }
+}
+```
+
+#### CLI Configuration for Multi-Domain
+
+```bash
+# Add secondary domain
+wabadmin ldap domain add \
+  --name "Subsidiary-AD" \
+  --ldaps-uri "ldaps://dc01.subsidiary.company.com:636" \
+  --bind-dn "CN=svc_wallix,OU=Service Accounts,DC=subsidiary,DC=company,DC=com" \
+  --base-dn "DC=subsidiary,DC=company,DC=com" \
+  --domain-qualifier "SUB"
+
+# Add group mapping for subsidiary domain
+wabadmin ldap group-mapping add \
+  --domain "Subsidiary-AD" \
+  --ldap-group "CN=SUB-PAM-Admins,OU=Security Groups,DC=subsidiary,DC=company,DC=com" \
+  --profile "subsidiary_admin" \
+  --priority 95 \
+  --description "Subsidiary administrators"
+
+# Test cross-domain group resolution
+wabadmin ldap test-cross-domain \
+  --username "sarah.wilson@subsidiary.company.com"
+
+# Expected output:
+# User: sarah.wilson@subsidiary.company.com
+# Primary Domain: Subsidiary-AD
+#
+# Domain: Subsidiary-AD
+#   Distinguished Name: CN=Sarah Wilson,OU=Users,DC=subsidiary,DC=company,DC=com
+#   Group Memberships:
+#     - CN=SUB-PAM-Admins,OU=Security Groups,DC=subsidiary,DC=company,DC=com
+#   Resolved Profile: subsidiary_admin (Priority 95)
+#
+# Cross-Domain Memberships (via trust):
+#   Domain: Corporate-AD
+#     Foreign Security Principal: S-1-5-21-3623811015-3361044348-30300820-1013
+#     Group Memberships: None
+#
+# Final Profile Assignment: subsidiary_admin (Priority 95)
+
+# List all domains and their mappings
+wabadmin ldap domain list --verbose
+
+# Expected output:
+# Domain: Corporate-AD
+#   LDAPS URI: ldaps://dc01.corp.company.com:636
+#   Base DN: DC=corp,DC=company,DC=com
+#   Status: Connected
+#   Group Mappings: 5
+#   Users: 1,247
+#
+# Domain: Subsidiary-AD
+#   LDAPS URI: ldaps://dc01.subsidiary.company.com:636
+#   Base DN: DC=subsidiary,DC=company,DC=com
+#   Status: Connected
+#   Group Mappings: 2
+#   Users: 342
+
+# Synchronize all domains
+wabadmin ldap sync-all-domains
+
+# Expected output:
+# Synchronizing domain: Corporate-AD
+#   Users synced: 1,247
+#   Groups synced: 5
+#   Duration: 3.2 seconds
+#
+# Synchronizing domain: Subsidiary-AD
+#   Users synced: 342
+#   Groups synced: 2
+#   Duration: 1.1 seconds
+#
+# Total users synced: 1,589
+# Total groups synced: 7
+# Errors: 0
+# Total duration: 4.3 seconds
+```
+
+#### Universal Group Support
+
+```bash
+# Enable universal group resolution across domains
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --universal-groups-enabled true
+
+# Test universal group membership
+# Universal groups can be accessed from any domain in the forest
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "DC=corp,DC=company,DC=com" \
+  "(&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=8))" \
+  sAMAccountName groupType memberOf
+
+# groupType:1.2.840.113556.1.4.803:=8 filters for Universal groups
+# This allows membership across all domains in the forest
+```
+
+### Group Mapping Troubleshooting
+
+Common issues and their resolutions when configuring LDAP group mappings.
+
+#### Issue 1: Group Not Resolving
+
+**Symptoms:**
+- User logs in but no profile is assigned
+- Group mapping appears in configuration but doesn't work
+- Logs show "Group DN not found" errors
+
+**Diagnosis:**
+
+```bash
+# Check if group exists in AD
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  "(objectClass=group)" distinguishedName member
+
+# Check WALLIX group mapping
+wabadmin ldap group-mapping show \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com"
+
+# Check user's actual group memberships
+wabadmin ldap test-user-groups \
+  --domain "Corporate-AD" \
+  --username "problematic.user"
+
+# Check logs for group resolution errors
+grep "group.*resolution.*failed" /var/log/wabengine/wabengine.log | tail -20
+```
+
+**Resolution:**
+
+```bash
+# Verify exact DN format (common issue: wrong OU path)
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "DC=corp,DC=company,DC=com" \
+  "(sAMAccountName=PAM-Admins)" distinguishedName
+
+# Update mapping with correct DN
+wabadmin ldap group-mapping update \
+  --domain "Corporate-AD" \
+  --old-dn "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --new-dn "CN=PAM-Admins,OU=PAM Groups,OU=Security,DC=corp,DC=company,DC=com"
+
+# Force group sync
+wabadmin ldap sync-groups --domain "Corporate-AD" --force
+
+# Test again
+wabadmin ldap test-user-groups --domain "Corporate-AD" --username "problematic.user"
+```
+
+#### Issue 2: Nested Groups Not Working
+
+**Symptoms:**
+- User is member of child group but parent group mapping doesn't apply
+- Nested group resolution is slow or times out
+- Only direct memberships work
+
+**Diagnosis:**
+
+```bash
+# Check if nested group resolution is enabled
+wabadmin ldap config-show --domain "Corporate-AD" | grep nested
+
+# Expected output:
+# nested_groups_enabled: true
+# nested_groups_max_depth: 10
+
+# Test nested resolution specifically
+wabadmin ldap test-nested-groups \
+  --domain "Corporate-AD" \
+  --username "test.user" \
+  --verbose
+
+# Check if AD supports transitive group queries
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "DC=corp,DC=company,DC=com" \
+  "(&(objectClass=user)(sAMAccountName=test.user)(memberOf:1.2.840.113556.1.4.1941:=CN=PAM-Global-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com))" \
+  sAMAccountName
+```
+
+**Resolution:**
+
+```bash
+# Enable nested group resolution if disabled
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --nested-groups-enabled true \
+  --nested-groups-max-depth 10
+
+# Enable on specific group mapping
+wabadmin ldap group-mapping update \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Global-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --resolve-nested true
+
+# Increase timeout for complex hierarchies
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --query-timeout 30
+
+# Clear group cache and re-sync
+wabadmin ldap cache-clear --domain "Corporate-AD" --type groups
+wabadmin ldap sync-groups --domain "Corporate-AD" --force
+
+# Test nested resolution again
+wabadmin ldap test-nested-groups \
+  --domain "Corporate-AD" \
+  --username "test.user" \
+  --trace
+```
+
+#### Issue 3: Wrong Profile Assigned (Priority Conflicts)
+
+**Symptoms:**
+- User gets lower-priority profile instead of higher-priority one
+- Multiple group memberships result in unexpected profile
+- Profile changes unexpectedly after group sync
+
+**Diagnosis:**
+
+```bash
+# Check all mappings and their priorities
+wabadmin ldap group-mapping list \
+  --domain "Corporate-AD" \
+  --sort-by priority \
+  --show-all
+
+# Expected output should show priority order
+# Priority | LDAP Group DN                  | Profile          | Enabled
+# ---------|--------------------------------|------------------|--------
+# 100      | CN=PAM-Admins,...              | admin            | Yes
+# 90       | CN=PAM-DBAdmins,...            | database_admin   | Yes
+# 80       | CN=PAM-Operators,...           | operator         | Yes
+
+# Test user profile resolution with explanation
+wabadmin ldap test-user-profile \
+  --domain "Corporate-AD" \
+  --username "conflicted.user" \
+  --explain
+
+# Expected output:
+# User: conflicted.user@corp.company.com
+# Group Memberships:
+#   1. CN=PAM-Admins,...                 -> Profile: admin (Priority: 100) [DISABLED]
+#   2. CN=PAM-DBAdmins,...               -> Profile: database_admin (Priority: 90) [ACTIVE]
+#   3. CN=PAM-Operators,...              -> Profile: operator (Priority: 80) [ACTIVE]
+#
+# Profile Resolution:
+#   Highest priority match: admin (Priority 100) - SKIPPED (mapping disabled)
+#   Next highest match: database_admin (Priority 90) - SELECTED
+#
+# Final Profile: database_admin
+
+# Check if mappings are disabled
+wabadmin ldap group-mapping show \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com"
+```
+
+**Resolution:**
+
+```bash
+# Enable disabled mapping if needed
+wabadmin ldap group-mapping enable \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com"
+
+# Adjust priorities to ensure correct resolution order
+# Higher number = higher priority
+wabadmin ldap group-mapping set-priority \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --priority 100
+
+wabadmin ldap group-mapping set-priority \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-DBAdmins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --priority 90
+
+# Set conflict resolution strategy
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --conflict-resolution highest_priority
+
+# Force profile update for affected users
+wabadmin ldap update-user-profiles \
+  --domain "Corporate-AD" \
+  --force
+
+# Verify correct profile is now assigned
+wabadmin user show conflicted.user | grep Profile
+```
+
+#### Issue 4: Group Sync Performance Issues
+
+**Symptoms:**
+- Group synchronization takes excessive time
+- High CPU/memory usage during sync
+- Timeouts during group resolution
+
+**Diagnosis:**
+
+```bash
+# Check sync performance metrics
+wabadmin ldap sync-stats --domain "Corporate-AD"
+
+# Expected output:
+# Last Sync: 2026-02-04 15:30:42
+# Duration: 45.2 seconds
+# Groups Processed: 150
+# Users Updated: 1,247
+# Average Query Time: 0.28 seconds
+# Peak Memory Usage: 2.3 GB
+# Errors: 0
+
+# Check for large groups
+wabadmin ldap list-large-groups \
+  --domain "Corporate-AD" \
+  --min-members 500
+
+# Check cache effectiveness
+wabadmin ldap cache-stats --domain "Corporate-AD"
+
+# Expected output:
+# Cache Hit Rate: 45%  (should be >70%)
+# Cache Size: 8,432 entries
+# Cache Memory: 124 MB
+# Evictions (last hour): 1,234 (high eviction rate indicates undersized cache)
+```
+
+**Resolution:**
+
+```bash
+# Increase cache size and TTL
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --cache-max-entries 20000 \
+  --cache-ttl-seconds 900
+
+# Enable incremental sync instead of full sync
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --incremental-sync true \
+  --sync-interval 15
+
+# Optimize large group handling
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --large-group-threshold 1000 \
+  --large-group-pagination true \
+  --page-size 500
+
+# Use more specific Base DNs to reduce search scope
+wabadmin ldap config-set \
+  --domain "Corporate-AD" \
+  --user-base-dn "OU=Users,OU=PAM,DC=corp,DC=company,DC=com" \
+  --group-base-dn "OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com"
+
+# Schedule sync during off-peak hours
+wabadmin ldap schedule-sync \
+  --domain "Corporate-AD" \
+  --cron "0 2 * * *"  # 2 AM daily
+
+# Test performance improvement
+time wabadmin ldap sync-groups --domain "Corporate-AD"
+```
+
+### Best Practices
+
+#### 1. Group Mapping Priority System
+
+```
+Priority Guidelines:
+100-90  : Administrative roles (full system access)
+89-80   : Privileged operators (database, system admins)
+79-70   : Standard operators (application support)
+69-60   : Limited access (contractors, vendors)
+59-50   : Read-only roles (auditors, viewers)
+49-0    : Reserved for future use
+
+Example Priority Scheme:
++----------+------------------------+-----------+
+| Priority | Role                   | Profile   |
++----------+------------------------+-----------+
+| 100      | Global Admins          | admin     |
+| 95       | Security Team          | sec_admin |
+| 90       | Database Admins        | db_admin  |
+| 85       | Windows Admins         | win_admin |
+| 85       | Linux Admins           | lin_admin |
+| 80       | Application Operators  | app_ops   |
+| 70       | Helpdesk               | helpdesk  |
+| 60       | Contractors            | contractor|
+| 50       | Auditors               | auditor   |
++----------+------------------------+-----------+
+```
+
+#### 2. Testing Before Production
+
+```bash
+# Always test group mappings in non-production first
+# Create test user accounts in each target group
+
+# Test each mapping individually
+for group in PAM-Admins PAM-DBAdmins PAM-Operators; do
+  echo "Testing group: $group"
+  wabadmin ldap test-user-groups \
+    --domain "Corporate-AD" \
+    --username "test.${group,,}"
+done
+
+# Test edge cases
+wabadmin ldap test-user-groups --domain "Corporate-AD" --username "user.no.groups"
+wabadmin ldap test-user-groups --domain "Corporate-AD" --username "user.many.groups"
+wabadmin ldap test-nested-groups --domain "Corporate-AD" --username "user.nested"
+
+# Validate performance with bulk test
+wabadmin ldap test-bulk-users \
+  --domain "Corporate-AD" \
+  --user-list /tmp/test_users.txt \
+  --report /tmp/mapping_test_report.txt
+```
+
+#### 3. Monitoring and Alerting
+
+```bash
+# Set up monitoring for group sync operations
+# Create monitoring script: /usr/local/bin/monitor_ldap_sync.sh
+
+#!/bin/bash
+DOMAIN="Corporate-AD"
+LOG_FILE="/var/log/wallix/ldap_sync_monitor.log"
+ALERT_THRESHOLD_SECONDS=60
+
+# Run sync and measure duration
+START_TIME=$(date +%s)
+wabadmin ldap sync-groups --domain "$DOMAIN" > /tmp/sync_output.txt 2>&1
+SYNC_STATUS=$?
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+
+# Log results
+echo "$(date -Iseconds) - Sync duration: ${DURATION}s, Status: $SYNC_STATUS" >> "$LOG_FILE"
+
+# Alert if sync takes too long or fails
+if [ $SYNC_STATUS -ne 0 ] || [ $DURATION -gt $ALERT_THRESHOLD_SECONDS ]; then
+  echo "$(date -Iseconds) - ALERT: Sync issue detected" >> "$LOG_FILE"
+  # Send alert (integrate with your monitoring system)
+  # curl -X POST https://monitoring.company.com/alert -d "LDAP sync issue"
+fi
+
+# Check cache hit rate
+CACHE_STATS=$(wabadmin ldap cache-stats --domain "$DOMAIN" 2>/dev/null)
+HIT_RATE=$(echo "$CACHE_STATS" | grep "Hit Rate" | awk '{print $4}' | tr -d '%')
+
+if [ "$HIT_RATE" -lt 70 ]; then
+  echo "$(date -Iseconds) - WARNING: Cache hit rate below 70%: ${HIT_RATE}%" >> "$LOG_FILE"
+fi
+
+# Schedule with cron: */15 * * * * /usr/local/bin/monitor_ldap_sync.sh
+```
+
+#### 4. Documentation Standards
+
+```bash
+# Document each group mapping with clear descriptions
+wabadmin ldap group-mapping add \
+  --domain "Corporate-AD" \
+  --ldap-group "CN=PAM-Admins,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com" \
+  --profile "admin" \
+  --priority 100 \
+  --description "Full WALLIX admin access - Requires approval from Security Team (ticket JIRA-SEC-XXX)"
+
+# Export current configuration for documentation
+wabadmin ldap group-mapping export \
+  --domain "Corporate-AD" \
+  --format json \
+  --output /backup/ldap_mappings_$(date +%Y%m%d).json
+
+# Keep changelog of mapping modifications
+cat >> /docs/ldap_mapping_changelog.md <<EOF
+### $(date +%Y-%m-%d) - Added PAM-DevOps Group Mapping
+- **Group DN**: CN=PAM-DevOps,OU=Security Groups,OU=PAM,DC=corp,DC=company,DC=com
+- **Profile**: devops_operator
+- **Priority**: 85
+- **Reason**: New DevOps team requires automated deployment access
+- **Approved By**: John Smith (CISO)
+- **Ticket**: JIRA-SEC-4567
+EOF
+```
+
+#### 5. Security Considerations
+
+```bash
+# Use principle of least privilege for service account
+# Service account should only have read access to necessary OUs
+# Grant specific permissions via AD delegation:
+#   - Read all user information
+#   - Read all group information
+#   - Read memberOf attribute
+#   - NO write permissions
+
+# Verify service account permissions
+ldapsearch -x -H ldaps://dc01.corp.company.com:636 \
+  -D "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  -W \
+  -b "CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com" \
+  "(objectClass=*)" memberOf
+
+# Audit group mapping changes
+wabadmin audit search \
+  --category "ldap_group_mapping" \
+  --last 30d \
+  --output /reports/ldap_mapping_audit_$(date +%Y%m%d).csv
+
+# Enable alerts for mapping modifications
+wabadmin alert-rule create \
+  --name "LDAP Group Mapping Modified" \
+  --event-type "ldap.group_mapping.modified" \
+  --severity high \
+  --notification-email security@company.com
+
+# Regular access reviews
+wabadmin ldap generate-access-report \
+  --domain "Corporate-AD" \
+  --include-group-mappings \
+  --output /reports/quarterly_access_review_$(date +%Y%m%d).pdf
+```
+
+#### 6. Backup and Recovery
+
+```bash
+# Backup all LDAP configurations before changes
+wabadmin backup create \
+  --include ldap-config \
+  --include group-mappings \
+  --output /backup/wallix_ldap_backup_$(date +%Y%m%d_%H%M%S).tar.gz
+
+# Export group mappings to version control
+mkdir -p /etc/wallix/ldap/mappings
+wabadmin ldap group-mapping export \
+  --domain "Corporate-AD" \
+  --format json \
+  --output /etc/wallix/ldap/mappings/corporate_ad_mappings.json
+
+# Commit to git
+cd /etc/wallix/ldap
+git add mappings/
+git commit -m "Update LDAP group mappings - $(date +%Y-%m-%d)"
+
+# Restore from backup if needed
+wabadmin backup restore \
+  --file /backup/wallix_ldap_backup_20260204_143000.tar.gz \
+  --components ldap-config,group-mappings
+```
+
+---
+
 ## Quick Reference
 
 ### Essential ldapsearch Commands
@@ -2066,6 +3197,20 @@ echo | openssl s_client -connect dc01.corp.company.com:636 2>/dev/null | \
 - [06 - Authorization](../07-authorization/README.md) - RBAC and access control
 - [12 - Troubleshooting](../13-troubleshooting/README.md) - General troubleshooting
 - [38 - Certificate Management](../28-certificate-management/README.md) - TLS certificate setup
+
+## See Also
+
+**Related Sections:**
+- [06 - Authentication](../06-authentication/README.md) - Authentication methods overview
+- [35 - Kerberos Authentication](../35-kerberos-authentication/README.md) - Kerberos and AD integration
+- [27 - Vendor Integration](../27-vendor-integration/README.md) - Integration patterns
+
+**Related Documentation:**
+- [Pre-Production Lab: AD Setup](/pre/02-active-directory-setup.md) - Lab AD configuration
+- [Pre-Production Lab: AD Integration](/pre/06-ad-integration.md) - Integration testing
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
 
 ## External References
 

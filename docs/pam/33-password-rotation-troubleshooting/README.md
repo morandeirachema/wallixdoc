@@ -2903,4 +2903,17 @@ Password rotation in WALLIX Bastion is an automated process that changes credent
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [08 - Password Management](../08-password-management/README.md) - Password management fundamentals
+- [18 - Error Reference](../18-error-reference/README.md) - Error codes and remediation
+- [13 - Troubleshooting](../13-troubleshooting/README.md) - General diagnostics
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+- [WALLIX Support Portal](https://support.wallix.com)
+
+---
+
 *Document Version: 1.0 | Last Updated: January 2026 | WALLIX Bastion 12.1.x*

@@ -2312,6 +2312,15 @@ if __name__ == "__main__":
 - [26 - API Reference](../17-api-reference/README.md) - Complete API documentation
 - [30 - Operational Runbooks](../21-operational-runbooks/README.md) - Day-to-day operational procedures
 
+## See Also
+
+**Related Sections:**
+- [42 - Service Account Lifecycle](../42-service-account-lifecycle/README.md) - Service account governance
+- [08 - Password Management](../08-password-management/README.md) - Credential vault and rotation
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
 ## External Resources
 
 - [WALLIX Documentation Portal](https://pam.wallix.one/documentation)

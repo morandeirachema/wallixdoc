@@ -2294,6 +2294,17 @@ curl -X GET "https://bastion.company.com/api/v1/selfservice/sessions?days=7" \
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [25 - JIT Access](../25-jit-access/README.md) - Just-in-time privileged access
+- [08 - Password Management](../08-password-management/README.md) - Credential checkout
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [Authorization](../07-authorization/README.md) for detailed RBAC configuration and approval workflow setup.

@@ -283,6 +283,118 @@
 
 ## Port Reference
 
+### Consolidated Port Matrix (Source → Destination)
+
+```
++===============================================================================+
+|                  COMPLETE PORT REFERENCE MATRIX                               |
++===============================================================================+
+|                                                                               |
+|  This matrix shows ALL required network flows for WALLIX Bastion deployment  |
+|                                                                               |
++===============================================================================+
+
+USER → WALLIX
+=============
+
++-----------------------------------------------------------------------------+
+| Source          | Destination    | Port/Proto   | Purpose        | Req/Opt |
++-----------------+----------------+--------------+----------------+---------+
+| End Users       | WALLIX         | 443/TCP      | Web UI, API    | Req     |
+| End Users       | WALLIX         | 22/TCP       | SSH Proxy      | Req     |
+| End Users       | WALLIX         | 3389/TCP     | RDP Proxy      | Req     |
+| End Users       | WALLIX         | 5900/TCP     | VNC Proxy      | Opt     |
+| End Users       | WALLIX         | 80/TCP       | HTTP redirect  | Opt     |
+| Administrators  | WALLIX         | 22/TCP       | OS Admin SSH   | Req     |
+| Monitoring      | WALLIX         | 161/UDP      | SNMP polling   | Opt     |
++-----------------+----------------+--------------+----------------+---------+
+
+WALLIX → ACTIVE DIRECTORY / LDAP
+=================================
+
++-----------------------------------------------------------------------------+
+| Source          | Destination    | Port/Proto   | Purpose        | Req/Opt |
++-----------------+----------------+--------------+----------------+---------+
+| WALLIX          | AD/LDAP        | 389/TCP      | LDAP auth      | Req*    |
+| WALLIX          | AD/LDAP        | 636/TCP      | LDAPS          | Req*    |
+| WALLIX          | AD/LDAP        | 3268/TCP     | Global Catalog | Req*    |
+| WALLIX          | AD/LDAP        | 3269/TCP     | GC over SSL    | Req*    |
+| WALLIX          | AD/KDC         | 88/TCP+UDP   | Kerberos auth  | Opt     |
+| WALLIX          | AD/KDC         | 464/TCP+UDP  | Kerberos pwd   | Opt     |
+| WALLIX          | AD/KDC         | 749/TCP      | Kerberos admin | Opt     |
++-----------------+----------------+--------------+----------------+---------+
+* LDAP (389) OR LDAPS (636) required. Global Catalog for multi-domain forests.
+
+WALLIX → FORTIAUTHENTICATOR (RADIUS)
+=====================================
+
++-----------------------------------------------------------------------------+
+| Source          | Destination    | Port/Proto   | Purpose        | Req/Opt |
++-----------------+----------------+--------------+----------------+---------+
+| WALLIX          | FortiAuth      | 1812/UDP     | RADIUS auth    | Req     |
+| WALLIX          | FortiAuth      | 1813/UDP     | RADIUS acct    | Opt     |
++-----------------+----------------+--------------+----------------+---------+
+
+WALLIX → TARGET SERVERS
+========================
+
++-----------------------------------------------------------------------------+
+| Source          | Destination    | Port/Proto   | Purpose        | Req/Opt |
++-----------------+----------------+--------------+----------------+---------+
+| WALLIX          | Linux/Unix     | 22/TCP       | SSH sessions   | Req     |
+| WALLIX          | Windows        | 3389/TCP     | RDP sessions   | Req     |
+| WALLIX          | Windows        | 5985/TCP     | WinRM HTTP     | Opt     |
+| WALLIX          | Windows        | 5986/TCP     | WinRM HTTPS    | Opt     |
+| WALLIX          | Various        | 5900+/TCP    | VNC sessions   | Opt     |
+| WALLIX          | Legacy         | 23/TCP       | Telnet         | Opt     |
+| WALLIX          | PLCs/RTUs      | 502/TCP      | Modbus TCP     | Opt     |
+| WALLIX          | OPC Servers    | 4840/TCP     | OPC UA         | Opt     |
+| WALLIX          | SCADA/IEDs     | 20000/TCP    | DNP3           | Opt     |
+| WALLIX          | PLCs           | 44818/TCP+UDP| EtherNet/IP    | Opt     |
+| WALLIX          | PLCs/SCADA     | 102/TCP      | S7/IEC61850    | Opt     |
+| WALLIX          | BMS            | 47808/UDP    | BACnet/IP      | Opt     |
++-----------------+----------------+--------------+----------------+---------+
+
+WALLIX HA CLUSTER (Between Bastion Nodes)
+==========================================
+
++-----------------------------------------------------------------------------+
+| Source          | Destination    | Port/Proto   | Purpose        | Req/Opt |
++-----------------+----------------+--------------+----------------+---------+
+| WALLIX Node 1   | WALLIX Node 2  | 3306/TCP     | MariaDB repl   | Req     |
+| WALLIX Node 1   | WALLIX Node 2  | 5404/UDP     | Corosync mcast | Req*    |
+| WALLIX Node 1   | WALLIX Node 2  | 5405/UDP     | Corosync ucast | Req*    |
+| WALLIX Node 1   | WALLIX Node 2  | 5406/UDP     | Corosync comm  | Req     |
+| WALLIX Node 1   | WALLIX Node 2  | 2224/TCP     | Pacemaker PCSD | Req     |
+| WALLIX Node 1   | WALLIX Node 2  | 3121/TCP     | Pacemaker rem  | Opt     |
+| WALLIX Nodes    | Quorum Device  | 5403/TCP     | Qdevice        | Opt     |
++-----------------+----------------+--------------+----------------+---------+
+* Either multicast (5404) OR unicast (5405) required, not both.
+
+INFRASTRUCTURE SERVICES
+========================
+
++-----------------------------------------------------------------------------+
+| Source          | Destination    | Port/Proto   | Purpose        | Req/Opt |
++-----------------+----------------+--------------+----------------+---------+
+| WALLIX          | DNS Server     | 53/UDP+TCP   | Name resolution| Req     |
+| WALLIX          | NTP Server     | 123/UDP      | Time sync      | Req     |
+| WALLIX          | Syslog Server  | 514/UDP      | Syslog plain   | Opt     |
+| WALLIX          | Syslog Server  | 6514/TCP     | Syslog TLS     | Opt     |
+| WALLIX          | SMTP Server    | 25/TCP       | Email notif    | Opt     |
+| WALLIX          | SMTP Server    | 587/TCP      | SMTP STARTTLS  | Opt     |
+| WALLIX          | SMTP Server    | 465/TCP      | SMTPS          | Opt     |
+| WALLIX          | SNMP Manager   | 162/UDP      | SNMP traps     | Opt     |
+| WALLIX          | Prometheus     | 9100/TCP     | Node exporter  | Opt     |
+| WALLIX          | IdP (OIDC/SAML)| 443/TCP      | SSO auth       | Opt     |
++-----------------+----------------+--------------+----------------+---------+
+
++===============================================================================+
+|  LEGEND                                                                       |
+|  Req = Required    Opt = Optional    * = See notes                            |
++===============================================================================+
+```
+
 ### Complete Port Matrix
 
 ```
@@ -2529,6 +2641,22 @@ cat /sys/class/net/eth0/statistics/*errors
 | Document Version | 1.0 |
 | WALLIX Bastion Version | 12.1.x |
 | Last Updated | January 2026 |
+
+---
+
+## See Also
+
+**Related Sections:**
+- [46 - Fortigate Integration](../46-fortigate-integration/README.md) - Firewall rules and configurations
+- [32 - Load Balancer](../32-load-balancer/README.md) - Health checks and load balancing
+- [19 - System Requirements](../19-system-requirements/README.md) - Network requirements
+
+**Related Documentation:**
+- [Install Guide: Network Validation](/install/08-validation-testing.md) - Deployment validation
+- [Install Guide: Architecture Diagrams](/install/09-architecture-diagrams.md) - Network topology
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
 
 ---
 

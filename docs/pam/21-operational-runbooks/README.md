@@ -1501,6 +1501,17 @@ wabadmin backup --verify /path/to/backup.tar.gz
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [12 - Monitoring & Observability](../12-monitoring-observability/README.md) - Monitoring setup and metrics
+- [14 - Best Practices](../14-best-practices/README.md) - Operational best practices
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [31 - FAQ & Known Issues](../22-faq-known-issues/README.md) for common questions and troubleshooting tips.

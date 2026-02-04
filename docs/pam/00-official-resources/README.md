@@ -47,6 +47,30 @@ This document provides curated links to official WALLIX documentation, tools, an
 | **SCIM API 2.0** | https://scim.wallix.com/scim/doc/Usage.html | User provisioning API |
 | **REST API Samples** | https://github.com/wallix/wbrest_samples | Python examples (official) |
 
+### API Versioning Clarification
+
+```
++===============================================================================+
+|  IMPORTANT: API Version vs Endpoint URL                                       |
++===============================================================================+
+|                                                                               |
+|  The API specification version and endpoint URLs use different numbering:    |
+|                                                                               |
+|  API Spec Version:  v3.12 (current features in WALLIX 12.x)                   |
+|  Endpoint URLs:     /api/v2/  (for backward compatibility)                    |
+|                                                                               |
+|  Example: Current API is v3.12, but you still use https://bastion/api/v2/    |
+|                                                                               |
++===============================================================================+
+```
+
+| Aspect | Version | Notes |
+|--------|---------|-------|
+| **API Specification** | v3.12 | Current features (WALLIX 12.x) |
+| **Endpoint URLs** | `/api/v2/` | URL path (backward compatibility) |
+| **Terraform Provider** | 0.14.0 | Supports API v3.12 |
+| **Deprecated** | v1.x | Removed in 12.x |
+
 ### API Version Compatibility
 
 | API Version | WALLIX Bastion | Status |
@@ -173,10 +197,21 @@ This document provides curated links to official WALLIX documentation, tools, an
 
 ---
 
-## Next Steps
+---
 
-- [Quick Start Guide](../01-quick-start/README.md) - Get started with WALLIX Bastion
-- [Introduction](../02-introduction/README.md) - Learn about WALLIX PAM
+## See Also
+
+**Related Sections:**
+- [01 - Quick Start](../01-quick-start/README.md) - Get started with WALLIX Bastion
+- [02 - Introduction](../02-introduction/README.md) - Company and product overview
+- [17 - API Reference](../17-api-reference/README.md) - REST API and SCIM documentation
+- [31 - wabadmin Reference](../31-wabadmin-reference/README.md) - CLI command reference
+
+**Related Documentation:**
+- [Install Guide](/install/README.md) - Multi-site deployment architecture
+
+**Official Resources:**
+- All resources listed in this document
 
 ---
 

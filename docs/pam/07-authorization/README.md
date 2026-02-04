@@ -631,6 +631,21 @@ Critical sessions require additional confirmation before access.
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [06 - Authentication](../06-authentication/README.md) - User authentication and MFA
+- [25 - JIT Access](../25-jit-access/README.md) - Just-in-time privileged access
+- [38 - Command Filtering](../38-command-filtering/README.md) - Command restrictions and controls
+
+**Related Documentation:**
+- [Pre-Production Lab](/pre/README.md) - Authorization testing and validation
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [07 - Password Management](../08-password-management/README.md) for detailed credential management and rotation.

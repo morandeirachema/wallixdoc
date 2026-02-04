@@ -1906,6 +1906,17 @@ wabadmin audit --session <session_id> --type sharing
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [09 - Session Management](../09-session-management/README.md) - Session recording and monitoring
+- [07 - Authorization](../07-authorization/README.md) - Access control and approvals
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 *Document Version: 1.0*
 *Last Updated: February 2026*
 *Applies to: WALLIX Bastion 12.x*

@@ -1997,6 +1997,20 @@
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [19 - System Requirements](../19-system-requirements/README.md) - Hardware sizing and specifications
+- [12 - Monitoring & Observability](../12-monitoring-observability/README.md) - Performance monitoring
+
+**Related Documentation:**
+- [Install Guide](/install/README.md) - Multi-site architecture and sizing
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [36 - Integration Patterns](../36-integration-patterns/README.md) for integration with external systems.

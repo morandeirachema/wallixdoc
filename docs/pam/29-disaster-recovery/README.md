@@ -2090,6 +2090,21 @@ ACTION ITEMS:
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [30 - Backup & Restore](../30-backup-restore/README.md) - Backup strategies and procedures
+- [11 - High Availability](../11-high-availability/README.md) - HA clustering configuration
+- [20 - Upgrade Guide](../20-upgrade-guide/README.md) - Safe upgrade procedures
+
+**Related Documentation:**
+- [Install Guide](/install/HOWTO.md) - Multi-site deployment for DR
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 *Document Version: 1.0*
 *Last Updated: January 2026*
 *Review Frequency: Quarterly*

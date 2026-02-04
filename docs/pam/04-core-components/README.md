@@ -164,6 +164,62 @@ The **Session Manager** is the heart of WALLIX Bastion, responsible for all priv
 
 ---
 
+#### WinRM Protocol Handler
+
+```
++===============================================================================+
+|                          WinRM HANDLER                                        |
++===============================================================================+
+|                                                                               |
+|  Connection Methods:                                                          |
+|  +-- WinRM HTTP (port 5985)                                                   |
+|  +-- WinRM HTTPS/TLS (port 5986, recommended)                                 |
+|                                                                               |
+|  Authentication Methods:                                                      |
+|  +-- Basic (username/password - avoid in production)                          |
+|  +-- NTLM (challenge-response authentication)                                 |
+|  +-- Kerberos (AD domain authentication - recommended)                        |
+|  +-- CredSSP (credential delegation over TLS)                                 |
+|  +-- Certificate-based authentication                                         |
+|                                                                               |
+|  Shell Types:                                                                 |
+|  +-- PowerShell (default, recommended)                                        |
+|  +-- CMD (legacy command prompt)                                              |
+|                                                                               |
+|  Recording Features:                                                          |
+|  +-- Command input logging (full commands)                                    |
+|  +-- Command output capture (stdout/stderr)                                   |
+|  +-- Timestamped execution logs                                               |
+|  +-- Exit code tracking                                                       |
+|  +-- Full-text search (native, no OCR needed)                                 |
+|                                                                               |
+|  Use Cases:                                                                   |
+|  +-- Scripted Windows administration                                          |
+|  +-- Automated server configuration                                           |
+|  +-- PowerShell-based privileged operations                                   |
+|  +-- Headless Windows Server Core management                                  |
+|  +-- Low-bandwidth remote administration                                      |
+|                                                                               |
+|  Advantages over RDP:                                                         |
+|  +-- Lower bandwidth consumption (2-8 MB/hr vs 50-200 MB/hr)                  |
+|  +-- Smaller recording files (text vs video)                                  |
+|  +-- Native text search (no OCR required)                                     |
+|  +-- Better for automation and scripting                                      |
+|                                                                               |
++===============================================================================+
+```
+
+**WinRM Security Levels:**
+
+| Level | Description | Use Case |
+|-------|-------------|----------|
+| **HTTP + Kerberos** | Kerberos encryption over HTTP | AD environments (secure) |
+| **HTTPS + NTLM** | TLS encryption with NTLM | Non-domain systems |
+| **HTTPS + CredSSP** | Full credential delegation | Multi-hop scenarios |
+| **HTTP + Basic** | Plaintext over HTTP | Lab only (never production) |
+
+---
+
 #### VNC Protocol Handler
 
 ```
@@ -769,6 +825,21 @@ User                Access Manager         Session Manager        Password Manag
  |                        |     (WebSocket)      |      (Proxied)        |                 |
  |                        |                      |                       |                 |
 ```
+
+---
+
+## See Also
+
+**Related Sections:**
+- [09 - Session Management](../09-session-management/README.md) - Session recording and monitoring
+- [08 - Password Management](../08-password-management/README.md) - Credential vaulting and rotation
+- [05 - Configuration](../05-configuration/README.md) - Object model and configuration
+
+**Related Documentation:**
+- [Pre-Production Lab](/pre/README.md) - Component setup and testing
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
 
 ---
 

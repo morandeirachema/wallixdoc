@@ -69,11 +69,27 @@
 
 ### API Versioning
 
-| Version | Status | Notes |
-|---------|--------|-------|
-| v2.0 | Current | Stable API for 12.x |
-| v1.0 | Removed | NOT supported in 12.x |
-| v3.x | Removed | NOT supported in 12.x |
+```
++===============================================================================+
+|  IMPORTANT: API Version vs Endpoint URL                                       |
++===============================================================================+
+|                                                                               |
+|  The API specification version and endpoint URLs use different numbering:    |
+|                                                                               |
+|  API Spec Version:  v3.12 (current features in WALLIX 12.x)                   |
+|  Endpoint URLs:     /api/v2/  (for backward compatibility)                    |
+|                                                                               |
+|  Example: Current API is v3.12, but you still use https://bastion/api/v2/    |
+|                                                                               |
++===============================================================================+
+```
+
+| Aspect | Version | Notes |
+|--------|---------|-------|
+| **API Specification** | v3.12 | Current features (WALLIX 12.x) |
+| **Endpoint URLs** | `/api/v2/` | URL path (backward compatibility) |
+| **Terraform Provider** | 0.14.0 | Supports API v3.12 |
+| **Deprecated** | v1.x | Removed in 12.x |
 
 ### CyberArk Comparison
 
@@ -1713,6 +1729,22 @@ def api_call_with_retry(url, method, data=None, max_retries=3):
 
     return {"success": False, "error": "Max retries exceeded"}
 ```
+
+---
+
+## See Also
+
+**Related Sections:**
+- [17 - API Reference](../17-api-reference/README.md) - Complete REST API documentation
+- [31 - wabadmin Reference](../31-wabadmin-reference/README.md) - CLI command reference
+
+**Related Documentation:**
+- [Examples: Ansible](/examples/ansible/README.md) - Ansible automation playbooks
+- [Examples: API](/examples/api/README.md) - API client examples
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+- [WALLIX REST API Samples](https://github.com/wallix/wbrest_samples)
 
 ---
 

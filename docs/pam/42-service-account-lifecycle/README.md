@@ -1956,12 +1956,24 @@ Every service account must have clearly defined ownership and accountability.
 
 ---
 
-## Related Documentation
+---
 
-- [07 - Password Management](../08-password-management/README.md) - Credential vault and rotation
-- [26 - API Reference](../17-api-reference/README.md) - Complete API documentation
-- [33 - Compliance & Audit](../24-compliance-audit/README.md) - Compliance framework mappings
-- [53 - Account Discovery](../40-account-discovery/README.md) - Discovering unmanaged accounts
+## See Also
+
+**Related Sections:**
+- [45 - Privileged Task Automation](../45-privileged-task-automation/README.md) - Automated privileged operations using service accounts
+- [08 - Password Management](../08-password-management/README.md) - Credential vault and automatic rotation
+- [40 - Account Discovery](../40-account-discovery/README.md) - Discovering unmanaged service accounts
+- [41 - SSH Key Lifecycle](../41-ssh-key-lifecycle/README.md) - SSH key management for service accounts
+- [17 - API Reference](../17-api-reference/README.md) - API for service account automation
+- [24 - Compliance & Audit](../24-compliance-audit/README.md) - Compliance framework mappings
+
+**Related Documentation:**
+- [Install Guide](/install/HOWTO.md) - Service account configuration during deployment
+
+**Official Resources:**
+- [WALLIX Documentation Portal](https://pam.wallix.one/documentation)
+- [WALLIX REST API Samples](https://github.com/wallix/wbrest_samples)
 
 ---
 

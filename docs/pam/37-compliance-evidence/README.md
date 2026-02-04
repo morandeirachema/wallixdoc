@@ -2762,5 +2762,16 @@ fi
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [24 - Compliance & Audit](../24-compliance-audit/README.md) - Compliance frameworks and audit prep
+- [23 - Incident Response](../23-incident-response/README.md) - Security incident procedures
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 *Document Version: 1.0*
 *Last Updated: January 2026*

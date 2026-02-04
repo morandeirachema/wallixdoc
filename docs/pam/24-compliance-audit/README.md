@@ -865,6 +865,21 @@ echo "Evidence collection complete: ${EVIDENCE_DIR}"
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [37 - Compliance Evidence](../37-compliance-evidence/README.md) - Evidence collection and attestation
+- [09 - Session Management](../09-session-management/README.md) - Audit trail and session recording
+- [08 - Password Management](../08-password-management/README.md) - Credential governance
+
+**Related Documentation:**
+- [Install Guide: Security Hardening](/install/07-security-hardening.md) - Security configuration
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 You have completed the documentation series. Additional resources:

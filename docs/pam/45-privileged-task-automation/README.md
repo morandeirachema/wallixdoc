@@ -965,6 +965,21 @@ wabadmin approval deny <id> --reason "..."
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [42 - Service Account Lifecycle](../42-service-account-lifecycle/README.md) - Service account governance
+- [10 - API & Automation](../10-api-automation/README.md) - REST API integration
+
+**Related Documentation:**
+- [Examples: Ansible](/examples/ansible/README.md) - Ansible automation examples
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+- [WALLIX REST API Samples](https://github.com/wallix/wbrest_samples)
+
+---
+
 *Document Version: 1.0*
 *Last Updated: February 2026*
 *Applies to: WALLIX Bastion 12.1.x*

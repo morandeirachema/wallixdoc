@@ -741,6 +741,21 @@
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [33 - Password Rotation Troubleshooting](../33-password-rotation-troubleshooting/README.md) - Rotation failure diagnosis
+- [41 - SSH Key Lifecycle](../41-ssh-key-lifecycle/README.md) - SSH key management and rotation
+- [42 - Service Account Lifecycle](../42-service-account-lifecycle/README.md) - Service account governance
+
+**Related Documentation:**
+- [Pre-Production Lab](/pre/README.md) - Password rotation testing
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [08 - Session Management](../09-session-management/README.md) for session recording and monitoring.

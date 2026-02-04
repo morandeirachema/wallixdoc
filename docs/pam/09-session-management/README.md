@@ -146,17 +146,17 @@
 |                    RECORDING CAPABILITIES BY PROTOCOL                         |
 +===============================================================================+
 |                                                                               |
-|  +----------+----------+----------+----------+----------+------------------+  |
-|  | Feature  |   SSH    |   RDP    |   VNC    |  HTTPS   |     TELNET       |  |
-|  +----------+----------+----------+----------+----------+------------------+  |
-|  | Video    |    -     |    Y     |    Y     | Snapshot |       -          |  |
-|  | Screen   |   Text   |  Full    |  Full    |  Page    |      Text        |  |
-|  | Keystroke|    Y     |    Y     |    Y     |    Y     |       Y          |  |
-|  | Commands |    Y     |    -     |    -     |    -     |       Y          |  |
-|  | OCR      |    -     |    Y     |    Y     |    -     |       -          |  |
-|  | Searchabl|    Y     | via OCR  | via OCR  |    Y     |       Y          |  |
-|  | File Size|  Small   |  Large   |  Medium  |  Small   |     Small        |  |
-|  +----------+----------+----------+----------+----------+------------------+  |
+|  +----------+--------+--------+--------+--------+--------+------------------+  |
+|  | Feature  |  SSH   |  RDP   |  VNC   | HTTPS  | WinRM  |     TELNET       |  |
+|  +----------+--------+--------+--------+--------+--------+------------------+  |
+|  | Video    |   -    |   Y    |   Y    | Snapsh |   -    |       -          |  |
+|  | Screen   |  Text  |  Full  |  Full  |  Page  |  Text  |      Text        |  |
+|  | Keystroke|   Y    |   Y    |   Y    |   Y    |   Y    |       Y          |  |
+|  | Commands |   Y    |   -    |   -    |   -    |   Y    |       Y          |  |
+|  | OCR      |   -    |   Y    |   Y    |   -    |   -    |       -          |  |
+|  | Searchabl|   Y    |via OCR |via OCR |   Y    |   Y    |       Y          |  |
+|  | File Size| Small  | Large  | Medium | Small  | Small  |     Small        |  |
+|  +----------+--------+--------+--------+--------+--------+------------------+  |
 |                                                                               |
 |  TYPICAL FILE SIZES (per hour)                                                |
 |  -----------------------------                                                |
@@ -165,6 +165,7 @@
 |  RDP:     50-200 MB/hour  (video, depends on activity)                        |
 |  VNC:     20-100 MB/hour  (video, depends on activity)                        |
 |  HTTPS:   5-20 MB/hour    (screenshots + requests)                            |
+|  WinRM:   2-8 MB/hour     (text-based commands, similar to SSH)               |
 |  Telnet:  1-3 MB/hour     (text-based)                                        |
 |                                                                               |
 +===============================================================================+
@@ -244,6 +245,154 @@
     }
 }
 ```
+
+---
+
+## WinRM Protocol Support
+
+### WinRM Overview
+
+Windows Remote Management (WinRM) is Microsoft's implementation of the WS-Management protocol for remote Windows administration. WALLIX Bastion supports WinRM sessions for privileged command-line access to Windows servers.
+
+### WinRM Ports and Protocols
+
+```
++===============================================================================+
+|                        WinRM PORT CONFIGURATION                               |
++===============================================================================+
+|                                                                               |
+|  +----------+----------+---------------+------------------------------------+  |
+|  | Port     | Protocol | Encryption    | Notes                              |  |
+|  +----------+----------+---------------+------------------------------------+  |
+|  | 5985     | TCP      | HTTP          | Kerberos encryption recommended    |  |
+|  | 5986     | TCP      | HTTPS (TLS)   | Certificate-based encryption       |  |
+|  +----------+----------+---------------+------------------------------------+  |
+|                                                                               |
+|  RECOMMENDED: Use port 5986 (HTTPS) for production environments              |
+|                                                                               |
++===============================================================================+
+```
+
+### WinRM Authentication Methods
+
+| Method | Port | Description | Security Level |
+|--------|------|-------------|----------------|
+| **Basic** | 5985/5986 | Username/password (plaintext over HTTP) | Low (avoid in production) |
+| **NTLM** | 5985/5986 | Challenge-response authentication | Medium |
+| **Kerberos** | 5985 | AD domain authentication | High (recommended) |
+| **CredSSP** | 5986 | Credential delegation over TLS | High (requires TLS) |
+| **Certificate** | 5986 | Client certificate authentication | High |
+
+### WinRM vs RDP Session Differences
+
+```
++===============================================================================+
+|                    WinRM vs RDP COMPARISON                                    |
++===============================================================================+
+|                                                                               |
+|  +--------------------+------------------------+---------------------------+  |
+|  | Aspect             | WinRM                  | RDP                       |  |
+|  +--------------------+------------------------+---------------------------+  |
+|  | Interface          | Command-line (CLI)     | Graphical desktop (GUI)   |  |
+|  | Recording Type     | Text/command logging   | Video recording           |  |
+|  | Bandwidth          | Low (2-8 MB/hour)      | High (50-200 MB/hour)     |  |
+|  | Session Resumption | No                     | Yes (reconnect)           |  |
+|  | Multi-user         | No (single session)    | Yes (RDS/Terminal Svc)    |  |
+|  | Use Case           | Scripted automation    | Interactive admin         |  |
+|  | OCR Search         | Not needed (native)    | Required (video→text)     |  |
+|  | File Size          | Small                  | Large                     |  |
+|  +--------------------+------------------------+---------------------------+  |
+|                                                                               |
++===============================================================================+
+```
+
+### WinRM Configuration Examples
+
+#### Target Windows Server Configuration
+
+```powershell
+# Enable WinRM service
+Enable-PSRemoting -Force
+
+# Configure WinRM for HTTPS (port 5986)
+$cert = New-SelfSignedCertificate -DnsName "server.company.com" -CertStoreLocation Cert:\LocalMachine\My
+New-Item -Path WSMan:\LocalHost\Listener -Transport HTTPS -Address * -CertificateThumbPrint $cert.Thumbprint -Force
+
+# Configure firewall rules
+New-NetFirewallRule -DisplayName "WinRM HTTPS" -Direction Inbound -LocalPort 5986 -Protocol TCP -Action Allow
+New-NetFirewallRule -DisplayName "WinRM HTTP" -Direction Inbound -LocalPort 5985 -Protocol TCP -Action Allow
+
+# Set trusted hosts (if using NTLM from WALLIX)
+Set-Item WSMan:\localhost\Client\TrustedHosts -Value "10.10.1.11,10.10.1.12" -Force
+
+# Configure authentication methods
+Set-Item WSMan:\localhost\Service\Auth\Kerberos -Value $true
+Set-Item WSMan:\localhost\Service\Auth\CredSSP -Value $true
+Set-Item WSMan:\localhost\Service\Auth\Basic -Value $false  # Disable for security
+
+# Verify configuration
+winrm get winrm/config
+```
+
+#### WALLIX Device Configuration for WinRM
+
+```json
+{
+  "device_name": "win-server-2022-01",
+  "host": "10.10.2.10",
+  "port": 5986,
+  "protocol": "WINRM",
+  "connection_policy": {
+    "winrm": {
+      "transport": "https",
+      "auth_method": "ntlm",
+      "verify_ssl": true,
+      "shell_type": "powershell"
+    }
+  },
+  "session_recording": {
+    "enabled": true,
+    "record_commands": true,
+    "record_output": true
+  }
+}
+```
+
+### WinRM Session Recording
+
+WinRM sessions are recorded differently than RDP:
+
+**Recording Components:**
+- Command input (full PowerShell commands)
+- Command output (stdout/stderr)
+- Timestamps for each command
+- Exit codes and errors
+- Environment variables (if configured)
+
+**NOT Recorded:**
+- Screen output (no video)
+- Mouse movements (CLI only)
+- GUI elements (N/A)
+
+**Example Recording Entry:**
+```
+[2026-02-04 14:32:15] Command: Get-Service -Name W32Time | Restart-Service
+[2026-02-04 14:32:16] Output:
+  Status   Name               DisplayName
+  ------   ----               -----------
+  Running  W32Time            Windows Time
+[2026-02-04 14:32:16] Exit Code: 0
+```
+
+### Troubleshooting WinRM Sessions
+
+| Issue | Symptom | Resolution |
+|-------|---------|------------|
+| **Connection Timeout** | Unable to establish WinRM session | Verify firewall rules allow ports 5985/5986 from WALLIX |
+| **Authentication Failed** | NTLM or Kerberos error | Check domain trust, verify credentials in vault |
+| **SSL Certificate Error** | HTTPS validation failure | Import Windows server certificate to WALLIX trust store |
+| **CredSSP Disabled** | Credential delegation fails | Enable CredSSP on target: `Set-Item WSMan:\localhost\Service\Auth\CredSSP $true` |
+| **Kerberos Clock Skew** | Kerberos ticket invalid | Synchronize NTP between WALLIX, AD, and Windows targets |
 
 ---
 
@@ -645,6 +794,21 @@
 |                                                                               |
 +===============================================================================+
 ```
+
+---
+
+## See Also
+
+**Related Sections:**
+- [39 - Session Recording Playback](../39-session-recording-playback/README.md) - Playback, OCR, and forensics
+- [43 - Session Sharing](../43-session-sharing/README.md) - Multi-user sessions and dual-control
+- [38 - Command Filtering](../38-command-filtering/README.md) - Command restrictions
+
+**Related Documentation:**
+- [Pre-Production Lab](/pre/README.md) - Session recording testing
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
 
 ---
 

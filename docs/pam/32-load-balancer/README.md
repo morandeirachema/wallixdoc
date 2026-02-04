@@ -2567,6 +2567,22 @@ awk '$10 > 5 {print $7,$10}' /var/log/nginx/access.log | sort -t' ' -k2 -rn | he
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [46 - Fortigate Integration](../46-fortigate-integration/README.md) - Fortigate firewall and load balancing
+- [11 - High Availability](../11-high-availability/README.md) - HA cluster configuration
+- [36 - Network Validation](../36-network-validation/README.md) - Health checks and monitoring
+
+**Related Documentation:**
+- [Install Guide: Architecture](/install/09-architecture-diagrams.md) - Load balancer topology
+- [Pre-Production Lab: HAProxy](/pre/03-haproxy-setup.md) - HAProxy configuration
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Version Information
 
 | Item | Value |

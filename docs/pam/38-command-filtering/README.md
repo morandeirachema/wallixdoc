@@ -2548,6 +2548,17 @@ curl -X GET "https://bastion.company.com/api/v3.12/audit/events" \
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [09 - Session Management](../09-session-management/README.md) - Session recording and monitoring
+- [07 - Authorization](../07-authorization/README.md) - Access control policies
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [50 - File Transfer Policies](../50-file-transfer/README.md) for controlling SCP/SFTP file transfers.

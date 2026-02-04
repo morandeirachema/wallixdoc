@@ -1067,6 +1067,635 @@
 
 ---
 
+## FortiAuthenticator RADIUS Errors
+
+### FortiAuthenticator RADIUS Integration Error Codes
+
+```
++===============================================================================+
+|                   FORTIAUTHENTICATOR RADIUS ERRORS                           |
++===============================================================================+
+
+  WAB-1007-RADIUS_TIMEOUT
+  =======================
+
+  Description: RADIUS authentication request to FortiAuthenticator timed out
+  Severity: CRITICAL
+
+  Symptoms:
+  * Login hangs for 15-20 seconds before failing
+  * User sees "Authentication timeout" message
+  * No response from FortiAuthenticator in logs
+
+  Possible Causes:
+  * Firewall blocking UDP port 1812 (RADIUS authentication)
+  * FortiAuthenticator service stopped or overloaded
+  * Wrong RADIUS server IP address configured in WALLIX
+  * Network routing issue between WALLIX and FortiAuthenticator
+  * FortiAuthenticator RADIUS service not listening on configured IP
+
+  Diagnostic Commands:
+  +------------------------------------------------------------------------+
+  | Test network connectivity:                                             |
+  |   ping <fortiauth-ip>                                                  |
+  |                                                                        |
+  | Test UDP port 1812 reachability:                                       |
+  |   nc -uzv <fortiauth-ip> 1812                                          |
+  |   # Expected: Connection succeeded                                     |
+  |                                                                        |
+  | Capture RADIUS traffic:                                                |
+  |   sudo tcpdump -i any -n port 1812 -v                                  |
+  |   # Look for Access-Request packets sent but no Access-Accept/Reject   |
+  |                                                                        |
+  | Check WALLIX RADIUS configuration:                                     |
+  |   wabadmin auth-domain show --name <domain>                            |
+  |   # Verify RADIUS server IP and port                                   |
+  +------------------------------------------------------------------------+
+
+  Resolution Steps:
+  +------------------------------------------------------------------------+
+  | Step 1: Verify FortiAuthenticator service status                       |
+  |   SSH to FortiAuthenticator and check:                                 |
+  |   # diagnose sys radius server                                         |
+  |   # get system status                                                  |
+  |                                                                        |
+  | Step 2: Test from WALLIX Bastion                                       |
+  |   # Install radtest if not present:                                    |
+  |   apt-get install freeradius-utils                                     |
+  |                                                                        |
+  |   # Test RADIUS authentication:                                        |
+  |   radtest <testuser> <password> <fortiauth-ip> 0 <shared-secret>      |
+  |                                                                        |
+  |   Expected output (success):                                           |
+  |   Sent Access-Request Id 123 from 0.0.0.0:34567 to <ip>:1812          |
+  |   Received Access-Accept Id 123 from <ip>:1812 length 20              |
+  |                                                                        |
+  | Step 3: Check firewall rules                                           |
+  |   Verify traffic allowed from WALLIX IP to FortiAuth IP on UDP 1812    |
+  |   Check both Fortigate firewall and host-based firewalls               |
+  |                                                                        |
+  | Step 4: Increase RADIUS timeout in WALLIX (if needed)                  |
+  |   Admin > Authentication Domains > [domain] > Edit                     |
+  |   Set "RADIUS Timeout" to 30 seconds                                   |
+  |   (Default is 5 seconds, may be too short for MFA push)                |
+  |                                                                        |
+  | Step 5: Check FortiAuthenticator RADIUS configuration                  |
+  |   Authentication > RADIUS Service > Clients                            |
+  |   Verify WALLIX Bastion IP is added as RADIUS client                   |
+  |   Verify shared secret matches WALLIX configuration                    |
+  +------------------------------------------------------------------------+
+
+  Log Examples:
+  +------------------------------------------------------------------------+
+  | /var/log/wab/wabauth.log (WALLIX side):                               |
+  | 2026-02-04 10:00:00 ERROR [wabauth] WAB-1007: RADIUS timeout for      |
+  | user 'jsmith' to server 10.10.2.50:1812 - No response after 5 seconds |
+  |                                                                        |
+  | FortiAuthenticator logs (if working):                                  |
+  | 2026-02-04 10:00:00 radius: Access-Request from 10.10.1.10 for user   |
+  | 'jsmith', sending Access-Accept                                        |
+  +------------------------------------------------------------------------+
+
+  Post-Resolution Verification:
+  +------------------------------------------------------------------------+
+  | 1. Test authentication from WALLIX web UI                              |
+  | 2. Verify login completes within 5 seconds                             |
+  | 3. Check wabauth.log shows successful RADIUS authentication            |
+  | 4. Verify FortiAuthenticator shows successful auth in logs             |
+  +------------------------------------------------------------------------+
+
+  --------------------------------------------------------------------------
+
+  WAB-1008-RADIUS_ACCESS_REJECT
+  ==============================
+
+  Description: FortiAuthenticator rejected RADIUS authentication request
+  Severity: ERROR
+
+  Symptoms:
+  * User receives "Authentication failed" message immediately
+  * Credentials appear correct but login fails
+  * Rejection happens quickly (1-2 seconds)
+
+  Possible Causes:
+  * Shared secret mismatch between WALLIX and FortiAuthenticator
+  * User not provisioned in FortiAuthenticator
+  * Invalid or expired OTP token entered
+  * User account locked or disabled in FortiAuthenticator
+  * FortiToken not assigned to user
+  * User not member of allowed RADIUS authentication group
+
+  Diagnostic Commands:
+  +------------------------------------------------------------------------+
+  | Check WALLIX authentication logs:                                      |
+  |   tail -f /var/log/wab/wabauth.log | grep RADIUS                       |
+  |                                                                        |
+  | Check FortiAuthenticator real-time logs:                               |
+  |   SSH to FortiAuthenticator:                                           |
+  |   # diagnose debug application radiusd -1                              |
+  |   # diagnose debug enable                                              |
+  |   (Attempt login from WALLIX)                                          |
+  |   # diagnose debug disable                                             |
+  |                                                                        |
+  | Verify user exists in FortiAuthenticator:                              |
+  |   FortiAuthenticator GUI > Authentication > User Management > Local    |
+  |   Search for username                                                  |
+  |                                                                        |
+  | Test with radtest (bypass WALLIX):                                     |
+  |   radtest <user> <password+otp> <fortiauth-ip> 0 <shared-secret>      |
+  |   # Example: radtest jsmith MyPass123456 10.10.2.50 0 SecretKey       |
+  |   # Where 123456 is the 6-digit OTP from FortiToken                    |
+  +------------------------------------------------------------------------+
+
+  Resolution Steps:
+  +------------------------------------------------------------------------+
+  | Scenario 1: Shared Secret Mismatch                                     |
+  | =====================================                                  |
+  |   Symptoms:                                                            |
+  |   - All users fail RADIUS authentication                               |
+  |   - FortiAuth logs show "Invalid shared secret" or similar             |
+  |                                                                        |
+  |   Resolution:                                                          |
+  |   1. Verify shared secret in WALLIX:                                   |
+  |      Admin > Authentication Domains > [domain] > RADIUS Config         |
+  |                                                                        |
+  |   2. Verify shared secret in FortiAuthenticator:                       |
+  |      Authentication > RADIUS Service > Clients > [WALLIX IP]           |
+  |      Click Edit, check "Secret" field                                  |
+  |                                                                        |
+  |   3. Update to match if different                                      |
+  |   4. Test with radtest to confirm                                      |
+  |                                                                        |
+  | Scenario 2: User Not in FortiAuthenticator                             |
+  | ==========================================                             |
+  |   Symptoms:                                                            |
+  |   - Specific users fail, others succeed                                |
+  |   - FortiAuth logs show "User not found"                               |
+  |                                                                        |
+  |   Resolution:                                                          |
+  |   1. Add user to FortiAuthenticator:                                   |
+  |      Authentication > User Management > Local Users > Create New       |
+  |      Or sync from LDAP/AD if using external directory                  |
+  |                                                                        |
+  |   2. Assign FortiToken to user:                                        |
+  |      Authentication > FortiTokens > Select token > Assign to user      |
+  |                                                                        |
+  |   3. Test authentication                                               |
+  |                                                                        |
+  | Scenario 3: Invalid OTP                                                |
+  | =======================                                                |
+  |   Symptoms:                                                            |
+  |   - User enters password correctly                                     |
+  |   - Rejection happens after OTP entry                                  |
+  |   - FortiAuth logs show "OTP validation failed"                        |
+  |                                                                        |
+  |   Resolution:                                                          |
+  |   1. Verify FortiToken is activated and assigned:                      |
+  |      Authentication > FortiTokens > Search for user's token            |
+  |      Status should be "Activated" and "Assigned"                       |
+  |                                                                        |
+  |   2. Test token generates valid codes:                                 |
+  |      FortiAuthenticator GUI > Authentication > Test Authentication     |
+  |      Enter username, password, and current OTP                         |
+  |      Should show "Authentication successful"                           |
+  |                                                                        |
+  |   3. Check time synchronization:                                       |
+  |      Both WALLIX and FortiAuthenticator must have correct time         |
+  |      # date  (on both systems)                                         |
+  |      If off by more than 30 seconds, OTP will fail                     |
+  |      Configure NTP if not already done                                 |
+  |                                                                        |
+  |   4. Resync token if needed:                                           |
+  |      Authentication > FortiTokens > Select token > Synchronize         |
+  |                                                                        |
+  | Scenario 4: User Account Locked/Disabled                               |
+  | ========================================                               |
+  |   Symptoms:                                                            |
+  |   - User previously worked, now fails                                  |
+  |   - FortiAuth logs show "Account locked" or "Account disabled"         |
+  |                                                                        |
+  |   Resolution:                                                          |
+  |   1. Check user status in FortiAuthenticator:                          |
+  |      Authentication > User Management > Local Users > [user]           |
+  |      Verify "Status" is "Enabled"                                      |
+  |                                                                        |
+  |   2. Check for account lockout:                                        |
+  |      Look for "Locked" status                                          |
+  |      Unlock: Click user > Edit > Unlock Account                        |
+  |                                                                        |
+  |   3. Verify authentication policy allows user:                         |
+  |      Authentication > RADIUS Service > Policies                        |
+  |      Ensure user/group is in allowed list                              |
+  +------------------------------------------------------------------------+
+
+  Log Examples:
+  +------------------------------------------------------------------------+
+  | /var/log/wab/wabauth.log (WALLIX side):                               |
+  | 2026-02-04 10:00:00 ERROR [wabauth] WAB-1008: RADIUS Access-Reject    |
+  | for user 'jsmith' from server 10.10.2.50:1812 - Reply-Message: Invalid|
+  | credentials or OTP                                                     |
+  |                                                                        |
+  | FortiAuthenticator RADIUS debug output:                                |
+  | (Shared secret mismatch):                                              |
+  | Access-Request from 10.10.1.10 invalid - shared secret mismatch       |
+  |                                                                        |
+  | (User not found):                                                      |
+  | Access-Request for user 'jsmith' - user not found in database         |
+  |                                                                        |
+  | (Invalid OTP):                                                         |
+  | Access-Request for user 'jsmith' - OTP validation failed               |
+  +------------------------------------------------------------------------+
+
+  Post-Resolution Verification:
+  +------------------------------------------------------------------------+
+  | 1. Test authentication with correct credentials and OTP                |
+  | 2. Verify Access-Accept in WALLIX logs                                 |
+  | 3. Check FortiAuthenticator shows successful authentication            |
+  | 4. Confirm user can access WALLIX session proxy                        |
+  +------------------------------------------------------------------------+
+
++===============================================================================+
+```
+
+---
+
+## LDAP Group Sync Failures
+
+### LDAP Active Directory Group Synchronization Error Codes
+
+```
++===============================================================================+
+|                   LDAP GROUP SYNC FAILURES                                   |
++===============================================================================+
+
+  WAB-6002-LDAP_SYNC_FAILED
+  =========================
+
+  Description: LDAP/AD group synchronization failed
+  Severity: ERROR
+
+  Overview:
+  Group synchronization pulls user groups from LDAP/Active Directory into
+  WALLIX Bastion for authorization purposes. Failures can result in users
+  losing access or not getting proper role assignments.
+
+
+  SCENARIO 1: CERTIFICATE VALIDATION FAILURE
+  ==========================================
+
+  Symptoms:
+  * Sync fails with "SSL certificate validation error"
+  * Works with LDAP on port 389 (non-SSL) but fails on 636 (LDAPS)
+  * Error shows "unable to verify certificate" or "certificate has expired"
+
+  Possible Causes:
+  * LDAPS certificate not trusted by WALLIX
+  * Domain controller certificate expired
+  * Certificate chain incomplete
+  * Self-signed certificate without CA import
+  * Hostname mismatch in certificate
+
+  Diagnostic Commands:
+  +------------------------------------------------------------------------+
+  | Test LDAPS connection:                                                 |
+  |   openssl s_client -connect <dc-hostname>:636 -showcerts              |
+  |   # Check certificate validity dates and issuer                        |
+  |   # Press Ctrl+C to exit                                               |
+  |                                                                        |
+  | Verify certificate trust:                                              |
+  |   echo | openssl s_client -connect <dc-hostname>:636 2>&1 | \         |
+  |     grep -i "verify return code"                                       |
+  |   # Should show: "verify return code: 0 (ok)"                          |
+  |                                                                        |
+  | Check WALLIX trusted CAs:                                              |
+  |   ls -la /etc/ssl/certs/ca-certificates.crt                            |
+  |   # This is where system trusts CA certificates                        |
+  |                                                                        |
+  | Test LDAP bind with openssl:                                           |
+  |   ldapsearch -H ldaps://<dc-hostname>:636 -D "<bind-dn>" \            |
+  |     -W -b "<base-dn>" "(objectClass=*)" -LLL                           |
+  |   # Should prompt for password and return results                      |
+  +------------------------------------------------------------------------+
+
+  Resolution Steps:
+  +------------------------------------------------------------------------+
+  | Step 1: Export Domain Controller Certificate                           |
+  |   From Windows Domain Controller:                                      |
+  |   1. Open MMC > Certificates snap-in > Computer account                |
+  |   2. Personal > Certificates > Find LDAP certificate                   |
+  |   3. Right-click > All Tasks > Export                                  |
+  |   4. Export as Base-64 encoded X.509 (.CER)                            |
+  |   5. Also export Root CA certificate from Trusted Root CAs             |
+  |                                                                        |
+  | Step 2: Import Certificate to WALLIX                                   |
+  |   Copy certificate files to WALLIX:                                    |
+  |   scp dc-cert.cer root@<wallix-ip>:/tmp/                               |
+  |   scp ca-cert.cer root@<wallix-ip>:/tmp/                               |
+  |                                                                        |
+  |   Install certificates:                                                |
+  |   cp /tmp/ca-cert.cer /usr/local/share/ca-certificates/adca.crt       |
+  |   update-ca-certificates                                               |
+  |   # Should show "1 added, 0 removed"                                   |
+  |                                                                        |
+  | Step 3: Verify Trust                                                   |
+  |   openssl verify /tmp/dc-cert.cer                                      |
+  |   # Should show: "/tmp/dc-cert.cer: OK"                                |
+  |                                                                        |
+  | Step 4: Restart WALLIX Services                                        |
+  |   systemctl restart wabengine                                          |
+  |                                                                        |
+  | Step 5: Test Sync                                                      |
+  |   Admin > Authentication Domains > [AD domain] > Synchronize Now       |
+  |   Check /var/log/wab/wabauth.log for success                           |
+  +------------------------------------------------------------------------+
+
+  Log Examples:
+  +------------------------------------------------------------------------+
+  | /var/log/wab/wabauth.log:                                              |
+  | 2026-02-04 10:00:00 ERROR [ldap] WAB-6002: LDAP group sync failed for  |
+  | domain 'company.com' - SSL certificate verification failed: unable to  |
+  | get local issuer certificate                                           |
+  +------------------------------------------------------------------------+
+
+
+  SCENARIO 2: NESTED GROUPS TIMEOUT
+  ==================================
+
+  Symptoms:
+  * Sync starts but times out after 5-10 minutes
+  * Works for small OUs but fails for entire domain
+  * Partial results returned before timeout
+  * Deeply nested group structures (groups within groups)
+
+  Possible Causes:
+  * Active Directory has deeply nested group membership (5+ levels)
+  * Large number of groups to process (>10,000)
+  * LDAP query timeout too short for large result sets
+  * Domain controller overwhelmed by recursive group expansion
+  * Network latency between WALLIX and DC
+
+  Diagnostic Commands:
+  +------------------------------------------------------------------------+
+  | Check group nesting depth:                                             |
+  |   # From Windows Domain Controller (PowerShell):                       |
+  |   Get-ADGroup "Domain Users" -Properties MemberOf | \                 |
+  |     Select-Object -ExpandProperty MemberOf | \                         |
+  |     Get-ADGroup -Properties MemberOf | \                               |
+  |     Measure-Object                                                     |
+  |                                                                        |
+  | Test LDAP query performance:                                           |
+  |   time ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \             |
+  |     -b "<base-dn>" "(&(objectClass=group)(member=*))" dn              |
+  |   # Note how long it takes                                             |
+  |                                                                        |
+  | Check WALLIX sync timeout setting:                                     |
+  |   wabadmin auth-domain show --name <domain> | grep -i timeout          |
+  |                                                                        |
+  | Monitor sync in real-time:                                             |
+  |   tail -f /var/log/wab/wabauth.log | grep "group sync"                |
+  +------------------------------------------------------------------------+
+
+  Resolution Steps:
+  +------------------------------------------------------------------------+
+  | Step 1: Increase LDAP Query Timeout                                    |
+  |   Admin > Authentication Domains > [domain] > Edit                     |
+  |   Set "LDAP Timeout" to 300 seconds (5 minutes)                        |
+  |   Set "LDAP Size Limit" to 0 (unlimited)                               |
+  |                                                                        |
+  | Step 2: Limit Sync Scope (if possible)                                 |
+  |   Instead of syncing entire domain, sync specific OUs:                 |
+  |   Base DN: "OU=IT,OU=Users,DC=company,DC=com"                          |
+  |   This reduces number of groups to process                             |
+  |                                                                        |
+  | Step 3: Disable Nested Group Expansion (if acceptable)                 |
+  |   Admin > Authentication Domains > [domain] > Advanced                 |
+  |   Uncheck "Expand nested groups"                                       |
+  |   Note: Users must be direct members of groups                         |
+  |                                                                        |
+  | Step 4: Optimize Active Directory Indexing                             |
+  |   On Domain Controller, ensure LDAP indexes exist for:                 |
+  |   - memberOf attribute                                                 |
+  |   - member attribute                                                   |
+  |   Check: AD Sites and Services > NTDS Settings > Query Policy          |
+  |                                                                        |
+  | Step 5: Schedule Sync During Off-Hours                                 |
+  |   Admin > Authentication Domains > [domain] > Schedule                 |
+  |   Set automatic sync to run at 2:00 AM when DC load is low             |
+  +------------------------------------------------------------------------+
+
+  Log Examples:
+  +------------------------------------------------------------------------+
+  | /var/log/wab/wabauth.log:                                              |
+  | 2026-02-04 10:00:00 INFO [ldap] Starting group sync for 'company.com'  |
+  | 2026-02-04 10:05:00 WARNING [ldap] Group sync slow - processing 5000   |
+  | groups so far...                                                       |
+  | 2026-02-04 10:10:00 ERROR [ldap] WAB-6002: LDAP group sync failed -    |
+  | timeout after 600 seconds, processed 8234 of ~15000 groups             |
+  +------------------------------------------------------------------------+
+
+
+  SCENARIO 3: PAGINATION ISSUES (LARGE AD ENVIRONMENTS)
+  ======================================================
+
+  Symptoms:
+  * Only first 1000 groups synced (or 500, 5000 - depends on DC config)
+  * Missing groups that definitely exist in AD
+  * No error shown, sync reports "success" but data incomplete
+  * Works in test AD with few groups, fails in production
+
+  Possible Causes:
+  * Active Directory returning results in pages (default 1000 objects)
+  * WALLIX not following LDAP paging controls correctly
+  * Domain controller MaxPageSize policy limiting results
+  * LDAP Size Limit hit without paging continuation
+
+  Diagnostic Commands:
+  +------------------------------------------------------------------------+
+  | Check AD MaxPageSize policy:                                           |
+  |   # On Domain Controller (PowerShell):                                 |
+  |   Get-ADObject -Identity "CN=Default Query Policy,CN=Query-Policies,  |
+  |     CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration,  |
+  |     DC=company,DC=com" -Properties * | Select-Object lDAPAdminLimits   |
+  |   # Look for MaxPageSize value                                         |
+  |                                                                        |
+  | Test pagination with ldapsearch:                                       |
+  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                  |
+  |     -b "<base-dn>" -E pr=1000/noprompt "(objectClass=group)" dn | \   |
+  |     grep -c "^dn:"                                                     |
+  |   # Count total groups returned                                        |
+  |                                                                        |
+  | Compare with actual group count in AD:                                 |
+  |   # PowerShell on DC:                                                  |
+  |   (Get-ADGroup -Filter *).Count                                        |
+  |                                                                        |
+  | Check WALLIX sync statistics:                                          |
+  |   wabadmin auth-domain sync-status --name <domain>                     |
+  |   # Shows how many groups were imported                                |
+  +------------------------------------------------------------------------+
+
+  Resolution Steps:
+  +------------------------------------------------------------------------+
+  | Step 1: Increase Domain Controller MaxPageSize (if allowed)            |
+  |   On Domain Controller:                                                |
+  |   1. Open ADSI Edit                                                    |
+  |   2. Connect to Configuration partition                                |
+  |   3. Navigate to: CN=Query-Policies, CN=Directory Service,             |
+  |      CN=Windows NT, CN=Services, CN=Configuration, DC=...              |
+  |   4. Edit CN=Default Query Policy                                      |
+  |   5. Find lDAPAdminLimits attribute                                    |
+  |   6. Change MaxPageSize from 1000 to 5000                              |
+  |   7. Restart "Active Directory Domain Services" service                |
+  |                                                                        |
+  | Step 2: Enable Paging in WALLIX (if not already)                       |
+  |   Admin > Authentication Domains > [domain] > Advanced Settings        |
+  |   Enable "Use LDAP Paging"                                             |
+  |   Set "Page Size" to 1000 (or match DC MaxPageSize)                    |
+  |                                                                        |
+  | Step 3: Verify WALLIX LDAP Client Version                              |
+  |   Ensure WALLIX Bastion is version 12.1+ which has improved paging     |
+  |   wabadmin version                                                     |
+  |                                                                        |
+  | Step 4: Test Incremental Sync                                          |
+  |   First sync may be slow, subsequent syncs use delta queries            |
+  |   Admin > Authentication Domains > [domain] > Synchronize Now          |
+  |   Wait for completion and verify all groups present                    |
+  +------------------------------------------------------------------------+
+
+  Log Examples:
+  +------------------------------------------------------------------------+
+  | /var/log/wab/wabauth.log (without proper paging):                      |
+  | 2026-02-04 10:00:00 INFO [ldap] Group sync started for 'company.com'   |
+  | 2026-02-04 10:00:30 INFO [ldap] Retrieved 1000 groups                  |
+  | 2026-02-04 10:00:31 INFO [ldap] Group sync completed - 1000 groups     |
+  |                                                                        |
+  | /var/log/wab/wabauth.log (with paging enabled):                        |
+  | 2026-02-04 10:00:00 INFO [ldap] Group sync started for 'company.com'   |
+  | 2026-02-04 10:00:30 INFO [ldap] Retrieved 1000 groups (page 1)         |
+  | 2026-02-04 10:01:00 INFO [ldap] Retrieved 1000 groups (page 2)         |
+  | 2026-02-04 10:01:30 INFO [ldap] Retrieved 1000 groups (page 3)         |
+  | 2026-02-04 10:02:00 INFO [ldap] Retrieved 543 groups (page 4, final)   |
+  | 2026-02-04 10:02:01 INFO [ldap] Group sync completed - 3543 groups     |
+  +------------------------------------------------------------------------+
+
+
+  SCENARIO 4: INSUFFICIENT PERMISSIONS ON SERVICE ACCOUNT
+  ========================================================
+
+  Symptoms:
+  * Sync fails with "Insufficient access rights"
+  * Works for user objects but fails for groups
+  * Specific OUs or groups cannot be read
+  * Error shows "Access denied" or "LDAP error code 50"
+
+  Possible Causes:
+  * LDAP service account lacks "Read" permissions on Groups OU
+  * Service account not member of required security groups
+  * Delegated permissions not applied correctly in AD
+  * AdminSDHolder interfering with permissions on protected groups
+  * Service account password expired
+
+  Diagnostic Commands:
+  +------------------------------------------------------------------------+
+  | Verify service account can read groups:                                |
+  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                  |
+  |     -b "<base-dn>" "(objectClass=group)" dn member                     |
+  |   # Should return group DNs and members, not "Insufficient access"     |
+  |                                                                        |
+  | Test specific OU access:                                               |
+  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                  |
+  |     -b "OU=Security Groups,DC=company,DC=com" \                        |
+  |     "(objectClass=group)" dn                                           |
+  |                                                                        |
+  | Check service account status in AD:                                    |
+  |   # PowerShell on DC:                                                  |
+  |   Get-ADUser <service-account> -Properties PasswordExpired, Enabled    |
+  |   # Verify: Enabled = True, PasswordExpired = False                    |
+  |                                                                        |
+  | Check effective permissions:                                           |
+  |   # AD Users and Computers > Advanced Features enabled                 |
+  |   # Right-click OU > Properties > Security > Advanced                  |
+  |   # Effective Access tab > Select service account                      |
+  |   # Should show "Read" permissions                                     |
+  +------------------------------------------------------------------------+
+
+  Resolution Steps:
+  +------------------------------------------------------------------------+
+  | Step 1: Grant Service Account Proper Permissions                       |
+  |   From AD Users and Computers:                                         |
+  |   1. Enable "Advanced Features" in View menu                           |
+  |   2. Right-click domain root > Delegate Control                        |
+  |   3. Add WALLIX service account                                        |
+  |   4. Choose "Create a custom task to delegate"                         |
+  |   5. Select "This folder, existing objects, and creation of new        |
+  |      objects in this folder"                                           |
+  |   6. Check permissions:                                                |
+  |      - Read all properties                                             |
+  |      - Read permissions                                                |
+  |   7. Apply to: Group objects                                           |
+  |   8. Click Finish                                                      |
+  |                                                                        |
+  | Step 2: Handle Protected Groups (AdminSDHolder)                        |
+  |   Protected groups (Domain Admins, etc.) inherit from AdminSDHolder    |
+  |   To allow reading protected groups:                                   |
+  |   1. Open ADSI Edit                                                    |
+  |   2. Navigate to: CN=AdminSDHolder,CN=System,DC=company,DC=com         |
+  |   3. Right-click > Properties > Security                               |
+  |   4. Add service account with Read permissions                         |
+  |   5. Wait 60 minutes for SDProp to propagate OR run manually:          |
+  |      # PowerShell:                                                     |
+  |      $RootDSE = [ADSI]"LDAP://RootDSE"                                 |
+  |      $RootDSE.UsePropertyCache = $false                                |
+  |      $RootDSE.Put("fixupinheritance", 1)                               |
+  |      $RootDSE.SetInfo()                                                |
+  |                                                                        |
+  | Step 3: Verify Service Account Password                                |
+  |   Ensure password has not expired:                                     |
+  |   # PowerShell:                                                        |
+  |   Set-ADUser <service-account> -PasswordNeverExpires $true             |
+  |   # Or extend password policy for service accounts                     |
+  |                                                                        |
+  | Step 4: Update Credentials in WALLIX                                   |
+  |   If password was changed:                                             |
+  |   Admin > Authentication Domains > [domain] > Edit                     |
+  |   Update "Bind DN" password                                            |
+  |   Test connection before saving                                        |
+  |                                                                        |
+  | Step 5: Re-run Sync                                                    |
+  |   Admin > Authentication Domains > [domain] > Synchronize Now          |
+  |   Monitor /var/log/wab/wabauth.log for success                         |
+  +------------------------------------------------------------------------+
+
+  Log Examples:
+  +------------------------------------------------------------------------+
+  | /var/log/wab/wabauth.log:                                              |
+  | 2026-02-04 10:00:00 ERROR [ldap] WAB-6002: LDAP group sync failed for  |
+  | domain 'company.com' - LDAP error 50: Insufficient access rights to    |
+  | perform operation on CN=Domain Admins,CN=Users,DC=company,DC=com       |
+  |                                                                        |
+  | Windows Security Event Log (DC):                                       |
+  | Event ID 4662: An operation was performed on an object                 |
+  | Subject: service_account@company.com                                   |
+  | Object: CN=Domain Admins,CN=Users,DC=company,DC=com                    |
+  | Access: Read Property                                                  |
+  | Result: Failure - Insufficient Rights                                  |
+  +------------------------------------------------------------------------+
+
+  Post-Resolution Verification:
+  +------------------------------------------------------------------------+
+  | 1. Run manual sync: Admin > Auth Domains > [domain] > Synchronize      |
+  | 2. Verify all groups synced:                                           |
+  |    Admin > Groups > Filter by domain                                   |
+  |    Compare count with AD: (Get-ADGroup -Filter *).Count               |
+  | 3. Check protected groups synced (Domain Admins, etc.)                 |
+  | 4. Test user authorization with newly synced groups                    |
+  | 5. Schedule automatic sync: Admin > Auth Domains > [domain] > Schedule |
+  +------------------------------------------------------------------------+
+
++===============================================================================+
+```
+
+---
+
 ## Troubleshooting Flowcharts
 
 ### Common Issue Resolution
@@ -1170,6 +1799,17 @@
 
 +===============================================================================+
 ```
+
+---
+
+## See Also
+
+**Related Sections:**
+- [13 - Troubleshooting](../13-troubleshooting/README.md) - General diagnostics and procedures
+- [22 - FAQ & Known Issues](../22-faq-known-issues/README.md) - Common questions and problems
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
 
 ---
 

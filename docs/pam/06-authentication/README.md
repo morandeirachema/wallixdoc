@@ -827,6 +827,24 @@ For specific authentication scenarios, see these detailed guides:
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [46 - Fortigate Integration](../46-fortigate-integration/README.md) - FortiAuthenticator MFA and RADIUS configuration
+- [34 - LDAP/AD Integration](../34-ldap-ad-integration/README.md) - Active Directory authentication and group sync
+- [35 - Kerberos Authentication](../35-kerberos-authentication/README.md) - Kerberos SSO and SPNEGO configuration
+- [07 - Authorization](../07-authorization/README.md) - Access control policies and RBAC
+- [05 - Configuration](../05-configuration/README.md) - Authentication domain configuration
+
+**Related Documentation:**
+- [Install Guide](/install/HOWTO.md) - Multi-site deployment with authentication setup
+- [Pre-Production Lab](/pre/README.md) - AD and FortiAuthenticator lab setup
+
+**Official Resources:**
+- [WALLIX Authentication Guide](https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf)
+
+---
+
 ## Next Steps
 
 Continue to [06 - Authorization](../07-authorization/README.md) to learn about access control and authorization policies.

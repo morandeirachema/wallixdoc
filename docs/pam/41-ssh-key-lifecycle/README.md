@@ -1069,5 +1069,16 @@ wabadmin ssh-key validate --file /tmp/key-to-check
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [08 - Password Management](../08-password-management/README.md) - Credential management overview
+- [42 - Service Account Lifecycle](../42-service-account-lifecycle/README.md) - Service account governance
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 *Document Version: 1.0*
 *Last Updated: February 2026*

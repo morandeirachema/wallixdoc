@@ -777,6 +777,21 @@ User Groups:
 
 ---
 
+## See Also
+
+**Related Sections:**
+- [06 - Authentication](../06-authentication/README.md) - Authentication methods and MFA
+- [07 - Authorization](../07-authorization/README.md) - RBAC and access policies
+- [34 - LDAP/AD Integration](../34-ldap-ad-integration/README.md) - Directory service integration
+
+**Related Documentation:**
+- [Pre-Production Lab](/pre/README.md) - Configuration examples and testing
+
+**Official Resources:**
+- [WALLIX Documentation](https://pam.wallix.one/documentation)
+
+---
+
 ## Next Steps
 
 Continue to [05 - Authentication](../06-authentication/README.md) to learn about authentication methods and MFA configuration.
