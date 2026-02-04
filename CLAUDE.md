@@ -11,7 +11,7 @@ This file provides context for AI assistants (Claude, Copilot, etc.) working wit
 | **Focus** | Privileged Access Management (PAM) with Fortigate MFA |
 | **Deployment** | On-premises only (bare metal and VMs, no cloud/SaaS) |
 | **Version** | WALLIX Bastion 12.1.x |
-| **Content** | 46 PAM documentation sections |
+| **Content** | 47 PAM documentation sections |
 
 ## Directory Structure
 
@@ -20,10 +20,10 @@ wallixdoc/
 ├── CLAUDE.md              # This file - AI assistant context
 ├── README.md              # Repository overview and navigation
 │
-├── docs/                  # Product documentation (46 sections)
+├── docs/                  # Product documentation (47 sections)
 │   ├── README.md          # Documentation index with learning paths
 │   │
-│   └── pam/               # PAM/WALLIX Core Documentation (46 sections)
+│   └── pam/               # PAM/WALLIX Core Documentation (47 sections)
 │       │
 │       │   # Getting Started (00-05)
 │       ├── 00-official-resources/     # Official WALLIX documentation links
@@ -83,14 +83,15 @@ wallixdoc/
 │       ├── 38-command-filtering/      # Command whitelist/blacklist
 │       ├── 39-session-recording-playback/ # Playback, OCR, forensics
 │       │
-│       │   # Advanced Features (40-46)
+│       │   # Advanced Features (40-47)
 │       ├── 40-account-discovery/      # Discovery scanning, bulk import
 │       ├── 41-ssh-key-lifecycle/      # SSH key management, rotation, CA
 │       ├── 42-service-account-lifecycle/ # Service account governance
 │       ├── 43-session-sharing/        # Multi-user sessions, dual-control
 │       ├── 44-user-self-service/      # Self-service portal
 │       ├── 45-privileged-task-automation/ # Automated privileged operations
-│       └── 46-fortigate-integration/  # Fortigate firewall and MFA integration
+│       ├── 46-fortigate-integration/  # Fortigate firewall and MFA integration
+│       └── 47-access-manager/         # WALLIX Access Manager setup and configuration
 │
 ├── install/               # Multi-site installation guide
 │   ├── README.md          # Architecture overview, 30-day timeline
