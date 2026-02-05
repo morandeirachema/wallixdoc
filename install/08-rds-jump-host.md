@@ -78,8 +78,8 @@ OT systems require additional security controls:
 |                    | RDP (3389/tcp)                                           |
 |                    v                                                          |
 |         +----------+----------+       +----------+----------+                 |
-|         | WALLIX Bastion-1    |  HA   | WALLIX Bastion-2    |  Active-Active |
-|         | - Auth & Recording  |<----->| - Auth & Recording  |  Cluster       |
+|         | WALLIX Bastion-1    |  HA   | WALLIX Bastion-2    |  Active-Active  |
+|         | - Auth & Recording  |<----->| - Auth & Recording  |  Cluster        |
 |         | - Credential Vault  |       | - Credential Vault  |                 |
 |         +----------+----------+       +----------+----------+                 |
 |                    |                             |                            |
@@ -99,10 +99,10 @@ OT systems require additional security controls:
 |  +----------------+----------------+-------------+-------------+              |
 |  |                |                |             |             |              |
 |  v                v                v             v             v              |
-|  +---------+  +---------+  +---------+  +---------+  +---------+             |
-|  | SCADA   |  | ICS     |  | HMI     |  | PLC     |  | OT      |  OT Systems |
-|  | System  |  | Server  |  | Panel   |  | Gateway |  | Workst. |             |
-|  +---------+  +---------+  +---------+  +---------+  +---------+             |
+|  +---------+  +---------+  +---------+  +---------+  +---------+              |
+|  | SCADA   |  | ICS     |  | HMI     |  | PLC     |  | OT      |  OT Systems  |
+|  | System  |  | Server  |  | Panel   |  | Gateway |  | Workst. |              |
+|  +---------+  +---------+  +---------+  +---------+  +---------+              |
 |                                                                               |
 +===============================================================================+
 ```
@@ -114,25 +114,25 @@ OT systems require additional security controls:
 |  5-SITE WALLIX RDS DEPLOYMENT                                                 |
 +===============================================================================+
 |                                                                               |
-|  Site 1 (DC-1)          Site 2 (DC-2)          Site 3 (DC-3)              |
+|  Site 1 (DC-1)          Site 2 (DC-2)          Site 3 (DC-3)                  |
 |  +--------------+        +--------------+        +--------------+             |
 |  | WALLIX RDS   |        | WALLIX RDS   |        | WALLIX RDS   |             |
 |  | 10.10.1.30   |        | 10.10.2.30   |        | 10.10.3.30   |             |
 |  +--------------+        +--------------+        +--------------+             |
 |         |                       |                       |                     |
 |         v                       v                       v                     |
-|  OT Targets (Site 1)    OT Targets (Site 2)    OT Targets (Site 3)          |
+|  OT Targets (Site 1)    OT Targets (Site 2)    OT Targets (Site 3)            |
 |                                                                               |
-|  Site 4 (DC-4)          Site 5 (DC-5)                                       |
+|  Site 4 (DC-4)          Site 5 (DC-5)                                         |
 |  +--------------+        +--------------+                                     |
 |  | WALLIX RDS   |        | WALLIX RDS   |                                     |
 |  | 10.10.4.30   |        | 10.10.5.30   |                                     |
 |  +--------------+        +--------------+                                     |
 |         |                       |                                             |
 |         v                       v                                             |
-|  OT Targets (Site 4)    OT Targets (Site 5)                                  |
+|  OT Targets (Site 4)    OT Targets (Site 5)                                   |
 |                                                                               |
-|  NOTE: Each RDS server is site-local, NO cross-site RDS access               |
+|  NOTE: Each RDS server is site-local, NO cross-site RDS access                |
 |                                                                               |
 +===============================================================================+
 ```
@@ -147,7 +147,7 @@ OT systems require additional security controls:
 |  Step 1: User Authentication                                                  |
 |  +-----------+    HTTPS (443)    +---------------+                            |
 |  | End User  | -----------------> | WALLIX Bastion | MFA + LDAP/AD            |
-|  +-----------+                    +-------+-------+                            |
+|  +-----------+                    +-------+-------+                           |
 |                                           |                                   |
 |  Step 2: Session Request                  v                                   |
 |                            +---------------+----------------+                 |
@@ -176,8 +176,8 @@ OT systems require additional security controls:
 |                            +--------------------------------+                 |
 |                                                                               |
 |  Recording Points:                                                            |
-|  - WALLIX Bastion: Records RDP to RDS (user -> RemoteApp)                    |
-|  - WALLIX RDS: Records RemoteApp to OT target (RDS -> SCADA)                 |
+|  - WALLIX Bastion: Records RDP to RDS (user -> RemoteApp)                     |
+|  - WALLIX RDS: Records RemoteApp to OT target (RDS -> SCADA)                  |
 |                                                                               |
 +===============================================================================+
 ```

@@ -47,19 +47,19 @@ WALLIX Bastion uses a **concurrent session-based** licensing model:
 |  | Integration: Optional unified pool    |                                    |
 |  +---------------------------------------+                                    |
 |                                                                               |
-|  LICENSE POOL B: WALLIX Bastion (Your Deployment)                            |
+|  LICENSE POOL B: WALLIX Bastion (Your Deployment)                             |
 |  +---------------------------------------+                                    |
-|  | Sites: 5 (Site 1 DC to DC-5)       |                                    |
+|  | Sites: 5 (Site 1 DC to DC-5)       |                                       |
 |  | Appliances: 10 (2 per site in HA)     |                                    |
 |  | Licensed Units: 5 HA clusters         |                                    |
 |  | Sessions: 450 concurrent              |                                    |
 |  | Sharing: Pool shared across 5 sites   |                                    |
 |  +---------------------------------------+                                    |
 |                                                                               |
-|  TOTAL CAPACITY: 950 concurrent sessions (AM 500 + Bastion 450)              |
+|  TOTAL CAPACITY: 950 concurrent sessions (AM 500 + Bastion 450)               |
 |                                                                               |
-|  KEY PRINCIPLE: HA cluster = 1 license (NOT 2)                               |
-|                 10 appliances = 5 HA pairs = 5 licenses needed               |
+|  KEY PRINCIPLE: HA cluster = 1 license (NOT 2)                                |
+|                 10 appliances = 5 HA pairs = 5 licenses needed                |
 |                                                                               |
 +===============================================================================+
 ```
@@ -97,13 +97,13 @@ WALLIX Bastion uses a **concurrent session-based** licensing model:
 |  |  +---------------------------+  |     |  | Site 4: 90 sessions       |  |  |
 |  |                                 |     |  | Site 5: 90 sessions       |  |  |
 |  |  Enforces: AM session limits    |     |  +---------------------------+  |  |
-|  |  Does NOT affect Bastion pool   |     |  Shared dynamically across sites |  |
+|  |  Does NOT affect Bastion pool   |     |  Shared dynamically across sites|  |
 |  +---------------------------------+     +---------------------------------+  |
 |                                                                               |
 |  Use Case:                                                                    |
-|  - Separate operational control                                              |
-|  - Independent billing/accounting                                            |
-|  - Bastion team manages own capacity                                         |
+|  - Separate operational control                                               |
+|  - Independent billing/accounting                                             |
+|  - Bastion team manages own capacity                                          |
 |                                                                               |
 +===============================================================================+
 ```
@@ -118,7 +118,7 @@ WALLIX Bastion uses a **concurrent session-based** licensing model:
 |  +---------------------------------------------------------------------+      |
 |  |               CENTRALIZED LICENSE SERVER (ACCESS MANAGER)           |      |
 |  |                                                                     |      |
-|  |  Total Pool: 950 sessions (AM 500 + Bastion 450)                   |      |
+|  |  Total Pool: 950 sessions (AM 500 + Bastion 450)                    |      |
 |  |  Dynamic Allocation: Sessions allocated on-demand                   |      |
 |  |                                                                     |      |
 |  |  +------------------------------------------------------------+     |      |
@@ -131,23 +131,23 @@ WALLIX Bastion uses a **concurrent session-based** licensing model:
 |  |  |   Bastion Site 5: 105/450 (23%)                            |     |      |
 |  |  +------------------------------------------------------------+     |      |
 |  +---------------------------------------------------------------------+      |
-|                             |                                                |
-|              +--------------+---------------+                                |
-|              |              |               |                                |
-|   +----------v---+   +------v------+   +---v----------+                      |
-|   | AM-1 (DC-A)  |   | Site 1-3    |   | Site 4-5     |                      |
-|   | AM-2 (DC-B)  |   |       |   |        |                      |
-|   +--------------+   +-------------+   +--------------+                      |
+|                             |                                                 |
+|              +--------------+---------------+                                 |
+|              |              |               |                                 |
+|   +----------v---+   +------v------+   +---v----------+                       |
+|   | AM-1 (DC-A)  |   | Site 1-3    |   | Site 4-5     |                       |
+|   | AM-2 (DC-B)  |   |             |   |              |                       |
+|   +--------------+   +-------------+   +--------------+                       |
 |                                                                               |
 |  Advantages:                                                                  |
-|  - Centralized visibility and control                                        |
-|  - Dynamic session reallocation                                              |
-|  - Single renewal process                                                    |
+|  - Centralized visibility and control                                         |
+|  - Dynamic session reallocation                                               |
+|  - Single renewal process                                                     |
 |                                                                               |
 |  Requirements:                                                                |
-|  - Network connectivity: Bastion -> Access Manager (443/tcp)                 |
-|  - Access Manager license server API access                                  |
-|  - Coordination with Access Manager team                                     |
+|  - Network connectivity: Bastion -> Access Manager (443/tcp)                  |
+|  - Access Manager license server API access                                   |
+|  - Coordination with Access Manager team                                      |
 |                                                                               |
 +===============================================================================+
 ```
