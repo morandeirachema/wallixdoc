@@ -114,7 +114,7 @@ OT systems require additional security controls:
 |  5-SITE WALLIX RDS DEPLOYMENT                                                 |
 +===============================================================================+
 |                                                                               |
-|  Site 1 (DC-P1)          Site 2 (DC-P2)          Site 3 (DC-P3)              |
+|  Site 1 (DC-1)          Site 2 (DC-2)          Site 3 (DC-3)              |
 |  +--------------+        +--------------+        +--------------+             |
 |  | WALLIX RDS   |        | WALLIX RDS   |        | WALLIX RDS   |             |
 |  | 10.10.1.30   |        | 10.10.2.30   |        | 10.10.3.30   |             |
@@ -123,7 +123,7 @@ OT systems require additional security controls:
 |         v                       v                       v                     |
 |  OT Targets (Site 1)    OT Targets (Site 2)    OT Targets (Site 3)          |
 |                                                                               |
-|  Site 4 (DC-P4)          Site 5 (DC-P5)                                       |
+|  Site 4 (DC-4)          Site 5 (DC-5)                                       |
 |  +--------------+        +--------------+                                     |
 |  | WALLIX RDS   |        | WALLIX RDS   |                                     |
 |  | 10.10.4.30   |        | 10.10.5.30   |                                     |

@@ -28,9 +28,9 @@ This deployment consists of:
 | Component | Quantity | Configuration | Location |
 |-----------|----------|---------------|----------|
 | **WALLIX Access Manager** | 2 | HA (Active-Passive) | 2 separate datacenters (not managed by us) |
-| **WALLIX Bastion Sites** | 5 | Each site: 2 HW appliances (HA) | Paris datacenters (separate buildings) |
-| **HAProxy Load Balancer** | 10 | 2 per site (Active-Passive) | Each Paris datacenter |
-| **WALLIX RDS Jump Host** | 5 | 1 per site | Each Paris datacenter |
+| **WALLIX Bastion Sites** | 5 | Each site: 2 HW appliances (HA) | geographically distributed datacenters (separate buildings) |
+| **HAProxy Load Balancer** | 10 | 2 per site (Active-Passive) | Each datacenter site |
+| **WALLIX RDS Jump Host** | 5 | 1 per site | Each datacenter site |
 
 ### Key Architectural Principles
 
@@ -55,8 +55,8 @@ This deployment consists of:
 |       |                   |         |         |               |              |
 |  +----v----+         +----v----+   ...   +----v----+    +----v----+         |
 |  | Site 1  |         | Site 2  |         | Site 4  |    | Site 5  |         |
-|  | Paris   |         | Paris   |         | Paris   |    | Paris   |         |
-|  | (DC-P1) |         | (DC-P2) |         | (DC-P4) |    | (DC-P5) |         |
+|  |   |         |   |         |   |    |   |         |
+|  | (DC-1) |         | (DC-2) |         | (DC-4) |    | (DC-5) |         |
 |  +---------+         +---------+         +---------+    +---------+         |
 |                                                                               |
 |  Each Site Contains:                                                          |
@@ -164,7 +164,7 @@ Each of the 5 sites requires:
 |  HARDWARE READINESS CHECKLIST (Per Site)                                     |
 +===============================================================================+
 
-Site 1 (Paris DC-P1):
+Site 1 (Site 1 DC):
 [ ] 2x HAProxy servers provisioned (physical or VM)
 [ ] 2x WALLIX Bastion HW appliances received and racked
 [ ] 1x WALLIX RDS server (Windows Server 2022) ready
@@ -172,28 +172,28 @@ Site 1 (Paris DC-P1):
 [ ] All servers have IPMI/iLO access configured
 [ ] All servers have network cables connected (bonded NICs)
 
-Site 2 (Paris DC-P2):
+Site 2 (Site 2 DC):
 [ ] 2x HAProxy servers provisioned
 [ ] 2x WALLIX Bastion HW appliances received and racked
 [ ] 1x WALLIX RDS server ready
 [ ] IPMI/iLO configured
 [ ] Network connectivity verified
 
-Site 3 (Paris DC-P3):
+Site 3 (Site 3 DC):
 [ ] 2x HAProxy servers provisioned
 [ ] 2x WALLIX Bastion HW appliances received and racked
 [ ] 1x WALLIX RDS server ready
 [ ] IPMI/iLO configured
 [ ] Network connectivity verified
 
-Site 4 (Paris DC-P4):
+Site 4 (Site 4 DC):
 [ ] 2x HAProxy servers provisioned
 [ ] 2x WALLIX Bastion HW appliances received and racked
 [ ] 1x WALLIX RDS server ready
 [ ] IPMI/iLO configured
 [ ] Network connectivity verified
 
-Site 5 (Paris DC-P5):
+Site 5 (Site 5 DC):
 [ ] 2x HAProxy servers provisioned
 [ ] 2x WALLIX Bastion HW appliances received and racked
 [ ] 1x WALLIX RDS server ready
@@ -255,7 +255,7 @@ Site 5 (Paris DC-P5):
 
 Adjust according to your network design.
 
-#### Site 1 (Paris DC-P1)
+#### Site 1 (Site 1 DC)
 
 | Component | IP Address | Notes |
 |-----------|------------|-------|

@@ -1,6 +1,6 @@
 # Site Deployment Template
 
-> Per-site deployment guide for replicating WALLIX Bastion infrastructure across 5 Paris datacenter sites
+> Per-site deployment guide for replicating WALLIX Bastion infrastructure across 5 datacenter site sites
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## Overview
 
-This document provides a comprehensive, repeatable template for deploying WALLIX Bastion infrastructure at each of the 5 Paris datacenter sites. Each site contains identical components configured for local operation while integrating with centralized Access Managers.
+This document provides a comprehensive, repeatable template for deploying WALLIX Bastion infrastructure at each of the 5 datacenter site sites. Each site contains identical components configured for local operation while integrating with centralized Access Managers.
 
 ### Per-Site Architecture
 
@@ -93,11 +93,11 @@ Each site contains:
 
 | Site | Datacenter | Subnet | HAProxy VIP | Notes |
 |------|------------|--------|-------------|-------|
-| **Site 1** | Paris DC-P1 (Building A) | 10.10.1.0/24 | 10.10.1.100 | Deploy first (reference) |
-| **Site 2** | Paris DC-P2 (Building B) | 10.10.2.0/24 | 10.10.2.100 | Replicate from Site 1 |
-| **Site 3** | Paris DC-P3 (Building C) | 10.10.3.0/24 | 10.10.3.100 | Replicate from Site 1 |
-| **Site 4** | Paris DC-P4 (Building D) | 10.10.4.0/24 | 10.10.4.100 | Replicate from Site 1 |
-| **Site 5** | Paris DC-P5 (Building E) | 10.10.5.0/24 | 10.10.5.100 | Replicate from Site 1 |
+| **Site 1** | Site 1 DC (Building A) | 10.10.1.0/24 | 10.10.1.100 | Deploy first (reference) |
+| **Site 2** | Site 2 DC (Building B) | 10.10.2.0/24 | 10.10.2.100 | Replicate from Site 1 |
+| **Site 3** | Site 3 DC (Building C) | 10.10.3.0/24 | 10.10.3.100 | Replicate from Site 1 |
+| **Site 4** | Site 4 DC (Building D) | 10.10.4.0/24 | 10.10.4.100 | Replicate from Site 1 |
+| **Site 5** | Site 5 DC (Building E) | 10.10.5.0/24 | 10.10.5.100 | Replicate from Site 1 |
 
 ---
 
@@ -318,7 +318,7 @@ Obtain SSL certificates for site components:
 openssl req -new -newkey rsa:2048 -nodes \
   -keyout bastion-site1.key \
   -out bastion-site1.csr \
-  -subj "/C=FR/ST=Ile-de-France/L=Paris/O=Company/CN=bastion-site1.company.com"
+  -subj "/C=FR/ST=Ile-de-France/L=CityName/O=Company/CN=bastion-site1.company.com"
 
 # Submit CSR to internal CA or public CA
 # Receive certificate: bastion-site1.crt
@@ -835,7 +835,7 @@ Set-DnsClientServerAddress -InterfaceAlias "Ethernet" `
     -ServerAddresses 10.10.0.10,8.8.8.8
 
 # Set timezone
-Set-TimeZone -Name "Romance Standard Time"  # Paris time
+Set-TimeZone -Name "Romance Standard Time"  # time
 
 # Enable RDP (for management)
 Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
@@ -938,7 +938,7 @@ scp admin@bastion1-node1.company.com:/tmp/bastion-site1-sp-metadata.xml .
 **Coordinate with Access Manager team:**
 
 Send the following information:
-- **Site Name**: Site 1 - Paris DC-P1
+- **Site Name**: Site 1 - Site 1 DC
 - **Site ID**: site1
 - **Entity ID**: https://bastion-site1.company.com
 - **SP Metadata**: bastion-site1-sp-metadata.xml

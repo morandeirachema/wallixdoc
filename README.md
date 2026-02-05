@@ -48,10 +48,10 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 |      |           |           |           |           |                        |
 |  +---v---+   +---v---+   +---v---+   +---v---+   +---v---+                   |
 |  | Site1 |   | Site2 |   | Site3 |   | Site4 |   | Site5 |                   |
-|  | Paris |   | Paris |   | Paris |   | Paris |   | Paris |                   |
+|  | Site |   | Site |   | Site |   | Site |   | Site |                   |
 |  +-------+   +-------+   +-------+   +-------+   +-------+                   |
 |                                                                               |
-|  Each Site (Paris Datacenters):                                               |
+|  Each Site (Geographically Distributed):                                               |
 |  +------------------------------------------------------------------------+   |
 |  |  HAProxy (2x HA) --> Bastion (2x HA) --> RDS --> OT Targets           |   |
 |  |                            |                                           |   |
@@ -70,7 +70,7 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 | **Load Balancer** | HAProxy + Keepalived | VM | 10 (2 per site) |
 | **PAM** | WALLIX Bastion | HW Appliance | 10 (2 per site) |
 | **Jump Host** | WALLIX RDS | Windows Server | 5 (1 per site) |
-| **Sites** | Paris Datacenters | Physical | 5 |
+| **Sites** | Site Datacenters | Physical | 5 |
 | **Network** | MPLS | Connectivity | AM ↔ Sites only |
 
 ---

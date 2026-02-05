@@ -80,11 +80,11 @@ Testing Scope:
 ==============
 
 Sites:
-- Site 1 (DC-P1): 2x Bastion + 2x HAProxy + 1x RDS
-- Site 2 (DC-P2): 2x Bastion + 2x HAProxy + 1x RDS
-- Site 3 (DC-P3): 2x Bastion + 2x HAProxy + 1x RDS
-- Site 4 (DC-P4): 2x Bastion + 2x HAProxy + 1x RDS
-- Site 5 (DC-P5): 2x Bastion + 2x HAProxy + 1x RDS
+- Site 1 (DC-1): 2x Bastion + 2x HAProxy + 1x RDS
+- Site 2 (DC-2): 2x Bastion + 2x HAProxy + 1x RDS
+- Site 3 (DC-3): 2x Bastion + 2x HAProxy + 1x RDS
+- Site 4 (DC-4): 2x Bastion + 2x HAProxy + 1x RDS
+- Site 5 (DC-5): 2x Bastion + 2x HAProxy + 1x RDS
 
 Shared Infrastructure:
 - 2x Access Manager (DC-A, DC-B) in HA

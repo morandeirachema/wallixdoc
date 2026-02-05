@@ -44,8 +44,8 @@ This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-
 |       |                |        |        |        |                |          |
 |  +----v----+      +----v----+  ...  +----v----+  +----v----+  +----v----+    |
 |  | Site 1  |      | Site 2  |       | Site 3  |  | Site 4  |  | Site 5  |    |
-|  | Paris   |      | Paris   |       | Paris   |  | Paris   |  | Paris   |    |
-|  | DC-P1   |      | DC-P2   |       | DC-P3   |  | DC-P4   |  | DC-P5   |    |
+|  |   |      |   |       |   |  |   |  |   |    |
+|  | DC-1   |      | DC-2   |       | DC-3   |  | DC-4   |  | DC-5   |    |
 |  +---------+      +---------+       +---------+  +---------+  +---------+    |
 |                                                                               |
 |  Each Site:                                                                   |
@@ -61,7 +61,7 @@ This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-
 
 | Aspect | Details |
 |--------|---------|
-| **Total Sites** | 5 (all in Paris datacenter buildings) |
+| **Total Sites** | 5 (all in datacenter site buildings) |
 | **Access Managers** | 2 (HA, separate datacenters) |
 | **HA Models** | Active-Active OR Active-Passive (per site choice) |
 | **Network** | MPLS connectivity, no direct site-to-site Bastion communication |
@@ -159,7 +159,7 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 1. **IP Address Allocation**
 
    ```
-   Site 1 (DC-P1):
+   Site 1 (DC-1):
    - HAProxy VIP:        10.1.1.10
    - HAProxy-1:          10.1.1.11
    - HAProxy-2:          10.1.1.12
@@ -167,7 +167,7 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
    - Bastion-2:          10.1.1.22
    - WALLIX RDS:         10.1.1.30
 
-   Site 2 (DC-P2):
+   Site 2 (DC-2):
    - HAProxy VIP:        10.2.1.10
    - HAProxy-1:          10.2.1.11
    - HAProxy-2:          10.2.1.12
@@ -384,7 +384,7 @@ wabadmin auth configure --method radius \
 # Session routing rules (example)
 routing_rules:
   - name: "Route by AD Site"
-    condition: "user.ad_site == 'Paris-P1'"
+    condition: "user.ad_site == 'Site-1'"
     target: "bastion-site1.company.local"
 
   - name: "Route by User Group"
@@ -803,7 +803,7 @@ curl -X POST https://am.company.local/api/v1/bastions \
     "api_key": "BASTION1_API_KEY",
     "api_secret": "BASTION1_API_SECRET",
     "capacity": 90,
-    "location": "Paris DC-P1",
+    "location": "Site 1 DC",
     "health_check_url": "https://bastion-site1.company.local/health",
     "health_check_interval": 30
   }'
@@ -1043,7 +1043,7 @@ Total Time: ~8 hours (1 business day)
 **IP Allocation**:
 
 ```bash
-# Site 2 (DC-P2)
+# Site 2 (DC-2)
 HAProxy VIP:   10.2.1.10
 HAProxy-1:     10.2.1.11
 HAProxy-2:     10.2.1.12
@@ -1094,7 +1094,7 @@ curl -X POST https://am.company.local/api/v1/bastions \
     "api_key": "BASTION2_API_KEY",
     "api_secret": "BASTION2_API_SECRET",
     "capacity": 90,
-    "location": "Paris DC-P2"
+    "location": "Site 2 DC"
   }'
 
 # 6. Add target systems (1 hour)
@@ -1276,13 +1276,13 @@ routing_rules:
   # Rule 1: Route by AD Site attribute
   - name: "Route by AD Site"
     priority: 1
-    condition: "user.ad_site == 'Paris-P1'"
+    condition: "user.ad_site == 'Site-1'"
     target: "bastion-site1.company.local"
     enabled: true
 
   - name: "Route by AD Site"
     priority: 1
-    condition: "user.ad_site == 'Paris-P2'"
+    condition: "user.ad_site == 'Site-2'"
     target: "bastion-site2.company.local"
     enabled: true
 

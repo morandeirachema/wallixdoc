@@ -9,7 +9,7 @@
 | Property | Value |
 |----------|-------|
 | **Purpose** | Network topology and connectivity requirements for 5-site deployment |
-| **Deployment Model** | 5 Paris sites + 2 Access Manager datacenters (DC-A, DC-B) |
+| **Deployment Model** | 5 datacenter sites + 2 Access Manager datacenters (DC-A, DC-B) |
 | **Network Type** | MPLS (Access Managers ↔ Bastions only) |
 | **Version** | WALLIX Bastion 12.1.x |
 | **Last Updated** | February 2026 |
@@ -53,8 +53,8 @@
 |            |      |      |      |      |      |                               |
 |      +-----v-+  +-v----+ +v---+ +v---+ +v----+                               |
 |      |Site 1 |  |Site 2| |Site| |Site| |Site |                               |
-|      |Paris  |  |Paris | | 3  | | 4  | | 5  |                               |
-|      |DC-P1  |  |DC-P2 | |P3  | |P4  | |P5  |                               |
+|      |Site |  |Site| | 3  | | 4  | | 5  |                               |
+|      |DC-1  |  |DC-2 | |P3  | |P4  | |P5  |                               |
 |      +-------+  +------+ +----+ +----+ +-----+                               |
 |                                                                               |
 |  KEY PRINCIPLE: NO direct Bastion-to-Bastion communication between sites     |
@@ -67,7 +67,7 @@
 
 ```
 +===============================================================================+
-|  SINGLE SITE ARCHITECTURE (Repeated at Each of 5 Paris Sites)                |
+|  SINGLE SITE ARCHITECTURE (Repeated at Each of 5 Sites)                |
 +===============================================================================+
 |                                                                               |
 |                          MPLS Network                                         |
@@ -128,17 +128,17 @@
 |  MPLS CONNECTIVITY PATHS                                                      |
 +===============================================================================+
 |                                                                               |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 1 (Paris DC-P1)                   |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 2 (Paris DC-P2)                   |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 3 (Paris DC-P3)                   |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 4 (Paris DC-P4)                   |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 5 (Paris DC-P5)                   |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 1 (Site 1 DC)                   |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 2 (Site 2 DC)                   |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 3 (Site 3 DC)                   |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 4 (Site 4 DC)                   |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 5 (Site 5 DC)                   |
 |                                                                               |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 1 (Paris DC-P1)                   |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 2 (Paris DC-P2)                   |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 3 (Paris DC-P3)                   |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 4 (Paris DC-P4)                   |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 5 (Paris DC-P5)                   |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 1 (Site 1 DC)                   |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 2 (Site 2 DC)                   |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 3 (Site 3 DC)                   |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 4 (Site 4 DC)                   |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 5 (Site 5 DC)                   |
 |                                                                               |
 |  Access Manager 1 (DC-A)  <--HA-->  Access Manager 2 (DC-B)                  |
 |                                                                               |
@@ -164,11 +164,11 @@
 |---------|------|---------|----------|
 | **Access Manager DC-A** | 10.100.1.0/24 | Access Manager 1 | Datacenter A |
 | **Access Manager DC-B** | 10.100.2.0/24 | Access Manager 2 | Datacenter B |
-| **Site 1 (Paris DC-P1)** | 10.10.1.0/24 | HAProxy, Bastion, RDS | Paris Building A |
-| **Site 2 (Paris DC-P2)** | 10.10.2.0/24 | HAProxy, Bastion, RDS | Paris Building B |
-| **Site 3 (Paris DC-P3)** | 10.10.3.0/24 | HAProxy, Bastion, RDS | Paris Building C |
-| **Site 4 (Paris DC-P4)** | 10.10.4.0/24 | HAProxy, Bastion, RDS | Paris Building D |
-| **Site 5 (Paris DC-P5)** | 10.10.5.0/24 | HAProxy, Bastion, RDS | Paris Building E |
+| **Site 1 (Site 1 DC)** | 10.10.1.0/24 | HAProxy, Bastion, RDS | Datacenter Site A |
+| **Site 2 (Site 2 DC)** | 10.10.2.0/24 | HAProxy, Bastion, RDS | Datacenter Site B |
+| **Site 3 (Site 3 DC)** | 10.10.3.0/24 | HAProxy, Bastion, RDS | Datacenter Site C |
+| **Site 4 (Site 4 DC)** | 10.10.4.0/24 | HAProxy, Bastion, RDS | Datacenter Site D |
+| **Site 5 (Site 5 DC)** | 10.10.5.0/24 | HAProxy, Bastion, RDS | Datacenter Site E |
 | **Authentication Services** | 10.20.0.0/24 | FortiAuthenticator, AD/LDAP | Shared Infrastructure |
 | **Target Systems (Win)** | 10.30.0.0/16 | Windows Server 2022 | Production |
 | **Target Systems (Linux)** | 10.40.0.0/16 | RHEL 9/10 | Production |
@@ -195,7 +195,7 @@
 | AM2 Management | 10.100.2.11 | VLAN 201 | Admin interface (out-of-band) |
 | AM2 Gateway | 10.100.2.1 | VLAN 200 | Default gateway (MPLS router) |
 
-### 3.2 Site 1 (Paris DC-P1)
+### 3.2 Site 1 (Site 1 DC)
 
 | Component | IP Address | VLAN | Purpose |
 |-----------|------------|------|---------|
@@ -208,7 +208,7 @@
 | WALLIX RDS | 10.10.1.30 | VLAN 11 | Jump host (OT RemoteApp) |
 | Default Gateway | 10.10.1.1 | VLAN 11 | Fortigate internal interface |
 
-### 3.3 Site 2 (Paris DC-P2)
+### 3.3 Site 2 (Site 2 DC)
 
 | Component | IP Address | VLAN | Purpose |
 |-----------|------------|------|---------|
@@ -221,7 +221,7 @@
 | WALLIX RDS | 10.10.2.30 | VLAN 12 | Jump host (OT RemoteApp) |
 | Default Gateway | 10.10.2.1 | VLAN 12 | Fortigate internal interface |
 
-### 3.4 Site 3 (Paris DC-P3)
+### 3.4 Site 3 (Site 3 DC)
 
 | Component | IP Address | VLAN | Purpose |
 |-----------|------------|------|---------|
@@ -234,7 +234,7 @@
 | WALLIX RDS | 10.10.3.30 | VLAN 13 | Jump host (OT RemoteApp) |
 | Default Gateway | 10.10.3.1 | VLAN 13 | Fortigate internal interface |
 
-### 3.5 Site 4 (Paris DC-P4)
+### 3.5 Site 4 (Site 4 DC)
 
 | Component | IP Address | VLAN | Purpose |
 |-----------|------------|------|---------|
@@ -247,7 +247,7 @@
 | WALLIX RDS | 10.10.4.30 | VLAN 14 | Jump host (OT RemoteApp) |
 | Default Gateway | 10.10.4.1 | VLAN 14 | Fortigate internal interface |
 
-### 3.6 Site 5 (Paris DC-P5)
+### 3.6 Site 5 (Site 5 DC)
 
 | Component | IP Address | VLAN | Purpose |
 |-----------|------------|------|---------|
@@ -624,7 +624,7 @@ am.wallix.company.local         A    10.100.1.10   (Primary alias)
 am.wallix.company.local         A    10.100.2.10   (Secondary alias - round robin)
 ```
 
-#### Site 1 (Paris DC-P1)
+#### Site 1 (Site 1 DC)
 
 ```
 bastion-site1.wallix.company.local        A    10.10.1.100   (HAProxy VIP)
@@ -635,7 +635,7 @@ bastion2-site1.wallix.company.local       A    10.10.1.12    (Bastion Node 2)
 rds-site1.wallix.company.local            A    10.10.1.30    (RDS Jump Host)
 ```
 
-#### Site 2 (Paris DC-P2)
+#### Site 2 (Site 2 DC)
 
 ```
 bastion-site2.wallix.company.local        A    10.10.2.100
@@ -646,7 +646,7 @@ bastion2-site2.wallix.company.local       A    10.10.2.12
 rds-site2.wallix.company.local            A    10.10.2.30
 ```
 
-#### Site 3 (Paris DC-P3)
+#### Site 3 (Site 3 DC)
 
 ```
 bastion-site3.wallix.company.local        A    10.10.3.100
@@ -657,7 +657,7 @@ bastion2-site3.wallix.company.local       A    10.10.3.12
 rds-site3.wallix.company.local            A    10.10.3.30
 ```
 
-#### Site 4 (Paris DC-P4)
+#### Site 4 (Site 4 DC)
 
 ```
 bastion-site4.wallix.company.local        A    10.10.4.100
@@ -668,7 +668,7 @@ bastion2-site4.wallix.company.local       A    10.10.4.12
 rds-site4.wallix.company.local            A    10.10.4.30
 ```
 
-#### Site 5 (Paris DC-P5)
+#### Site 5 (Site 5 DC)
 
 ```
 bastion-site5.wallix.company.local        A    10.10.5.100

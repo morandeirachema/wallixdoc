@@ -39,8 +39,8 @@ This installation guide covers the deployment of a multi-site WALLIX PAM infrast
 |       |                   |         |         |               |               |
 |  +----v----+         +----v----+   ...   +----v----+    +----v----+          |
 |  | Site 1  |         | Site 2  |         | Site 4  |    | Site 5  |          |
-|  | Paris   |         | Paris   |         | Paris   |    | Paris   |          |
-|  | (DC-P1) |         | (DC-P2) |         | (DC-P4) |    | (DC-P5) |          |
+|  |   |         |   |         |   |    |   |          |
+|  | (DC-1) |         | (DC-2) |         | (DC-4) |    | (DC-5) |          |
 |  +---------+         +---------+         +---------+    +---------+          |
 |                                                                               |
 |  Each Site Contains:                                                          |
@@ -211,19 +211,19 @@ See [09-licensing.md](09-licensing.md) for detailed configuration and integratio
 
 ---
 
-## Site Locations (Paris Datacenters)
+## Site Locations
 
-All 5 sites are located in Paris across different buildings within the same datacenter infrastructure:
+5 geographically distributed datacenter sites:
 
 | Site | Location | Building |
 |------|----------|----------|
-| **Site 1** | Paris DC-P1 | Building A |
-| **Site 2** | Paris DC-P2 | Building B |
-| **Site 3** | Paris DC-P3 | Building C |
-| **Site 4** | Paris DC-P4 | Building D |
-| **Site 5** | Paris DC-P5 | Building E |
+| **Site 1** | Site 1 DC | Building A |
+| **Site 2** | Site 2 DC | Building B |
+| **Site 3** | Site 3 DC | Building C |
+| **Site 4** | Site 4 DC | Building D |
+| **Site 5** | Site 5 DC | Building E |
 
-**Cross-site connectivity**: Sites are interconnected within Paris datacenter fabric, but Bastions do NOT communicate directly (all traffic routes through Access Managers via MPLS).
+**Cross-site connectivity**: Sites are interconnected within datacenter site fabric, but Bastions do NOT communicate directly (all traffic routes through Access Managers via MPLS).
 
 ---
 

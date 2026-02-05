@@ -49,7 +49,7 @@ WALLIX Bastion uses a **concurrent session-based** licensing model:
 |                                                                               |
 |  LICENSE POOL B: WALLIX Bastion (Your Deployment)                            |
 |  +---------------------------------------+                                    |
-|  | Sites: 5 (Paris DC-P1 to DC-P5)       |                                    |
+|  | Sites: 5 (Site 1 DC to DC-5)       |                                    |
 |  | Appliances: 10 (2 per site in HA)     |                                    |
 |  | Licensed Units: 5 HA clusters         |                                    |
 |  | Sessions: 450 concurrent              |                                    |
@@ -136,7 +136,7 @@ WALLIX Bastion uses a **concurrent session-based** licensing model:
 |              |              |               |                                |
 |   +----------v---+   +------v------+   +---v----------+                      |
 |   | AM-1 (DC-A)  |   | Site 1-3    |   | Site 4-5     |                      |
-|   | AM-2 (DC-B)  |   | Paris       |   | Paris        |                      |
+|   | AM-2 (DC-B)  |   |       |   |        |                      |
 |   +--------------+   +-------------+   +--------------+                      |
 |                                                                               |
 |  Advantages:                                                                  |
@@ -477,7 +477,7 @@ wabadmin quota set \
 wabadmin quota show --site "site1"
 
 # Expected:
-# Site: Site 1 (Paris DC-P1)
+# Site: Site 1 (Site 1 DC)
 # Max Sessions: 90
 # Current Usage: 42/90 (47%)
 # Status: OK

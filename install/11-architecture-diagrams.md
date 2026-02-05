@@ -56,7 +56,7 @@
 |       |               |  |           |  |           |  |          |          |
 |  +----v-------+  +----v-------+  +---v------+  +----v------+  +---v------+  |
 |  | Site 1     |  | Site 2     |  | Site 3   |  | Site 4    |  | Site 5   |  |
-|  | Paris P1   |  | Paris P2   |  | Paris P3 |  | Paris P4  |  | Paris P5 |  |
+|  | P1   |  | P2   |  | P3 |  | P4  |  | P5 |  |
 |  | Bldg A     |  | Bldg B     |  | Bldg C   |  | Bldg D    |  | Bldg E   |  |
 |  +------------+  +------------+  +----------+  +-----------+  +----------+  |
 |                                                                               |
@@ -82,17 +82,17 @@
 |  ========================================                                     |
 |                                                                               |
 |  AM1 (DC-A) <--MPLS--> AM2 (DC-B)        [10 Gbps, HA replication]          |
-|  AM1 (DC-A) <--MPLS--> Site 1 (Paris P1) [1 Gbps]                            |
-|  AM1 (DC-A) <--MPLS--> Site 2 (Paris P2) [1 Gbps]                            |
-|  AM1 (DC-A) <--MPLS--> Site 3 (Paris P3) [1 Gbps]                            |
-|  AM1 (DC-A) <--MPLS--> Site 4 (Paris P4) [1 Gbps]                            |
-|  AM1 (DC-A) <--MPLS--> Site 5 (Paris P5) [1 Gbps]                            |
+|  AM1 (DC-A) <--MPLS--> Site 1 (DC-1) [1 Gbps]                            |
+|  AM1 (DC-A) <--MPLS--> Site 2 (DC-2) [1 Gbps]                            |
+|  AM1 (DC-A) <--MPLS--> Site 3 (DC-3) [1 Gbps]                            |
+|  AM1 (DC-A) <--MPLS--> Site 4 (DC-4) [1 Gbps]                            |
+|  AM1 (DC-A) <--MPLS--> Site 5 (DC-5) [1 Gbps]                            |
 |                                                                               |
-|  AM2 (DC-B) <--MPLS--> Site 1 (Paris P1) [1 Gbps]                            |
-|  AM2 (DC-B) <--MPLS--> Site 2 (Paris P2) [1 Gbps]                            |
-|  AM2 (DC-B) <--MPLS--> Site 3 (Paris P3) [1 Gbps]                            |
-|  AM2 (DC-B) <--MPLS--> Site 4 (Paris P4) [1 Gbps]                            |
-|  AM2 (DC-B) <--MPLS--> Site 5 (Paris P5) [1 Gbps]                            |
+|  AM2 (DC-B) <--MPLS--> Site 1 (DC-1) [1 Gbps]                            |
+|  AM2 (DC-B) <--MPLS--> Site 2 (DC-2) [1 Gbps]                            |
+|  AM2 (DC-B) <--MPLS--> Site 3 (DC-3) [1 Gbps]                            |
+|  AM2 (DC-B) <--MPLS--> Site 4 (DC-4) [1 Gbps]                            |
+|  AM2 (DC-B) <--MPLS--> Site 5 (DC-5) [1 Gbps]                            |
 |                                                                               |
 |  Site-to-Site Connectivity (BLOCKED):                                         |
 |  ====================================                                         |
@@ -155,7 +155,7 @@
 
 ```
 +===============================================================================+
-|  SITE 1 (PARIS DC-P1) - DETAILED ARCHITECTURE                                |
+|  SITE 1 (PARIS DC-1) - DETAILED ARCHITECTURE                                |
 +===============================================================================+
 |                                                                               |
 |                          MPLS Network (10 Gbps)                               |
@@ -903,7 +903,7 @@
 |    .10           Access Manager 2 primary                                     |
 |    .11           Access Manager 2 management (out-of-band)                    |
 |                                                                               |
-|  Site 1 (Paris DC-P1, Building A):                                            |
+|  Site 1 (Site 1 DC, Building A):                                            |
 |  ===================================                                          |
 |  10.10.1.0/24    DMZ VLAN 11                                                  |
 |    .1            Fortigate firewall                                           |
@@ -924,25 +924,25 @@
 |    .133          HAProxy-1 IPMI                                               |
 |    .134          HAProxy-2 IPMI                                               |
 |                                                                               |
-|  Site 2 (Paris DC-P2, Building B):                                            |
+|  Site 2 (Site 2 DC, Building B):                                            |
 |  ===================================                                          |
 |  10.10.2.0/24    DMZ VLAN 12 (same layout as Site 1)                          |
 |  192.168.2.0/24  HA Cluster VLAN 121                                          |
 |  10.10.2.128/27  Management VLAN 122                                          |
 |                                                                               |
-|  Site 3 (Paris DC-P3, Building C):                                            |
+|  Site 3 (Site 3 DC, Building C):                                            |
 |  ===================================                                          |
 |  10.10.3.0/24    DMZ VLAN 13                                                  |
 |  192.168.3.0/24  HA Cluster VLAN 131                                          |
 |  10.10.3.128/27  Management VLAN 132                                          |
 |                                                                               |
-|  Site 4 (Paris DC-P4, Building D):                                            |
+|  Site 4 (Site 4 DC, Building D):                                            |
 |  ===================================                                          |
 |  10.10.4.0/24    DMZ VLAN 14                                                  |
 |  192.168.4.0/24  HA Cluster VLAN 141                                          |
 |  10.10.4.128/27  Management VLAN 142                                          |
 |                                                                               |
-|  Site 5 (Paris DC-P5, Building E):                                            |
+|  Site 5 (Site 5 DC, Building E):                                            |
 |  ===================================                                          |
 |  10.10.5.0/24    DMZ VLAN 15                                                  |
 |  192.168.5.0/24  HA Cluster VLAN 151                                          |
@@ -988,7 +988,7 @@
 |  am2.company.com                       A    10.100.2.10                       |
 |  accessmanager.company.com             CNAME am.company.com                   |
 |                                                                               |
-|  Site 1 (Paris DC-P1):                                                        |
+|  Site 1 (Site 1 DC):                                                        |
 |  bastion-site1.company.com             A    10.10.1.100  (VIP)                |
 |  haproxy1-site1.company.com            A    10.10.1.5                         |
 |  haproxy2-site1.company.com            A    10.10.1.6                         |
@@ -996,7 +996,7 @@
 |  bastion2-site1.company.com            A    10.10.1.12                        |
 |  rds-site1.company.com                 A    10.10.1.30                        |
 |                                                                               |
-|  Site 2 (Paris DC-P2):                                                        |
+|  Site 2 (Site 2 DC):                                                        |
 |  bastion-site2.company.com             A    10.10.2.100                       |
 |  haproxy1-site2.company.com            A    10.10.2.5                         |
 |  haproxy2-site2.company.com            A    10.10.2.6                         |
@@ -1004,15 +1004,15 @@
 |  bastion2-site2.company.com            A    10.10.2.12                        |
 |  rds-site2.company.com                 A    10.10.2.30                        |
 |                                                                               |
-|  Site 3 (Paris DC-P3):                                                        |
+|  Site 3 (Site 3 DC):                                                        |
 |  bastion-site3.company.com             A    10.10.3.100                       |
 |  [Similar pattern for Site 3]                                                 |
 |                                                                               |
-|  Site 4 (Paris DC-P4):                                                        |
+|  Site 4 (Site 4 DC):                                                        |
 |  bastion-site4.company.com             A    10.10.4.100                       |
 |  [Similar pattern for Site 4]                                                 |
 |                                                                               |
-|  Site 5 (Paris DC-P5):                                                        |
+|  Site 5 (Site 5 DC):                                                        |
 |  bastion-site5.company.com             A    10.10.5.100                       |
 |  [Similar pattern for Site 5]                                                 |
 |                                                                               |

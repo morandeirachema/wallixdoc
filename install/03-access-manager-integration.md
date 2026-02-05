@@ -61,11 +61,11 @@ WALLIX Access Manager (AM) is a centralized gateway that provides:
 |            |             |   |          | |         |  |                      |
 |   +--------v--------+  +-v-----------+  +-v-------+ +--v---------+            |
 |   | Bastion Site 1  |  | Bastion     |  | Bastion | | Bastion    |            |
-|   | (DC-P1)         |  | Site 2      |  | Site 3  | | Site 4     |            |
-|   | 2x Appliances   |  | (DC-P2)     |  | (DC-P3) | | (DC-P4)    |            |
+|   | (DC-1)         |  | Site 2      |  | Site 3  | | Site 4     |            |
+|   | 2x Appliances   |  | (DC-2)     |  | (DC-3) | | (DC-4)    |            |
 |   +-----------------+  +-------------+  +---------+ +------------+            |
 |                                                                               |
-|            Bastion Site 5 (DC-P5)                                             |
+|            Bastion Site 5 (DC-5)                                             |
 |            +-------------------------+                                        |
 |            | 2x Appliances           |                                        |
 |            +-------------------------+                                        |
@@ -722,9 +722,9 @@ Session brokering allows Access Manager to intelligently route users to the appr
 2. Navigate to: Configuration > Session Broker > Bastion Sites
 
 3. Add Bastion Site 1:
-   Site Name:          WALLIX-Site1-Paris-DC-P1
+   Site Name:          WALLIX-Site1-DC-1
    Site ID:            site1
-   Location:           Paris DC-P1, Building A
+   Location:           Site 1 DC, Building A
 
    Endpoint Configuration:
    +-- Primary URL:    https://bastion-site1.company.com
@@ -844,7 +844,7 @@ curl https://bastion-site1.company.com/health
    +-- Enable Session Broker:     [x]
    +-- Broker URL:                https://accessmanager.company.com/api/v1
    +-- Site ID:                   site1
-   +-- Site Name:                 WALLIX-Site1-Paris-DC-P1
+   +-- Site Name:                 WALLIX-Site1-DC-1
 
    API Configuration:
    +-- Bastion API Key:           [Key for AM to call Bastion]
