@@ -44,24 +44,24 @@ This deployment consists of:
 |  5-SITE DEPLOYMENT OVERVIEW                                                   |
 +===============================================================================+
 |                                                                               |
-|  Access Manager 1 (DC-A)  <---HA--->  Access Manager 2 (DC-B)                |
-|  - SSO / MFA                          - SSO / MFA                            |
-|  - Session Brokering                  - Session Brokering                    |
-|  - License Management                 - License Management                   |
-|          |                                    |                              |
-|          +------------------------------------+                              |
-|                          MPLS Network                                        |
-|       +-------------------+----+----+----+--------------------+              |
-|       |                   |         |         |               |              |
-|  +----v----+         +----v----+   ...   +----v----+    +----v----+         |
-|  | Site 1  |         | Site 2  |         | Site 4  |    | Site 5  |         |
-|  | (DC-1)  |         | (DC-2)  |         | (DC-4)  |    | (DC-5)  |         |
-|  +---------+         +---------+         +---------+    +---------+         |
+|  Access Manager 1 (DC-A)  <---HA--->  Access Manager 2 (DC-B)                 |
+|  - SSO / MFA                          - SSO / MFA                             |
+|  - Session Brokering                  - Session Brokering                     |
+|  - License Management                 - License Management                    |
+|          |                                    |                               |
+|          +------------------------------------+                               |
+|                          MPLS Network                                         |
+|       +-------------------+----+----+----+--------------------+               |
+|       |                   |         |         |               |               |
+|  +----v----+         +----v----+   ...   +----v----+    +----v----+           |
+|  | Site 1  |         | Site 2  |         | Site 4  |    | Site 5  |           |
+|  | (DC-1)  |         | (DC-2)  |         | (DC-4)  |    | (DC-5)  |           |
+|  +---------+         +---------+         +---------+    +---------+           |
 |                                                                               |
 |  Each Site Contains:                                                          |
-|  - 2x HAProxy (Active-Passive with Keepalived VRRP)                          |
-|  - 2x WALLIX Bastion HW Appliances (Active-Active or Active-Passive)        |
-|  - 1x WALLIX RDS (Jump host for OT RemoteApp access)                         |
+|  - 2x HAProxy (Active-Passive with Keepalived VRRP)                           |
+|  - 2x WALLIX Bastion HW Appliances (Active-Active or Active-Passive)          |
+|  - 1x WALLIX RDS (Jump host for OT RemoteApp access)                          |
 |                                                                               |
 +===============================================================================+
 ```
@@ -160,7 +160,7 @@ Each of the 5 sites requires:
 
 ```
 +===============================================================================+
-|  HARDWARE READINESS CHECKLIST (Per Site)                                     |
+|  HARDWARE READINESS CHECKLIST (Per Site)                                      |
 +===============================================================================+
 
 Site 1 (Site 1 DC):
@@ -210,28 +210,28 @@ Site 5 (Site 5 DC):
 
 ```
 +===============================================================================+
-|  NETWORK TOPOLOGY - ACCESS MANAGER TO BASTION SITES                          |
+|  NETWORK TOPOLOGY - ACCESS MANAGER TO BASTION SITES                           |
 +===============================================================================+
 |                                                                               |
-|  Access Manager 1 (DC-A)           Access Manager 2 (DC-B)                   |
-|  IP: <AM1-IP>                      IP: <AM2-IP>                              |
-|         |                                 |                                  |
-|         +----------------+----------------+                                  |
-|                          |                                                   |
-|                    MPLS Network                                              |
-|         Bandwidth: 100+ Mbps per site                                        |
-|         Latency: < 50ms RTT preferred                                        |
-|                          |                                                   |
-|         +----------------+----------------+----------------+                 |
-|         |                |                |                |                 |
-|    Site 1           Site 2           Site 3           Site 4,5              |
-|   10.10.1.0/24     10.10.2.0/24     10.10.3.0/24     10.10.4-5.0/24         |
-|         |                |                |                |                 |
-|    HAProxy VIP      HAProxy VIP      HAProxy VIP      HAProxy VIP           |
-|    10.10.1.100      10.10.2.100      10.10.3.100      10.10.4-5.100         |
-|         |                |                |                |                 |
-|  Bastion Nodes     Bastion Nodes     Bastion Nodes     Bastion Nodes        |
-|  10.10.1.11-12     10.10.2.11-12     10.10.3.11-12     10.10.4-5.11-12      |
+|  Access Manager 1 (DC-A)           Access Manager 2 (DC-B)                    |
+|  IP: <AM1-IP>                      IP: <AM2-IP>                               |
+|         |                                 |                                   |
+|         +----------------+----------------+                                   |
+|                          |                                                    |
+|                    MPLS Network                                               |
+|         Bandwidth: 100+ Mbps per site                                         |
+|         Latency: < 50ms RTT preferred                                         |
+|                          |                                                    |
+|         +----------------+----------------+----------------+                  |
+|         |                |                |                |                  |
+|    Site 1           Site 2           Site 3           Site 4,5                |
+|   10.10.1.0/24     10.10.2.0/24     10.10.3.0/24     10.10.4-5.0/24           |
+|         |                |                |                |                  |
+|    HAProxy VIP      HAProxy VIP      HAProxy VIP      HAProxy VIP             |
+|    10.10.1.100      10.10.2.100      10.10.3.100      10.10.4-5.100           |
+|         |                |                |                |                  |
+|  Bastion Nodes     Bastion Nodes     Bastion Nodes     Bastion Nodes          |
+|  10.10.1.11-12     10.10.2.11-12     10.10.3.11-12     10.10.4-5.11-12        |
 |                                                                               |
 +===============================================================================+
 ```
@@ -353,7 +353,7 @@ Adjust according to your network design.
 
 ```
 +===============================================================================+
-|  NETWORK READINESS CHECKLIST                                                 |
+|  NETWORK READINESS CHECKLIST                                                  |
 +===============================================================================+
 
 MPLS Connectivity:
@@ -457,7 +457,7 @@ WALLIX Bastion includes an embedded MariaDB database.
 
 ```
 +===============================================================================+
-|  SOFTWARE READINESS CHECKLIST                                                |
+|  SOFTWARE READINESS CHECKLIST                                                 |
 +===============================================================================+
 
 WALLIX Bastion Appliances:
@@ -522,7 +522,7 @@ The Access Managers provide the following services to the Bastion sites:
 
 ```
 +===============================================================================+
-|  ACCESS MANAGER INTEGRATION CHECKLIST                                        |
+|  ACCESS MANAGER INTEGRATION CHECKLIST                                         |
 +===============================================================================+
 
 Access Manager Information:
@@ -635,7 +635,7 @@ The licensing is split into two separate pools:
 
 ```
 +===============================================================================+
-|  LICENSING READINESS CHECKLIST                                               |
+|  LICENSING READINESS CHECKLIST                                                |
 +===============================================================================+
 
 Access Manager Licenses (Managed by AM Team):
@@ -740,7 +740,7 @@ Compliance:
 
 ```
 +===============================================================================+
-|  SECURITY READINESS CHECKLIST                                                |
+|  SECURITY READINESS CHECKLIST                                                 |
 +===============================================================================+
 
 SSL/TLS Certificates:
@@ -847,7 +847,7 @@ Audit and Compliance:
 
 ```
 +===============================================================================+
-|  DNS AND NTP READINESS CHECKLIST                                             |
+|  DNS AND NTP READINESS CHECKLIST                                              |
 +===============================================================================+
 
 DNS Records:
@@ -938,7 +938,7 @@ Time Synchronization Testing:
 
 ```
 +===============================================================================+
-|  BACKUP STORAGE READINESS CHECKLIST                                          |
+|  BACKUP STORAGE READINESS CHECKLIST                                           |
 +===============================================================================+
 
 Backup Storage:
@@ -980,7 +980,7 @@ Use this master checklist to track readiness across all prerequisites.
 
 ```
 +===============================================================================+
-|  MASTER PRE-DEPLOYMENT CHECKLIST                                             |
+|  MASTER PRE-DEPLOYMENT CHECKLIST                                              |
 +===============================================================================+
 
 HARDWARE (All 5 Sites):

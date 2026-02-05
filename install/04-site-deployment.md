@@ -134,7 +134,7 @@ Each site contains:
 |  - Configure HA (Active-Active OR Active-Passive)                             |
 |  - Configure MariaDB replication                                              |
 |  - Test cluster failover                                                      |
-|  Duration: 1-2 weeks (Site 1), 2-3 days (Sites 2-5)                          |
+|  Duration: 1-2 weeks (Site 1), 2-3 days (Sites 2-5)                           |
 |                                                                               |
 |  Phase 4: WALLIX RDS Jump Host                                                |
 |  - Deploy Windows Server 2022                                                 |

@@ -35,7 +35,7 @@
 
 ```
 +===============================================================================+
-|  5-SITE MPLS TOPOLOGY WITH ACCESS MANAGER INTEGRATION                        |
+|  5-SITE MPLS TOPOLOGY WITH ACCESS MANAGER INTEGRATION                         |
 +===============================================================================+
 |                                                                               |
 |  DATACENTER A (DC-A)           DATACENTER B (DC-B)                            |
@@ -56,8 +56,8 @@
 |      | DC-1  |  | DC-2  | | DC-3  | | DC-4  | | DC-5  |                       |
 |      +-------+  +-------+ +-------+ +-------+ +-------+                       |
 |                                                                               |
-|  KEY PRINCIPLE: NO direct Bastion-to-Bastion communication between sites     |
-|                 All inter-site traffic flows through Access Managers         |
+|  KEY PRINCIPLE: NO direct Bastion-to-Bastion communication between sites      |
+|                 All inter-site traffic flows through Access Managers          |
 |                                                                               |
 +===============================================================================+
 ```
@@ -66,7 +66,7 @@
 
 ```
 +===============================================================================+
-|  SINGLE SITE ARCHITECTURE (Repeated at Each of 5 Sites)                |
+|  SINGLE SITE ARCHITECTURE (Repeated at Each of 5 Sites)                       |
 +===============================================================================+
 |                                                                               |
 |                          MPLS Network                                         |
@@ -111,7 +111,7 @@
 |                    +--------------------+                                     |
 |                              |                                                |
 |                              v                                                |
-|                    Target Systems (Windows 2022, RHEL 9/10)                  |
+|                    Target Systems (Windows 2022, RHEL 9/10)                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -127,21 +127,21 @@
 |  MPLS CONNECTIVITY PATHS                                                      |
 +===============================================================================+
 |                                                                               |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 1 (Site 1 DC)                   |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 2 (Site 2 DC)                   |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 3 (Site 3 DC)                   |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 4 (Site 4 DC)                   |
-|  Access Manager 1 (DC-A)  <--MPLS-->  Site 5 (Site 5 DC)                   |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 1 (Site 1 DC)                      |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 2 (Site 2 DC)                      |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 3 (Site 3 DC)                      |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 4 (Site 4 DC)                      |
+|  Access Manager 1 (DC-A)  <--MPLS-->  Site 5 (Site 5 DC)                      |
 |                                                                               |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 1 (Site 1 DC)                   |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 2 (Site 2 DC)                   |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 3 (Site 3 DC)                   |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 4 (Site 4 DC)                   |
-|  Access Manager 2 (DC-B)  <--MPLS-->  Site 5 (Site 5 DC)                   |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 1 (Site 1 DC)                      |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 2 (Site 2 DC)                      |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 3 (Site 3 DC)                      |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 4 (Site 4 DC)                      |
+|  Access Manager 2 (DC-B)  <--MPLS-->  Site 5 (Site 5 DC)                      |
 |                                                                               |
-|  Access Manager 1 (DC-A)  <--HA-->  Access Manager 2 (DC-B)                  |
+|  Access Manager 1 (DC-A)  <--HA-->  Access Manager 2 (DC-B)                   |
 |                                                                               |
-|  CRITICAL: NO Site-to-Site connectivity (Site 1 X Site 2, etc.)             |
+|  CRITICAL: NO Site-to-Site connectivity (Site 1 X Site 2, etc.)               |
 |                                                                               |
 +===============================================================================+
 ```
@@ -589,21 +589,21 @@ Logging: Enable (security events)
 |  FIREWALL ACL SUMMARY                                                         |
 +===============================================================================+
 |                                                                               |
-|  ALLOW: Users → HAProxy VIP (443, 22, 3389)                                  |
-|  ALLOW: HAProxy → Bastion (443, 22)                                          |
-|  ALLOW: Bastion → Access Manager (443) via MPLS                              |
-|  ALLOW: Access Manager → Bastion (443, 22) via MPLS                          |
-|  ALLOW: Bastion → FortiAuthenticator (1812/1813 UDP)                         |
-|  ALLOW: Bastion → Active Directory (636, 3269, 88)                           |
-|  ALLOW: Bastion → Targets (3389, 22, 5985/5986)                              |
-|  ALLOW: Bastion-1 ↔ Bastion-2 (3306, 2224, 3121, 5404-5406) [HA VLAN]       |
-|  ALLOW: HAProxy-1 ↔ HAProxy-2 (IP proto 112) [VRRP]                          |
-|  ALLOW: Bastion → NTP (123 UDP)                                              |
-|  ALLOW: Bastion → SIEM (514 UDP, 6514 TCP)                                   |
-|  ALLOW: Monitoring → Bastion (9100, 161)                                     |
+|  ALLOW: Users → HAProxy VIP (443, 22, 3389)                                   |
+|  ALLOW: HAProxy → Bastion (443, 22)                                           |
+|  ALLOW: Bastion → Access Manager (443) via MPLS                               |
+|  ALLOW: Access Manager → Bastion (443, 22) via MPLS                           |
+|  ALLOW: Bastion → FortiAuthenticator (1812/1813 UDP)                          |
+|  ALLOW: Bastion → Active Directory (636, 3269, 88)                            |
+|  ALLOW: Bastion → Targets (3389, 22, 5985/5986)                               |
+|  ALLOW: Bastion-1 ↔ Bastion-2 (3306, 2224, 3121, 5404-5406) [HA VLAN]         |
+|  ALLOW: HAProxy-1 ↔ HAProxy-2 (IP proto 112) [VRRP]                           |
+|  ALLOW: Bastion → NTP (123 UDP)                                               |
+|  ALLOW: Bastion → SIEM (514 UDP, 6514 TCP)                                    |
+|  ALLOW: Monitoring → Bastion (9100, 161)                                      |
 |                                                                               |
-|  DENY: Bastion Site 1 → Bastion Site 2 (NO direct site-to-site)             |
-|  DENY: All other traffic (default drop)                                      |
+|  DENY: Bastion Site 1 → Bastion Site 2 (NO direct site-to-site)               |
+|  DENY: All other traffic (default drop)                                       |
 |                                                                               |
 +===============================================================================+
 ```

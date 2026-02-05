@@ -61,11 +61,11 @@ WALLIX Access Manager (AM) is a centralized gateway that provides:
 |            |             |   |          | |         |  |                      |
 |   +--------v--------+  +-v-----------+  +-v-------+ +--v---------+            |
 |   | Bastion Site 1  |  | Bastion     |  | Bastion | | Bastion    |            |
-|   | (DC-1)         |  | Site 2      |  | Site 3  | | Site 4     |            |
-|   | 2x Appliances   |  | (DC-2)     |  | (DC-3) | | (DC-4)    |            |
+|   | (DC-1)          |  | Site 2      |  | Site 3  | | Site 4     |            |
+|   | 2x Appliances   |  | (DC-2)      |  | (DC-3)  | | (DC-4)     |            |
 |   +-----------------+  +-------------+  +---------+ +------------+            |
 |                                                                               |
-|            Bastion Site 5 (DC-5)                                             |
+|            Bastion Site 5 (DC-5)                                              |
 |            +-------------------------+                                        |
 |            | 2x Appliances           |                                        |
 |            +-------------------------+                                        |
@@ -702,7 +702,7 @@ Session brokering allows Access Manager to intelligently route users to the appr
 |  +------+  +------+  +------+  +------+  +------+                             |
 |     ^                                                                         |
 |     |                                                                         |
-|     | 3. Route to optimal site (Site 1 - lowest load, healthy)               |
+|     | 3. Route to optimal site (Site 1 - lowest load, healthy)                |
 |     |                                                                         |
 |  +--------------------+                                                       |
 |  | Bastion Site 1     |                                                       |
@@ -972,11 +972,11 @@ WALLIX supports two license pooling models:
 |  |  Total Pool: 1000 sessions                                           |     |
 |  |                                                                      |     |
 |  |  Dynamic Allocation:                                                 |     |
-|  |  +------------------+    +--------------------------------------+     |     |
-|  |  | Access Manager   |    | Bastion Sites 1-5                  |     |     |
-|  |  | 200 sessions     |    | 800 sessions (dynamically shared)  |     |     |
-|  |  | (reserved)       |    |                                    |     |     |
-|  |  +------------------+    +--------------------------------------+     |     |
+|  |  +------------------+    +--------------------------------------+    |     |
+|  |  | Access Manager   |    | Bastion Sites 1-5                    |    |     |
+|  |  | 200 sessions     |    | 800 sessions (dynamically shared)    |    |     |
+|  |  | (reserved)       |    |                                      |    |     |
+|  |  +------------------+    +--------------------------------------+    |     |
 |  |                                                                      |     |
 |  +----------------------------------------------------------------------+     |
 |                                                                               |

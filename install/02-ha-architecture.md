@@ -300,52 +300,52 @@ fence-agents-ipmilan    # IPMI fencing
 |  |  WALLIX BASTION NODE 1         |                                           |
 |  |  (PRIMARY - ACTIVE)            |                                           |
 |  |                                |                                           |
-|  |  IP: 10.x.x.11                 |          +--------------------------------+|
-|  |  VIP: 10.x.x.10 (current)      |          |  WALLIX BASTION NODE 2         ||
-|  |  Load: 100% traffic            |          |  (STANDBY - PASSIVE)           ||
-|  |                                |          |                                ||
-|  |  +---------------------------+ |          |  IP: 10.x.x.12                 ||
-|  |  | WALLIX Bastion            | |          |  VIP: - (not assigned)         ||
-|  |  | Services (Running)        | |          |  Load: 0% (idle)               ||
-|  |  |                           | |          |                                ||
-|  |  | - Session Manager         | |          |  +---------------------------+||
-|  |  | - Password Manager        | |          |  | WALLIX Bastion            |||
-|  |  | - Web UI                  | |          |  | Services (Stopped)        |||
-|  |  +---------------------------+ |          |  |                           |||
-|  |                                |          |  | - Session Manager         |||
-|  |  +---------------------------+ |          |  | - Password Manager        |||
-|  |  | MariaDB                   | |          |  | - Web UI                  |||
-|  |  | (PRIMARY)                 | |          |  +---------------------------+||
-|  |  |                           | |          |                                ||
+|  |  IP: 10.x.x.11                 |          +-------------------------------+|
+|  |  VIP: 10.x.x.10 (current)      |          |  WALLIX BASTION NODE 2        ||
+|  |  Load: 100% traffic            |          |  (STANDBY - PASSIVE)          ||
+|  |                                |          |                               ||
+|  |  +---------------------------+ |          |  IP: 10.x.x.12                ||
+|  |  | WALLIX Bastion            | |          |  VIP: - (not assigned)        ||
+|  |  | Services (Running)        | |          |  Load: 0% (idle)              ||
+|  |  |                           | |          |                               ||
+|  |  | - Session Manager         | |          |  +--------------------------+ ||
+|  |  | - Password Manager        | |          |  | WALLIX Bastion           | ||
+|  |  | - Web UI                  | |          |  | Services (Stopped)       | ||
+|  |  +---------------------------+ |          |  |                          | ||
+|  |                                |          |  | - Session Manager        | ||
+|  |  +---------------------------+ |          |  | - Password Manager       | ||
+|  |  | MariaDB                   | |          |  | - Web UI                 | ||
+|  |  | (PRIMARY)                 | |          |  +--------------------------+ ||
+|  |  |                           | |          |                               ||
 |  |  | Async Replication --------+-+--------->|  +---------------------------+||
 |  |  |                           | |          |  | MariaDB                   |||
 |  |  +---------------------------+ |          |  | (REPLICA - Read-only)     |||
 |  |                                |          |  |                           |||
 |  +--------------------------------+          |  +---------------------------+||
-|                    |                         |                                ||
-|                    |                         +--------------------------------+|
-|                    |                                         |                 |
-|                    +----------------+------------------------+                 |
-|                                     |                                          |
-|                         +-----------+--------------+                           |
-|                         |  Shared Storage (NAS)    |                           |
-|                         |  Session Recordings      |                           |
-|                         |  /var/wab/recorded       |                           |
-|                         +--------------------------+                           |
-|                                                                                |
-|  HEARTBEAT MONITORING                                                          |
-|  ====================                                                          |
-|  Node 1 <----- Heartbeat (every 2s) -----> Node 2                              |
-|                                                                                |
-|  If Node 1 fails:                                                              |
-|    1. Node 2 detects missing heartbeat (3 consecutive = 6 seconds)             |
-|    2. Node 2 promotes MariaDB replica to primary                               |
-|    3. Node 2 starts WALLIX services                                            |
-|    4. Node 2 assumes VIP 10.x.x.10                                             |
-|    5. Node 2 sends gratuitous ARP                                              |
-|                                                                                |
-|  FAILOVER TIME: 30-60 seconds                                                  |
-|                                                                                |
+|                    |                         |                               ||
+|                    |                         +-------------------------------+|
+|                    |                                         |                |
+|                    +----------------+------------------------+                |
+|                                     |                                         |
+|                         +-----------+--------------+                          |
+|                         |  Shared Storage (NAS)    |                          |
+|                         |  Session Recordings      |                          |
+|                         |  /var/wab/recorded       |                          |
+|                         +--------------------------+                          |
+|                                                                               |
+|  HEARTBEAT MONITORING                                                         |
+|  ====================                                                         |
+|  Node 1 <----- Heartbeat (every 2s) -----> Node 2                             |
+|                                                                               |
+|  If Node 1 fails:                                                             |
+|    1. Node 2 detects missing heartbeat (3 consecutive = 6 seconds)            |
+|    2. Node 2 promotes MariaDB replica to primary                              |
+|    3. Node 2 starts WALLIX services                                           |
+|    4. Node 2 assumes VIP 10.x.x.10                                            |
+|    5. Node 2 sends gratuitous ARP                                             |
+|                                                                               |
+|  FAILOVER TIME: 30-60 seconds                                                 |
+|                                                                               |
 +===============================================================================+
 ```
 
@@ -665,12 +665,12 @@ fence-agents-ipmilan    # IPMI fencing
 |                                                                               |
 |  Active-Active:                                                               |
 |    Hardware Utilization: 100% (both nodes serving traffic)                    |
-|    Effective Cost per Session: $X per node / 100 sessions = $X/100           |
+|    Effective Cost per Session: $X per node / 100 sessions = $X/100            |
 |    Downtime Cost Savings: High (near-zero downtime)                           |
 |                                                                               |
 |  Active-Passive:                                                              |
 |    Hardware Utilization: 50% (standby idle)                                   |
-|    Effective Cost per Session: $X per node / 100 sessions = $X/100           |
+|    Effective Cost per Session: $X per node / 100 sessions = $X/100            |
 |    BUT: $X wasted on idle standby                                             |
 |    Downtime Cost: Minimal (30-60s failover acceptable)                        |
 |                                                                               |
@@ -742,22 +742,22 @@ fence-agents-ipmilan    # IPMI fencing
 |  DECISION MATRIX: SESSION LOAD                                                |
 +===============================================================================+
 |                                                                               |
-|  Concurrent Sessions  |  Recommended Model    | Justification               |
-|  --------------------+----------------------+-----------------------------   |
-|  < 50                 |  Active-Passive       | Single node sufficient,     |
-|                       |                       | simplicity preferred        |
-|  --------------------+----------------------+-----------------------------   |
-|  50 - 100             |  Active-Passive       | Single node capacity OK,    |
-|                       |  (Consider A-A)       | but evaluate growth         |
-|  --------------------+----------------------+-----------------------------   |
-|  100 - 200            |  Active-Active        | Load distribution needed,   |
-|                       |                       | single node near capacity   |
-|  --------------------+----------------------+-----------------------------   |
-|  > 200                |  Active-Active        | Mandatory for performance,  |
-|                       |                       | horizontal scaling needed   |
-|  --------------------+----------------------+-----------------------------   |
+|  Concurrent Sessions  |  Recommended Model    | Justification                 |
+|  --------------------+----------------------+-----------------------------    |
+|  < 50                 |  Active-Passive       | Single node sufficient,       |
+|                       |                       | simplicity preferred          |
+|  --------------------+----------------------+-----------------------------    |
+|  50 - 100             |  Active-Passive       | Single node capacity OK,      |
+|                       |  (Consider A-A)       | but evaluate growth           |
+|  --------------------+----------------------+-----------------------------    |
+|  100 - 200            |  Active-Active        | Load distribution needed,     |
+|                       |                       | single node near capacity     |
+|  --------------------+----------------------+-----------------------------    |
+|  > 200                |  Active-Active        | Mandatory for performance,    |
+|                       |                       | horizontal scaling needed     |
+|  --------------------+----------------------+-----------------------------    |
 |                                                                               |
-|  Note: Session count refers to peak concurrent sessions, not total users.    |
+|  Note: Session count refers to peak concurrent sessions, not total users.     |
 |                                                                               |
 +===============================================================================+
 ```
@@ -769,16 +769,16 @@ fence-agents-ipmilan    # IPMI fencing
 |  DECISION MATRIX: AVAILABILITY REQUIREMENTS                                   |
 +===============================================================================+
 |                                                                               |
-|  Uptime SLA    | Allowed Downtime | Failover Req  | Recommended Model       |
-|  -------------+------------------+---------------+------------------------   |
-|  99%           | 87 hrs/year      | Manual        | Standalone (no HA)      |
-|  99.9%         | 8.7 hrs/year     | < 60 seconds  | Active-Passive          |
-|  99.95%        | 4.4 hrs/year     | < 30 seconds  | Active-Passive +        |
-|                |                  |               | good monitoring         |
-|  99.99%        | 52 min/year      | < 1 second    | Active-Active           |
-|  99.999%       | 5 min/year       | Near-instant  | Active-Active +         |
-|                |                  |               | Multi-site              |
-|  -------------+------------------+---------------+------------------------   |
+|  Uptime SLA    | Allowed Downtime | Failover Req  | Recommended Model         |
+|  -------------+------------------+---------------+------------------------    |
+|  99%           | 87 hrs/year      | Manual        | Standalone (no HA)        |
+|  99.9%         | 8.7 hrs/year     | < 60 seconds  | Active-Passive            |
+|  99.95%        | 4.4 hrs/year     | < 30 seconds  | Active-Passive +          |
+|                |                  |               | good monitoring           |
+|  99.99%        | 52 min/year      | < 1 second    | Active-Active             |
+|  99.999%       | 5 min/year       | Near-instant  | Active-Active +           |
+|                |                  |               | Multi-site                |
+|  -------------+------------------+---------------+------------------------    |
 |                                                                               |
 |  Additional Considerations:                                                   |
 |  - Planned maintenance windows: Active-Active for zero-downtime updates       |
@@ -796,20 +796,20 @@ fence-agents-ipmilan    # IPMI fencing
 |  DECISION MATRIX: TEAM CAPABILITY                                             |
 +===============================================================================+
 |                                                                               |
-|  Team Skill Level     | Experience              | Recommended Model         |
-|  --------------------+------------------------+---------------------------   |
-|  Junior/Mid-Level     | - Basic Linux admin     | Active-Passive            |
-|                       | - Limited HA experience |                           |
-|                       | - Small team (1-2)      |                           |
-|  --------------------+------------------------+---------------------------   |
-|  Senior               | - Advanced Linux        | Active-Active or          |
-|                       | - Some HA clustering    | Active-Passive            |
-|                       | - Medium team (2-4)     | (based on other factors)  |
-|  --------------------+------------------------+---------------------------   |
-|  Expert/SRE Team      | - Distributed systems   | Active-Active             |
-|                       | - Multi-master DB       |                           |
-|                       | - Large team (4+)       |                           |
-|  --------------------+------------------------+---------------------------   |
+|  Team Skill Level     | Experience              | Recommended Model           |
+|  --------------------+------------------------+---------------------------    |
+|  Junior/Mid-Level     | - Basic Linux admin     | Active-Passive              |
+|                       | - Limited HA experience |                             |
+|                       | - Small team (1-2)      |                             |
+|  --------------------+------------------------+---------------------------    |
+|  Senior               | - Advanced Linux        | Active-Active or            | 
+|                       | - Some HA clustering    | Active-Passive              |
+|                       | - Medium team (2-4)     | (based on other factors)    |
+|  --------------------+------------------------+---------------------------    |
+|  Expert/SRE Team      | - Distributed systems   | Active-Active               |
+|                       | - Multi-master DB       |                             | 
+|                       | - Large team (4+)       |                             |
+|  --------------------+------------------------+---------------------------    |
 |                                                                               |
 |  Key Skills Required for Active-Active:                                       |
 |  - MariaDB Galera Cluster configuration and troubleshooting                   |
@@ -835,28 +835,28 @@ fence-agents-ipmilan    # IPMI fencing
 |  DECISION MATRIX: BUDGET & TIME CONSTRAINTS                                   |
 +===============================================================================+
 |                                                                               |
-|  Constraint           | Scenario                | Recommended Model         |
-|  --------------------+------------------------+---------------------------   |
-|  Fast Deployment      | - Go-live in 1-2 weeks  | Active-Passive            |
-|                       | - Limited prep time     |                           |
-|                       | - Urgent requirement    |                           |
-|  --------------------+------------------------+---------------------------   |
-|  Normal Timeline      | - Go-live in 1 month    | Active-Active or          |
-|                       | - Adequate testing      | Active-Passive            |
-|                       | - Standard project      | (evaluate other factors)  |
-|  --------------------+------------------------+---------------------------   |
-|  Greenfield/Ideal     | - No time pressure      | Active-Active             |
-|                       | - Full testing cycle    | (if load/availability     |
-|                       | - Best practices focus  | justify complexity)       |
-|  --------------------+------------------------+---------------------------   |
-|  Limited Budget       | - Minimize OPEX         | Active-Passive            |
-|                       | - Smaller team          | (simpler, cheaper ops)    |
-|                       | - Cost-conscious        |                           |
-|  --------------------+------------------------+---------------------------   |
-|  Enterprise Budget    | - High OPEX acceptable  | Active-Active             |
-|                       | - Large support team    | (maximize availability)   |
-|                       | - Best-in-class SLA     |                           |
-|  --------------------+------------------------+---------------------------   |
+|  Constraint           | Scenario                | Recommended Model           |
+|  --------------------+------------------------+---------------------------    |
+|  Fast Deployment      | - Go-live in 1-2 weeks  | Active-Passive              |
+|                       | - Limited prep time     |                             |
+|                       | - Urgent requirement    |                             |
+|  --------------------+------------------------+---------------------------    |
+|  Normal Timeline      | - Go-live in 1 month    | Active-Active or            |
+|                       | - Adequate testing      | Active-Passive              |
+|                       | - Standard project      | (evaluate other factors)    |
+|  --------------------+------------------------+---------------------------    |
+|  Greenfield/Ideal     | - No time pressure      | Active-Active               |
+|                       | - Full testing cycle    | (if load/availability       |  
+|                       | - Best practices focus  | justify complexity)         |
+|  --------------------+------------------------+---------------------------    |
+|  Limited Budget       | - Minimize OPEX         | Active-Passive              |
+|                       | - Smaller team          | (simpler, cheaper ops)      |
+|                       | - Cost-conscious        |                             | 
+|  --------------------+------------------------+---------------------------    |
+|  Enterprise Budget    | - High OPEX acceptable  | Active-Active               | 
+|                       | - Large support team    | (maximize availability)     |
+|                       | - Best-in-class SLA     |                             |
+|  --------------------+------------------------+---------------------------    |
 |                                                                               |
 |  DEPLOYMENT TIME COMPARISON                                                   |
 |  ==========================                                                   |
@@ -893,7 +893,7 @@ fence-agents-ipmilan    # IPMI fencing
 |    v                                                                          |
 |  [ Peak Sessions > 100? ]                                                     |
 |    |                                                                          |
-|    +---YES---> ACTIVE-ACTIVE (Load distribution required)                    |
+|    +---YES---> ACTIVE-ACTIVE (Load distribution required)                     |
 |    |                                                                          |
 |    +---NO                                                                     |
 |        |                                                                      |
@@ -927,7 +927,7 @@ fence-agents-ipmilan    # IPMI fencing
 |                +---NO----> ACTIVE-PASSIVE (Simpler operations)                |
 |                                                                               |
 |  RECOMMENDATION:                                                              |
-|  - If multiple YES answers for ACTIVE-ACTIVE: Use Active-Active              |
+|  - If multiple YES answers for ACTIVE-ACTIVE: Use Active-Active               |
 |  - If mostly NO answers: Use Active-Passive                                   |
 |  - If mixed: Evaluate cost vs benefit (see next section)                      |
 |                                                                               |
