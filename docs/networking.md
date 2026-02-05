@@ -40,31 +40,31 @@
 |                          |   (MFA Server)      |                              |
 |                          |   10.10.0.60        |                              |
 |                          +----------+----------+                              |
-|                                     | RADIUS 1812/1813                         |
+|                                     | RADIUS 1812/1813                        |
 |          +--------------+----------+----------+----------+                    |
 |          |              |          |          |          |                    |
-|    +-----v-----+  +-----v-----+  +----v-----+  +-----v-----+                 |
-|    | Fortigate |  | Fortigate |  | Fortigate|  | Fortigate |                 |
-|    |  Site 1   |  |  Site 2   |  |  Site 3  |  |  Site 4   |                 |
-|    +-----+-----+  +-----+-----+  +-----+----+  +-----+-----+                 |
+|    +-----v-----+  +-----v-----+  +----v-----+  +-----v-----+             v    |
+|    | Fortigate |  | Fortigate |  | Fortigate|  | Fortigate |                  |
+|    |  Site 1   |  |  Site 2   |  |  Site 3  |  |  Site 4   |                  |
+|    +-----+-----+  +-----+-----+  +-----+----+  +-----+-----+                  |
 |          |              |              |             |                        |
-|    +-----v-----+  +-----v-----+  +-----v----+  +-----v-----+                 |
-|    | HAProxy   |  | HAProxy   |  | HAProxy  |  | HAProxy   |                 |
-|    | HA Pair   |  | HA Pair   |  | HA Pair  |  | HA Pair   |                 |
-|    +-----+-----+  +-----+-----+  +-----+----+  +-----+-----+                 |
+|    +-----v-----+  +-----v-----+  +-----v----+  +-----v-----+                  |
+|    | HAProxy   |  | HAProxy   |  | HAProxy  |  | HAProxy   |                  |
+|    | HA Pair   |  | HA Pair   |  | HA Pair  |  | HA Pair   |                  |
+|    +-----+-----+  +-----+-----+  +-----+----+  +-----+-----+                  |
 |          |              |              |             |                        |
-|    +-----v-----+  +-----v-----+  +-----v----+  +-----v-----+                 |
-|    | WALLIX    |  | WALLIX    |  | WALLIX   |  | WALLIX    |                 |
-|    | Bastion   |  | Bastion   |  | Bastion  |  | Bastion   |                 |
-|    | HA Pair   |  | HA Pair   |  | HA Pair  |  | HA Pair   |                 |
-|    +-----+-----+  +-----+-----+  +-----+----+  +-----+-----+                 |
+|    +-----v-----+  +-----v-----+  +-----v----+  +-----v-----+                  |
+|    | WALLIX    |  | WALLIX    |  | WALLIX   |  | WALLIX    |                  |
+|    | Bastion   |  | Bastion   |  | Bastion  |  | Bastion   |                  |
+|    | HA Pair   |  | HA Pair   |  | HA Pair  |  | HA Pair   |                  |
+|    +-----+-----+  +-----+-----+  +-----+----+  +-----+-----+                  |
 |          |              |              |             |                        |
-|    +-----v-----+  +-----v-----+  +-----v----+  +-----v-----+                 |
-|    | WALLIX    |  | WALLIX    |  | WALLIX   |  | WALLIX    |                 |
-|    |   RDS     |  |   RDS     |  |   RDS    |  |   RDS     |                 |
-|    +-----------+  +-----------+  +----------+  +-----------+                 |
+|    +-----v-----+  +-----v-----+  +-----v----+  +-----v-----+                  |
+|    | WALLIX    |  | WALLIX    |  | WALLIX   |  | WALLIX    |                  |
+|    |   RDS     |  |   RDS     |  |   RDS    |  |   RDS     |                  |
+|    +-----------+  +-----------+  +----------+  +-----------+                  |
 |                                                                               |
-|  All sites synchronized with cross-site replication (443/tcp, 3306/tcp)      |
+|  All sites synchronized with cross-site replication (443/tcp, 3306/tcp)       |
 |                                                                               |
 +===============================================================================+
 ```
@@ -79,31 +79,31 @@
 |  INTERNET/WAN                                                                 |
 |       |                                                                       |
 |  +----v----------------------+                                                |
-|  |    FORTIGATE FIREWALL     |  SSL VPN: 443/tcp                             |
-|  |   (Perimeter Defense)     |  Admin: 10443/tcp                             |
-|  |      10.10.1.1            |  RADIUS Proxy to FortiAuth                    |
+|  |    FORTIGATE FIREWALL     |  SSL VPN: 443/tcp                              |
+|  |   (Perimeter Defense)     |  Admin: 10443/tcp                              |
+|  |      10.10.1.1            |  RADIUS Proxy to FortiAuth                     |
 |  +-----------+---------------+                                                |
 |              |                                                                |
-|  +-----------v---------------+      +--------------------+                   |
-|  |    HAProxy-1 (Primary)    |<---->|    HAProxy-2       |                   |
-|  |      10.10.1.5            | VRRP |      10.10.1.6     |                   |
-|  |  VIP: 10.10.1.100         |112ip |                    |                   |
-|  +-----------+---------------+      +--------------------+                   |
+|  +-----------v---------------+      +--------------------+                    |
+|  |    HAProxy-1 (Primary)    |<---->|    HAProxy-2       |                    |
+|  |      10.10.1.5            | VRRP |      10.10.1.6     |                    |
+|  |  VIP: 10.10.1.100         |112ip |                    |                    |
+|  +-----------+---------------+      +--------------------+                    |
 |              |                                                                |
 |              | HTTPS:443  SSH:22  RDP:3389                                    |
 |              |                                                                |
-|  +-----------v---------------+      +--------------------+                   |
-|  |  WALLIX Bastion-1         |<---->|  WALLIX Bastion-2  |                   |
-|  |      10.10.1.11           |      |      10.10.1.12    |                   |
-|  |                           |      |                    |                   |
-|  |  MariaDB Replication: 3306/tcp (bi-directional)      |                   |
-|  |  Corosync HA: 5404-5406/udp                           |                   |
-|  |  PCSD: 2224/tcp, 3121/tcp                             |                   |
-|  +-----------+---------------+      +--------------------+                   |
+|  +-----------v---------------+      +--------------------+                    |
+|  |  WALLIX Bastion-1         |<---->|  WALLIX Bastion-2  |                    |
+|  |      10.10.1.11           |      |      10.10.1.12    |                    |
+|  |                           |      |                    |                    |
+|  |  MariaDB Replication: 3306/tcp (bi-directional)       |                    |
+|  |  Corosync HA: 5404-5406/udp                           |                    |
+|  |  PCSD: 2224/tcp, 3121/tcp                             |                    | 
+|  +-----------+---------------+      +--------------------+                    |
 |              |                           |                                    |
 |              +------------+--------------+                                    |
 |                           |                                                   |
-|                  +--------v---------+                                         |
+|                  +--------v-----------+                                       |
 |                  | FortiAuthenticator |                                       |
 |                  |    10.10.0.60      |                                       |
 |                  | RADIUS: 1812/1813  |                                       |
@@ -113,23 +113,23 @@
 |                           |                                                   |
 |                  +--------v---------+                                         |
 |                  |  Active Directory|                                         |
-|                  |    10.10.0.10     |                                        |
+|                  |    10.10.0.10    |                                         |
 |                  +------------------+                                         |
 |                                                                               |
-|  +-----------+---------------+      +--------------------+                   |
-|  |    WALLIX RDS             |      | Target Systems     |                   |
-|  |      10.10.1.30           |      |                    |                   |
-|  | (Windows Session Manager) |      | Windows 2022: RDP  |                   |
-|  +-----------+---------------+      | RHEL 9/10: SSH     |                   |
-|              |                      +--------------------+                   |
+|  +-----------+---------------+      +--------------------+                    |
+|  |    WALLIX RDS             |      | Target Systems     |                    |
+|  |      10.10.1.30           |      |                    |                    |
+|  | (Windows Session Manager) |      | Windows 2022: RDP  |                    |
+|  +-----------+---------------+      | RHEL 9/10: SSH     |                    |
+|              |                      +--------------------+                    |
 |              |                           |                                    |
 |              +------------+--------------+                                    |
 |                           |                                                   |
 |                  +--------v---------+                                         |
 |                  |  Target Servers  |                                         |
 |                  |                  |                                         |
-|                  | Windows: 3389/tcp (RDP), 5985-5986/tcp (WinRM)           |
-|                  | RHEL: 22/tcp (SSH)                                        |
+|                  | Windows: 3389/tcp (RDP), 5985-5986/tcp (WinRM)             |
+|                  | RHEL: 22/tcp (SSH)                                         |
 |                  +------------------+                                         |
 |                                                                               |
 +===============================================================================+
@@ -189,16 +189,16 @@
 
 ```
 +===============================================================================+
-|  USER ACCESS PORTS (Inbound to WALLIX Bastion)                               |
+|  USER ACCESS PORTS (Inbound to WALLIX Bastion)                                |
 +===============================================================================+
 |                                                                               |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  22      TCP        SSH Proxy        Inbound      SSH session access         |
-|  80      TCP        HTTP             Inbound      Redirect to HTTPS          |
-|  443     TCP        HTTPS            Inbound      Web UI, REST API, sync     |
-|  3389    TCP        RDP Proxy        Inbound      RDP session access         |
-|  5900    TCP        VNC Proxy        Inbound      VNC session access (opt)   |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  22      TCP        SSH Proxy        Inbound      SSH session access          |
+|  80      TCP        HTTP             Inbound      Redirect to HTTPS           |
+|  443     TCP        HTTPS            Inbound      Web UI, REST API, sync      |
+|  3389    TCP        RDP Proxy        Inbound      RDP session access          |
+|  5900    TCP        VNC Proxy        Inbound      VNC session access (opt)    |
 |                                                                               |
 +===============================================================================+
 ```
@@ -207,18 +207,18 @@
 
 ```
 +===============================================================================+
-|  WALLIX ACCESS MANAGER PORTS (Inbound to WALLIX Bastion)                     |
+|  WALLIX ACCESS MANAGER PORTS (Inbound to WALLIX Bastion)                      |
 +===============================================================================+
 |                                                                               |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  443     TCP        HTTPS            Inbound      Access Manager API/UI      |
-|  22      TCP        SSH              Inbound      Access Manager connections |
-|  3389    TCP        RDP              Inbound      Access Manager RDP proxy   |
-|  5900    TCP        VNC              Inbound      Access Manager VNC proxy   |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  443     TCP        HTTPS            Inbound      Access Manager API/UI       |
+|  22      TCP        SSH              Inbound      Access Manager connections  |
+|  3389    TCP        RDP              Inbound      Access Manager RDP proxy    |
+|  5900    TCP        VNC              Inbound      Access Manager VNC proxy    |
 |                                                                               |
-|  Note: WALLIX Access Manager provides web-based access to WALLIX Bastion     |
-|  These ports must be accessible from Access Manager servers                  |
+|  Note: WALLIX Access Manager provides web-based access to WALLIX Bastion      |
+|  These ports must be accessible from Access Manager servers                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -227,28 +227,28 @@
 
 ```
 +===============================================================================+
-|  TARGET ACCESS PORTS (Outbound from WALLIX to Target Systems)                |
+|  TARGET ACCESS PORTS (Outbound from WALLIX to Target Systems)                 |
 +===============================================================================+
 |                                                                               |
 |  WINDOWS SERVER 2022 TARGETS                                                  |
 |  ===========================                                                  |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  3389    TCP        RDP              Outbound     Remote Desktop sessions    |
-|  5985    TCP        WinRM HTTP       Outbound     Password rotation          |
-|  5986    TCP        WinRM HTTPS      Outbound     Password rotation (SSL)    |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  3389    TCP        RDP              Outbound     Remote Desktop sessions     |
+|  5985    TCP        WinRM HTTP       Outbound     Password rotation           |
+|  5986    TCP        WinRM HTTPS      Outbound     Password rotation (SSL)     |
 |                                                                               |
 |  RED HAT (RHEL 9/10) TARGETS                                                  |
 |  ============================                                                 |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  22      TCP        SSH              Outbound     SSH sessions, mgmt         |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  22      TCP        SSH              Outbound     SSH sessions, mgmt          |
 |                                                                               |
 |  LEGACY PROTOCOLS (Discouraged)                                               |
 |  ===============================                                              |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  23      TCP        Telnet           Outbound     Legacy (not recommended)   |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  23      TCP        Telnet           Outbound     Legacy (not recommended)    |
 |                                                                               |
 +===============================================================================+
 ```
@@ -262,18 +262,18 @@
 |                                                                               |
 |  FORTIAUTHENTICATOR PRIMARY SERVER                                            |
 |  ==================================                                           |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  1812    UDP        RADIUS Auth      Outbound     WALLIX → FortiAuth Auth    |
-|  1813    UDP        RADIUS Acct      Outbound     WALLIX → FortiAuth Acct    |
-|  8443    TCP        FortiAuth Admin  Inbound      Admin UI access            |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  1812    UDP        RADIUS Auth      Outbound     WALLIX → FortiAuth Auth     |
+|  1813    UDP        RADIUS Acct      Outbound     WALLIX → FortiAuth Acct     |
+|  8443    TCP        FortiAuth Admin  Inbound      Admin UI access             |
 |                                                                               |
 |  FORTIAUTHENTICATOR TO ACTIVE DIRECTORY                                       |
 |  =======================================                                      |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  389     TCP        LDAP             Outbound     FortiAuth → AD user sync   |
-|  636     TCP        LDAPS            Outbound     FortiAuth → AD (SSL)       |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  389     TCP        LDAP             Outbound     FortiAuth → AD user sync    |
+|  636     TCP        LDAPS            Outbound     FortiAuth → AD (SSL)        |
 |                                                                               |
 |  Note: FortiAuthenticator serves as central MFA provider for all sites        |
 |                                                                               |
@@ -289,17 +289,17 @@
 |                                                                               |
 |  FORTIGATE EXTERNAL ACCESS                                                    |
 |  =========================                                                    |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  443     TCP        SSL VPN          Inbound      SSL VPN endpoint           |
-|  10443   TCP        Admin UI         Inbound      Fortigate management       |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  443     TCP        SSL VPN          Inbound      SSL VPN endpoint            |
+|  10443   TCP        Admin UI         Inbound      Fortigate management        |
 |                                                                               |
 |  FORTIGATE RADIUS PROXY                                                       |
 |  =======================                                                      |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  1812    UDP        RADIUS Auth      Outbound     Fortigate → FortiAuth      |
-|  1813    UDP        RADIUS Acct      Outbound     Fortigate → FortiAuth      |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  1812    UDP        RADIUS Auth      Outbound     Fortigate → FortiAuth       |
+|  1813    UDP        RADIUS Acct      Outbound     Fortigate → FortiAuth       |
 |                                                                               |
 +===============================================================================+
 ```
@@ -308,28 +308,28 @@
 
 ```
 +===============================================================================+
-|  HA CLUSTER PORTS (WALLIX Node-to-Node Communication)                        |
+|  HA CLUSTER PORTS (WALLIX Node-to-Node Communication)                         |
 +===============================================================================+
 |                                                                               |
 |  PACEMAKER/COROSYNC CLUSTER                                                   |
 |  ===========================                                                  |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  2224    TCP        PCSD             Bidirect     Pacemaker web UI/API       |
-|  3121    TCP        Pacemaker        Bidirect     Pacemaker remote           |
-|  5403    TCP        Corosync QNet    Bidirect     Quorum device              |
-|  5404    UDP        Corosync         Bidirect     Cluster multicast          |
-|  5405    UDP        Corosync         Bidirect     Cluster unicast            |
-|  5406    UDP        Corosync         Bidirect     Cluster communication      |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  2224    TCP        PCSD             Bidirect     Pacemaker web UI/API        |
+|  3121    TCP        Pacemaker        Bidirect     Pacemaker remote            |
+|  5403    TCP        Corosync QNet    Bidirect     Quorum device               |
+|  5404    UDP        Corosync         Bidirect     Cluster multicast           |
+|  5405    UDP        Corosync         Bidirect     Cluster unicast             |
+|  5406    UDP        Corosync         Bidirect     Cluster communication       |
 |                                                                               |
 |  DATABASE REPLICATION                                                         |
 |  =====================                                                        |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  3306    TCP        MariaDB          Bidirect     Streaming replication      |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  3306    TCP        MariaDB          Bidirect     Streaming replication       |
 |                                                                               |
 |  Note: These ports must ONLY be accessible between cluster nodes              |
-|  Isolate on dedicated VLAN for security                                      |
+|  Isolate on dedicated VLAN for security                                       |
 |                                                                               |
 +===============================================================================+
 ```
@@ -343,31 +343,31 @@
 |                                                                               |
 |  FRONTEND PORTS (User-Facing)                                                 |
 |  =============================                                                |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  443     TCP        HTTPS            Inbound      Web UI, API (LB VIP)       |
-|  22      TCP        SSH              Inbound      SSH Proxy (LB VIP)         |
-|  3389    TCP        RDP              Inbound      RDP Proxy (LB VIP)         |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  443     TCP        HTTPS            Inbound      Web UI, API (LB VIP)        |
+|  22      TCP        SSH              Inbound      SSH Proxy (LB VIP)          |
+|  3389    TCP        RDP              Inbound      RDP Proxy (LB VIP)          |
 |                                                                               |
 |  BACKEND HEALTH CHECKS                                                        |
 |  ======================                                                       |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  443     TCP        HTTPS            Outbound     Health check to WALLIX     |
-|  22      TCP        SSH              Outbound     SSH connectivity check     |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  443     TCP        HTTPS            Outbound     Health check to WALLIX      |
+|  22      TCP        SSH              Outbound     SSH connectivity check      |
 |                                                                               |
 |  HAPROXY HA COMMUNICATION                                                     |
 |  =========================                                                    |
-|  Protocol  Service          Direction    Description                         |
-|  --------  -------          ---------    -----------                         |
-|  112/IP    VRRP             Bidirect     Keepalived heartbeat                |
-|                                           (IP protocol 112, not TCP/UDP)     |
+|  Protocol  Service          Direction    Description                          |
+|  --------  -------          ---------    -----------                          |
+|  112/IP    VRRP             Bidirect     Keepalived heartbeat                 |
+|                                           (IP protocol 112, not TCP/UDP)      |
 |                                                                               |
 |  HAPROXY STATS (Optional)                                                     |
 |  =========================                                                    |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  8404    TCP        Stats UI         Inbound      HAProxy statistics         |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  8404    TCP        Stats UI         Inbound      HAProxy statistics          |
 |                                                                               |
 +===============================================================================+
 ```
@@ -376,23 +376,23 @@
 
 ```
 +===============================================================================+
-|  AUTHENTICATION PORTS (WALLIX to Active Directory/LDAP)                      |
+|  AUTHENTICATION PORTS (WALLIX to Active Directory/LDAP)                       |
 +===============================================================================+
 |                                                                               |
 |  LDAP/ACTIVE DIRECTORY                                                        |
 |  ======================                                                       |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  389     TCP        LDAP             Outbound     WALLIX → AD (plaintext)    |
-|  636     TCP        LDAPS            Outbound     WALLIX → AD (SSL)          |
-|  3268    TCP        Global Catalog   Outbound     Multi-domain forests       |
-|  3269    TCP        GC SSL           Outbound     GC with SSL                |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  389     TCP        LDAP             Outbound     WALLIX → AD (plaintext)     |
+|  636     TCP        LDAPS            Outbound     WALLIX → AD (SSL)           |
+|  3268    TCP        Global Catalog   Outbound     Multi-domain forests        |
+|  3269    TCP        GC SSL           Outbound     GC with SSL                 |
 |                                                                               |
 |  SMB (For Domain Join, Optional)                                              |
 |  ================================                                             |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  445     TCP        SMB              Outbound     Domain join operations     |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  445     TCP        SMB              Outbound     Domain join operations      |
 |                                                                               |
 +===============================================================================+
 ```
@@ -406,48 +406,48 @@
 |                                                                               |
 |  TIME SYNCHRONIZATION                                                         |
 |  =====================                                                        |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  123     UDP        NTP              Outbound     Time synchronization       |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  123     UDP        NTP              Outbound     Time synchronization        |
 |                                                                               |
 |  LOGGING & SIEM                                                               |
 |  ===============                                                              |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  514     UDP        Syslog           Outbound     Log forwarding             |
-|  6514    TCP        Syslog TLS       Outbound     Secure log forwarding      |
-|  1514    TCP        Syslog (Custom)  Outbound     Alternative syslog port    |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  514     UDP        Syslog           Outbound     Log forwarding              |
+|  6514    TCP        Syslog TLS       Outbound     Secure log forwarding       |
+|  1514    TCP        Syslog (Custom)  Outbound     Alternative syslog port     |
 |                                                                               |
 |  EMAIL NOTIFICATIONS                                                          |
 |  ====================                                                         |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  25      TCP        SMTP             Outbound     Email notifications        |
-|  587     TCP        SMTP Submission  Outbound     Email with STARTTLS        |
-|  465     TCP        SMTPS            Outbound     Email with SSL (legacy)    |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  25      TCP        SMTP             Outbound     Email notifications         |
+|  587     TCP        SMTP Submission  Outbound     Email with STARTTLS         |
+|  465     TCP        SMTPS            Outbound     Email with SSL (legacy)     |
 |                                                                               |
 |  SNMP MONITORING                                                              |
 |  ================                                                             |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  161     UDP        SNMP             Inbound      SNMP queries (NMS → WALLIX)|
-|  162     UDP        SNMP Trap        Outbound     SNMP traps (WALLIX → NMS)  |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  161     UDP        SNMP             Inbound      SNMP queries (NMS → WALLIX) |
+|  162     UDP        SNMP Trap        Outbound     SNMP traps (WALLIX → NMS)   |
 |                                                                               |
 |  SSH ADMINISTRATION                                                           |
 |  ===================                                                          |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  22      TCP        SSH              Inbound      Admin SSH to WALLIX OS     |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  22      TCP        SSH              Inbound      Admin SSH to WALLIX OS      |
 |                                                    (Different from proxy!)    |
 |                                                                               |
 |  PROMETHEUS/GRAFANA (Optional)                                                |
 |  ==============================                                               |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  9100    TCP        Node Exporter    Inbound      Prometheus → WALLIX        |
-|  9104    TCP        MariaDB Exporter Inbound      DB metrics (optional)      |
-|  9090    TCP        Prometheus       Inbound      Prometheus server UI       |
-|  3000    TCP        Grafana          Inbound      Grafana dashboard          |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  9100    TCP        Node Exporter    Inbound      Prometheus → WALLIX         |
+|  9104    TCP        MariaDB Exporter Inbound      DB metrics (optional)       |
+|  9090    TCP        Prometheus       Inbound      Prometheus server UI        |
+|  3000    TCP        Grafana          Inbound      Grafana dashboard           |
 |                                                                               |
 +===============================================================================+
 ```
@@ -461,17 +461,17 @@
 |                                                                               |
 |  CONFIGURATION SYNC                                                           |
 |  ===================                                                          |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  443     TCP        HTTPS            Bidirect     Config sync (Site ↔ Site)  |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  443     TCP        HTTPS            Bidirect     Config sync (Site ↔ Site)   |
 |                                                                               |
 |  DATABASE REPLICATION (Multi-Site)                                            |
 |  ==================================                                           |
-|  Port    Protocol   Service          Direction    Description                |
-|  ----    --------   -------          ---------    -----------                |
-|  3306    TCP        MariaDB          Bidirect     Cross-site DB replication  |
+|  Port    Protocol   Service          Direction    Description                 |
+|  ----    --------   -------          ---------    -----------                 |
+|  3306    TCP        MariaDB          Bidirect     Cross-site DB replication   |
 |                                                                               |
-|  Note: Cross-site replication latency should be < 100ms for optimal sync     |
+|  Note: Cross-site replication latency should be < 100ms for optimal sync      |
 |                                                                               |
 +===============================================================================+
 ```
