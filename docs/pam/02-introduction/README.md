@@ -82,21 +82,21 @@ The **flagship PAM platform** providing comprehensive privileged access manageme
 
 ```
 +===============================================================================+
-|                            WALLIX Bastion                                      |
+|                            WALLIX Bastion                                     |
 |                  (Built on WALLIX Bastion Technology)                         |
 +===============================================================================+
 |                                                                               |
 |  +----------------------------------+  +----------------------------------+   |
-|  | SECURE REMOTE ACCESS            |  | JUST-IN-TIME ACCESS               |   |
+|  | SECURE REMOTE ACCESS             |  | JUST-IN-TIME ACCESS              |   |
 |  |                                  |  |                                  |   |
-|  | * VPN-less access               |  | * Approval workflows              |   |
-|  | * Vendor access management      |  | * Time-limited privileges         |   |
-|  | * Browser-based sessions        |  | * On-demand access                |   |
+|  | * VPN-less access                |  | * Approval workflows             |   |
+|  | * Vendor access management       |  | * Time-limited privileges        |   |
+|  | * Browser-based sessions         |  | * On-demand access               |   |
 |  +----------------------------------+  +----------------------------------+   |
 |                                                                               |
 |  +----------------------------------+  +----------------------------------+   |
 |  | SESSION RECORDING               |  | PASSWORD MANAGEMENT               |   |
-|  |                                  |  |                                  |   |
+|  |                                 |  |                                   |   |
 |  | * Full audit trail              |  | * Credential vault                |   |
 |  | * Compliance evidence           |  | * Automatic rotation              |   |
 |  | * Forensic analysis             |  | * Least privilege                 |   |

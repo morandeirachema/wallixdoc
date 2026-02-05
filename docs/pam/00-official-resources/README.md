@@ -54,12 +54,12 @@ This document provides curated links to official WALLIX documentation, tools, an
 |  IMPORTANT: API Version vs Endpoint URL                                       |
 +===============================================================================+
 |                                                                               |
-|  The API specification version and endpoint URLs use different numbering:    |
+|  The API specification version and endpoint URLs use different numbering:     |
 |                                                                               |
 |  API Spec Version:  v3.12 (current features in WALLIX 12.x)                   |
 |  Endpoint URLs:     /api/v2/  (for backward compatibility)                    |
 |                                                                               |
-|  Example: Current API is v3.12, but you still use https://bastion/api/v2/    |
+|  Example: Current API is v3.12, but you still use https://bastion/api/v2/     |
 |                                                                               |
 +===============================================================================+
 ```
