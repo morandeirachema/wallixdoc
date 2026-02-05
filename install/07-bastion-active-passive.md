@@ -59,15 +59,15 @@
 |  |  WALLIX BASTION NODE 1         |                                           |
 |  |  (PRIMARY - ACTIVE)            |                                           |
 |  |                                |                                           |
-|  |  IP: 10.10.X.11                |          +--------------------------------+|
-|  |  VIP: 10.10.X.10 (current)     |          |  WALLIX BASTION NODE 2         ||
-|  |  IPMI: 10.10.X.211             |          |  (STANDBY - PASSIVE)           ||
-|  |  Load: 100% traffic            |          |                                ||
-|  |                                |          |  IP: 10.10.X.12                ||
-|  |  +---------------------------+ |          |  VIP: - (not assigned)         ||
-|  |  | WALLIX Bastion            | |          |  IPMI: 10.10.X.212             ||
-|  |  | Services (Running)        | |          |  Load: 0% (idle)               ||
-|  |  |                           | |          |                                ||
+|  |  IP: 10.10.X.11                |          +-------------------------------+|
+|  |  VIP: 10.10.X.10 (current)     |          |  WALLIX BASTION NODE 2        ||
+|  |  IPMI: 10.10.X.211             |          |  (STANDBY - PASSIVE)          ||
+|  |  Load: 100% traffic            |          |                               ||
+|  |                                |          |  IP: 10.10.X.12               ||
+|  |  +---------------------------+ |          |  VIP: - (not assigned)        ||
+|  |  | WALLIX Bastion            | |          |  IPMI: 10.10.X.212            ||
+|  |  | Services (Running)        | |          |  Load: 0% (idle)              ||
+|  |  |                           | |          |                               ||
 |  |  | - Session Manager         | |          |  +---------------------------+||
 |  |  | - Password Manager        | |          |  | WALLIX Bastion            |||
 |  |  | - Web UI                  | |          |  | Services (Stopped)        |||
@@ -77,7 +77,7 @@
 |  |  +---------------------------+ |          |  | - Web UI (OFF)            |||
 |  |  | MariaDB 10.11+            | |          |  | - API Server (OFF)        |||
 |  |  | (PRIMARY)                 | |          |  +---------------------------+||
-|  |  |                           | |          |                                ||
+|  |  |                           | |          |                               ||
 |  |  | Async Replication --------+-+--------->|  +---------------------------+||
 |  |  | Binary Log: ON            | |          |  | MariaDB 10.11+            |||
 |  |  | Server ID: 1              | |          |  | (REPLICA - Read-only)     |||
@@ -85,41 +85,41 @@
 |  |                                |          |  | Relay Log: ON             |||
 |  |  +---------------------------+ |          |  | Server ID: 2              |||
 |  |  | Pacemaker Resources       | |          |  +---------------------------+||
-|  |  | - VIP (10.10.X.10)        | |          |                                ||
+|  |  | - VIP (10.10.X.10)        | |          |                               ||
 |  |  | - WALLIX Services (ON)    | |          |  +---------------------------+||
 |  |  +---------------------------+ |          |  | Pacemaker Resources       |||
 |  |                                |          |  | - VIP (not assigned)      |||
 |  +--------------------------------+          |  | - WALLIX Services (OFF)   |||
 |                    |                         |  +---------------------------+||
-|                    |                         |                                ||
-|                    |                         +--------------------------------+|
-|                    |                                         |                 |
-|                    +----------------+------------------------+                 |
-|                                     |                                          |
-|                         +-----------+--------------+                           |
-|                         |  Shared Storage (NAS)    |                           |
-|                         |  Session Recordings      |                           |
-|                         |  /var/wab/recorded       |                           |
-|                         |  NFS/iSCSI Mount         |                           |
-|                         +--------------------------+                           |
-|                                                                                |
-|  HEARTBEAT MONITORING (Dedicated Network - VLAN X+100)                         |
-|  ====================                                                          |
+|                    |                         |                               ||
+|                    |                         +-------------------------------+|
+|                    |                                         |                |
+|                    +----------------+------------------------+                |
+|                                     |                                         |
+|                         +-----------+--------------+                          |
+|                         |  Shared Storage (NAS)    |                          |
+|                         |  Session Recordings      |                          |
+|                         |  /var/wab/recorded       |                          |
+|                         |  NFS/iSCSI Mount         |                          |
+|                         +--------------------------+                          |
+|                                                                               |
+|  HEARTBEAT MONITORING (Dedicated Network - VLAN X+100)                        |
+|  ====================                                                         |
 |  Node 1 (192.168.100.11) <--- Corosync Heartbeat (every 1s) ---> Node 2       |
-|                                      UDP 5405                                  |
-|                                                                                |
-|  FAILOVER PROCESS (Automatic)                                                  |
-|  ============================                                                  |
-|    0s --------> Node 1 fails (hardware/network/service)                        |
-|    3s --------> Node 2 detects 3 consecutive missed heartbeats                 |
-|    8s --------> STONITH fence primary via IPMI (optional but recommended)      |
-|    15s -------> MariaDB replica promoted to primary (READ_ONLY=OFF)            |
-|    25s -------> WALLIX Bastion services started on Node 2                      |
-|    35s -------> VIP migrated to Node 2, gratuitous ARP sent                    |
-|    45s -------> Node 2 ready to accept new sessions                            |
-|                                                                                |
-|  TOTAL FAILOVER TIME: 30-60 seconds                                            |
-|                                                                                |
+|                                      UDP 5405                                 |
+|                                                                               |
+|  FAILOVER PROCESS (Automatic)                                                 |
+|  ============================                                                 |
+|    0s --------> Node 1 fails (hardware/network/service)                       |
+|    3s --------> Node 2 detects 3 consecutive missed heartbeats                |
+|    8s --------> STONITH fence primary via IPMI (optional but recommended)     |
+|    15s -------> MariaDB replica promoted to primary (READ_ONLY=OFF)           |
+|    25s -------> WALLIX Bastion services started on Node 2                     |
+|    35s -------> VIP migrated to Node 2, gratuitous ARP sent                   |
+|    45s -------> Node 2 ready to accept new sessions                           |
+|                                                                               |
+|  TOTAL FAILOVER TIME: 30-60 seconds                                           |
+|                                                                               |
 +===============================================================================+
 ```
 
