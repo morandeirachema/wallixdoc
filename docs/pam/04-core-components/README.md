@@ -369,13 +369,13 @@ Recording File Structure
 |   +----------------------------------------------------------------------+    |
 |   |                     ACTIVE SESSIONS VIEW                             |    |
 |   |                                                                      |    |
-|   |  Session ID    User        Target           Protocol  Duration      |    |
-|   |  ----------    ----        ------           --------  --------      |    |
-|   |  SES-001       jsmith      srv-prod-01      SSH       00:45:12      |    |
-|   |  SES-002       admin       dc01.corp        RDP       01:23:45      |    |
-|   |  SES-003       dbadmin     oracle-prd       SQL*Plus  00:12:30      |    |
+|   |  Session ID    User        Target           Protocol  Duration       |    |
+|   |  ----------    ----        ------           --------  --------       |    |
+|   |  SES-001       jsmith      srv-prod-01      SSH       00:45:12       |    |
+|   |  SES-002       admin       dc01.corp        RDP       01:23:45       |    |
+|   |  SES-003       dbadmin     oracle-prd       SQL*Plus  00:12:30       |    |
 |   |                                                                      |    |
-|   |  [View] [Share] [Message] [Kill]                                    |    |
+|   |  [View] [Share] [Message] [Kill]                                     |    |
 |   +----------------------------------------------------------------------+    |
 |                                                                               |
 |   Monitoring Actions:                                                         |
@@ -411,9 +411,9 @@ Recording File Structure
      |  2. Approver joins session           |
      |<-------------------------------------|
      |                                      |
-     |  ================================   |
+     |  ================================    |
      |         SHARED SESSION               |
-     |  ================================   |
+     |  ================================    |
      |                                      |
      |  * Both users see same screen        |
      |  * Both can interact (if allowed)    |
