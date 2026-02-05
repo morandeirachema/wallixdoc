@@ -1,1734 +1,2205 @@
-# WALLIX Bastion 12.x - Complete Installation HOWTO
+# WALLIX Bastion - Master Installation Guide
+
+> Step-by-step deployment instructions for 5-site enterprise PAM infrastructure with Access Manager integration
+
+---
 
 ## Table of Contents
 
-1. [Introduction](#introduction)
-2. [Project Planning](#project-planning)
-3. [Phase 1: Infrastructure Preparation](#phase-1-infrastructure-preparation)
-4. [Phase 2: Site 1 Primary Installation](#phase-2-site-1-primary-installation)
-5. [Phase 3: Site 2 Installation](#phase-3-site-2-installation)
-6. [Phase 4: Sites 3 and 4 Installation](#phase-4-sites-3-and-4-installation)
-7. [Phase 5: Multi-Site Synchronization](#phase-5-multi-site-synchronization)
-8. [Phase 6: Fortigate MFA Integration](#phase-6-fortigate-mfa-integration)
-9. [Phase 7: Security Hardening](#phase-7-security-hardening)
-10. [Phase 8: Validation and Go-Live](#phase-8-validation-and-go-live)
-11. [Post-Installation Operations](#post-installation-operations)
-12. [Troubleshooting Reference](#troubleshooting-reference)
+1. [Overview](#overview)
+2. [Deployment Timeline](#deployment-timeline)
+3. [Phase 1: Planning and Prerequisites (Week 1)](#phase-1-planning-and-prerequisites-week-1)
+4. [Phase 2: Access Manager Integration (Week 2)](#phase-2-access-manager-integration-week-2)
+5. [Phase 3: Site 1 Deployment (Weeks 3-4)](#phase-3-site-1-deployment-weeks-3-4)
+6. [Phase 4-7: Sites 2-5 Deployment (Weeks 5-8)](#phase-4-7-sites-2-5-deployment-weeks-5-8)
+7. [Phase 8: Final Integration (Week 9)](#phase-8-final-integration-week-9)
+8. [Phase 9: Go-Live (Week 10)](#phase-9-go-live-week-10)
+9. [Quick Reference Commands](#quick-reference-commands)
+10. [Troubleshooting Quick Links](#troubleshooting-quick-links)
 
 ---
 
-## Introduction
+## Overview
 
-### Purpose of This Guide
+This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-site WALLIX Bastion infrastructure integrated with 2 WALLIX Access Managers in high availability configuration.
 
-This HOWTO provides a complete, step-by-step walkthrough for deploying WALLIX Bastion 12.x in a production enterprise environment with four synchronized sites in a single CPD. Unlike the reference documentation, this guide follows a strict chronological order and includes every command, configuration, and verification step.
-
-### Who Should Use This Guide
-
-- **Infrastructure Engineers** - Server provisioning and networking
-- **Security Engineers** - PAM deployment and hardening
-- **Network Engineers** - Fortigate and HAProxy integration
-- **System Administrators** - Day-to-day operations
-
-### Time Estimates
-
-| Phase | Duration | Resources Required |
-|-------|----------|-------------------|
-| Phase 1: Preparation | 5 days | Infrastructure team |
-| Phase 2: Site 1 | 5 days | 2 engineers |
-| Phase 3: Site 2 | 3 days | 2 engineers |
-| Phase 4: Sites 3 + 4 | 4 days | 2 engineers |
-| Phase 5: Multi-Site | 3 days | 1 engineer |
-| Phase 6: Fortigate MFA | 3 days | Network + Security teams |
-| Phase 7: Security | 3 days | Security team |
-| Phase 8: Validation | 4 days | All teams |
-| **Total** | **30 days** | |
-
-### Prerequisites Checklist
-
-Before starting, ensure you have:
+### Architecture Summary
 
 ```
-[ ] WALLIX Bastion 12.x license file(s)
-[ ] SSL certificates (or plan for Let's Encrypt)
-[ ] Network diagrams for all three sites
-[ ] Firewall change requests approved
-[ ] DNS records planned
-[ ] Shared storage provisioned (NFS/iSCSI)
-[ ] VM resources allocated
-[ ] VPN/MPLS connectivity between sites verified
-[ ] LDAP/AD service account credentials
-[ ] Emergency access procedures documented
++===============================================================================+
+|  DEPLOYMENT ARCHITECTURE                                                      |
++===============================================================================+
+|                                                                               |
+|  Access Manager Layer (HA):                                                   |
+|  +-------------------------+          +-------------------------+             |
+|  | Access Manager 1 (DC-A) |  <---->  | Access Manager 2 (DC-B) |             |
+|  | - SSO / MFA             |          | - SSO / MFA             |             |
+|  | - Session Brokering     |          | - Session Brokering     |             |
+|  | - License Pool (500)    |          | - License Pool (500)    |             |
+|  +------------+------------+          +------------+------------+             |
+|               |                                    |                          |
+|               +------------------------------------+                          |
+|                            MPLS Network                                       |
+|       +----------------+--------+--------+--------+----------------+          |
+|       |                |        |        |        |                |          |
+|  +----v----+      +----v----+  ...  +----v----+  +----v----+  +----v----+    |
+|  | Site 1  |      | Site 2  |       | Site 3  |  | Site 4  |  | Site 5  |    |
+|  | Paris   |      | Paris   |       | Paris   |  | Paris   |  | Paris   |    |
+|  | DC-P1   |      | DC-P2   |       | DC-P3   |  | DC-P4   |  | DC-P5   |    |
+|  +---------+      +---------+       +---------+  +---------+  +---------+    |
+|                                                                               |
+|  Each Site:                                                                   |
+|  - 2x HAProxy (Active-Passive)                                                |
+|  - 2x WALLIX Bastion (Active-Active OR Active-Passive)                       |
+|  - 1x WALLIX RDS (Jump host for OT RemoteApp)                                |
+|  - License Pool Share: 450 sessions across all 5 sites                       |
+|                                                                               |
++===============================================================================+
 ```
+
+### Key Deployment Facts
+
+| Aspect | Details |
+|--------|---------|
+| **Total Sites** | 5 (all in Paris datacenter buildings) |
+| **Access Managers** | 2 (HA, separate datacenters) |
+| **HA Models** | Active-Active OR Active-Passive (per site choice) |
+| **Network** | MPLS connectivity, no direct site-to-site Bastion communication |
+| **Total Duration** | 10 weeks (Site 1: 3-4 weeks, Sites 2-5: 1 week each) |
+| **Total Appliances** | 10 Bastion HW appliances, 10 HAProxy servers, 5 RDS servers |
+| **Licensed Capacity** | 950 concurrent sessions (500 AM + 450 Bastion shared) |
 
 ---
 
-## Project Planning
+## Deployment Timeline
 
-### Architecture Decision Record
+### Overview Table
 
-Before installation, document these decisions:
+| Phase | Duration | Components | Key Deliverables |
+|-------|----------|------------|------------------|
+| **Phase 1: Planning** | Week 1 | Prerequisites, network design | Network ready, licenses confirmed |
+| **Phase 2: Access Manager** | Week 2 | SSO, MFA, brokering | Integration tested, APIs documented |
+| **Phase 3: Site 1** | Week 3-4 | HAProxy, Bastion HA, RDS | Fully functional site, template created |
+| **Phase 4: Site 2** | Week 5 | Replicate Site 1 | Second site operational |
+| **Phase 5: Site 3** | Week 6 | Replicate Site 1 | Third site operational |
+| **Phase 6: Site 4** | Week 7 | Replicate Site 1 | Fourth site operational |
+| **Phase 7: Site 5** | Week 8 | Replicate Site 1 | All sites deployed |
+| **Phase 8: Integration** | Week 9 | License pooling, testing | Multi-site validated |
+| **Phase 9: Go-Live** | Week 10 | Production cutover | Production operational |
 
-```
-+===============================================================================+
-|                   ARCHITECTURE DECISION RECORD                               |
-+===============================================================================+
-
-  1. HIGH AVAILABILITY MODEL
-  ==========================
-
-  Decision: Active-Active (All 4 Sites in Single CPD)
-
-  Rationale:
-  - All Sites: High availability with zero-downtime maintenance
-  - Synchronized: Cross-site replication via HTTPS 443
-  - Fortigate MFA: Centralized FortiAuthenticator for all sites
-
-  --------------------------------------------------------------------------
-
-  2. DATABASE STRATEGY
-  ====================
-
-  Decision: MariaDB 15 with streaming replication
-
-  Configuration per site:
-  - Site A: Primary + Synchronous Standby (zero data loss)
-  - Site B: Primary + Asynchronous Standby (performance priority)
-  - Site C: Standalone with daily backups
-
-  --------------------------------------------------------------------------
-
-  3. STORAGE ARCHITECTURE
-  =======================
-
-  Decision: Shared NFS for Sites A/B, Local storage for Site C
-
-  Recording retention:
-  - Site A: 1 year (compliance requirement)
-  - Site B: 6 months
-  - Site C: 90 days (replicated to Site A weekly)
-
-  --------------------------------------------------------------------------
-
-  4. AUTHENTICATION STRATEGY
-  ==========================
-
-  Decision: LDAP primary + OIDC for SSO + Local fallback
-
-  Flow:
-  1. User attempts login
-  2. OIDC redirect (if configured)
-  3. LDAP authentication
-  4. MFA validation (TOTP)
-  5. Local cache update (for offline)
-
-  --------------------------------------------------------------------------
-
-  5. NETWORK SEGMENTATION
-  =======================
-
-  Decision: Enterprise zone model with Fortigate perimeter
-
-  Zones:
-  - Internet/WAN: External access via Fortigate SSL VPN
-  - Fortigate: Perimeter security with FortiAuthenticator MFA
-  - HAProxy: Load balancing layer
-  - WALLIX: PAM session management
-  - Targets: Windows Server 2022, RHEL 10, RHEL 9
-
-+===============================================================================+
-```
-
-### IP Address Planning
-
-Complete this table before starting:
+### Critical Path Dependencies
 
 ```
-+===============================================================================+
-|                   IP ADDRESS ASSIGNMENT SHEET                                |
-+===============================================================================+
-
-  SITE A - PRIMARY (10.100.0.0/16)
-  ================================
-
-  Management Network (10.100.1.0/24):
-  +------------------------------------------------------------------------+
-  | Hostname              | IP Address    | Purpose          | MAC Address |
-  +-----------------------+---------------+------------------+-------------|
-  | wallix-a1             | 10.100.1.10   | Primary node     |             |
-  | wallix-a2             | 10.100.1.11   | Secondary node   |             |
-  | wallix-vip            | 10.100.1.100  | Virtual IP       | N/A         |
-  | wallix-db-vip         | 10.100.1.101  | Database VIP     | N/A         |
-  +-----------------------+---------------+------------------+-------------|
-
-  HA Heartbeat Network (10.100.254.0/30):
-  +------------------------------------------------------------------------+
-  | Hostname              | IP Address    | Purpose          | Interface   |
-  +-----------------------+---------------+------------------+-------------|
-  | wallix-a1-hb          | 10.100.254.1  | Cluster heartbeat| eth1        |
-  | wallix-a2-hb          | 10.100.254.2  | Cluster heartbeat| eth1        |
-  +-----------------------+---------------+------------------+-------------|
-
-  OT DMZ Network (10.100.10.0/24):
-  +------------------------------------------------------------------------+
-  | Hostname              | IP Address    | Purpose          | Notes       |
-  +-----------------------+---------------+------------------+-------------|
-  | wallix-ot-a           | 10.100.10.5   | OT proxy interface|            |
-  +-----------------------+---------------+------------------+-------------|
-
-  Infrastructure Services:
-  +------------------------------------------------------------------------+
-  | Service               | IP Address    | Port             | Notes       |
-  +-----------------------+---------------+------------------+-------------|
-  | NFS Server            | 10.100.1.50   | 2049             | Recordings  |
-  | DNS Primary           | 10.100.1.2    | 53               |             |
-  | DNS Secondary         | 10.100.1.3    | 53               |             |
-  | NTP Server            | 10.100.1.4    | 123              |             |
-  | LDAP/AD               | 10.100.1.20   | 636              | LDAPS       |
-  | Syslog/SIEM           | 10.100.1.5    | 514              | TCP+TLS     |
-  | SMTP Relay            | 10.100.1.6    | 587              | STARTTLS    |
-  +-----------------------+---------------+------------------+-------------|
-
-  --------------------------------------------------------------------------
-
-  SITE B - SECONDARY (10.200.0.0/16)
-  ==================================
-
-  [Complete same table structure for Site B]
-
-  --------------------------------------------------------------------------
-
-  SITE C - REMOTE (10.50.0.0/16)
-  ==============================
-
-  [Complete same table structure for Site C]
-
-+===============================================================================+
+Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
+                                                      ↓
+                                           Weeks 5-8 (Sites 2-5 in parallel)
+                                                      ↓
+                                           Week 9 (Final Integration)
+                                                      ↓
+                                           Week 10 (Go-Live)
 ```
+
+**Key Constraint**: Site 1 must be fully operational and tested before replicating to Sites 2-5.
+
+**Parallelization Opportunity**: Sites 2-5 can be deployed in parallel if resources permit (reduces Weeks 5-8 to 1-2 weeks total instead of 4).
 
 ---
 
-## Phase 1: Infrastructure Preparation
+## Phase 1: Planning and Prerequisites (Week 1)
 
-### Day 1: Server Provisioning
+### Objectives
 
-#### Step 1.1: Create Virtual Machines
+- Validate all prerequisites are met
+- Design network topology and port matrix
+- Choose HA architecture model per site
+- Prepare installation environment
 
-**Site A - Primary Cluster:**
+### Step 1.1: Review Prerequisites
 
-```bash
-# Using vSphere/ESXi CLI (adjust for your hypervisor)
+**Action**: Read and complete checklist in [00-prerequisites.md](00-prerequisites.md)
 
-# Node 1
-govc vm.create -m 32768 -c 16 -g debian12_64Guest \
-    -net.adapter vmxnet3 -net "Management Network" \
-    -net.adapter vmxnet3 -net "HA Heartbeat" \
-    -disk 200GB -disk 1TB \
-    wallix-a1
-
-# Node 2
-govc vm.create -m 32768 -c 16 -g debian12_64Guest \
-    -net.adapter vmxnet3 -net "Management Network" \
-    -net.adapter vmxnet3 -net "HA Heartbeat" \
-    -disk 200GB -disk 1TB \
-    wallix-a2
-```
-
-**Site B - Secondary Cluster:**
+**Key Items to Verify**:
 
 ```bash
-# Node 1
-govc vm.create -m 16384 -c 8 -g debian12_64Guest \
-    -net.adapter vmxnet3 -net "Management Network" \
-    -net.adapter vmxnet3 -net "HA Heartbeat" \
-    -disk 200GB -disk 500GB \
-    wallix-b1
+# Hardware readiness
+- [ ] 10x WALLIX Bastion HW appliances received, racked, powered
+- [ ] 10x HAProxy servers (VMs or physical) provisioned
+- [ ] 5x Windows Server 2022 (RDS) ready
+- [ ] IPMI/iLO access configured for all appliances
 
-# Node 2
-govc vm.create -m 16384 -c 8 -g debian12_64Guest \
-    -net.adapter vmxnet3 -net "Management Network" \
-    -net.adapter vmxnet3 -net "HA Heartbeat" \
-    -disk 200GB -disk 500GB \
-    wallix-b2
-```
+# Network readiness
+- [ ] MPLS circuits installed (Access Manager ↔ all sites)
+- [ ] DNS records created (all components)
+- [ ] NTP servers configured and reachable
+- [ ] SSL/TLS certificates obtained (wildcard or per-host)
+- [ ] Firewall rules pre-approved
 
-**Site C - Standalone:**
-
-```bash
-govc vm.create -m 16384 -c 8 -g debian12_64Guest \
-    -net.adapter vmxnet3 -net "Management Network" \
-    -disk 200GB -disk 500GB \
-    wallix-c1
-```
-
-#### Step 1.2: Install Debian 12
-
-For each server, perform a minimal Debian 12 installation:
-
-```
-Installation choices:
-- Language: English
-- Location: [Your timezone region]
-- Keyboard: [Your layout]
-- Hostname: [As per IP plan]
-- Domain: site-[a|b|c].company.com
-- Root password: [Strong, document securely]
-- User: wadmin (WALLIX admin user)
-- Partitioning: Guided - use entire disk with LVM
-  - / : 50GB
-  - /var : 100GB (for logs)
-  - /var/wab : Remaining space (for recordings on Site C)
-  - swap: 8GB
-- Software selection:
-  [x] SSH server
-  [x] Standard system utilities
-  [ ] Desktop environment (DO NOT SELECT)
-```
-
-#### Step 1.3: Post-Installation Base Configuration
-
-Run on ALL servers:
-
-```bash
-#!/bin/bash
-# save as: /root/01-base-setup.sh
-
-set -e
-
-echo "=== WALLIX Base System Setup ==="
-
-# 1. Update system
-echo "[1/10] Updating system packages..."
-apt update && apt upgrade -y
-
-# 2. Install essential packages
-echo "[2/10] Installing essential packages..."
-apt install -y \
-    openssh-server \
-    curl \
-    wget \
-    gnupg \
-    lsb-release \
-    ca-certificates \
-    ntp \
-    ntpdate \
-    net-tools \
-    tcpdump \
-    rsync \
-    vim \
-    htop \
-    iotop \
-    sudo \
-    dnsutils \
-    telnet \
-    mtr-tiny \
-    lsof \
-    strace \
-    sysstat \
-    logrotate \
-    unzip \
-    apt-transport-https
-
-# 3. Configure timezone
-echo "[3/10] Configuring timezone..."
-timedatectl set-timezone Europe/Paris  # Adjust to your timezone
-
-# 4. Configure NTP
-echo "[4/10] Configuring NTP..."
-cat > /etc/ntp.conf << 'NTPCONF'
-# NTP Configuration for WALLIX
-driftfile /var/lib/ntp/ntp.drift
-statistics loopstats peerstats clockstats
-filegen loopstats file loopstats type day enable
-filegen peerstats file peerstats type day enable
-filegen clockstats file clockstats type day enable
-
-# Local NTP servers (adjust to your environment)
-server 10.100.1.4 iburst prefer
-server 10.200.1.4 iburst
-
-# Fallback to public NTP
-server 0.debian.pool.ntp.org iburst
-server 1.debian.pool.ntp.org iburst
-
-# Access control
-restrict -4 default kod notrap nomodify nopeer noquery limited
-restrict -6 default kod notrap nomodify nopeer noquery limited
-restrict 127.0.0.1
-restrict ::1
-NTPCONF
-
-systemctl restart ntp
-systemctl enable ntp
-
-# 5. Configure SSH hardening
-echo "[5/10] Hardening SSH..."
-cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
-
-cat > /etc/ssh/sshd_config << 'SSHCONF'
-# SSH Server Configuration - WALLIX Bastion Host
-
-# Network
-Port 22
-ListenAddress 0.0.0.0
-Protocol 2
-
-# Authentication
-PermitRootLogin prohibit-password
-PubkeyAuthentication yes
-PasswordAuthentication yes
-PermitEmptyPasswords no
-ChallengeResponseAuthentication no
-UsePAM yes
+# Licensing
+- [ ] Access Manager license pool confirmed (500 sessions)
+- [ ] Bastion license pool purchased (450 sessions)
+- [ ] License activation keys received
 
 # Security
-X11Forwarding no
-AllowTcpForwarding no
-AllowAgentForwarding no
-PermitTunnel no
-MaxAuthTries 3
-MaxSessions 10
-ClientAliveInterval 300
-ClientAliveCountMax 2
-LoginGraceTime 60
-
-# Logging
-SyslogFacility AUTH
-LogLevel VERBOSE
-
-# Allowed users (adjust as needed)
-AllowUsers wadmin root
-
-# Ciphers (WALLIX 12.x compatible)
-Ciphers aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
-MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512,hmac-sha2-256
-KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,diffie-hellman-group16-sha512
-SSHCONF
-
-systemctl restart sshd
-
-# 6. Configure sudo
-echo "[6/10] Configuring sudo..."
-usermod -aG sudo wadmin
-
-# 7. Configure sysctl for performance
-echo "[7/10] Configuring kernel parameters..."
-cat > /etc/sysctl.d/99-wallix.conf << 'SYSCTL'
-# Network performance
-net.core.somaxconn = 65535
-net.core.netdev_max_backlog = 65535
-net.ipv4.tcp_max_syn_backlog = 65535
-net.ipv4.ip_local_port_range = 1024 65535
-net.ipv4.tcp_tw_reuse = 1
-net.ipv4.tcp_fin_timeout = 15
-net.ipv4.tcp_keepalive_time = 300
-net.ipv4.tcp_keepalive_probes = 5
-net.ipv4.tcp_keepalive_intvl = 15
-
-# Memory
-vm.swappiness = 10
-vm.dirty_ratio = 60
-vm.dirty_background_ratio = 2
-
-# File handles
-fs.file-max = 2097152
-fs.nr_open = 2097152
-
-# Security
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
-net.ipv4.icmp_echo_ignore_broadcasts = 1
-net.ipv4.conf.all.accept_redirects = 0
-net.ipv4.conf.default.accept_redirects = 0
-net.ipv4.conf.all.send_redirects = 0
-net.ipv4.conf.default.send_redirects = 0
-net.ipv4.conf.all.accept_source_route = 0
-net.ipv4.conf.default.accept_source_route = 0
-SYSCTL
-
-sysctl -p /etc/sysctl.d/99-wallix.conf
-
-# 8. Configure limits
-echo "[8/10] Configuring system limits..."
-cat > /etc/security/limits.d/99-wallix.conf << 'LIMITS'
-# WALLIX service limits
-*               soft    nofile          65535
-*               hard    nofile          65535
-*               soft    nproc           65535
-*               hard    nproc           65535
-root            soft    nofile          65535
-root            hard    nofile          65535
-LIMITS
-
-# 9. Disable unnecessary services
-echo "[9/10] Disabling unnecessary services..."
-systemctl disable --now avahi-daemon 2>/dev/null || true
-systemctl disable --now cups 2>/dev/null || true
-systemctl disable --now bluetooth 2>/dev/null || true
-
-# 10. Final verification
-echo "[10/10] Verifying configuration..."
-echo ""
-echo "=== System Information ==="
-echo "Hostname: $(hostname -f)"
-echo "IP Address: $(hostname -I | awk '{print $1}')"
-echo "Debian Version: $(cat /etc/debian_version)"
-echo "Kernel: $(uname -r)"
-echo "NTP Status: $(systemctl is-active ntp)"
-echo "SSH Status: $(systemctl is-active sshd)"
-echo ""
-echo "=== Base setup complete ==="
+- [ ] AD/LDAP service accounts created
+- [ ] FortiAuthenticator RADIUS shared secret obtained
+- [ ] Backup storage configured (offsite)
+- [ ] Encryption keys generated
 ```
 
-### Day 2: Network Configuration
+**Deliverable**: Completed prerequisite checklist with sign-off.
 
-#### Step 1.4: Configure Network Interfaces
+---
 
-**Site A - Node 1 (wallix-a1):**
+### Step 1.2: Design Network Topology
 
-```bash
-# /etc/network/interfaces
+**Action**: Read and document network design in [01-network-design.md](01-network-design.md)
 
-# Loopback
-auto lo
-iface lo inet loopback
+**Key Decisions**:
 
-# Management interface
-auto eth0
-iface eth0 inet static
-    address 10.100.1.10
-    netmask 255.255.255.0
-    gateway 10.100.1.1
-    dns-nameservers 10.100.1.2 10.100.1.3
-    dns-search site-a.company.com company.com
+1. **IP Address Allocation**
 
-# HA Heartbeat interface (no gateway!)
-auto eth1
-iface eth1 inet static
-    address 10.100.254.1
-    netmask 255.255.255.252
-    # No gateway - direct link only
+   ```
+   Site 1 (DC-P1):
+   - HAProxy VIP:        10.1.1.10
+   - HAProxy-1:          10.1.1.11
+   - HAProxy-2:          10.1.1.12
+   - Bastion-1:          10.1.1.21
+   - Bastion-2:          10.1.1.22
+   - WALLIX RDS:         10.1.1.30
+
+   Site 2 (DC-P2):
+   - HAProxy VIP:        10.2.1.10
+   - HAProxy-1:          10.2.1.11
+   - HAProxy-2:          10.2.1.12
+   - Bastion-1:          10.2.1.21
+   - Bastion-2:          10.2.1.22
+   - WALLIX RDS:         10.2.1.30
+
+   (Pattern repeats for Sites 3-5)
+   ```
+
+2. **DNS Records**
+
+   ```bash
+   # Site 1 Example
+   bastion-site1.company.local      A    10.1.1.10  (HAProxy VIP)
+   bastion1-site1.company.local     A    10.1.1.21
+   bastion2-site1.company.local     A    10.1.1.22
+   rds-site1.company.local          A    10.1.1.30
+   ```
+
+3. **Firewall Rules**
+
+   **Reference**: [01-network-design.md](01-network-design.md) for complete port matrix.
+
+   **Critical Ports**:
+   - Access Manager → Bastion: TCP 443 (HTTPS API)
+   - Bastion → FortiAuthenticator: UDP 1812/1813 (RADIUS)
+   - HAProxy → Bastion: TCP 443, TCP 3389, TCP 22
+   - Users → HAProxy VIP: TCP 443 (Web UI), TCP 22 (SSH), TCP 3389 (RDP)
+
+**Deliverable**: Network design document with IP allocations, DNS records, and approved firewall rules.
+
+---
+
+### Step 1.3: Choose HA Architecture Model
+
+**Action**: Review [02-ha-architecture.md](02-ha-architecture.md) and decide per site.
+
+**Decision Matrix**:
+
+| Site | Expected Load | HA Model | Rationale |
+|------|---------------|----------|-----------|
+| Site 1 | 150+ sessions | **Active-Active** | High load, needs full capacity |
+| Site 2 | 80 sessions | **Active-Passive** | Lower load, simplicity preferred |
+| Site 3 | 120 sessions | **Active-Active** | Moderate load, growth expected |
+| Site 4 | 60 sessions | **Active-Passive** | Low load, easier operations |
+| Site 5 | 40 sessions | **Active-Passive** | Low load, easier operations |
+
+**Recommendation**: Start with **Active-Passive** for Site 1 during initial deployment for simplicity. Convert to Active-Active later if needed.
+
+**Configuration References**:
+- Active-Active: [06-bastion-active-active.md](06-bastion-active-active.md)
+- Active-Passive: [07-bastion-active-passive.md](07-bastion-active-passive.md)
+
+**Deliverable**: HA model selection document with justification per site.
+
+---
+
+### Step 1.4: Prepare Installation Environment
+
+**Actions**:
+
+1. **Download Software**
+
+   ```bash
+   # WALLIX Bastion ISO
+   wget https://download.wallix.com/bastion/12.1/wallix-bastion-12.1.x.iso
+
+   # HAProxy packages
+   apt-get update && apt-get install -y haproxy keepalived
+   ```
+
+2. **Create Installation Media**
+
+   ```bash
+   # Burn ISO to USB for appliance installation
+   dd if=wallix-bastion-12.1.x.iso of=/dev/sdX bs=4M status=progress
+   sync
+   ```
+
+3. **Prepare Configuration Templates**
+
+   - HAProxy configuration template
+   - Bastion initial configuration
+   - RDS installation script
+
+**Deliverable**: Installation media ready, configuration templates prepared.
+
+---
+
+### Week 1 Deliverables Checklist
+
+- [ ] All prerequisites validated and signed off
+- [ ] Network design documented (IP, DNS, firewall rules)
+- [ ] HA model selected per site with justification
+- [ ] Installation environment prepared (software, media, templates)
+- [ ] Access Manager team coordination meeting scheduled for Week 2
+
+---
+
+## Phase 2: Access Manager Integration (Week 2)
+
+### Objectives
+
+- Configure Access Manager for session brokering
+- Integrate FortiAuthenticator for MFA
+- Test SSO authentication flow
+- Document API endpoints for Bastion integration
+
+### Step 2.1: Review Access Manager Architecture
+
+**Action**: Read [03-access-manager-integration.md](03-access-manager-integration.md)
+
+**Coordination with Access Manager Team**:
+
+The Access Manager infrastructure is managed by a separate team. This phase focuses on **Bastion-side integration** only.
+
+**Information to Obtain from Access Manager Team**:
+
+```yaml
+# SSO Configuration
+sso_method: "SAML" | "OIDC" | "LDAP"
+idp_metadata_url: "https://am.company.local/saml/metadata"
+entity_id: "https://am.company.local"
+assertion_consumer_url: "https://bastion-siteX.company.local/auth/sso"
+
+# Session Brokering API
+brokering_api_url: "https://am.company.local/api/v1/sessions"
+api_key: "AM_API_KEY_REDACTED"
+api_secret: "AM_API_SECRET_REDACTED"
+
+# MFA Configuration
+fortiauth_radius_primary: "10.0.1.50"
+fortiauth_radius_secondary: "10.0.2.50"
+radius_shared_secret: "RADIUS_SECRET_REDACTED"
+radius_timeout: 5
+
+# License Integration (Optional)
+license_pool_api: "https://am.company.local/api/v1/licenses"
+license_pool_id: "bastion-pool-450"
 ```
 
-**Site A - Node 2 (wallix-a2):**
+**Deliverable**: Integration parameters document from Access Manager team.
+
+---
+
+### Step 2.2: Configure SSO Integration
+
+**Action**: Configure SAML/OIDC on Access Manager side (handled by AM team).
+
+**Bastion Configuration** (to be applied in Phase 3):
 
 ```bash
-# /etc/network/interfaces
-
-auto lo
-iface lo inet loopback
-
-auto eth0
-iface eth0 inet static
-    address 10.100.1.11
-    netmask 255.255.255.0
-    gateway 10.100.1.1
-    dns-nameservers 10.100.1.2 10.100.1.3
-    dns-search site-a.company.com company.com
-
-auto eth1
-iface eth1 inet static
-    address 10.100.254.2
-    netmask 255.255.255.252
+# On Bastion (Phase 3), configure SSO provider
+wabadmin sso configure --provider saml \
+  --idp-metadata "https://am.company.local/saml/metadata" \
+  --entity-id "https://bastion-site1.company.local" \
+  --assertion-consumer-url "https://bastion-site1.company.local/auth/sso"
 ```
 
-#### Step 1.5: Configure /etc/hosts
+**Test Plan**:
+1. Verify metadata exchange between AM and Bastion
+2. Test user login via SSO (redirect to AM, return to Bastion)
+3. Validate user attributes mapping (username, groups, email)
 
-On ALL Site A servers:
+**Deliverable**: SSO configuration tested between AM test environment and pre-prod lab.
+
+---
+
+### Step 2.3: Integrate FortiAuthenticator MFA
+
+**Action**: Configure RADIUS authentication for MFA.
+
+**FortiAuthenticator Configuration** (handled by Security team):
+
+```yaml
+# RADIUS Client Configuration (on FortiAuthenticator)
+client_name: "WALLIX-Bastion-Site1"
+client_ip: "10.1.1.21"  # Bastion-1
+nas_id: "bastion-site1"
+shared_secret: "RADIUS_SECRET_REDACTED"
+token_type: "FortiToken"
+```
+
+**Bastion Configuration** (Phase 3):
 
 ```bash
-cat > /etc/hosts << 'HOSTS'
-127.0.0.1       localhost
+# Configure RADIUS authentication
+wabadmin auth configure --method radius \
+  --primary-server 10.0.1.50 \
+  --secondary-server 10.0.2.50 \
+  --shared-secret "RADIUS_SECRET_REDACTED" \
+  --timeout 5 \
+  --retry 3
+```
 
-# Site A - Local
-10.100.1.10     wallix-a1.site-a.company.com wallix-a1
-10.100.1.11     wallix-a2.site-a.company.com wallix-a2
-10.100.1.100    wallix.site-a.company.com wallix-vip wallix
+**Test Plan**:
+1. Test RADIUS authentication with FortiToken (push notification)
+2. Test fallback to secondary RADIUS server
+3. Validate MFA for privileged accounts
+4. Test MFA bypass for service accounts (if required)
 
-# Site A - Heartbeat
-10.100.254.1    wallix-a1-hb
-10.100.254.2    wallix-a2-hb
+**Deliverable**: FortiAuthenticator RADIUS integration tested and documented.
 
-# Site B - Remote
-10.200.1.10     wallix-b1.site-b.company.com wallix-b1
-10.200.1.11     wallix-b2.site-b.company.com wallix-b2
-10.200.1.100    wallix.site-b.company.com wallix-b-vip
+---
 
-# Site C - Remote
-10.50.1.10      wallix-c1.site-c.company.com wallix-c1 wallix.site-c.company.com
+### Step 2.4: Configure Session Brokering
 
+**Action**: Set up session routing between Access Manager and Bastion sites.
+
+**Brokering Logic** (configured on Access Manager):
+
+```yaml
+# Session routing rules (example)
+routing_rules:
+  - name: "Route by AD Site"
+    condition: "user.ad_site == 'Paris-P1'"
+    target: "bastion-site1.company.local"
+
+  - name: "Route by User Group"
+    condition: "user.groups contains 'IT-Admins'"
+    target: "bastion-site1.company.local"
+
+  - name: "Load Balance"
+    condition: "true"  # Default
+    target: "round_robin([site1, site2, site3, site4, site5])"
+```
+
+**Bastion API Configuration** (Phase 3):
+
+```bash
+# Register Bastion with Access Manager
+curl -X POST https://am.company.local/api/v1/bastions \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "bastion-site1",
+    "url": "https://bastion-site1.company.local",
+    "api_key": "BASTION_API_KEY",
+    "capacity": 90,
+    "health_check_url": "https://bastion-site1.company.local/health"
+  }'
+```
+
+**Test Plan**:
+1. Test session creation via Access Manager API
+2. Verify session routing to correct Bastion site
+3. Test failover when primary site unavailable
+4. Validate session attributes passed from AM to Bastion
+
+**Deliverable**: Session brokering tested with all 5 sites registered (Sites 2-5 in Phase 4-7).
+
+---
+
+### Step 2.5: Document API Integration
+
+**Action**: Document all API endpoints and authentication methods.
+
+**API Endpoints Summary**:
+
+| Endpoint | Method | Purpose | Authentication |
+|----------|--------|---------|----------------|
+| `/api/v1/sessions` | POST | Create new session | API Key |
+| `/api/v1/sessions/{id}` | GET | Get session status | API Key |
+| `/api/v1/sessions/{id}` | DELETE | Terminate session | API Key |
+| `/api/v1/bastions` | GET | List registered Bastions | API Key |
+| `/api/v1/licenses/pool` | GET | Check license availability | API Key |
+| `/auth/sso` | POST | SSO authentication | SAML assertion |
+| `/health` | GET | Health check | None (public) |
+
+**Example API Call**:
+
+```bash
+# Create session via Access Manager
+curl -X POST https://am.company.local/api/v1/sessions \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": "john.doe@company.local",
+    "target": "server01.company.local",
+    "protocol": "ssh",
+    "bastion_hint": "site1"
+  }'
+
+# Response
+{
+  "session_id": "550e8400-e29b-41d4-a716-446655440000",
+  "bastion_url": "https://bastion-site1.company.local",
+  "connection_string": "ssh://john.doe@bastion-site1.company.local:22",
+  "expires_at": "2026-02-05T18:00:00Z"
+}
+```
+
+**Deliverable**: API integration guide with examples and error codes.
+
+---
+
+### Week 2 Deliverables Checklist
+
+- [ ] SSO integration tested (SAML/OIDC)
+- [ ] FortiAuthenticator RADIUS integration validated
+- [ ] Session brokering API documented and tested
+- [ ] API endpoint reference created
+- [ ] Integration credentials securely stored
+- [ ] Test results documented and approved
+
+---
+
+## Phase 3: Site 1 Deployment (Weeks 3-4)
+
+### Objectives
+
+- Deploy Site 1 as reference template for Sites 2-5
+- Configure HAProxy load balancer in HA mode
+- Deploy Bastion HA cluster (Active-Passive or Active-Active)
+- Set up WALLIX RDS jump host for OT access
+- Validate end-to-end functionality
+- Document deployment process for replication
+
+### Week 3: Infrastructure Setup
+
+#### Step 3.1: Deploy HAProxy Load Balancer Pair
+
+**Action**: Follow [05-haproxy-setup.md](05-haproxy-setup.md)
+
+**Configuration Summary**:
+
+```bash
+# HAProxy-1 (10.1.1.11) and HAProxy-2 (10.1.1.12)
+
+# 1. Install HAProxy and Keepalived
+apt-get update
+apt-get install -y haproxy keepalived
+
+# 2. Configure HAProxy
+cat > /etc/haproxy/haproxy.cfg <<'EOF'
+global
+    log /dev/log local0
+    chroot /var/lib/haproxy
+    stats socket /run/haproxy/admin.sock mode 660 level admin
+    stats timeout 30s
+    user haproxy
+    group haproxy
+    daemon
+
+defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5000
+    timeout client  50000
+    timeout server  50000
+
+frontend bastion-web
+    bind *:443 ssl crt /etc/haproxy/certs/bastion-site1.pem
+    mode http
+    default_backend bastion-web-backend
+
+backend bastion-web-backend
+    mode http
+    balance roundrobin
+    option httpchk GET /health
+    http-check expect status 200
+    server bastion1 10.1.1.21:443 check ssl verify none
+    server bastion2 10.1.1.22:443 check ssl verify none
+
+frontend bastion-ssh
+    bind *:22
+    mode tcp
+    default_backend bastion-ssh-backend
+
+backend bastion-ssh-backend
+    mode tcp
+    balance roundrobin
+    option tcp-check
+    server bastion1 10.1.1.21:22 check
+    server bastion2 10.1.1.22:22 check
+
+frontend bastion-rdp
+    bind *:3389
+    mode tcp
+    default_backend bastion-rdp-backend
+
+backend bastion-rdp-backend
+    mode tcp
+    balance roundrobin
+    option tcp-check
+    server bastion1 10.1.1.21:3389 check
+    server bastion2 10.1.1.22:3389 check
+EOF
+
+# 3. Configure Keepalived (VIP: 10.1.1.10)
+cat > /etc/keepalived/keepalived.conf <<'EOF'
+vrrp_instance HAPROXY_VIP {
+    state MASTER              # BACKUP on HAProxy-2
+    interface eth0
+    virtual_router_id 51
+    priority 100              # 90 on HAProxy-2
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass SecurePassword123
+    }
+    virtual_ipaddress {
+        10.1.1.10/24
+    }
+}
+EOF
+
+# 4. Enable and start services
+systemctl enable haproxy keepalived
+systemctl start haproxy keepalived
+
+# 5. Verify VIP
+ip addr show eth0 | grep 10.1.1.10
+```
+
+**Validation**:
+
+```bash
+# Test HAProxy stats
+curl http://10.1.1.10:8080/stats
+
+# Test VIP failover
+# On HAProxy-1 (master)
+systemctl stop keepalived
+# Verify VIP moves to HAProxy-2
+ping 10.1.1.10
+```
+
+**Deliverable**: HAProxy HA pair operational with VIP failover tested.
+
+---
+
+#### Step 3.2: Deploy Bastion HA Cluster
+
+**Action**: Choose deployment model and follow corresponding guide.
+
+**Option A: Active-Passive (Recommended for Initial Deployment)**
+
+Follow [07-bastion-active-passive.md](07-bastion-active-passive.md)
+
+**Summary**:
+
+```bash
+# On Bastion-1 (Primary: 10.1.1.21)
+
+# 1. Initial appliance setup
+wabadmin setup --hostname bastion1-site1.company.local \
+               --ip 10.1.1.21 \
+               --netmask 255.255.255.0 \
+               --gateway 10.1.1.1 \
+               --dns 10.0.1.10 \
+               --ntp ntp.company.local
+
+# 2. Configure as primary
+wabadmin ha configure --mode active-passive \
+                      --role primary \
+                      --partner 10.1.1.22 \
+                      --vip 10.1.1.10 \
+                      --cluster-password "SecureClusterPassword"
+
+# 3. Apply license
+wabadmin license apply --key "LICENSE_KEY_SITE1"
+
+# On Bastion-2 (Secondary: 10.1.1.22)
+
+# 1. Initial appliance setup
+wabadmin setup --hostname bastion2-site1.company.local \
+               --ip 10.1.1.22 \
+               --netmask 255.255.255.0 \
+               --gateway 10.1.1.1 \
+               --dns 10.0.1.10 \
+               --ntp ntp.company.local
+
+# 2. Configure as secondary
+wabadmin ha configure --mode active-passive \
+                      --role secondary \
+                      --partner 10.1.1.21 \
+                      --vip 10.1.1.10 \
+                      --cluster-password "SecureClusterPassword"
+
+# 3. Verify cluster status
+wabadmin ha status
+```
+
+**Option B: Active-Active (For High Load Sites)**
+
+Follow [06-bastion-active-active.md](06-bastion-active-active.md)
+
+**Note**: Active-Active requires additional MariaDB multi-master replication configuration and Pacemaker/Corosync setup. Defer to later phase if complexity is a concern.
+
+**Validation**:
+
+```bash
+# Check cluster health
+wabadmin ha status
+
+# Test failover (Active-Passive)
+# On Bastion-1
+wabadmin ha failover
+
+# Verify Bastion-2 becomes primary
+wabadmin ha status
+
+# Restore Bastion-1 as primary
+wabadmin ha failback
+```
+
+**Deliverable**: Bastion HA cluster operational with failover tested.
+
+---
+
+#### Step 3.3: Configure Authentication Integration
+
+**Action**: Integrate with Access Manager SSO and FortiAuthenticator MFA.
+
+```bash
+# On primary Bastion (Bastion-1)
+
+# 1. Configure SSO (SAML)
+wabadmin sso configure --provider saml \
+  --idp-metadata "https://am.company.local/saml/metadata" \
+  --entity-id "https://bastion-site1.company.local" \
+  --assertion-consumer-url "https://bastion-site1.company.local/auth/sso"
+
+# 2. Configure RADIUS MFA
+wabadmin auth configure --method radius \
+  --primary-server 10.0.1.50 \
+  --secondary-server 10.0.2.50 \
+  --shared-secret "RADIUS_SECRET_REDACTED" \
+  --timeout 5 \
+  --retry 3
+
+# 3. Configure LDAP/AD user sync
+wabadmin ldap configure --server ldap.company.local \
+  --port 636 \
+  --use-ssl \
+  --base-dn "DC=company,DC=local" \
+  --bind-dn "CN=svc_wallix,OU=Service Accounts,DC=company,DC=local" \
+  --bind-password "LDAP_PASSWORD_REDACTED" \
+  --user-filter "(objectClass=user)" \
+  --sync-interval 300
+
+# 4. Test authentication
+wabadmin auth test --user john.doe@company.local
+```
+
+**Validation**:
+
+```bash
+# Test SSO login via web UI
+# 1. Open browser: https://bastion-site1.company.local
+# 2. Click "Login with SSO"
+# 3. Redirect to Access Manager
+# 4. Authenticate with AD credentials + FortiToken MFA
+# 5. Return to Bastion dashboard
+
+# Test direct RADIUS authentication
+wabadmin auth test-radius --user john.doe@company.local --token 123456
+```
+
+**Deliverable**: SSO and MFA authentication working end-to-end.
+
+---
+
+### Week 4: Services and Integration
+
+#### Step 3.4: Deploy WALLIX RDS Jump Host
+
+**Action**: Follow [08-rds-jump-host.md](08-rds-jump-host.md)
+
+**Configuration Summary**:
+
+```powershell
+# On WALLIX RDS (Windows Server 2022: 10.1.1.30)
+
+# 1. Install RDS RemoteApp role
+Install-WindowsFeature -Name RDS-RD-Server -IncludeManagementTools
+
+# 2. Configure RemoteApp
+New-RDRemoteApp -CollectionName "OT-RemoteApps" `
+                -DisplayName "OT Access" `
+                -FilePath "C:\Windows\System32\mstsc.exe" `
+                -ShowInWebAccess $true
+
+# 3. Configure access via Bastion
+# Add WALLIX RDS as target in Bastion
+# Protocol: RDP
+# Port: 3389
+# Authentication: WALLIX credentials (passed through)
+
+# 4. Test OT RemoteApp access
+# User connects to Bastion → Bastion proxies to RDS → RDS launches RemoteApp
+```
+
+**Validation**:
+
+```bash
+# On Bastion, add RDS target
+wabadmin target create --name "rds-site1" \
+                       --host "10.1.1.30" \
+                       --protocol rdp \
+                       --port 3389 \
+                       --domain "COMPANY"
+
+# Grant access to test user
+wabadmin authorization create --user "john.doe@company.local" \
+                              --target "rds-site1" \
+                              --account "ot-access"
+
+# Test RDP connection via Bastion
+rdesktop -u john.doe@bastion-site1.company.local -p - 10.1.1.10:3389
+```
+
+**Deliverable**: WALLIX RDS operational with RemoteApp access via Bastion.
+
+---
+
+#### Step 3.5: Register Bastion with Access Manager
+
+**Action**: Register Site 1 Bastion with Access Manager for session brokering.
+
+```bash
+# From Access Manager (or via API)
+curl -X POST https://am.company.local/api/v1/bastions \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "bastion-site1",
+    "url": "https://bastion-site1.company.local",
+    "api_key": "BASTION1_API_KEY",
+    "api_secret": "BASTION1_API_SECRET",
+    "capacity": 90,
+    "location": "Paris DC-P1",
+    "health_check_url": "https://bastion-site1.company.local/health",
+    "health_check_interval": 30
+  }'
+
+# Verify registration
+curl -X GET https://am.company.local/api/v1/bastions/bastion-site1 \
+  -H "Authorization: Bearer AM_API_KEY"
+```
+
+**Validation**:
+
+```bash
+# Test session brokering
+curl -X POST https://am.company.local/api/v1/sessions \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user": "john.doe@company.local",
+    "target": "server01.company.local",
+    "protocol": "ssh",
+    "bastion_hint": "site1"
+  }'
+
+# Verify session routed to Site 1 Bastion
+# Check session on Bastion
+wabadmin session list --active
+```
+
+**Deliverable**: Site 1 Bastion registered with Access Manager, session brokering tested.
+
+---
+
+#### Step 3.6: Configure Target Systems
+
+**Action**: Add initial target systems for testing.
+
+```bash
+# Add Windows target
+wabadmin target create --name "win-server-01" \
+                       --host "win-server-01.company.local" \
+                       --protocol rdp \
+                       --port 3389 \
+                       --domain "COMPANY" \
+                       --description "Windows Server 2022"
+
+# Add Linux target
+wabadmin target create --name "rhel-server-01" \
+                       --host "rhel-server-01.company.local" \
+                       --protocol ssh \
+                       --port 22 \
+                       --description "RHEL 10"
+
+# Configure credentials (Password Manager)
+wabadmin credential create --target "win-server-01" \
+                           --account "Administrator" \
+                           --password "SecurePassword123" \
+                           --auto-change \
+                           --change-interval 30
+
+wabadmin credential create --target "rhel-server-01" \
+                           --account "root" \
+                           --password "SecurePassword123" \
+                           --auto-change \
+                           --change-interval 30
+
+# Grant access to test users
+wabadmin authorization create --user "john.doe@company.local" \
+                              --target "win-server-01" \
+                              --account "Administrator"
+
+wabadmin authorization create --user "jane.smith@company.local" \
+                              --target "rhel-server-01" \
+                              --account "root"
+```
+
+**Validation**:
+
+```bash
+# Test SSH access via Bastion
+ssh john.doe@bastion-site1.company.local@rhel-server-01
+
+# Test RDP access via Bastion
+rdesktop -u john.doe@bastion-site1.company.local@win-server-01 -p - 10.1.1.10:3389
+
+# Verify session recording
+wabadmin session list --recent 10
+wabadmin session replay --id <session_id>
+```
+
+**Deliverable**: Target systems configured and accessible via Bastion with session recording.
+
+---
+
+#### Step 3.7: Site 1 Validation Testing
+
+**Action**: Comprehensive testing before replication to Sites 2-5.
+
+**Test Checklist**:
+
+```bash
+# 1. Authentication
+- [ ] SSO login via web UI (redirect to Access Manager)
+- [ ] MFA with FortiToken (push notification)
+- [ ] LDAP user sync (verify user groups)
+- [ ] Service account authentication (no MFA)
+
+# 2. Session Management
+- [ ] SSH session to Linux target
+- [ ] RDP session to Windows target
+- [ ] VNC session (if applicable)
+- [ ] Session recording enabled
+- [ ] Session playback functional
+- [ ] Session termination
+
+# 3. High Availability
+- [ ] HAProxy VIP failover (stop HAProxy-1, VIP moves to HAProxy-2)
+- [ ] Bastion failover (stop Bastion-1, Bastion-2 takes over)
+- [ ] Active sessions preserved during failover
+- [ ] No data loss during failover
+
+# 4. Password Management
+- [ ] Credential checkout
+- [ ] Automatic password rotation (30-day interval)
+- [ ] Credential reconciliation after rotation
+- [ ] Password complexity enforcement
+
+# 5. OT Access
+- [ ] RemoteApp launch via WALLIX RDS
+- [ ] Session recording of RemoteApp session
+- [ ] OT target access via RDS
+
+# 6. Access Manager Integration
+- [ ] Session brokering (AM routes session to Site 1)
+- [ ] API health check (AM polls Bastion health)
+- [ ] License check (verify license consumption)
+
+# 7. Audit and Compliance
+- [ ] Audit log generation
+- [ ] Syslog export to SIEM
+- [ ] Compliance report generation (SOC2, ISO27001)
+```
+
+**Reference**: [10-testing-validation.md](10-testing-validation.md) for detailed test procedures.
+
+**Deliverable**: Test results documented with all items passing.
+
+---
+
+#### Step 3.8: Document Site 1 Deployment
+
+**Action**: Create deployment template for Sites 2-5 replication.
+
+**Template Structure**:
+
+```markdown
+# Site Deployment Template (Based on Site 1)
+
+## 1. IP Address Allocation
+- HAProxy VIP: 10.X.1.10
+- HAProxy-1: 10.X.1.11
+- HAProxy-2: 10.X.1.12
+- Bastion-1: 10.X.1.21
+- Bastion-2: 10.X.1.22
+- WALLIX RDS: 10.X.1.30
+
+## 2. DNS Records
+- bastion-siteX.company.local → 10.X.1.10
+- bastion1-siteX.company.local → 10.X.1.21
+- bastion2-siteX.company.local → 10.X.1.22
+- rds-siteX.company.local → 10.X.1.30
+
+## 3. Configuration Files
+- HAProxy: /etc/haproxy/haproxy.cfg (attached)
+- Keepalived: /etc/keepalived/keepalived.conf (attached)
+- Bastion: wabadmin scripts (attached)
+
+## 4. Deployment Steps
+1. Deploy HAProxy pair (45 mins)
+2. Deploy Bastion HA cluster (2 hours)
+3. Configure authentication (1 hour)
+4. Deploy WALLIX RDS (1 hour)
+5. Register with Access Manager (30 mins)
+6. Add target systems (1 hour)
+7. Validation testing (2 hours)
+
+Total Time: ~8 hours (1 business day)
+
+## 5. Validation Checklist
+[Copy from Site 1 test checklist]
+```
+
+**Deliverable**: Site deployment template ready for replication.
+
+---
+
+### Week 3-4 Deliverables Checklist
+
+- [ ] HAProxy HA pair deployed and failover tested
+- [ ] Bastion HA cluster deployed (Active-Passive or Active-Active)
+- [ ] SSO and MFA authentication working
+- [ ] WALLIX RDS operational with RemoteApp
+- [ ] Site 1 registered with Access Manager
+- [ ] Target systems configured and accessible
+- [ ] Comprehensive testing completed (100% pass rate)
+- [ ] Deployment template created for Sites 2-5
+
+---
+
+## Phase 4-7: Sites 2-5 Deployment (Weeks 5-8)
+
+### Objectives
+
+- Replicate Site 1 configuration to Sites 2-5
+- Minimize deployment time using template
+- Register all sites with Access Manager
+- Validate multi-site operation
+
+### Deployment Strategy
+
+**Sequential Deployment** (default):
+- Week 5: Site 2
+- Week 6: Site 3
+- Week 7: Site 4
+- Week 8: Site 5
+
+**Parallel Deployment** (if resources permit):
+- Week 5-6: Sites 2, 3, 4, 5 in parallel
+- Requires 4 deployment teams
+- Reduces timeline to 2 weeks instead of 4
+
+---
+
+### Step 4.1: Site 2 Deployment (Week 5)
+
+**Action**: Replicate Site 1 using deployment template.
+
+**IP Allocation**:
+
+```bash
+# Site 2 (DC-P2)
+HAProxy VIP:   10.2.1.10
+HAProxy-1:     10.2.1.11
+HAProxy-2:     10.2.1.12
+Bastion-1:     10.2.1.21
+Bastion-2:     10.2.1.22
+WALLIX RDS:    10.2.1.30
+```
+
+**DNS Records**:
+
+```bash
+bastion-site2.company.local      A    10.2.1.10
+bastion1-site2.company.local     A    10.2.1.21
+bastion2-site2.company.local     A    10.2.1.22
+rds-site2.company.local          A    10.2.1.30
+```
+
+**Deployment Steps** (using template):
+
+```bash
+# 1. Deploy HAProxy pair (45 mins)
+# - Adapt Site 1 config: update IPs, VIP, hostname
+# - Deploy HAProxy-1 and HAProxy-2
+# - Test VIP failover
+
+# 2. Deploy Bastion HA cluster (2 hours)
+# - Install appliances with Site 2 IPs
+# - Configure HA cluster
+# - Apply license (from Bastion pool)
+
+# 3. Configure authentication (1 hour)
+# - Import SSO config from Site 1
+# - Configure RADIUS (same FortiAuthenticator)
+# - Configure LDAP sync
+
+# 4. Deploy WALLIX RDS (1 hour)
+# - Install Windows Server 2022
+# - Configure RemoteApp
+# - Add as target in Bastion
+
+# 5. Register with Access Manager (30 mins)
+curl -X POST https://am.company.local/api/v1/bastions \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "bastion-site2",
+    "url": "https://bastion-site2.company.local",
+    "api_key": "BASTION2_API_KEY",
+    "api_secret": "BASTION2_API_SECRET",
+    "capacity": 90,
+    "location": "Paris DC-P2"
+  }'
+
+# 6. Add target systems (1 hour)
+# - Import target list from Site 1 (or create site-specific)
+# - Configure credentials
+# - Grant user authorizations
+
+# 7. Validation testing (2 hours)
+# - Run test checklist from Site 1
+# - Verify session brokering from Access Manager
+# - Test multi-site failover (AM routes to Site 2 when Site 1 unavailable)
+```
+
+**Validation**:
+
+```bash
+# Test multi-site routing
+# From Access Manager, create session with no bastion_hint
+curl -X POST https://am.company.local/api/v1/sessions \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -d '{
+    "user": "john.doe@company.local",
+    "target": "server02.company.local",
+    "protocol": "ssh"
+  }'
+
+# Verify Access Manager routes session to Site 1 or Site 2 (load balanced)
+```
+
+**Deliverable**: Site 2 operational and integrated with Access Manager.
+
+---
+
+### Step 4.2: Sites 3, 4, 5 Deployment (Weeks 6-8)
+
+**Action**: Repeat Site 2 deployment process for remaining sites.
+
+**IP Allocation Summary**:
+
+| Site | HAProxy VIP | Bastion-1 | Bastion-2 | WALLIX RDS |
+|------|-------------|-----------|-----------|------------|
+| Site 3 | 10.3.1.10 | 10.3.1.21 | 10.3.1.22 | 10.3.1.30 |
+| Site 4 | 10.4.1.10 | 10.4.1.21 | 10.4.1.22 | 10.4.1.30 |
+| Site 5 | 10.5.1.10 | 10.5.1.21 | 10.5.1.22 | 10.5.1.30 |
+
+**Parallel Deployment** (if resources permit):
+
+```bash
+# Week 6: Deploy Sites 3 and 4 in parallel (2 teams)
+# Week 7: Deploy Site 5 and start integration testing
+
+# Reduces 4 weeks to 2 weeks
+```
+
+**Registration with Access Manager**:
+
+```bash
+# Register all sites
+for site in site3 site4 site5; do
+  curl -X POST https://am.company.local/api/v1/bastions \
+    -H "Authorization: Bearer AM_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"name\": \"bastion-${site}\",
+      \"url\": \"https://bastion-${site}.company.local\",
+      \"api_key\": \"${site^^}_API_KEY\",
+      \"capacity\": 90,
+      \"location\": \"Paris DC-${site#site}\"
+    }"
+done
+
+# Verify all sites registered
+curl -X GET https://am.company.local/api/v1/bastions \
+  -H "Authorization: Bearer AM_API_KEY"
+```
+
+**Deliverable**: Sites 3, 4, 5 operational and integrated with Access Manager.
+
+---
+
+### Week 5-8 Deliverables Checklist
+
+- [ ] Site 2 deployed and operational (Week 5)
+- [ ] Site 3 deployed and operational (Week 6)
+- [ ] Site 4 deployed and operational (Week 7)
+- [ ] Site 5 deployed and operational (Week 8)
+- [ ] All 5 sites registered with Access Manager
+- [ ] Multi-site session brokering tested
+- [ ] Deployment metrics collected (actual vs. estimated time)
+
+---
+
+## Phase 8: Final Integration (Week 9)
+
+### Objectives
+
+- Configure license pooling across all 5 sites
+- Optimize session brokering rules
+- Conduct comprehensive multi-site testing
+- Performance tuning and optimization
+
+### Step 8.1: Configure License Pooling
+
+**Action**: Integrate Bastion license pool with Access Manager.
+
+**Reference**: [09-licensing.md](09-licensing.md)
+
+**Configuration**:
+
+```bash
+# On Access Manager
+# Configure Bastion license pool (450 concurrent sessions shared)
+
+curl -X POST https://am.company.local/api/v1/licenses/pools \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "bastion-pool-450",
+    "type": "shared",
+    "capacity": 450,
+    "bastions": [
+      "bastion-site1",
+      "bastion-site2",
+      "bastion-site3",
+      "bastion-site4",
+      "bastion-site5"
+    ],
+    "allocation_strategy": "dynamic",
+    "warning_threshold": 90
+  }'
+
+# On each Bastion, configure license pool client
+wabadmin license configure --pool-mode shared \
+                           --pool-server "https://am.company.local/api/v1/licenses" \
+                           --pool-id "bastion-pool-450" \
+                           --pool-api-key "LICENSE_POOL_API_KEY"
+
+# Verify license consumption
+wabadmin license status
+# Output:
+# License Pool: bastion-pool-450
+# Total Capacity: 450
+# Currently Used: 45
+# Available: 405
+# Site 1: 15 sessions
+# Site 2: 10 sessions
+# Site 3: 8 sessions
+# Site 4: 7 sessions
+# Site 5: 5 sessions
+```
+
+**Validation**:
+
+```bash
+# Test license exhaustion behavior
+# 1. Simulate 450 concurrent sessions
+# 2. Verify new session requests queued or rejected gracefully
+# 3. Verify license release when sessions end
+# 4. Verify alerting at 90% threshold (405 sessions)
+
+# Check license pool via API
+curl -X GET https://am.company.local/api/v1/licenses/pool/bastion-pool-450 \
+  -H "Authorization: Bearer AM_API_KEY"
+```
+
+**Deliverable**: License pooling operational, consumption monitoring configured.
+
+---
+
+### Step 8.2: Optimize Session Brokering
+
+**Action**: Fine-tune session routing rules for optimal load distribution.
+
+**Brokering Rules**:
+
+```yaml
+# On Access Manager
+routing_rules:
+  # Rule 1: Route by AD Site attribute
+  - name: "Route by AD Site"
+    priority: 1
+    condition: "user.ad_site == 'Paris-P1'"
+    target: "bastion-site1.company.local"
+    enabled: true
+
+  - name: "Route by AD Site"
+    priority: 1
+    condition: "user.ad_site == 'Paris-P2'"
+    target: "bastion-site2.company.local"
+    enabled: true
+
+  # Rule 2: Route by user group
+  - name: "IT Admins to Site 1"
+    priority: 2
+    condition: "user.groups contains 'IT-Admins'"
+    target: "bastion-site1.company.local"
+    enabled: true
+
+  # Rule 3: OT users via RDS
+  - name: "OT Users to Site 5"
+    priority: 3
+    condition: "user.groups contains 'OT-Operators'"
+    target: "bastion-site5.company.local"
+    enabled: true
+
+  # Rule 4: Load balancing (default)
+  - name: "Load Balance"
+    priority: 99
+    condition: "true"
+    target: "weighted_round_robin([
+      {site: 'bastion-site1', weight: 30},
+      {site: 'bastion-site2', weight: 25},
+      {site: 'bastion-site3', weight: 20},
+      {site: 'bastion-site4', weight: 15},
+      {site: 'bastion-site5', weight: 10}
+    ])"
+    enabled: true
+
+  # Rule 5: Failover
+  - name: "Failover to Available Sites"
+    priority: 100
+    condition: "primary_site.health == 'unhealthy'"
+    target: "first_healthy([site1, site2, site3, site4, site5])"
+    enabled: true
+```
+
+**Validation**:
+
+```bash
+# Test routing rules
+# 1. Create sessions for users with different AD sites
+# 2. Verify routing to correct site
+# 3. Test load balancing (create 100 sessions, verify distribution)
+# 4. Test failover (stop Site 1, verify sessions route to other sites)
+```
+
+**Deliverable**: Session brokering optimized for performance and reliability.
+
+---
+
+### Step 8.3: Multi-Site Testing
+
+**Action**: Comprehensive testing across all 5 sites.
+
+**Reference**: [10-testing-validation.md](10-testing-validation.md)
+
+**Test Scenarios**:
+
+```bash
+# 1. Load Testing
+- [ ] 450 concurrent sessions across all 5 sites
+- [ ] Performance metrics (latency, throughput, CPU, memory)
+- [ ] Session recording performance under load
+
+# 2. Failover Testing
+- [ ] Single site failure (Site 1 down, sessions route to Sites 2-5)
+- [ ] Multiple site failure (Sites 1-2 down, sessions route to Sites 3-5)
+- [ ] Access Manager failover (AM-1 down, AM-2 takes over)
+- [ ] HAProxy failover per site
+- [ ] Bastion cluster failover per site
+
+# 3. Integration Testing
+- [ ] SSO across all sites
+- [ ] MFA with FortiAuthenticator
+- [ ] LDAP user sync
+- [ ] Session brokering via Access Manager
+- [ ] License pool consumption
+- [ ] OT access via WALLIX RDS
+
+# 4. Security Testing
+- [ ] TLS certificate validation
+- [ ] Encrypted session recordings
+- [ ] Audit log integrity
+- [ ] Credential rotation
+- [ ] Access control enforcement
+
+# 5. Operational Testing
+- [ ] Backup and restore (per site)
+- [ ] Logging and monitoring (SIEM integration)
+- [ ] Alerting (license threshold, cluster health)
+- [ ] Performance dashboard (Grafana)
+```
+
+**Validation Criteria**:
+
+```bash
+# Performance SLAs
+- Session connection time: < 3 seconds
+- Failover time: < 60 seconds
+- Session recording latency: < 100ms
+- API response time: < 500ms
+- License pool query: < 100ms
+
+# Availability SLAs
+- Site uptime: 99.9% (HA cluster)
+- Access Manager uptime: 99.95% (HA cluster)
+- Multi-site availability: 99.99% (1 site can fail)
+```
+
+**Deliverable**: Multi-site testing completed with all scenarios passing.
+
+---
+
+### Step 8.4: Performance Tuning
+
+**Action**: Optimize configuration based on testing results.
+
+**Tuning Areas**:
+
+```bash
+# 1. HAProxy Tuning
+# Increase connection limits
+cat >> /etc/haproxy/haproxy.cfg <<'EOF'
+global
+    maxconn 10000
+    tune.ssl.default-dh-param 2048
+
+defaults
+    timeout connect 10s
+    timeout client 300s
+    timeout server 300s
+EOF
+
+# 2. Bastion Database Tuning (MariaDB)
+wabadmin database tune --innodb-buffer-pool-size 8G \
+                       --max-connections 1000 \
+                       --query-cache-size 256M
+
+# 3. Session Recording Optimization
+wabadmin config set session.recording.compression gzip
+wabadmin config set session.recording.buffer_size 10M
+
+# 4. API Rate Limiting
+wabadmin api configure --rate-limit 1000 \
+                       --burst-limit 2000 \
+                       --timeout 30
+
+# 5. Caching (Access Manager)
+# Enable session brokering cache (reduce API calls to Bastions)
+curl -X PATCH https://am.company.local/api/v1/config/cache \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -d '{
+    "enabled": true,
+    "ttl": 300,
+    "max_entries": 10000
+  }'
+```
+
+**Deliverable**: Performance optimizations applied, benchmarks documented.
+
+---
+
+### Week 9 Deliverables Checklist
+
+- [ ] License pooling configured and validated
+- [ ] Session brokering rules optimized
+- [ ] Multi-site testing completed (100% pass rate)
+- [ ] Performance tuning applied
+- [ ] Monitoring and alerting configured
+- [ ] Documentation updated with test results
+
+---
+
+## Phase 9: Go-Live (Week 10)
+
+### Objectives
+
+- Production cutover and go-live
+- User training and documentation handoff
+- Post-deployment support
+- Project closeout
+
+### Step 9.1: Pre-Production Validation
+
+**Action**: Final validation before production cutover.
+
+**Pre-Flight Checklist**:
+
+```bash
 # Infrastructure
-10.100.1.50     nfs.site-a.company.com nfs
-10.100.1.20     ldap.company.com ldap
-HOSTS
+- [ ] All 5 sites operational (HA clusters healthy)
+- [ ] HAProxy load balancers operational (all 10 instances)
+- [ ] WALLIX RDS jump hosts operational (all 5 instances)
+- [ ] Access Manager HA cluster operational
+
+# Integration
+- [ ] SSO authentication working (all sites)
+- [ ] MFA with FortiAuthenticator working
+- [ ] LDAP user sync operational
+- [ ] Session brokering via Access Manager working
+- [ ] License pooling operational (450 sessions shared)
+
+# Security
+- [ ] SSL certificates valid (not expiring within 90 days)
+- [ ] Encryption keys backed up (offsite)
+- [ ] Audit logging enabled (all sites)
+- [ ] SIEM integration working (syslog export)
+- [ ] Backup strategy tested (restore validated)
+
+# Performance
+- [ ] Load testing passed (450 concurrent sessions)
+- [ ] Failover tested (all scenarios)
+- [ ] Performance metrics within SLAs
+- [ ] Monitoring dashboards operational
+
+# Documentation
+- [ ] Deployment documentation completed
+- [ ] Operational runbooks created
+- [ ] User guides finalized
+- [ ] API documentation updated
+- [ ] Troubleshooting guides available
 ```
 
-#### Step 1.6: Verify Network Connectivity
+**Validation Sign-Off**: Obtain approval from:
+- Infrastructure team
+- Security team
+- Access Manager team
+- Business stakeholders
+
+**Deliverable**: Pre-production validation complete with sign-off.
+
+---
+
+### Step 9.2: Production Cutover
+
+**Action**: Execute production cutover plan.
+
+**Cutover Plan**:
 
 ```bash
-#!/bin/bash
-# save as: /root/02-network-verify.sh
+# Phase 1: Pilot (2 days)
+# - Onboard 10 pilot users (IT admins)
+# - Test all access patterns (SSH, RDP, OT RemoteApp)
+# - Monitor for issues
+# - Collect feedback
 
-echo "=== Network Verification ==="
+# Phase 2: Early Adopters (3 days)
+# - Onboard 50 early adopter users
+# - Monitor performance and stability
+# - Refine procedures based on feedback
 
-echo ""
-echo "[1] Checking local interfaces..."
-ip addr show
-
-echo ""
-echo "[2] Checking routing table..."
-ip route show
-
-echo ""
-echo "[3] Testing gateway..."
-ping -c 3 10.100.1.1
-
-echo ""
-echo "[4] Testing DNS resolution..."
-nslookup wallix.site-a.company.com
-
-echo ""
-echo "[5] Testing HA heartbeat (if applicable)..."
-ping -c 3 10.100.254.2 2>/dev/null || echo "Heartbeat peer not reachable (OK if this is node 2)"
-
-echo ""
-echo "[6] Testing Site B connectivity..."
-ping -c 3 10.200.1.10 || echo "Site B not reachable - check VPN"
-
-echo ""
-echo "[7] Testing Site C connectivity..."
-ping -c 3 10.50.1.10 || echo "Site C not reachable - check VPN"
-
-echo ""
-echo "[8] Testing NFS server..."
-ping -c 3 10.100.1.50
-
-echo ""
-echo "[9] Testing LDAP server..."
-ping -c 3 10.100.1.20
-
-echo ""
-echo "=== Network verification complete ==="
+# Phase 3: Full Rollout (5 days)
+# - Onboard all users (phased by department)
+# - Migrate all target systems
+# - Decommission legacy PAM solution (if applicable)
 ```
 
-### Day 3: DNS and Certificates
+**Cutover Schedule**:
 
-#### Step 1.7: Create DNS Records
+| Date | Activity | Users | Status |
+|------|----------|-------|--------|
+| Day 1-2 | Pilot | 10 | In Progress |
+| Day 3-5 | Early Adopters | 50 | Pending |
+| Day 6-10 | Full Rollout | All | Pending |
 
-Provide this to your DNS administrator:
-
-```
-; WALLIX Bastion DNS Records
-; Zone: company.com
-
-; Site A
-wallix-a1.site-a    IN  A       10.100.1.10
-wallix-a2.site-a    IN  A       10.100.1.11
-wallix.site-a       IN  A       10.100.1.100
-wallix              IN  CNAME   wallix.site-a.company.com.
-
-; Site B
-wallix-b1.site-b    IN  A       10.200.1.10
-wallix-b2.site-b    IN  A       10.200.1.11
-wallix.site-b       IN  A       10.200.1.100
-
-; Site C
-wallix.site-c       IN  A       10.50.1.10
-
-; Reverse DNS (request separately)
-; 10.100.1.10 -> wallix-a1.site-a.company.com
-; 10.100.1.11 -> wallix-a2.site-a.company.com
-; etc.
-```
-
-#### Step 1.8: SSL Certificate Preparation
-
-**Option A: Commercial Certificate (Recommended for Production)**
+**Rollback Plan**:
 
 ```bash
-# Generate CSR on wallix-a1
-mkdir -p /etc/opt/wab/ssl
-cd /etc/opt/wab/ssl
-
-# Generate private key
-openssl genrsa -out wallix.key 4096
-
-# Generate CSR
-openssl req -new -key wallix.key -out wallix.csr \
-    -subj "/C=FR/ST=IDF/L=Paris/O=Company/OU=IT/CN=wallix.site-a.company.com" \
-    -addext "subjectAltName=DNS:wallix.site-a.company.com,DNS:wallix.company.com,DNS:wallix-a1.site-a.company.com,DNS:wallix-a2.site-a.company.com,IP:10.100.1.100,IP:10.100.1.10,IP:10.100.1.11"
-
-# Submit CSR to CA and wait for certificate
-# When received, save as wallix.crt and chain as ca-chain.crt
+# If critical issues during cutover
+# 1. Redirect users back to legacy PAM (if available)
+# 2. Pause new user onboarding
+# 3. Root cause analysis
+# 4. Fix and retest
+# 5. Resume cutover
 ```
 
-**Option B: Let's Encrypt (If publicly accessible)**
+**Deliverable**: Production cutover executed successfully.
+
+---
+
+### Step 9.3: User Training
+
+**Action**: Train end users and administrators.
+
+**Training Sessions**:
+
+1. **End User Training** (1 hour)
+   - How to access Bastion web UI
+   - SSO login with FortiToken MFA
+   - Connecting to target systems (SSH, RDP)
+   - OT access via WALLIX RDS RemoteApp
+   - Session recordings and audit
+
+2. **Administrator Training** (4 hours)
+   - Bastion administration (`wabadmin` CLI)
+   - User and authorization management
+   - Target system configuration
+   - Credential management and rotation
+   - Session monitoring and playback
+   - Troubleshooting common issues
+   - Backup and restore procedures
+
+3. **Operations Training** (2 hours)
+   - Monitoring and alerting
+   - Performance dashboards (Grafana)
+   - Incident response procedures
+   - Failover and disaster recovery
+   - License management
+
+**Training Materials**:
 
 ```bash
-apt install certbot
+# User guides
+- End User Quick Start Guide
+- Administrator Guide
+- Operations Runbook
+- Troubleshooting Guide
 
-certbot certonly --standalone \
-    -d wallix.site-a.company.com \
-    -d wallix.company.com \
-    --agree-tos \
-    --email admin@company.com
+# Video tutorials
+- "Connecting to Windows via Bastion"
+- "Accessing Linux Servers via Bastion"
+- "OT Access via WALLIX RDS"
+- "Bastion Administration Basics"
 ```
 
-**Option C: Self-Signed (Development/Testing Only)**
+**Deliverable**: Training sessions completed, materials distributed.
+
+---
+
+### Step 9.4: Documentation Handoff
+
+**Action**: Transfer knowledge and documentation to operations team.
+
+**Documentation Package**:
 
 ```bash
-#!/bin/bash
-# Generate self-signed certificate for testing
+# 1. Architecture Documentation
+- Network topology diagrams
+- Component inventory (all 5 sites)
+- Integration architecture (Access Manager, FortiAuthenticator)
+- License allocation
 
-mkdir -p /etc/opt/wab/ssl
-cd /etc/opt/wab/ssl
+# 2. Operational Documentation
+- Deployment procedures (per site)
+- Configuration standards
+- Backup and restore procedures
+- Disaster recovery runbook
+- Incident response playbook
 
-# Generate CA
-openssl genrsa -out ca.key 4096
-openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 \
-    -out ca.crt \
-    -subj "/C=FR/ST=IDF/L=Paris/O=Company/OU=IT/CN=WALLIX Internal CA"
+# 3. Troubleshooting Documentation
+- Common issues and resolutions
+- Log file locations
+- Diagnostic commands
+- Escalation procedures
+- Vendor support contacts
 
-# Generate server key
-openssl genrsa -out wallix.key 4096
+# 4. User Documentation
+- End user guides
+- Administrator guides
+- API reference
+- FAQ
 
-# Create config for SAN
-cat > wallix.cnf << 'EOF'
-[req]
-distinguished_name = req_distinguished_name
-req_extensions = v3_req
-prompt = no
-
-[req_distinguished_name]
-C = FR
-ST = IDF
-L = Paris
-O = Company
-OU = IT
-CN = wallix.site-a.company.com
-
-[v3_req]
-basicConstraints = CA:FALSE
-keyUsage = nonRepudiation, digitalSignature, keyEncipherment
-subjectAltName = @alt_names
-
-[alt_names]
-DNS.1 = wallix.site-a.company.com
-DNS.2 = wallix.company.com
-DNS.3 = wallix-a1.site-a.company.com
-DNS.4 = wallix-a2.site-a.company.com
-IP.1 = 10.100.1.100
-IP.2 = 10.100.1.10
-IP.3 = 10.100.1.11
-EOF
-
-# Generate CSR
-openssl req -new -key wallix.key -out wallix.csr -config wallix.cnf
-
-# Sign with CA
-openssl x509 -req -in wallix.csr -CA ca.crt -CAkey ca.key \
-    -CAcreateserial -out wallix.crt -days 365 -sha256 \
-    -extfile wallix.cnf -extensions v3_req
-
-# Verify
-openssl verify -CAfile ca.crt wallix.crt
-
-# Set permissions
-chmod 600 wallix.key
-chmod 644 wallix.crt ca.crt
-
-echo "Certificates generated in /etc/opt/wab/ssl/"
-ls -la /etc/opt/wab/ssl/
+# 5. Compliance Documentation
+- Audit logging configuration
+- Compliance report templates (SOC2, ISO27001)
+- Evidence collection procedures
 ```
 
-### Day 4: Shared Storage Configuration
+**Handoff Meeting Agenda**:
 
-#### Step 1.9: NFS Server Setup (on NFS server, not WALLIX)
+```markdown
+# Documentation Handoff Meeting (2 hours)
 
-```bash
-# On NFS server (10.100.1.50)
-apt install nfs-kernel-server
+## 1. Architecture Overview (30 mins)
+- Review network topology
+- Access Manager integration
+- License pooling
 
-# Create export directory
-mkdir -p /export/wallix/recordings
-mkdir -p /export/wallix/backups
-chown -R nobody:nogroup /export/wallix
+## 2. Operational Procedures (45 mins)
+- Daily/weekly/monthly tasks
+- Monitoring and alerting
+- Backup and restore
+- Failover procedures
 
-# Configure exports
-cat >> /etc/exports << 'EOF'
-/export/wallix/recordings  10.100.1.0/24(rw,sync,no_subtree_check,no_root_squash)
-/export/wallix/recordings  10.200.1.0/24(rw,sync,no_subtree_check,no_root_squash)
-/export/wallix/backups     10.100.1.0/24(rw,sync,no_subtree_check,no_root_squash)
-/export/wallix/backups     10.200.1.0/24(rw,sync,no_subtree_check,no_root_squash)
-EOF
+## 3. Troubleshooting (30 mins)
+- Common issues walkthrough
+- Log analysis
+- Escalation process
 
-# Apply exports
-exportfs -ra
-systemctl restart nfs-kernel-server
+## 4. Q&A (15 mins)
+- Address questions
+- Schedule follow-up sessions
 ```
 
-#### Step 1.10: NFS Client Setup (on WALLIX nodes)
+**Deliverable**: Documentation package delivered, handoff meeting completed.
+
+---
+
+### Step 9.5: Post-Deployment Support
+
+**Action**: Provide support during stabilization period.
+
+**Support Plan** (30 days):
 
 ```bash
-# On all Site A and Site B WALLIX nodes
-apt install nfs-common
+# Week 1-2: High Touch Support
+- Daily check-in meetings
+- Real-time issue resolution
+- Performance monitoring
+- User feedback collection
 
-# Create mount points
-mkdir -p /var/wab/recorded
-mkdir -p /var/wab/backups
+# Week 3-4: Transition Support
+- Weekly check-in meetings
+- Issue tracking and resolution
+- Knowledge transfer to operations team
+- Optimization and tuning
 
-# Test mount manually
-mount -t nfs4 10.100.1.50:/export/wallix/recordings /var/wab/recorded
-mount -t nfs4 10.100.1.50:/export/wallix/backups /var/wab/backups
-
-# Verify
-df -h | grep nfs
-
-# Add to fstab
-cat >> /etc/fstab << 'EOF'
-10.100.1.50:/export/wallix/recordings  /var/wab/recorded  nfs4  defaults,_netdev,hard,intr,timeo=600,retrans=5  0  0
-10.100.1.50:/export/wallix/backups     /var/wab/backups   nfs4  defaults,_netdev,hard,intr,timeo=600,retrans=5  0  0
-EOF
-
-# Test fstab
-umount /var/wab/recorded
-umount /var/wab/backups
-mount -a
-
-# Verify
-df -h | grep nfs
+# Week 5+: Standard Support
+- Transition to BAU (Business As Usual)
+- Issue escalation to vendor support
+- Periodic health checks
 ```
 
-### Day 5: Pre-Installation Verification
+**Support Metrics**:
 
-#### Step 1.11: Final Pre-Installation Checklist
+| Metric | Target | Actual |
+|--------|--------|--------|
+| Uptime (per site) | 99.9% | TBD |
+| Uptime (multi-site) | 99.99% | TBD |
+| Mean Time to Resolution (MTTR) | < 4 hours | TBD |
+| User satisfaction | > 90% | TBD |
+| Support tickets | < 10/week | TBD |
+
+**Deliverable**: Post-deployment support completed, metrics documented.
+
+---
+
+### Step 9.6: Project Closeout
+
+**Action**: Complete project closeout activities.
+
+**Closeout Activities**:
 
 ```bash
-#!/bin/bash
-# save as: /root/03-preinstall-check.sh
+# 1. Lessons Learned Session
+- What went well
+- What could be improved
+- Recommendations for future deployments
 
-echo "=== WALLIX Pre-Installation Verification ==="
-echo ""
+# 2. Final Documentation
+- Update documentation with lessons learned
+- Archive project artifacts
+- Create deployment retrospective
 
-ERRORS=0
+# 3. Financial Closeout
+- Final budget reconciliation
+- Asset inventory and tracking
+- License activation and tracking
 
-# Check hostname
-echo -n "[1] Hostname configured: "
-if hostname -f | grep -q "company.com"; then
-    echo "OK ($(hostname -f))"
-else
-    echo "FAIL - FQDN not set correctly"
-    ERRORS=$((ERRORS+1))
-fi
+# 4. Stakeholder Communication
+- Project completion announcement
+- Success metrics summary
+- Thank you and recognition
 
-# Check DNS resolution
-echo -n "[2] DNS resolution: "
-if nslookup $(hostname -f) >/dev/null 2>&1; then
-    echo "OK"
-else
-    echo "FAIL - Cannot resolve own hostname"
-    ERRORS=$((ERRORS+1))
-fi
+# 5. Transition to BAU
+- Hand off to operations team
+- Close project
+- Celebrate success!
+```
 
-# Check NTP sync
-echo -n "[3] NTP synchronization: "
-if ntpq -p | grep -q "^\*"; then
-    echo "OK"
-else
-    echo "WARN - NTP not synchronized"
-fi
+**Project Metrics Summary**:
 
-# Check disk space
-echo -n "[4] Disk space (/ > 20GB free): "
-ROOT_FREE=$(df -BG / | awk 'NR==2 {print $4}' | tr -d 'G')
-if [ "$ROOT_FREE" -gt 20 ]; then
-    echo "OK (${ROOT_FREE}GB free)"
-else
-    echo "FAIL - Only ${ROOT_FREE}GB free"
-    ERRORS=$((ERRORS+1))
-fi
+| Metric | Target | Actual |
+|--------|--------|--------|
+| Deployment timeline | 10 weeks | TBD |
+| Budget | $XXX,XXX | TBD |
+| Sites deployed | 5 | 5 |
+| Appliances deployed | 10 | 10 |
+| Licensed capacity | 450 sessions | 450 |
+| User satisfaction | > 90% | TBD |
+| Uptime (first 30 days) | 99.9% | TBD |
 
-# Check memory
-echo -n "[5] Memory (>= 8GB): "
-MEM_GB=$(free -g | awk '/^Mem:/ {print $2}')
-if [ "$MEM_GB" -ge 8 ]; then
-    echo "OK (${MEM_GB}GB)"
-else
-    echo "FAIL - Only ${MEM_GB}GB"
-    ERRORS=$((ERRORS+1))
-fi
+**Deliverable**: Project closed successfully with documentation and metrics.
 
-# Check NFS mount (if applicable)
-echo -n "[6] NFS recordings mount: "
-if mountpoint -q /var/wab/recorded 2>/dev/null; then
-    echo "OK"
-elif [ -d /var/wab/recorded ]; then
-    echo "WARN - Directory exists but not mounted (OK for Site C)"
-else
-    echo "FAIL - Mount point missing"
-    ERRORS=$((ERRORS+1))
-fi
+---
 
-# Check heartbeat interface (for HA nodes)
-echo -n "[7] Heartbeat interface: "
-if ip addr show eth1 2>/dev/null | grep -q "10.100.254"; then
-    echo "OK"
-else
-    echo "N/A - Single node or Site C"
-fi
+### Week 10 Deliverables Checklist
 
-# Check SSL certificates
-echo -n "[8] SSL certificates: "
-if [ -f /etc/opt/wab/ssl/wallix.crt ] && [ -f /etc/opt/wab/ssl/wallix.key ]; then
-    echo "OK"
-else
-    echo "WARN - Not found (will use self-signed during install)"
-fi
+- [ ] Pre-production validation completed with sign-off
+- [ ] Production cutover executed successfully (pilot, early adopters, full rollout)
+- [ ] User training completed (end users, administrators, operations)
+- [ ] Documentation handoff completed
+- [ ] Post-deployment support plan activated (30 days)
+- [ ] Project closeout activities completed
+- [ ] Lessons learned documented
+- [ ] Transition to BAU operations
 
-# Check internet connectivity (for package download)
-echo -n "[9] Internet connectivity: "
-if curl -s --connect-timeout 5 https://repo.wallix.com >/dev/null; then
-    echo "OK"
-else
-    echo "FAIL - Cannot reach WALLIX repository"
-    ERRORS=$((ERRORS+1))
-fi
+---
 
-# Check LDAP connectivity
-echo -n "[10] LDAP server reachable: "
-if nc -z -w5 10.100.1.20 636 2>/dev/null; then
-    echo "OK"
-else
-    echo "WARN - LDAP not reachable (configure later)"
-fi
+## Quick Reference Commands
 
-echo ""
-echo "=== Verification Complete ==="
-echo "Errors: $ERRORS"
+### Bastion Administration
 
-if [ $ERRORS -gt 0 ]; then
-    echo "Please fix the errors above before proceeding."
-    exit 1
-else
-    echo "System is ready for WALLIX installation."
-    exit 0
-fi
+```bash
+# System Status
+wabadmin status
+wabadmin ha status
+wabadmin license status
+
+# User Management
+wabadmin user list
+wabadmin user create --username john.doe --email john.doe@company.local
+wabadmin user grant-role --username john.doe --role admin
+
+# Target Management
+wabadmin target list
+wabadmin target create --name server01 --host 10.1.1.50 --protocol ssh
+wabadmin target delete --name server01
+
+# Authorization Management
+wabadmin authorization create --user john.doe --target server01 --account root
+wabadmin authorization list --user john.doe
+
+# Session Management
+wabadmin session list --active
+wabadmin session terminate --id <session_id>
+wabadmin session replay --id <session_id>
+
+# Credential Management
+wabadmin credential create --target server01 --account root --password SecurePass123
+wabadmin credential rotate --target server01 --account root
+
+# Backup and Restore
+wabadmin backup create --output /backup/bastion-$(date +%Y%m%d).tar.gz
+wabadmin restore --input /backup/bastion-20260205.tar.gz
+
+# Logs
+wabadmin log view --tail 100
+wabadmin log export --start "2026-02-05 00:00" --end "2026-02-05 23:59" --output audit.log
+```
+
+### HAProxy Management
+
+```bash
+# Service Management
+systemctl status haproxy
+systemctl restart haproxy
+systemctl status keepalived
+
+# Check VIP
+ip addr show eth0 | grep <VIP>
+
+# HAProxy Statistics
+curl http://localhost:8080/stats
+
+# Test Backend Health
+haproxy -c -f /etc/haproxy/haproxy.cfg
+```
+
+### Access Manager Integration
+
+```bash
+# Register Bastion
+curl -X POST https://am.company.local/api/v1/bastions \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -d '{"name": "bastion-site1", "url": "https://bastion-site1.company.local"}'
+
+# Check Bastion Health
+curl -X GET https://am.company.local/api/v1/bastions/bastion-site1/health \
+  -H "Authorization: Bearer AM_API_KEY"
+
+# Create Session via Access Manager
+curl -X POST https://am.company.local/api/v1/sessions \
+  -H "Authorization: Bearer AM_API_KEY" \
+  -d '{"user": "john.doe", "target": "server01", "protocol": "ssh"}'
+
+# Check License Pool
+curl -X GET https://am.company.local/api/v1/licenses/pool/bastion-pool-450 \
+  -H "Authorization: Bearer AM_API_KEY"
+```
+
+### Monitoring and Diagnostics
+
+```bash
+# Cluster Health (Pacemaker)
+crm status
+crm_mon -1
+
+# Database Replication (MariaDB)
+mysql -e "SHOW SLAVE STATUS\G"
+
+# System Resources
+top
+htop
+iostat -x 5
+vmstat 5
+
+# Network Connectivity
+ping <target>
+traceroute <target>
+nc -zv <host> <port>
+
+# Firewall Rules
+iptables -L -n
+ss -tunlp
 ```
 
 ---
 
-## Phase 2: Site A Primary Installation
+## Troubleshooting Quick Links
 
-### Day 1: Node 1 - WALLIX Installation
+### Common Issues
 
-#### Step 2.1: Add WALLIX Repository
+#### Issue 1: HAProxy VIP Not Responding
+
+**Symptoms**:
+- Cannot connect to HAProxy VIP (10.X.1.10)
+- Keepalived logs show VRRP errors
+
+**Diagnosis**:
 
 ```bash
-# On wallix-a1
+# Check Keepalived status
+systemctl status keepalived
+journalctl -u keepalived -f
 
-# Import WALLIX GPG key
-curl -fsSL https://repo.wallix.com/wallix.gpg | gpg --dearmor -o /usr/share/keyrings/wallix.gpg
+# Check VIP assignment
+ip addr show eth0 | grep 10.X.1.10
 
-# Add repository
-cat > /etc/apt/sources.list.d/wallix.list << 'EOF'
-deb [signed-by=/usr/share/keyrings/wallix.gpg] https://repo.wallix.com/bastion/12.1 bookworm main
-EOF
-
-# Update package list
-apt update
-
-# Verify WALLIX packages available
-apt-cache search wallix
+# Check VRRP packets
+tcpdump -i eth0 vrrp
 ```
 
-#### Step 2.2: Install WALLIX Bastion
+**Resolution**:
 
 ```bash
-# Install WALLIX Bastion
-apt install -y wallix-bastion
+# Restart Keepalived
+systemctl restart keepalived
 
-# The installer will prompt for:
-# 1. Admin password - USE STRONG PASSWORD, DOCUMENT SECURELY
-# 2. License file - Provide path or skip for evaluation
-# 3. SSL certificate - Use prepared cert or accept self-signed
-
-# Wait for installation to complete (5-10 minutes)
+# If VIP not moving, check firewall (VRRP uses multicast 224.0.0.18)
+iptables -I INPUT -p vrrp -j ACCEPT
 ```
 
-#### Step 2.3: Install License
+**Reference**: [05-haproxy-setup.md](05-haproxy-setup.md#troubleshooting)
+
+---
+
+#### Issue 2: Bastion Cluster Split-Brain
+
+**Symptoms**:
+- Both Bastion nodes think they are primary
+- Data inconsistency between nodes
+
+**Diagnosis**:
 
 ```bash
-# Copy license file
-cp /path/to/wallix-license.key /etc/opt/wab/license.key
-chmod 640 /etc/opt/wab/license.key
-chown root:wab /etc/opt/wab/license.key
-
-# Verify license
-wab-admin license-check
-
-# Expected output:
-# License Status: Valid
-# License Type: Enterprise
-# Expiration: 2027-01-15
-# Max Concurrent Users: 100
-# Max Targets: Unlimited
-# Features: HA, Recording, Password Management, Session Audit
-```
-
-#### Step 2.4: Install SSL Certificate
-
-```bash
-# If using pre-generated certificates
-wab-admin ssl-install \
-    --cert /etc/opt/wab/ssl/wallix.crt \
-    --key /etc/opt/wab/ssl/wallix.key \
-    --chain /etc/opt/wab/ssl/ca-chain.crt
-
-# Verify
-wab-admin ssl-verify
-
-# Restart services
-systemctl restart wabengine
-systemctl restart nginx
-```
-
-#### Step 2.5: Configure MariaDB for Replication
-
-```bash
-# Configure MariaDB for replication
-# Note: WALLIX Bastion uses `bastion-replication` command for most replication setup
-# Manual configuration shown for reference
-
-cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
-# =============================================================================
-# WALLIX HA Replication Configuration
-# =============================================================================
-
-[mysqld]
-# Server identification (unique per node)
-server-id = 1
-
-# Binary logging for replication
-log_bin = /var/log/mysql/mariadb-bin
-binlog_format = ROW
-expire_logs_days = 7
-max_binlog_size = 100M
-
-# Enable GTID for easier failover
-gtid_strict_mode = ON
-log_slave_updates = ON
-
-# Connection settings
-bind-address = 0.0.0.0
-max_connections = 500
-
-# Performance tuning
-innodb_buffer_pool_size = 8G
-innodb_log_file_size = 1G
-innodb_flush_log_at_trx_commit = 1
-sync_binlog = 1
-
-# For synchronous replication (Galera-style), uncomment:
-# wsrep_on = ON
-# wsrep_provider = /usr/lib/galera/libgalera_smm.so
-# wsrep_cluster_address = "gcomm://10.100.1.10,10.100.1.11"
-# wsrep_cluster_name = "wallix_cluster"
-# wsrep_node_address = "10.100.1.10"
-# wsrep_node_name = "wallix-a1"
-# wsrep_sst_method = mariabackup
-EOF
-
-# Create replication user
-sudo mysql << 'SQL'
-CREATE USER 'replicator'@'10.100.254.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
-GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.100.254.%';
-CREATE USER 'replicator'@'10.100.1.%' IDENTIFIED BY 'ReplicaSecurePass2026!';
-GRANT REPLICATION SLAVE ON *.* TO 'replicator'@'10.100.1.%';
-FLUSH PRIVILEGES;
-SQL
-
-# Restart MariaDB
-systemctl restart mariadb
-
-# Verify replication status
-sudo mysql -e "SHOW MASTER STATUS\G"
-```
-
-### Day 2: Node 2 - Installation and Replication
-
-#### Step 2.6: Install WALLIX on Node 2
-
-```bash
-# On wallix-a2
-
-# Add repository (same as Node 1)
-curl -fsSL https://repo.wallix.com/wallix.gpg | gpg --dearmor -o /usr/share/keyrings/wallix.gpg
-cat > /etc/apt/sources.list.d/wallix.list << 'EOF'
-deb [signed-by=/usr/share/keyrings/wallix.gpg] https://repo.wallix.com/bastion/12.1 bookworm main
-EOF
-apt update
-
-# Install WALLIX
-apt install -y wallix-bastion
-
-# Copy license from Node 1
-scp root@wallix-a1:/etc/opt/wab/license.key /etc/opt/wab/license.key
-chmod 640 /etc/opt/wab/license.key
-chown root:wab /etc/opt/wab/license.key
-
-# Copy SSL certificates from Node 1
-scp -r root@wallix-a1:/etc/opt/wab/ssl/* /etc/opt/wab/ssl/
-wab-admin ssl-install \
-    --cert /etc/opt/wab/ssl/wallix.crt \
-    --key /etc/opt/wab/ssl/wallix.key \
-    --chain /etc/opt/wab/ssl/ca-chain.crt
-```
-
-#### Step 2.7: Configure MariaDB as Standby
-
-```bash
-# On wallix-a2
-
-# Stop MariaDB
-systemctl stop mariadb
-
-# Clear existing data
-rm -rf /var/lib/mysql/*
-
-# Take base backup from primary using mariabackup
-mariabackup --backup --target-dir=/tmp/backup \
-    --host=10.100.254.1 \
-    --user=replicator \
-    --password=ReplicaSecurePass2026!
-
-# Prepare the backup
-mariabackup --prepare --target-dir=/tmp/backup
-
-# Restore the backup
-mariabackup --copy-back --target-dir=/tmp/backup
-
-# Fix permissions
-chown -R mysql:mysql /var/lib/mysql
-
-# Configure as replica
-cat > /etc/mysql/mariadb.conf.d/50-replication.cnf << 'EOF'
-[mysqld]
-# Server identification (must be unique - different from primary)
-server-id = 2
-
-# Binary logging for replication
-log_bin = /var/log/mysql/mariadb-bin
-binlog_format = ROW
-expire_logs_days = 7
-max_binlog_size = 100M
-
-# Enable GTID
-gtid_strict_mode = ON
-log_slave_updates = ON
-
-# Replica settings
-read_only = ON
-
-# Connection settings
-bind-address = 0.0.0.0
-max_connections = 500
-EOF
-
-# Start MariaDB
-systemctl start mariadb
-
-# Configure replication to primary
-sudo mysql << 'SQL'
-CHANGE MASTER TO
-    MASTER_HOST='10.100.254.1',
-    MASTER_USER='replicator',
-    MASTER_PASSWORD='ReplicaSecurePass2026!',
-    MASTER_USE_GTID=slave_pos;
-START SLAVE;
-SQL
-
-# Verify replication status
-sudo mysql -e "SHOW SLAVE STATUS\G"
-# Check: Slave_IO_Running: Yes, Slave_SQL_Running: Yes
-
-# On Node 1, verify replication from primary perspective
-sudo mysql -e "SHOW SLAVE HOSTS\G"
-```
-
-### Day 3: HA Cluster Setup
-
-#### Step 2.8: Install Pacemaker/Corosync
-
-```bash
-# On BOTH nodes
-apt install -y pacemaker corosync pcs resource-agents fence-agents
-
-# Set hacluster password (SAME on both nodes)
-echo "hacluster:HAClusterSecure2026!" | chpasswd
-
-# Enable and start pcsd
-systemctl enable pcsd
-systemctl start pcsd
-```
-
-#### Step 2.9: Create Cluster
-
-```bash
-# On Node 1 ONLY
-
-# Authenticate nodes
-pcs host auth wallix-a1-hb wallix-a2-hb -u hacluster -p 'HAClusterSecure2026!'
-
-# Create cluster
-pcs cluster setup wallix-site-a wallix-a1-hb wallix-a2-hb \
-    --transport udp \
-    --force
-
-# Start cluster
-pcs cluster start --all
-pcs cluster enable --all
-
-# Wait for cluster to stabilize
-sleep 30
-
 # Check cluster status
-pcs status
+wabadmin ha status
+
+# Check Pacemaker/Corosync
+crm status
+corosync-quorumtool
 ```
 
-#### Step 2.10: Configure Cluster Resources
+**Resolution**:
 
 ```bash
-# On Node 1
+# Stop secondary node
+wabadmin ha demote --force
 
-# Set cluster properties
-pcs property set stonith-enabled=false  # Enable in production with fencing!
-pcs property set no-quorum-policy=ignore
-pcs property set default-resource-stickiness=100
+# Restart cluster services
+systemctl restart pacemaker
+systemctl restart corosync
 
-# Create Virtual IP resource
-pcs resource create wallix-vip ocf:heartbeat:IPaddr2 \
-    ip=10.100.1.100 \
-    cidr_netmask=24 \
-    nic=eth0 \
-    op monitor interval=10s timeout=20s \
-    op start timeout=20s \
-    op stop timeout=20s
-
-# Create MariaDB resource (using systemd for simplicity)
-# For advanced MariaDB HA, consider Galera cluster or external replication management
-pcs resource create mariadb systemd:mariadb \
-    op start timeout=60s \
-    op stop timeout=60s \
-    op monitor interval=30s
-
-# Create WALLIX engine resource
-pcs resource create wallix-engine systemd:wabengine \
-    op monitor interval=30s timeout=30s \
-    op start timeout=90s \
-    op stop timeout=90s
-
-# Create WALLIX web resource
-pcs resource create wallix-web systemd:wab-webui \
-    op monitor interval=30s timeout=30s \
-    op start timeout=60s \
-    op stop timeout=60s
-
-# Group WALLIX services
-pcs resource group add wallix-services mariadb wallix-engine wallix-web
-
-# Set constraints
-# WALLIX services must be with VIP
-pcs constraint colocation add wallix-services with wallix-vip INFINITY
-
-# Order: VIP -> WALLIX services (includes MariaDB)
-pcs constraint order wallix-vip then wallix-services
-
-# Verify configuration
-pcs constraint show
-pcs resource show
-
-# Check status
-pcs status
+# Verify primary/secondary roles
+wabadmin ha status
 ```
 
-### Day 4: Initial Configuration
-
-#### Step 2.11: Access Web UI
-
-```
-URL: https://10.100.1.100 (or https://wallix.site-a.company.com)
-Username: admin
-Password: [Set during installation]
-```
-
-#### Step 2.12: Configure System Settings
-
-Via Web UI or CLI:
-
-```bash
-# System identification
-wab-admin config-set system.name "WALLIX-SITE-A"
-wab-admin config-set system.fqdn "wallix.site-a.company.com"
-wab-admin config-set system.timezone "Europe/Paris"
-
-# Session settings
-wab-admin config-set session.idle_timeout 1800
-wab-admin config-set session.absolute_timeout 28800
-wab-admin config-set session.warning_before_timeout 300
-
-# Recording settings
-wab-admin config-set recording.enabled true
-wab-admin config-set recording.ssh true
-wab-admin config-set recording.rdp true
-wab-admin config-set recording.vnc true
-wab-admin config-set recording.compression true
-wab-admin config-set recording.retention_days 365
-
-# Audit settings
-wab-admin config-set audit.enabled true
-wab-admin config-set audit.log_level info
-wab-admin config-set audit.retention_days 365
-```
-
-#### Step 2.13: Configure LDAP Authentication
-
-```bash
-wab-admin ldap-add \
-    --name "Corporate-AD" \
-    --host "ldaps://10.100.1.20:636" \
-    --base-dn "DC=company,DC=com" \
-    --bind-dn "CN=svc_wallix,OU=ServiceAccounts,DC=company,DC=com" \
-    --bind-password "<LDAP_SERVICE_PASSWORD>" \
-    --user-filter "(&(objectClass=user)(sAMAccountName=%s)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))" \
-    --group-filter "(&(objectClass=group)(member=%s))" \
-    --user-attribute "sAMAccountName" \
-    --email-attribute "mail" \
-    --display-name-attribute "displayName" \
-    --tls-verify true \
-    --timeout 30
-
-# Test LDAP
-wab-admin ldap-test --name "Corporate-AD" --user testuser
-```
-
-#### Step 2.14: Configure Email Alerts
-
-```bash
-wab-admin config-set smtp.enabled true
-wab-admin config-set smtp.host "10.100.1.6"
-wab-admin config-set smtp.port 587
-wab-admin config-set smtp.tls true
-wab-admin config-set smtp.auth true
-wab-admin config-set smtp.username "wallix-alerts"
-wab-admin config-set smtp.password "<SMTP_PASSWORD>"
-wab-admin config-set smtp.from "wallix-alerts@company.com"
-wab-admin config-set smtp.admin_email "security-team@company.com"
-
-# Test email
-wab-admin test-email security-team@company.com
-```
-
-### Day 5: HA Verification
-
-#### Step 2.15: Test Planned Failover
-
-```bash
-#!/bin/bash
-# save as: /root/test-failover.sh
-
-echo "=== WALLIX HA Failover Test ==="
-echo ""
-
-echo "[1] Current cluster status:"
-pcs status
-
-echo ""
-echo "[2] Recording current primary node..."
-PRIMARY=$(pcs status | grep "Masters:" | awk '{print $NF}' | tr -d '[]')
-echo "Current primary: $PRIMARY"
-
-echo ""
-echo "[3] Current VIP location:"
-ip addr show | grep "10.100.1.100" || echo "VIP not on this node"
-
-echo ""
-read -p "Press Enter to initiate failover (put $PRIMARY in standby)..."
-
-echo ""
-echo "[4] Initiating failover..."
-pcs node standby $PRIMARY
-
-echo ""
-echo "[5] Waiting for failover (30 seconds)..."
-sleep 30
-
-echo ""
-echo "[6] Post-failover status:"
-pcs status
-
-echo ""
-echo "[7] Testing VIP accessibility..."
-ping -c 3 10.100.1.100
-
-echo ""
-echo "[8] Testing WALLIX API..."
-curl -k -s https://10.100.1.100/api/status | head -5
-
-echo ""
-echo "[9] Testing Web UI..."
-curl -k -s -o /dev/null -w "%{http_code}" https://10.100.1.100/
-echo ""
-
-echo ""
-read -p "Press Enter to restore $PRIMARY..."
-
-echo ""
-echo "[10] Restoring node..."
-pcs node unstandby $PRIMARY
-
-echo ""
-echo "[11] Final status:"
-sleep 30
-pcs status
-
-echo ""
-echo "=== Failover test complete ==="
-```
+**Reference**: [07-bastion-active-passive.md](07-bastion-active-passive.md#split-brain-recovery)
 
 ---
 
-## Phase 3: Site B Secondary Installation
+#### Issue 3: SSO Authentication Failure
 
-[Continue with similar detailed steps for Site B...]
+**Symptoms**:
+- Users redirected to Access Manager but fail to return to Bastion
+- SAML assertion errors in logs
 
-### Quick Reference for Site B
+**Diagnosis**:
 
-Site B follows the same process as Site A with these differences:
+```bash
+# Check SSO configuration
+wabadmin sso status
 
-| Setting | Site A | Site B |
-|---------|--------|--------|
-| Management IPs | 10.100.1.10, .11 | 10.200.1.10, .11 |
-| VIP | 10.100.1.100 | 10.200.1.100 |
-| Heartbeat IPs | 10.100.254.1, .2 | 10.200.254.1, .2 |
-| Cluster Name | wallix-site-a | wallix-site-b |
-| NFS Server | 10.100.1.50 (local) | 10.200.1.50 (local) or Site A |
-| Multi-site Role | Primary | Secondary |
+# Check SAML metadata
+curl https://am.company.local/saml/metadata
+
+# Check Bastion logs
+wabadmin log view --filter sso
+```
+
+**Resolution**:
+
+```bash
+# Re-import SAML metadata
+wabadmin sso configure --provider saml \
+  --idp-metadata "https://am.company.local/saml/metadata"
+
+# Verify certificate validity
+openssl s_client -connect am.company.local:443 -showcerts
+
+# Test SSO flow manually
+# Browser: https://bastion-site1.company.local/auth/sso
+```
+
+**Reference**: [03-access-manager-integration.md](03-access-manager-integration.md#sso-troubleshooting)
 
 ---
 
-## Phase 4: Sites 3 and 4 Installation
+#### Issue 4: RADIUS MFA Timeout
 
-Sites 3 and 4 follow the same process as Sites 1 and 2 with appropriate IP addressing:
+**Symptoms**:
+- MFA authentication fails with timeout
+- FortiToken push notifications not received
 
-| Setting | Site 1 | Site 2 | Site 3 | Site 4 |
-|---------|--------|--------|--------|--------|
-| Management IPs | 10.100.1.10, .11 | 10.200.1.10, .11 | 10.300.1.10, .11 | 10.400.1.10, .11 |
-| VIP | 10.100.1.100 | 10.200.1.100 | 10.300.1.100 | 10.400.1.100 |
-| Heartbeat IPs | 10.100.254.1, .2 | 10.200.254.1, .2 | 10.300.254.1, .2 | 10.400.254.1, .2 |
-| Cluster Name | wallix-site-1 | wallix-site-2 | wallix-site-3 | wallix-site-4 |
+**Diagnosis**:
 
-Repeat the installation steps from Phase 2 for each additional site.
+```bash
+# Test RADIUS connectivity
+wabadmin auth test-radius --user john.doe --token 123456
+
+# Check FortiAuthenticator logs
+# (on FortiAuthenticator)
+diag debug application radiusd -1
+diag debug enable
+
+# Check network connectivity
+nc -zvu 10.0.1.50 1812
+nc -zvu 10.0.1.50 1813
+```
+
+**Resolution**:
+
+```bash
+# Increase RADIUS timeout
+wabadmin auth configure --method radius --timeout 10
+
+# Test with secondary RADIUS server
+wabadmin auth configure --method radius --primary-server 10.0.2.50
+
+# Verify shared secret
+wabadmin auth test-radius --user john.doe --debug
+```
+
+**Reference**: [03-access-manager-integration.md](03-access-manager-integration.md#radius-troubleshooting)
 
 ---
 
-## Phase 5: Multi-Site Synchronization
+#### Issue 5: Session Recording Playback Failure
 
-### Step 5.1: Generate API Keys on Site A
+**Symptoms**:
+- Session recordings not playable
+- "Corrupted recording" error
 
-```bash
-# On Site A
-wab-admin multisite-generate-key --site site-b --name "Site B - Secondary Plant"
-# Save output: sk_live_site-b_xxxxxxxxxxxxxxxxxxxxxxxxxx
-
-wab-admin multisite-generate-key --site site-c --name "Site C - Remote Field"
-# Save output: sk_live_site-c_xxxxxxxxxxxxxxxxxxxxxxxxxx
-
-# List all keys
-wab-admin multisite-list-keys
-```
-
-### Step 5.2: Configure Site B as Secondary
+**Diagnosis**:
 
 ```bash
-# On Site B
-wab-admin config-set multisite.enabled true
-wab-admin config-set multisite.role secondary
-wab-admin config-set multisite.instance_id site-b
-wab-admin config-set multisite.primary_url "https://wallix.site-a.company.com"
-wab-admin config-set multisite.api_key "sk_live_site-b_xxxxxxxxxxxxxxxxxxxxxxxxxx"
-wab-admin config-set multisite.sync_interval 300
-wab-admin config-set multisite.sync_on_startup true
+# Check recording status
+wabadmin session list --id <session_id>
 
-# Test connection
-wab-admin multisite-test
+# Check storage space
+df -h /var/wab/recordings
 
-# Initial sync
-wab-admin multisite-sync --full
-
-# Verify
-wab-admin multisite-status
+# Verify recording file integrity
+wabadmin session verify --id <session_id>
 ```
 
-### Step 5.3: Configure Sites 3 and 4 as Secondary
+**Resolution**:
 
 ```bash
-# On Sites 3 and 4 (repeat with appropriate site ID)
-wab-admin config-set multisite.enabled true
-wab-admin config-set multisite.role secondary
-wab-admin config-set multisite.instance_id site-3  # or site-4
-wab-admin config-set multisite.primary_url "https://wallix.site-1.company.com"
-wab-admin config-set multisite.api_key "sk_live_site-3_xxxxxxxxxxxxxxxxxxxxxxxxxx"
-wab-admin config-set multisite.sync_interval 300
-wab-admin config-set multisite.sync_on_startup true
+# Repair recording index
+wabadmin session repair --id <session_id>
 
-# Test and sync
-wab-admin multisite-test
-wab-admin multisite-sync --full
+# Export recording to alternative format
+wabadmin session export --id <session_id> --format mp4
+
+# If storage full, clean old recordings
+wabadmin recording cleanup --older-than 90
 ```
+
+**Reference**: [../docs/pam/39-session-recording-playback/](../docs/pam/39-session-recording-playback/)
 
 ---
 
-## Phase 6: Fortigate MFA Integration
+#### Issue 6: License Pool Exhaustion
 
-### Step 6.1: Configure FortiAuthenticator
+**Symptoms**:
+- New sessions rejected with "License limit reached"
+- License pool shows 100% utilization
 
-```bash
-# FortiAuthenticator settings (via GUI or CLI)
-# 1. Create RADIUS client for WALLIX
-# 2. Configure FortiToken Mobile push
-# 3. Set up user directory sync with AD
-
-# RADIUS client configuration:
-# Client Name: wallix-bastion
-# Client IP: 10.100.1.100 (VIP)
-# Secret: <strong RADIUS secret>
-# Auth Port: 1812
-# Acct Port: 1813
-```
-
-### Step 6.2: Configure WALLIX for FortiAuthenticator
+**Diagnosis**:
 
 ```bash
-# Add FortiAuthenticator as external authentication
-wab-admin external-auth-add \
-    --name "FortiAuthenticator" \
-    --type radius \
-    --host "10.100.5.10" \
-    --port 1812 \
-    --secret "<RADIUS_SECRET>" \
-    --timeout 30 \
-    --retries 3
+# Check license status
+wabadmin license status
 
-# Enable MFA for user groups
-wab-admin policy-update --group "Administrators" --mfa-required true
-wab-admin policy-update --group "Operators" --mfa-required true
+# Check license pool via Access Manager
+curl -X GET https://am.company.local/api/v1/licenses/pool/bastion-pool-450 \
+  -H "Authorization: Bearer AM_API_KEY"
+
+# List active sessions
+wabadmin session list --active --count
 ```
 
-### Step 6.3: Configure Fortigate Firewall Policies
+**Resolution**:
 
 ```bash
-# Fortigate CLI configuration (example)
-config firewall policy
-    edit 100
-        set name "WALLIX-Access"
-        set srcintf "wan"
-        set dstintf "internal"
-        set srcaddr "all"
-        set dstaddr "WALLIX-VIP"
-        set action accept
-        set schedule "always"
-        set service "HTTPS" "SSH" "RDP"
-        set fsso enable
-        set groups "WALLIX-Users"
-    next
-end
+# Terminate idle sessions
+wabadmin session cleanup --idle-timeout 3600
+
+# Increase license pool (requires purchase)
+# Contact WALLIX licensing team
+
+# Temporary: Increase warning threshold
+curl -X PATCH https://am.company.local/api/v1/licenses/pools/bastion-pool-450 \
+  -d '{"warning_threshold": 95}'
 ```
+
+**Reference**: [09-licensing.md](09-licensing.md#license-pool-exhaustion)
 
 ---
 
-## Phase 7: Security Hardening
+### Escalation Procedures
 
-[Detailed security hardening steps...]
+#### Level 1: Internal Operations Team
 
----
-
-## Phase 8: Validation and Go-Live
-
-### Complete Validation Checklist
-
-```bash
-#!/bin/bash
-# save as: /root/final-validation.sh
-
-echo "========================================"
-echo "WALLIX BASTION - FINAL VALIDATION"
-echo "========================================"
-echo ""
-
-PASS=0
-FAIL=0
-WARN=0
-
-check() {
-    local name="$1"
-    local result="$2"
-    if [ "$result" = "0" ]; then
-        echo "[PASS] $name"
-        PASS=$((PASS+1))
-    else
-        echo "[FAIL] $name"
-        FAIL=$((FAIL+1))
-    fi
-}
-
-warn() {
-    local name="$1"
-    echo "[WARN] $name"
-    WARN=$((WARN+1))
-}
-
-echo "=== System Health ==="
-wab-admin health-check >/dev/null 2>&1
-check "Health check" $?
-
-systemctl is-active wabengine >/dev/null 2>&1
-check "WALLIX Engine running" $?
-
-systemctl is-active wab-webui >/dev/null 2>&1
-check "WALLIX Web UI running" $?
-
-echo ""
-echo "=== License ==="
-wab-admin license-check >/dev/null 2>&1
-check "License valid" $?
-
-echo ""
-echo "=== High Availability ==="
-pcs status >/dev/null 2>&1
-check "Cluster healthy" $?
-
-echo ""
-echo "=== Multi-Site ==="
-wab-admin multisite-test >/dev/null 2>&1 || warn "Multi-site test (may be expected if secondary)"
-
-echo ""
-echo "=== Authentication ==="
-wab-admin ldap-test --name "Corporate-AD" --user testuser >/dev/null 2>&1
-check "LDAP authentication" $?
-
-echo ""
-echo "=== Recording ==="
-ls /var/wab/recorded/*.wab >/dev/null 2>&1 && check "Recordings present" 0 || warn "No recordings yet"
-
-echo ""
-echo "=== Security ==="
-wab-admin security-audit >/dev/null 2>&1
-check "Security audit" $?
-
-echo ""
-echo "========================================"
-echo "RESULTS: $PASS passed, $FAIL failed, $WARN warnings"
-echo "========================================"
-
-if [ $FAIL -gt 0 ]; then
-    echo "VALIDATION FAILED - Do not proceed to production"
-    exit 1
-else
-    echo "VALIDATION PASSED - Ready for production"
-    exit 0
-fi
-```
+**Contact**: operations@company.local
+**Response Time**: 1 hour (business hours), 4 hours (after hours)
+**Scope**: Common issues, restarts, configuration changes
 
 ---
 
-## Post-Installation Operations
+#### Level 2: Infrastructure Team
 
-### Daily Operations Checklist
-
-```bash
-# Morning check
-wab-admin health-check
-pcs status
-wab-admin session-list --active
-
-# Check disk space
-df -h /var/wab/recorded
-
-# Check logs for errors
-journalctl -u wabengine --since "24 hours ago" | grep -i error
-```
-
-### Weekly Operations
-
-```bash
-# Backup configuration
-wab-admin backup --config --output /var/wab/backups/config-$(date +%Y%m%d).tar.gz
-
-# Review audit logs
-wab-admin audit-report --last-week --output /tmp/weekly-audit.pdf
-
-# Check certificate expiry
-wab-admin ssl-verify
-```
-
-### Monthly Operations
-
-```bash
-# Full backup
-wab-admin backup --full --output /var/wab/backups/full-$(date +%Y%m%d).tar.gz
-
-# Compliance report
-wab-admin compliance-report --standard iec62443 --output /tmp/monthly-compliance.pdf
-
-# Review user access
-wab-admin user-list --inactive-days 30
-```
+**Contact**: infrastructure@company.local
+**Response Time**: 4 hours
+**Scope**: Network issues, hardware failures, clustering issues
 
 ---
 
-## Troubleshooting Reference
+#### Level 3: WALLIX Support
 
-### Common Issues and Solutions
-
-| Issue | Symptoms | Solution |
-|-------|----------|----------|
-| Service won't start | wabengine fails | Check `journalctl -u wabengine` |
-| Database connection | "Cannot connect to database" | Verify MariaDB: `systemctl status mariadb` |
-| Cluster split-brain | Both nodes think they're primary | Stop one node, verify data, restart cluster |
-| Sync failures | "Connection refused to primary" | Check firewall, VPN, API key |
-| Recording missing | Sessions not recorded | Check `/var/wab/recorded` permissions, disk space |
-| Authentication fails | "LDAP bind failed" | Verify LDAP credentials, network connectivity |
-
-### Emergency Procedures
-
-```bash
-# Emergency admin access (bypass LDAP)
-wab-admin emergency-access --enable --duration 3600
-
-# Force cluster failover
-pcs resource move wallix-vip wallix-a2-hb --lifetime=PT1H
-
-# Stop all WALLIX services
-systemctl stop wabengine wab-webui
-
-# Start in maintenance mode
-wab-admin maintenance-mode --enable
-```
+**Contact**: support@wallix.com
+**Support Portal**: https://support.wallix.com
+**Response Time**: 8 hours (Standard), 4 hours (Premium), 1 hour (Critical)
+**Scope**: Product defects, complex configuration, vendor escalation
 
 ---
 
-## Support Contacts
+### Additional Resources
 
-| Issue Type | Contact |
-|------------|---------|
-| WALLIX Product Support | https://support.wallix.com |
-| License Issues | license@wallix.com |
-| Security Vulnerabilities | security@wallix.com |
-| Internal IT Support | [Your internal contact] |
-| OT Team | [Your OT team contact] |
+#### Documentation Links
+
+| Resource | Location |
+|----------|----------|
+| **PAM Documentation** | [/docs/pam/](../docs/pam/) |
+| **Installation Guides** | [/install/](../install/) |
+| **Pre-Production Lab** | [/pre/](../pre/) |
+| **Automation Examples** | [/examples/](../examples/) |
+| **Architecture Diagrams** | [11-architecture-diagrams.md](11-architecture-diagrams.md) |
+| **Testing Procedures** | [10-testing-validation.md](10-testing-validation.md) |
 
 ---
 
-**Document Version**: 2.0
-**WALLIX Version**: 12.1.x
-**Last Updated**: January 2026
+#### Official WALLIX Resources
+
+| Resource | URL |
+|----------|-----|
+| **Documentation Portal** | https://pam.wallix.one/documentation |
+| **Admin Guide** | https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf |
+| **User Guide** | https://pam.wallix.one/documentation/user-doc/bastion_en_user_guide.pdf |
+| **API Reference** | https://github.com/wallix/wbrest_samples |
+| **Support Portal** | https://support.wallix.com |
+
+---
+
+## Summary
+
+This HOWTO guide has walked you through the complete 10-week deployment process for a 5-site WALLIX Bastion infrastructure with Access Manager integration:
+
+1. **Week 1**: Planning and prerequisites
+2. **Week 2**: Access Manager integration
+3. **Weeks 3-4**: Site 1 deployment (reference template)
+4. **Weeks 5-8**: Sites 2-5 replication
+5. **Week 9**: Final integration and testing
+6. **Week 10**: Go-live and production support
+
+**Key Success Factors**:
+- Thorough planning and prerequisites validation
+- Robust Site 1 deployment as template
+- Effective collaboration with Access Manager team
+- Comprehensive testing at each phase
+- Proper documentation and knowledge transfer
+
+**Next Steps**:
+1. Review and complete Week 1 planning activities
+2. Coordinate with Access Manager team for Week 2 integration
+3. Begin Site 1 deployment in Week 3
+4. Use this guide as your reference throughout the deployment
+
+**Questions or Issues?**
+- Reference troubleshooting section above
+- Consult detailed installation guides linked throughout this document
+- Contact WALLIX support for vendor escalation
+
+---
+
+*Good luck with your deployment!*

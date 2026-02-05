@@ -22,9 +22,9 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 |--------|---------|
 | **Solution** | Privileged Access Management (PAM) |
 | **Authentication** | FortiAuthenticator with FortiToken Mobile/Push |
-| **Architecture** | 4 synchronized sites in single CPD |
-| **High Availability** | Active-Active clustering per site |
-| **Target Systems** | Windows Server 2022, RHEL 10, RHEL 9 |
+| **Architecture** | 5 sites with 2 Access Managers (HA) via MPLS |
+| **High Availability** | Active-Active or Active-Passive per site |
+| **Target Systems** | Windows Server 2022, RHEL 10, RHEL 9, OT (via RDS) |
 | **Documentation** | 48 comprehensive sections |
 
 ---
@@ -33,45 +33,45 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 
 ```
 +===============================================================================+
-|                     4-SITE SYNCHRONIZED ARCHITECTURE                          |
+|           5-SITE ARCHITECTURE WITH ACCESS MANAGER INTEGRATION                 |
 +===============================================================================+
 |                                                                               |
-|                          +--------------------+                               |
-|                          |  FortiAuthenticator |                              |
-|                          |    (HW Appliance)   |                              |
-|                          |     RADIUS MFA      |                              |
-|                          +---------+----------+                               |
-|                                    |                                          |
-|         +------------+-------------+-------------+------------+               |
-|         |            |             |             |            |               |
-|    +----v----+  +----v----+  +----v----+  +----v----+                         |
-|    |  Site 1 |  |  Site 2 |  |  Site 3 |  |  Site 4 |                         |
-|    +---------+  +---------+  +---------+  +---------+                         |
+|  +----------------------+      +----------------------+                        |
+|  | Access Manager 1     |      | Access Manager 2     |                       |
+|  | (DC-A) - HA          | HA   | (DC-B) - HA          |                       |
+|  | SSO, MFA, Brokering  |<---->| SSO, MFA, Brokering  |                       |
+|  +----------+-----------+      +-----------+----------+                       |
+|             |                              |                                  |
+|             +------------MPLS--------------+                                  |
+|                              |                                                |
+|      +-----------+-----------+-----------+-----------+                        |
+|      |           |           |           |           |                        |
+|  +---v---+   +---v---+   +---v---+   +---v---+   +---v---+                   |
+|  | Site1 |   | Site2 |   | Site3 |   | Site4 |   | Site5 |                   |
+|  | Paris |   | Paris |   | Paris |   | Paris |   | Paris |                   |
+|  +-------+   +-------+   +-------+   +-------+   +-------+                   |
 |                                                                               |
-|    Each Site:                                                                 |
-|    +-----------------------------------------------------------------------+  |
-|    |  Fortigate FW --> HAProxy (2x HA) --> WALLIX (2x HA) --> WALLIX RDS   |  |
-|    +-----------------------------------------------------------------------+  |
-|                                    |                                          |
-|                          +---------v----------+                               |
-|                          |   Target Systems   |                               |
-|                          | Windows Server 2022|                               |
-|                          |  RHEL 10 / RHEL 9  |                               |
-|                          +--------------------+                               |
+|  Each Site (Paris Datacenters):                                               |
+|  +------------------------------------------------------------------------+   |
+|  |  HAProxy (2x HA) --> Bastion (2x HA) --> RDS --> OT Targets           |   |
+|  |                            |                                           |   |
+|  |                     Native: Windows/Linux                              |   |
+|  +------------------------------------------------------------------------+   |
 |                                                                               |
 +===============================================================================+
 ```
 
 ### Component Stack
 
-| Layer | Component | Type | Quantity/Site |
-|-------|-----------|------|---------------|
-| **MFA** | FortiAuthenticator | HW Appliance | 1 (shared) |
-| **Firewall** | Fortigate | HW Appliance | 1 |
-| **Load Balancer** | HAProxy + Keepalived | VM | 2 (HA pair) |
-| **PAM** | WALLIX Bastion | HW Appliance | 2 (HA pair) |
-| **RDP Gateway** | WALLIX RDS | VM | 1 |
-| **Targets** | Windows/RHEL | VM | N |
+| Layer | Component | Type | Total Quantity |
+|-------|-----------|------|----------------|
+| **Broker** | WALLIX Access Manager | HA Cluster | 2 (HA, not managed) |
+| **MFA** | FortiAuthenticator | HW Appliance | 2 (HA, shared) |
+| **Load Balancer** | HAProxy + Keepalived | VM | 10 (2 per site) |
+| **PAM** | WALLIX Bastion | HW Appliance | 10 (2 per site) |
+| **Jump Host** | WALLIX RDS | Windows Server | 5 (1 per site) |
+| **Sites** | Paris Datacenters | Physical | 5 |
+| **Network** | MPLS | Connectivity | AM ↔ Sites only |
 
 ---
 

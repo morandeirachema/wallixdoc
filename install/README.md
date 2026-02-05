@@ -1,242 +1,387 @@
-# WALLIX Bastion Multi-Site Installation
+# WALLIX Bastion - 5-Site Multi-Datacenter Deployment with Access Manager Integration
 
-<p align="center">
-  <strong>Production deployment guide with Fortigate MFA integration</strong><br/>
-  <sub>Powered by WALLIX Bastion 12.x</sub>
-</p>
-
-<p align="center">
-  <img src="https://img.shields.io/badge/WALLIX-12.1.x-0066cc?style=flat-square" alt="Version"/>
-  <img src="https://img.shields.io/badge/Sites-4-green?style=flat-square" alt="Sites"/>
-  <img src="https://img.shields.io/badge/Nodes-8-blue?style=flat-square" alt="Nodes"/>
-  <img src="https://img.shields.io/badge/Fortigate-MFA-ee3124?style=flat-square" alt="Fortigate"/>
-</p>
+> Enterprise deployment guide for 5 WALLIX Bastion sites integrated with 2 WALLIX Access Managers in HA configuration
 
 ---
 
-## Overview
+## Architecture Overview
 
-| Scope | Details |
-|-------|---------|
-| **Sites** | 4 (synchronized within single CPD) |
-| **Nodes** | 8 total (2 per site) |
-| **HA Modes** | Active-Active at each site |
-| **MFA** | Fortigate with FortiAuthenticator |
-| **Timeline** | 30 days |
+This installation guide covers the deployment of a multi-site WALLIX PAM infrastructure:
+
+| Component | Quantity | Configuration |
+|-----------|----------|---------------|
+| **WALLIX Access Manager** | 2 | HA (Active-Passive), separate datacenters |
+| **WALLIX Bastion Sites** | 5 | Each in separate datacenter |
+| **HAProxy per Site** | 2 | Active-Passive load balancer pair |
+| **Bastion Appliances per Site** | 2 | Active-Active OR Active-Passive (both documented) |
+| **WALLIX RDS** | 1 per site | Jump host for OT RemoteApp access |
+| **Network** | MPLS | Connectivity between Access Managers and Bastions |
 
 ---
 
-## Architecture
-
-### 4-Site Synchronized Architecture (Single CPD)
+## Network Topology
 
 ```
 +===============================================================================+
-|  4-SITE SYNCHRONIZED ARCHITECTURE (Single CPD)                                |
+|  5-SITE MULTI-DATACENTER ARCHITECTURE WITH ACCESS MANAGER INTEGRATION        |
 +===============================================================================+
 |                                                                               |
-|                            +------------------+                               |
-|                            | FortiAuthenticator|                              |
-|                            |   (MFA Server)   |                               |
-|                            +--------+---------+                               |
-|                                     | RADIUS                                  |
-|        +-------------+-------------+-------------+-------------+              |
-|        |             |             |             |             |              |
-|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
-|  | Fortigate | | Fortigate | | Fortigate | | Fortigate |                      |
-|  |  Site 1   | |  Site 2   | |  Site 3   | |  Site 4   |                      |
-|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
-|        |             |             |             |                            |
-|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
-|  | HAProxy   | | HAProxy   | | HAProxy   | | HAProxy   |                      |
-|  | 1a + 1b   | | 2a + 2b   | | 3a + 3b   | | 4a + 4b   |                      |
-|  | (HA/VRRP) | | (HA/VRRP) | | (HA/VRRP) | | (HA/VRRP) |                      |
-|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
-|        |             |             |             |                            |
-|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
-|  | WALLIX    | | WALLIX    | | WALLIX    | | WALLIX    |                      |
-|  | Bastion   | | Bastion   | | Bastion   | | Bastion   |                      |
-|  | 1a + 1b   | | 2a + 2b   | | 3a + 3b   | | 4a + 4b   |                      |
-|  | (HA)      | | (HA)      | | (HA)      | | (HA)      |                      |
-|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
-|        |             |             |             |                            |
-|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
-|  | WALLIX    | | WALLIX    | | WALLIX    | | WALLIX    |                      |
-|  |   RDS     | |   RDS     | |   RDS     | |   RDS     |                      |
-|  +-----+-----+ +-----+-----+ +-----+-----+ +-----+-----+                      |
-|        |             |             |             |                            |
-|  +-----v-----+ +-----v-----+ +-----v-----+ +-----v-----+                      |
-|  | Windows   | | Windows   | | Windows   | | Windows   |                      |
-|  | RHEL 10/9 | | RHEL 10/9 | | RHEL 10/9 | | RHEL 10/9 |                      |
-|  +-----------+ +-----------+ +-----------+ +-----------+                      |
+|  +--------------------------+      +--------------------------+               |
+|  | Access Manager 1 (DC-A)  |      | Access Manager 2 (DC-B)  |               |
+|  | - SSO / MFA              |      | - SSO / MFA              |               |
+|  | - Session Brokering      | HA   | - Session Brokering      |               |
+|  | - License Management     |<---->| - License Management     |               |
+|  +-----------+--------------+      +--------------+-----------+               |
+|              |                                    |                           |
+|              +------------------------------------+                           |
+|                           MPLS Network                                        |
+|       +-------------------+----+----+----+--------------------+               |
+|       |                   |         |         |               |               |
+|  +----v----+         +----v----+   ...   +----v----+    +----v----+          |
+|  | Site 1  |         | Site 2  |         | Site 4  |    | Site 5  |          |
+|  | Paris   |         | Paris   |         | Paris   |    | Paris   |          |
+|  | (DC-P1) |         | (DC-P2) |         | (DC-P4) |    | (DC-P5) |          |
+|  +---------+         +---------+         +---------+    +---------+          |
 |                                                                               |
-|  <====================== MULTI-SITE SYNC (HTTPS 443) ======================>  |
+|  Each Site Contains:                                                          |
+|  - 2x HAProxy (Active-Passive)                                                |
+|  - 2x WALLIX Bastion HW Appliances (Active-Active or Active-Passive)         |
+|  - 1x WALLIX RDS (Jump host for OT RemoteApp)                                |
+|                                                                               |
+|  NO direct Bastion-to-Bastion communication between sites                    |
 |                                                                               |
 +===============================================================================+
 ```
 
-| Site | Config | Nodes | HA Mode | Target Systems |
-|------|--------|-------|---------|----------------|
-| 1 | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
-| 2 | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
-| 3 | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
-| 4 | HA Cluster | 2 | Active-Active | Windows Server 2022, RHEL 10/9 |
+---
+
+## Key Architecture Principles
+
+### Network Isolation
+- **Access Manager ↔ Bastion**: MPLS connectivity
+- **Bastion ↔ Bastion**: NO direct communication between sites
+- **Site Internal**: Full connectivity between HAProxy, Bastion, RDS
+
+### High Availability Options
+- **Active-Active**: Both Bastion appliances handle traffic simultaneously (load balancing)
+- **Active-Passive**: One primary, one standby (automatic failover)
+- See [02-ha-architecture.md](02-ha-architecture.md) for detailed comparison
+
+### Access Patterns
+1. **Native Access**: Windows/Linux via SSH, RDP, VNC
+2. **OT Access**: Via WALLIX RDS jump host using RemoteApp (RDP only)
+
+### Licensing Model
+- **Split Pools**:
+  - Access Manager license pool (managed centrally)
+  - Bastion license pool (shared across 5 sites)
+- See [09-licensing.md](09-licensing.md) for integration details
 
 ---
 
-## Documents
+## Integration with Access Manager
 
-| File | Purpose |
-|------|---------|
-| [HOWTO.md](./HOWTO.md) | Complete step-by-step guide |
-| [00-debian-luks-installation.md](./00-debian-luks-installation.md) | Debian 12 + LUKS setup |
-| [01-prerequisites.md](./01-prerequisites.md) | Requirements checklist |
-| [02-site-a-primary.md](./02-site-a-primary.md) | Site 1 HA cluster |
-| [03-site-b-secondary.md](./03-site-b-secondary.md) | Site 2 HA cluster |
-| [05-multi-site-sync.md](./05-multi-site-sync.md) | Cross-site sync |
-| [07-security-hardening.md](./07-security-hardening.md) | Hardening |
-| [08-validation-testing.md](./08-validation-testing.md) | Go-live checklist |
-| [09-architecture-diagrams.md](./09-architecture-diagrams.md) | Diagrams & ports |
-| [10-mariadb-replication.md](./10-mariadb-replication.md) | DB HA |
+The WALLIX Access Manager provides centralized management:
+
+| Function | Description |
+|----------|-------------|
+| **SSO Integration** | Single Sign-On for end users |
+| **MFA** | Multi-factor authentication via FortiAuthenticator |
+| **Session Brokering** | Routes user sessions to appropriate Bastion site |
+| **License Integration** | Centralized license pool management (optional) |
+
+**Important**: Access Managers are managed by a separate team. This guide covers the Bastion-side integration configuration only.
 
 ---
 
-## Timeline
+## Deployment Timeline
 
-```
-Week 1          Week 2          Week 3          Week 4
-────────────────────────────────────────────────────────
-PLANNING        SITES 1 + 2     SITES 3 + 4     HARDENING
-• Prerequisites • HA clusters   • HA clusters   • Security
-• Network       • Fortigate MFA • Multi-site    • Testing
-• VMs           • Testing       • sync          • Go-live
-```
+| Phase | Duration | Tasks |
+|-------|----------|-------|
+| **Phase 1: Planning** | Week 1 | Prerequisites, network design, licensing |
+| **Phase 2: Access Manager Integration** | Week 2 | SSO, MFA, session brokering setup |
+| **Phase 3: Site 1 Deployment** | Week 3-4 | HAProxy, Bastion cluster, RDS, testing |
+| **Phase 4: Site 2 Deployment** | Week 5 | Replicate Site 1 configuration |
+| **Phase 5: Site 3 Deployment** | Week 6 | Replicate Site 1 configuration |
+| **Phase 6: Site 4 Deployment** | Week 7 | Replicate Site 1 configuration |
+| **Phase 7: Site 5 Deployment** | Week 8 | Replicate Site 1 configuration |
+| **Phase 8: Final Integration** | Week 9 | License pooling, testing, optimization |
+| **Phase 9: Go-Live** | Week 10 | Production cutover, documentation handoff |
+
+**Total Timeline**: 10 weeks (2.5 months)
 
 ---
 
-## Requirements
+## Installation Documentation Structure
 
-### Hardware (per node)
+### Planning & Design
+- [00-prerequisites.md](00-prerequisites.md) - Hardware, network, licensing requirements
+- [01-network-design.md](01-network-design.md) - MPLS topology, connectivity, ports
+- [02-ha-architecture.md](02-ha-architecture.md) - Active-Active vs Active-Passive comparison
 
-| Spec | Minimum | Recommended |
-|------|---------|-------------|
-| CPU | 4 vCPU | 8 vCPU |
-| RAM | 8 GB | 16 GB |
-| OS Disk | 100 GB SSD | 200 GB NVMe |
-| Data Disk | 250 GB SSD | 500 GB NVMe |
+### Access Manager Integration
+- [03-access-manager-integration.md](03-access-manager-integration.md) - SSO, MFA, brokering, licensing
 
-### Software
+### Site Deployment
+- [04-site-deployment.md](04-site-deployment.md) - Per-site deployment template
+- [05-haproxy-setup.md](05-haproxy-setup.md) - HAProxy configuration
+- [06-bastion-active-active.md](06-bastion-active-active.md) - Active-Active cluster setup
+- [07-bastion-active-passive.md](07-bastion-active-passive.md) - Active-Passive cluster setup
+- [08-rds-jump-host.md](08-rds-jump-host.md) - WALLIX RDS for OT RemoteApp
+
+### Operations
+- [09-licensing.md](09-licensing.md) - License pools and integration
+- [10-testing-validation.md](10-testing-validation.md) - End-to-end testing procedures
+- [11-architecture-diagrams.md](11-architecture-diagrams.md) - Network diagrams and port reference
+
+### Quick Start
+- **[HOWTO.md](HOWTO.md)** - Main step-by-step installation guide
+
+---
+
+## Hardware Requirements (Per Site)
+
+### HAProxy Servers (2x per site)
+
+| Component | Specification |
+|-----------|---------------|
+| **CPU** | 4 vCPU |
+| **RAM** | 8 GB |
+| **Disk** | 50 GB SSD |
+| **Network** | 2x 1 GbE (redundant) |
+| **OS** | Debian 12 or RHEL 9 |
+
+### WALLIX Bastion HW Appliances (2x per site)
+
+| Component | Specification |
+|-----------|---------------|
+| **Model** | WALLIX Bastion HW Appliance (specific model TBD) |
+| **CPU** | 8+ cores (HW appliance) |
+| **RAM** | 16+ GB |
+| **Disk** | 500 GB+ (session recordings) |
+| **Network** | 2x 1 GbE (redundant, bonded) |
+| **IPMI/iLO** | Required for remote management |
+
+### WALLIX RDS (1x per site)
+
+| Component | Specification |
+|-----------|---------------|
+| **CPU** | 4 vCPU |
+| **RAM** | 8 GB |
+| **Disk** | 100 GB |
+| **Network** | 1 GbE |
+| **OS** | Windows Server 2022 |
+
+---
+
+## Network Requirements
+
+### MPLS Connectivity
+- **Bandwidth**: Minimum 100 Mbps between Access Managers and each site
+- **Latency**: < 50ms round-trip preferred
+- **Redundancy**: Dual MPLS paths recommended
+
+### Ports (Access Manager ↔ Bastion)
+
+| Source | Destination | Port | Protocol | Purpose |
+|--------|-------------|------|----------|---------|
+| Access Manager | Bastion | 443 | TCP/HTTPS | API, session brokering |
+| Bastion | Access Manager | 443 | TCP/HTTPS | SSO callbacks, health checks |
+| Bastion | FortiAuthenticator | 1812 | UDP | RADIUS authentication |
+| Bastion | FortiAuthenticator | 1813 | UDP | RADIUS accounting |
+
+See [01-network-design.md](01-network-design.md) for complete port matrix.
+
+---
+
+## Licensing Summary
+
+### License Pools
+
+| Pool | Components | Sessions | Notes |
+|------|------------|----------|-------|
+| **Access Manager** | 2 AM instances (HA) | 500 concurrent | Managed centrally |
+| **Bastion** | 10 Bastion appliances (5 sites × 2) | 450 concurrent | Shared across sites |
+
+**HA Licensing**: Each HA cluster counts as 1 license (not 2).
+
+**Total Licensed Capacity**: 950 concurrent sessions (500 AM + 450 Bastion)
+
+See [09-licensing.md](09-licensing.md) for detailed configuration and integration.
+
+---
+
+## Site Locations (Paris Datacenters)
+
+All 5 sites are located in Paris across different buildings within the same datacenter infrastructure:
+
+| Site | Location | Building |
+|------|----------|----------|
+| **Site 1** | Paris DC-P1 | Building A |
+| **Site 2** | Paris DC-P2 | Building B |
+| **Site 3** | Paris DC-P3 | Building C |
+| **Site 4** | Paris DC-P4 | Building D |
+| **Site 5** | Paris DC-P5 | Building E |
+
+**Cross-site connectivity**: Sites are interconnected within Paris datacenter fabric, but Bastions do NOT communicate directly (all traffic routes through Access Managers via MPLS).
+
+---
+
+## Target Systems
+
+### Native Access (via Bastion)
+- **Windows Server 2022** - RDP, WinRM
+- **RHEL 10** - SSH
+- **RHEL 9** - SSH (legacy)
+- **Other Linux** - SSH
+
+### OT Systems (via WALLIX RDS Jump Host)
+- **Industrial Control Systems** - RDP via RemoteApp
+- **SCADA Systems** - RDP via RemoteApp
+- **OT Workstations** - RDP via RemoteApp
+
+**Rationale**: OT systems require additional isolation via jump host due to security policies.
+
+---
+
+## Deployment Models
+
+### Active-Active Bastion Cluster (Recommended for High Load)
+
+**Pros:**
+- Load balancing: Both appliances handle traffic simultaneously
+- Maximum capacity: Full utilization of both appliances
+- No standby waste: All hardware actively used
+- Transparent failover: HAProxy distributes load
+
+**Cons:**
+- More complex configuration (MariaDB multi-master replication)
+- Requires split-brain protection (Pacemaker/Corosync)
+- Session state synchronization overhead
+
+**Use Case**: Sites with 100+ concurrent sessions, high availability critical
+
+See [06-bastion-active-active.md](06-bastion-active-active.md) for setup.
+
+---
+
+### Active-Passive Bastion Cluster (Simpler, Lower Load)
+
+**Pros:**
+- Simpler configuration (single primary node)
+- Faster failover (no replication conflict resolution)
+- Lower operational complexity
+- Easier troubleshooting
+
+**Cons:**
+- 50% capacity utilization (passive node idle)
+- Failover interruption (30-60 seconds)
+- Passive node hardware underutilized
+
+**Use Case**: Sites with < 100 concurrent sessions, simplicity preferred
+
+See [07-bastion-active-passive.md](07-bastion-active-passive.md) for setup.
+
+---
+
+## Prerequisites Checklist
+
+Before starting deployment:
+
+### Network
+- [ ] MPLS circuits installed and tested
+- [ ] Firewall rules configured (Access Manager ↔ Bastion)
+- [ ] DNS records created for all components
+- [ ] NTP servers configured and reachable
+- [ ] SSL certificates obtained (wildcard or per-host)
+
+### Hardware
+- [ ] 10x WALLIX Bastion HW appliances received and racked
+- [ ] 10x HAProxy servers (VMs or physical) provisioned
+- [ ] 5x WALLIX RDS servers (Windows Server 2022) ready
+- [ ] IPMI/iLO access configured for all appliances
+
+### Access Manager
+- [ ] Access Manager HA configuration documented
+- [ ] SSO integration method confirmed (SAML, OIDC, LDAP)
+- [ ] FortiAuthenticator RADIUS configuration provided
+- [ ] Session brokering API endpoints available
+
+### Licensing
+- [ ] Access Manager license pool confirmed (500 sessions)
+- [ ] Bastion license pool purchased (450 sessions)
+- [ ] License activation keys received
+- [ ] License server access credentials available
+
+### Security
+- [ ] AD/LDAP service account created for user sync
+- [ ] FortiAuthenticator RADIUS shared secret obtained
+- [ ] Encryption keys generated (database, sessions)
+- [ ] Backup storage configured (offsite)
+
+---
+
+## Quick Start Guide
+
+1. **Read Prerequisites**: [00-prerequisites.md](00-prerequisites.md)
+2. **Design Network**: [01-network-design.md](01-network-design.md)
+3. **Choose HA Model**: [02-ha-architecture.md](02-ha-architecture.md)
+4. **Integrate Access Manager**: [03-access-manager-integration.md](03-access-manager-integration.md)
+5. **Deploy Site 1**: [04-site-deployment.md](04-site-deployment.md)
+6. **Replicate Sites 2-5**: Repeat Site 1 deployment
+7. **Configure Licensing**: [09-licensing.md](09-licensing.md)
+8. **Test End-to-End**: [10-testing-validation.md](10-testing-validation.md)
+
+**Full walkthrough**: See [HOWTO.md](HOWTO.md)
+
+---
+
+## Support and Resources
+
+### Official Documentation
+- WALLIX Bastion 12.x Admin Guide: https://pam.wallix.one/documentation
+- WALLIX Access Manager Guide: https://pam.wallix.one/documentation
+- FortiAuthenticator Guide: https://docs.fortinet.com/product/fortiauthenticator
+
+### Internal Resources
+- **PAM Documentation**: [/docs/pam/](../docs/pam/)
+- **Pre-Production Lab**: [/pre/](../pre/) - Test environment setup
+- **Automation Examples**: [/examples/](../examples/) - Ansible, API scripts
+
+### Architecture Diagrams
+- See [11-architecture-diagrams.md](11-architecture-diagrams.md) for detailed network topology, data flows, and port matrices
+
+---
+
+## Version Information
 
 | Component | Version |
 |-----------|---------|
 | WALLIX Bastion | 12.1.x |
-| Debian | 12 (Bookworm) |
-| MariaDB | 10.11+ |
+| WALLIX Access Manager | 5.2.x |
 | FortiAuthenticator | 6.4+ |
-
-### Network Ports
-
-| Port | Protocol | Purpose |
-|------|----------|---------|
-| 22 | TCP | SSH access |
-| 443 | TCP | Web UI / API |
-| 3389 | TCP | RDP proxy |
-| 3306 | TCP | MariaDB |
-| 5404-5406 | UDP | Cluster sync |
-| 1812/1813 | UDP | RADIUS (FortiAuth) |
+| HAProxy | 2.8+ |
+| MariaDB | 10.11+ |
+| Windows Server (RDS) | 2022 |
 
 ---
 
-## Quick Start
+## Architecture Summary
 
-```bash
-# 1. Check prerequisites
-cat 01-prerequisites.md
+**Deployment Model**: 5-site multi-datacenter with centralized Access Manager
 
-# 2. Follow main guide
-cat HOWTO.md
+**HA Strategy**: Choice of Active-Active (high capacity) or Active-Passive (simplicity)
 
-# 3. Verify installation
-systemctl status wallix-bastion
-wabadmin status
-crm status  # HA only
-```
+**Network**: MPLS-based, isolated sites, no direct inter-site Bastion communication
 
----
+**Licensing**: Split pools (AM + Bastion), centralized management
 
-## Verification Commands
+**Access Patterns**: Native (Windows/Linux) + Jump host (OT RemoteApp)
 
-```bash
-# Service status
-systemctl status wallix-bastion
-
-# Cluster health (HA)
-crm status
-
-# License check
-wabadmin license-info
-
-# Database
-sudo mysql -e "SHOW SLAVE STATUS\G"
-
-# Recent audit
-wabadmin audit --last 10
-```
+**Timeline**: 10 weeks end-to-end deployment
 
 ---
 
-## Security Features
+*For questions or clarifications, refer to the detailed installation guides linked above.*
 
-| Category | Features |
-|----------|----------|
-| Authentication | Fortigate MFA, LDAP/AD, Kerberos, OIDC/SAML |
-| Authorization | RBAC, approval workflows, JIT access |
-| Sessions | Recording, keystroke logging, 4-eyes |
-| Credentials | Vault, auto-rotation, injection |
-| Encryption | AES-256-GCM, TLS 1.3, LUKS, Argon2ID |
-
----
-
-## Compliance
-
-| Standard | Coverage |
-|----------|----------|
-| ISO 27001 | Full |
-| SOC 2 Type II | Full |
-| NIS2 | Full |
-| PCI-DSS | Full |
-| HIPAA | Partial |
-
----
-
-## Resources
-
-| Resource | Link |
-|----------|------|
-| Documentation | https://pam.wallix.one/documentation |
-| Support | https://support.wallix.com |
-| Main Docs | [../docs/README.md](../docs/README.md) |
-
----
-
-## Next Steps
-
-After completing installation:
-
-| Step | Document |
-|------|----------|
-| Configure authentication | [Authentication Guide](../docs/pam/06-authentication/README.md) |
-| Configure Fortigate MFA | [Fortigate Integration](../docs/pam/46-fortigate-integration/README.md) |
-| Set up monitoring | [Monitoring & Observability](../docs/pam/12-monitoring-observability/README.md) |
-| Review best practices | [Best Practices](../docs/pam/14-best-practices/README.md) |
-| Set up operational procedures | [Operational Runbooks](../docs/pam/21-operational-runbooks/README.md) |
-
-For pre-production testing, see the [Pre-Production Lab Guide](../pre/README.md).
-
----
-
-<p align="center">
-  <a href="./HOWTO.md">Full Guide</a> •
-  <a href="./01-prerequisites.md">Prerequisites</a> •
-  <a href="./08-validation-testing.md">Validation</a>
-</p>
+**Next Step**: Review [HOWTO.md](HOWTO.md) for step-by-step deployment instructions.
