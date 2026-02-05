@@ -354,22 +354,22 @@ wabadmin license-info
 |  |  https://am.corp.local/api/license  |  - Real-time monitoring              |
 |  +-----------------+-------------------+                                      |
 |                    |                                                          |
-|                    | HTTPS (443/tcp)                                        |
-|                    | License API Calls                                       |
+|                    | HTTPS (443/tcp)                                          |
+|                    | License API Calls                                        |
 |                    |                                                          |
 |       +------------+------------+------------+------------+                   |
 |       |            |            |            |            |                   |
-|  +----v----+  +----v----+  +----v----+  +----v----+  +----v----+            |
-|  | Site 1  |  | Site 2  |  | Site 3  |  | Site 4  |  | Site 5  |            |
-|  | Bastion |  | Bastion |  | Bastion |  | Bastion |  | Bastion |            |
-|  | Cluster |  | Cluster |  | Cluster |  | Cluster |  | Cluster |            |
-|  +---------+  +---------+  +---------+  +---------+  +---------+            |
+|  +----v----+  +----v----+  +----v----+  +----v----+  +----v----+              |
+|  | Site 1  |  | Site 2  |  | Site 3  |  | Site 4  |  | Site 5  |              |
+|  | Bastion |  | Bastion |  | Bastion |  | Bastion |  | Bastion |              |
+|  | Cluster |  | Cluster |  | Cluster |  | Cluster |  | Cluster |              |
+|  +---------+  +---------+  +---------+  +---------+  +---------+              |
 |                                                                               |
 |  Integration Benefits:                                                        |
-|  - Centralized license visibility across AM + Bastion                        |
-|  - Single renewal process (no per-site activation)                           |
-|  - Dynamic session reallocation (e.g., move sessions from Site 1 to Site 4)  |
-|  - Unified compliance reporting                                              |
+|  - Centralized license visibility across AM + Bastion                         |
+|  - Single renewal process (no per-site activation)                            |
+|  - Dynamic session reallocation (e.g., move sessions from Site 1 to Site 4)   |
+|  - Unified compliance reporting                                               |
 |                                                                               |
 +===============================================================================+
 ```

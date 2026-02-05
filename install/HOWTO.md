@@ -42,16 +42,16 @@ This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-
 |                            MPLS Network                                       |
 |       +----------------+--------+--------+--------+----------------+          |
 |       |                |        |        |        |                |          |
-|  +----v----+      +----v----+  ...  +----v----+  +----v----+  +----v----+    |
-|  | Site 1  |      | Site 2  |       | Site 3  |  | Site 4  |  | Site 5  |    |
-|  | (DC-1)  |      | (DC-2)  |       | (DC-3)  |  | (DC-4)  |  | (DC-5)  |    |
-|  +---------+      +---------+       +---------+  +---------+  +---------+    |
+|  +----v----+      +----v----+  ...  +----v----+  +----v----+  +----v----+     |
+|  | Site 1  |      | Site 2  |       | Site 3  |  | Site 4  |  | Site 5  |     |
+|  | (DC-1)  |      | (DC-2)  |       | (DC-3)  |  | (DC-4)  |  | (DC-5)  |     |
+|  +---------+      +---------+       +---------+  +---------+  +---------+     |
 |                                                                               |
 |  Each Site:                                                                   |
 |  - 2x HAProxy (Active-Passive)                                                |
-|  - 2x WALLIX Bastion (Active-Active OR Active-Passive)                       |
-|  - 1x WALLIX RDS (Jump host for OT RemoteApp)                                |
-|  - License Pool Share: 450 sessions across all 5 sites                       |
+|  - 2x WALLIX Bastion (Active-Active OR Active-Passive)                        |
+|  - 1x WALLIX RDS (Jump host for OT RemoteApp)                                 |
+|  - License Pool Share: 450 sessions across all 5 sites                        |
 |                                                                               |
 +===============================================================================+
 ```

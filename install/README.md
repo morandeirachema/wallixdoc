@@ -23,7 +23,7 @@ This installation guide covers the deployment of a multi-site WALLIX PAM infrast
 
 ```
 +===============================================================================+
-|  5-SITE MULTI-DATACENTER ARCHITECTURE WITH ACCESS MANAGER INTEGRATION        |
+|  5-SITE MULTI-DATACENTER ARCHITECTURE WITH ACCESS MANAGER INTEGRATION         |
 +===============================================================================+
 |                                                                               |
 |  +--------------------------+      +--------------------------+               |
@@ -37,17 +37,17 @@ This installation guide covers the deployment of a multi-site WALLIX PAM infrast
 |                           MPLS Network                                        |
 |       +-------------------+----+----+----+--------------------+               |
 |       |                   |         |         |               |               |
-|  +----v----+         +----v----+   ...   +----v----+    +----v----+          |
-|  | Site 1  |         | Site 2  |         | Site 4  |    | Site 5  |          |
-|  | (DC-1)  |         | (DC-2)  |         | (DC-4)  |    | (DC-5)  |          |
-|  +---------+         +---------+         +---------+    +---------+          |
+|  +----v----+         +----v----+   ...   +----v----+    +----v----+           |
+|  | Site 1  |         | Site 2  |         | Site 4  |    | Site 5  |           |
+|  | (DC-1)  |         | (DC-2)  |         | (DC-4)  |    | (DC-5)  |           |
+|  +---------+         +---------+         +---------+    +---------+           |
 |                                                                               |
 |  Each Site Contains:                                                          |
 |  - 2x HAProxy (Active-Passive)                                                |
-|  - 2x WALLIX Bastion HW Appliances (Active-Active or Active-Passive)         |
-|  - 1x WALLIX RDS (Jump host for OT RemoteApp)                                |
+|  - 2x WALLIX Bastion HW Appliances (Active-Active or Active-Passive)          |
+|  - 1x WALLIX RDS (Jump host for OT RemoteApp)                                 |
 |                                                                               |
-|  NO direct Bastion-to-Bastion communication between sites                    |
+|  NO direct Bastion-to-Bastion communication between sites                     |
 |                                                                               |
 +===============================================================================+
 ```
