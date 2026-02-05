@@ -44,8 +44,7 @@ This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-
 |       |                |        |        |        |                |          |
 |  +----v----+      +----v----+  ...  +----v----+  +----v----+  +----v----+    |
 |  | Site 1  |      | Site 2  |       | Site 3  |  | Site 4  |  | Site 5  |    |
-|  |   |      |   |       |   |  |   |  |   |    |
-|  | DC-1   |      | DC-2   |       | DC-3   |  | DC-4   |  | DC-5   |    |
+|  | (DC-1)  |      | (DC-2)  |       | (DC-3)  |  | (DC-4)  |  | (DC-5)  |    |
 |  +---------+      +---------+       +---------+  +---------+  +---------+    |
 |                                                                               |
 |  Each Site:                                                                   |

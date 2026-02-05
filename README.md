@@ -48,7 +48,7 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 |      |           |           |           |           |                        |
 |  +---v---+   +---v---+   +---v---+   +---v---+   +---v---+                   |
 |  | Site1 |   | Site2 |   | Site3 |   | Site4 |   | Site5 |                   |
-|  | Site |   | Site |   | Site |   | Site |   | Site |                   |
+|  | DC-1  |   | DC-2  |   | DC-3  |   | DC-4  |   | DC-5  |                   |
 |  +-------+   +-------+   +-------+   +-------+   +-------+                   |
 |                                                                               |
 |  Each Site (Geographically Distributed):                                               |

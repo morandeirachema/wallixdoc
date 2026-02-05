@@ -51,11 +51,10 @@
 |                         MPLS NETWORK                                          |
 |            +------+------+------+------+------+                               |
 |            |      |      |      |      |      |                               |
-|      +-----v-+  +-v----+ +v---+ +v---+ +v----+                               |
-|      |Site 1 |  |Site 2| |Site| |Site| |Site |                               |
-|      |Site |  |Site| | 3  | | 4  | | 5  |                               |
-|      |DC-1  |  |DC-2 | |P3  | |P4  | |P5  |                               |
-|      +-------+  +------+ +----+ +----+ +-----+                               |
+|      +-------+  +-------+ +-------+ +-------+ +-------+                       |
+|      |Site 1 |  |Site 2 | |Site 3 | |Site 4 | |Site 5 |                       |
+|      | DC-1  |  | DC-2  | | DC-3  | | DC-4  | | DC-5  |                       |
+|      +-------+  +-------+ +-------+ +-------+ +-------+                       |
 |                                                                               |
 |  KEY PRINCIPLE: NO direct Bastion-to-Bastion communication between sites     |
 |                 All inter-site traffic flows through Access Managers         |
