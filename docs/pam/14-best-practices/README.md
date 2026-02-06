@@ -177,7 +177,7 @@
   |   User Identity                                                        |
   |   +--------------------+                                               |
   |   | 1. Primary Auth    | AD/LDAP, Local, SAML, OIDC                    |
-  |   | 2. MFA Required    | TOTP, FortiToken Push                        |
+  |   | 2. MFA Required    | TOTP, FortiToken Push                         |
   |   | 3. Device Trust    | Certificate, compliance check                 |
   |   | 4. Context Check   | Location, time, behavior                      |
   |   +--------------------+                                               |

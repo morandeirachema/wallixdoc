@@ -47,10 +47,10 @@ WALLIX Bastion supports multiple authentication layers:
 |   +---------------------------------------------------------------------+   |
 |   |                    SECOND FACTOR                                    |   |
 |   |                                                                     |   |
-|   |  +---------+  +---------+  +---------+  +---------+  +---------+    |   |
-|   |  |FortiToken|  |  RADIUS |  |   SMS   |  |  Push   |  |  X.509  |    |   |
-|   |  |         |  |  (OTP)  |  |         |  |         |  |  Cert   |    |   |
-|   |  +---------+  +---------+  +---------+  +---------+  +---------+    |   |
+|   |  +----------+  +---------+  +---------+  +---------+  +---------+   |   |
+|   |  |FortiToken|  |  RADIUS |  |   SMS   |  |  Push   |  |  X.509  |   |   |
+|   |  |          |  |  (OTP)  |  |         |  |         |  |  Cert   |   |   |
+|   |  +----------+  +---------+  +---------+  +---------+  +---------+   |   |
 |   |                                                                     |   |
 |   +---------------------------------------------------------------------+   |
 |     |                                                                       |
@@ -345,7 +345,7 @@ WALLIX supports multiple MFA methods for enhanced security.
 +=============================================================================+
 |                                                                             |
 |   +-----------------+  +-----------------+  +-----------------+             |
-|   |      FortiToken       |  |     RADIUS      |  |   PUSH/SMS      |             |
+|   |      FortiToken |  |     RADIUS      |  |   PUSH/SMS      |             |
 |   |                 |  |     (OTP)       |  |                 |             |
 |   |  * Google Auth  |  |  * RSA SecurID  |  |  * Trustelem    |             |
 |   |  * Microsoft    |  |  * Duo          |  |  * External     |             |
@@ -356,8 +356,8 @@ WALLIX supports multiple MFA methods for enhanced security.
 |                                                                             |
 |   +-----------------+  +-----------------+                                  |
 |   |   CERTIFICATE   |  |    WEBAUTHN     |                                  |
-|   |                 |  |    FortiToken      |                                  |
-|   |  * FortiToken  |  |  * FortiToken      |                                  |
+|   |                 |  |    FortiToken   |                                  |
+|   |  * FortiToken   |  |  * FortiToken   |                                  |
 |   |  * PKI certs    |  |  * Windows      |                                  |
 |   |                 |  |    Hello        |                                  |
 |   +-----------------+  +-----------------+                                  |

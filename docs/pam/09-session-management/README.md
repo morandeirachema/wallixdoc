@@ -146,17 +146,17 @@
 |                    RECORDING CAPABILITIES BY PROTOCOL                         |
 +===============================================================================+
 |                                                                               |
-|  +----------+--------+--------+--------+--------+--------+------------------+  |
-|  | Feature  |  SSH   |  RDP   |  VNC   | HTTPS  | WinRM  |     TELNET       |  |
-|  +----------+--------+--------+--------+--------+--------+------------------+  |
-|  | Video    |   -    |   Y    |   Y    | Snapsh |   -    |       -          |  |
-|  | Screen   |  Text  |  Full  |  Full  |  Page  |  Text  |      Text        |  |
-|  | Keystroke|   Y    |   Y    |   Y    |   Y    |   Y    |       Y          |  |
-|  | Commands |   Y    |   -    |   -    |   -    |   Y    |       Y          |  |
-|  | OCR      |   -    |   Y    |   Y    |   -    |   -    |       -          |  |
-|  | Searchabl|   Y    |via OCR |via OCR |   Y    |   Y    |       Y          |  |
-|  | File Size| Small  | Large  | Medium | Small  | Small  |     Small        |  |
-|  +----------+--------+--------+--------+--------+--------+------------------+  |
+|  +----------+--------+--------+--------+--------+--------+------------------+ |
+|  | Feature  |  SSH   |  RDP   |  VNC   | HTTPS  | WinRM  |     TELNET       | |
+|  +----------+--------+--------+--------+--------+--------+------------------+ |
+|  | Video    |   -    |   Y    |   Y    | Snapsh |   -    |       -          | |
+|  | Screen   |  Text  |  Full  |  Full  |  Page  |  Text  |      Text        | |
+|  | Keystroke|   Y    |   Y    |   Y    |   Y    |   Y    |       Y          | |
+|  | Commands |   Y    |   -    |   -    |   -    |   Y    |       Y          | |
+|  | OCR      |   -    |   Y    |   Y    |   -    |   -    |       -          | |
+|  | Searchabl|   Y    |via OCR |via OCR |   Y    |   Y    |       Y          | |
+|  | File Size| Small  | Large  | Medium | Small  | Small  |     Small        | |
+|  +----------+--------+--------+--------+--------+--------+------------------+ |
 |                                                                               |
 |  TYPICAL FILE SIZES (per hour)                                                |
 |  -----------------------------                                                |
@@ -203,16 +203,16 @@
 |  ========================                                                     |
 |                                                                               |
 |  +-----------------+---------------------------------------------------+      |
-|  | Storage Type    | Configuration                                      |     |
+|  | Storage Type    | Configuration                                     |      |
 |  +-----------------+---------------------------------------------------+      |
-|  | NFS Mount       | Mount point: /var/wab/recorded                     |     |
-|  |                 | NFS server: nas.company.com:/wallix/recordings     |     |
+|  | NFS Mount       | Mount point: /var/wab/recorded                    |      |
+|  |                 | NFS server: nas.company.com:/wallix/recordings    |      |
 |  +-----------------+---------------------------------------------------+      |
-|  | iSCSI           | Target: iqn.2024-01.com.company:wallix-recordings  |     |
-|  |                 | LUN formatted with XFS/ext4                        |     |
+|  | iSCSI           | Target: iqn.2024-01.com.company:wallix-recordings |      |
+|  |                 | LUN formatted with XFS/ext4                       |      |
 |  +-----------------+---------------------------------------------------+      |
-|  | S3/Object       | Bucket: wallix-recordings                          |     |
-|  | (archival)      | Lifecycle: Move to Glacier after 90 days           |     |
+|  | S3/Object       | Bucket: wallix-recordings                         |      |
+|  | (archival)      | Lifecycle: Move to Glacier after 90 days          |      |
 |  +-----------------+---------------------------------------------------+      |
 |                                                                               |
 +===============================================================================+
@@ -261,14 +261,14 @@ Windows Remote Management (WinRM) is Microsoft's implementation of the WS-Manage
 |                        WinRM PORT CONFIGURATION                               |
 +===============================================================================+
 |                                                                               |
-|  +----------+----------+---------------+------------------------------------+  |
-|  | Port     | Protocol | Encryption    | Notes                              |  |
-|  +----------+----------+---------------+------------------------------------+  |
-|  | 5985     | TCP      | HTTP          | Kerberos encryption recommended    |  |
-|  | 5986     | TCP      | HTTPS (TLS)   | Certificate-based encryption       |  |
-|  +----------+----------+---------------+------------------------------------+  |
+|  +----------+----------+---------------+------------------------------------+ |
+|  | Port     | Protocol | Encryption    | Notes                              | |
+|  +----------+----------+---------------+------------------------------------+ |
+|  | 5985     | TCP      | HTTP          | Kerberos encryption recommended    | |
+|  | 5986     | TCP      | HTTPS (TLS)   | Certificate-based encryption       | |
+|  +----------+----------+---------------+------------------------------------+ |
 |                                                                               |
-|  RECOMMENDED: Use port 5986 (HTTPS) for production environments              |
+|  RECOMMENDED: Use port 5986 (HTTPS) for production environments               |
 |                                                                               |
 +===============================================================================+
 ```
@@ -578,12 +578,12 @@ WinRM sessions are recorded differently than RDP:
 |  =================                                                            |
 |                                                                               |
 |  +-----------------+---------------------------------------------------+      |
-|  | Format          | Description                                        |     | 
+|  | Format          | Description                                       |      | 
 |  +-----------------+---------------------------------------------------+      |
-|  | Syslog (RFC5424)| Standard syslog format                             |     |
-|  | CEF             | ArcSight Common Event Format                       |     |
-|  | LEEF            | QRadar Log Event Extended Format                   |     |
-|  | JSON            | Structured JSON for Splunk/ELK                     |     |
+|  | Syslog (RFC5424)| Standard syslog format                            |      |
+|  | CEF             | ArcSight Common Event Format                      |      |
+|  | LEEF            | QRadar Log Event Extended Format                  |      |
+|  | JSON            | Structured JSON for Splunk/ELK                    |      |
 |  +-----------------+---------------------------------------------------+      |
 |                                                                               |
 |  SAMPLE CEF OUTPUT                                                            |

@@ -19,7 +19,7 @@
 
 ```
 +===============================================================================+
-|                   WALLIX ERROR CODE FORMAT                                   |
+|                   WALLIX ERROR CODE FORMAT                                    |
 +===============================================================================+
 
   ERROR CODE STRUCTURE
@@ -72,7 +72,7 @@
 
 ```
 +===============================================================================+
-|                   AUTHENTICATION ERRORS                                      |
+|                   AUTHENTICATION ERRORS                                       |
 +===============================================================================+
 
   WAB-1001: INVALID_CREDENTIALS
@@ -311,7 +311,7 @@
 
 ```
 +===============================================================================+
-|                   AUTHORIZATION ERRORS                                       |
+|                   AUTHORIZATION ERRORS                                        |
 +===============================================================================+
 
   WAB-2001: NO_AUTHORIZATION
@@ -461,7 +461,7 @@
 
 ```
 +===============================================================================+
-|                   SESSION ERRORS                                             |
+|                   SESSION ERRORS                                              |
 +===============================================================================+
 
   WAB-3001: TARGET_UNREACHABLE
@@ -639,7 +639,7 @@
 
 ```
 +===============================================================================+
-|                   PASSWORD MANAGEMENT ERRORS                                 |
+|                   PASSWORD MANAGEMENT ERRORS                                  |
 +===============================================================================+
 
   WAB-4001: ROTATION_FAILED
@@ -664,7 +664,7 @@
   +------------------------------------------------------------------------+
   | 2024-01-27 02:00:00 ERROR [wabpassword] WAB-4001: Password rotation    |
   | failed for account 'root' on device 'server1' - New password does not  |
-  | meet target password policy requirements                                |
+  | meet target password policy requirements                               |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -809,7 +809,7 @@
 
 ```
 +===============================================================================+
-|                   SYSTEM ERRORS                                              |
+|                   SYSTEM ERRORS                                               |
 +===============================================================================+
 
   WAB-5001: SERVICE_UNAVAILABLE
@@ -987,7 +987,7 @@
 
 ```
 +===============================================================================+
-|                   INTEGRATION ERRORS                                         |
+|                   INTEGRATION ERRORS                                          |
 +===============================================================================+
 
   WAB-6001: SIEM_CONNECTION_FAILED
@@ -1073,7 +1073,7 @@
 
 ```
 +===============================================================================+
-|                   FORTIAUTHENTICATOR RADIUS ERRORS                           |
+|                   FORTIAUTHENTICATOR RADIUS ERRORS                            |
 +===============================================================================+
 
   WAB-1007-RADIUS_TIMEOUT
@@ -1124,11 +1124,11 @@
   |   apt-get install freeradius-utils                                     |
   |                                                                        |
   |   # Test RADIUS authentication:                                        |
-  |   radtest <testuser> <password> <fortiauth-ip> 0 <shared-secret>      |
+  |   radtest <testuser> <password> <fortiauth-ip> 0 <shared-secret>       |
   |                                                                        |
   |   Expected output (success):                                           |
-  |   Sent Access-Request Id 123 from 0.0.0.0:34567 to <ip>:1812          |
-  |   Received Access-Accept Id 123 from <ip>:1812 length 20              |
+  |   Sent Access-Request Id 123 from 0.0.0.0:34567 to <ip>:1812           |
+  |   Received Access-Accept Id 123 from <ip>:1812 length 20               |
   |                                                                        |
   | Step 3: Check firewall rules                                           |
   |   Verify traffic allowed from WALLIX IP to FortiAuth IP on UDP 1812    |
@@ -1147,12 +1147,12 @@
 
   Log Examples:
   +------------------------------------------------------------------------+
-  | /var/log/wab/wabauth.log (WALLIX side):                               |
-  | 2026-02-04 10:00:00 ERROR [wabauth] WAB-1007: RADIUS timeout for      |
-  | user 'jsmith' to server 10.10.2.50:1812 - No response after 5 seconds |
+  | /var/log/wab/wabauth.log (WALLIX side):                                |
+  | 2026-02-04 10:00:00 ERROR [wabauth] WAB-1007: RADIUS timeout for       |
+  | user 'jsmith' to server 10.10.2.50:1812 - No response after 5 seconds  |
   |                                                                        |
   | FortiAuthenticator logs (if working):                                  |
-  | 2026-02-04 10:00:00 radius: Access-Request from 10.10.1.10 for user   |
+  | 2026-02-04 10:00:00 radius: Access-Request from 10.10.1.10 for user    |
   | 'jsmith', sending Access-Accept                                        |
   +------------------------------------------------------------------------+
 
@@ -1202,8 +1202,8 @@
   |   Search for username                                                  |
   |                                                                        |
   | Test with radtest (bypass WALLIX):                                     |
-  |   radtest <user> <password+otp> <fortiauth-ip> 0 <shared-secret>      |
-  |   # Example: radtest jsmith MyPass123456 10.10.2.50 0 SecretKey       |
+  |   radtest <user> <password+otp> <fortiauth-ip> 0 <shared-secret>       |
+  |   # Example: radtest jsmith MyPass123456 10.10.2.50 0 SecretKey        |
   |   # Where 123456 is the 6-digit OTP from FortiToken                    |
   +------------------------------------------------------------------------+
 
@@ -1297,10 +1297,10 @@
   |                                                                        |
   | FortiAuthenticator RADIUS debug output:                                |
   | (Shared secret mismatch):                                              |
-  | Access-Request from 10.10.1.10 invalid - shared secret mismatch       |
+  | Access-Request from 10.10.1.10 invalid - shared secret mismatch        |
   |                                                                        |
   | (User not found):                                                      |
-  | Access-Request for user 'jsmith' - user not found in database         |
+  | Access-Request for user 'jsmith' - user not found in database          |
   |                                                                        |
   | (Invalid OTP):                                                         |
   | Access-Request for user 'jsmith' - OTP validation failed               |
@@ -1325,7 +1325,7 @@
 
 ```
 +===============================================================================+
-|                   LDAP GROUP SYNC FAILURES                                   |
+|                   LDAP GROUP SYNC FAILURES                                    |
 +===============================================================================+
 
   WAB-6002-LDAP_SYNC_FAILED
@@ -1358,12 +1358,12 @@
   Diagnostic Commands:
   +------------------------------------------------------------------------+
   | Test LDAPS connection:                                                 |
-  |   openssl s_client -connect <dc-hostname>:636 -showcerts              |
+  |   openssl s_client -connect <dc-hostname>:636 -showcerts               |
   |   # Check certificate validity dates and issuer                        |
   |   # Press Ctrl+C to exit                                               |
   |                                                                        |
   | Verify certificate trust:                                              |
-  |   echo | openssl s_client -connect <dc-hostname>:636 2>&1 | \         |
+  |   echo | openssl s_client -connect <dc-hostname>:636 2>&1 | \          |
   |     grep -i "verify return code"                                       |
   |   # Should show: "verify return code: 0 (ok)"                          |
   |                                                                        |
@@ -1372,7 +1372,7 @@
   |   # This is where system trusts CA certificates                        |
   |                                                                        |
   | Test LDAP bind with openssl:                                           |
-  |   ldapsearch -H ldaps://<dc-hostname>:636 -D "<bind-dn>" \            |
+  |   ldapsearch -H ldaps://<dc-hostname>:636 -D "<bind-dn>" \             |
   |     -W -b "<base-dn>" "(objectClass=*)" -LLL                           |
   |   # Should prompt for password and return results                      |
   +------------------------------------------------------------------------+
@@ -1393,7 +1393,7 @@
   |   scp ca-cert.cer root@<wallix-ip>:/tmp/                               |
   |                                                                        |
   |   Install certificates:                                                |
-  |   cp /tmp/ca-cert.cer /usr/local/share/ca-certificates/adca.crt       |
+  |   cp /tmp/ca-cert.cer /usr/local/share/ca-certificates/adca.crt        |
   |   update-ca-certificates                                               |
   |   # Should show "1 added, 0 removed"                                   |
   |                                                                        |
@@ -1438,21 +1438,21 @@
   +------------------------------------------------------------------------+
   | Check group nesting depth:                                             |
   |   # From Windows Domain Controller (PowerShell):                       |
-  |   Get-ADGroup "Domain Users" -Properties MemberOf | \                 |
+  |   Get-ADGroup "Domain Users" -Properties MemberOf | \                  |
   |     Select-Object -ExpandProperty MemberOf | \                         |
   |     Get-ADGroup -Properties MemberOf | \                               |
   |     Measure-Object                                                     |
   |                                                                        |
   | Test LDAP query performance:                                           |
-  |   time ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \             |
-  |     -b "<base-dn>" "(&(objectClass=group)(member=*))" dn              |
+  |   time ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \              |
+  |     -b "<base-dn>" "(&(objectClass=group)(member=*))" dn               |
   |   # Note how long it takes                                             |
   |                                                                        |
   | Check WALLIX sync timeout setting:                                     |
   |   wabadmin auth-domain show --name <domain> | grep -i timeout          |
   |                                                                        |
   | Monitor sync in real-time:                                             |
-  |   tail -f /var/log/wab/wabauth.log | grep "group sync"                |
+  |   tail -f /var/log/wab/wabauth.log | grep "group sync"                 |
   +------------------------------------------------------------------------+
 
   Resolution Steps:
@@ -1513,14 +1513,14 @@
   +------------------------------------------------------------------------+
   | Check AD MaxPageSize policy:                                           |
   |   # On Domain Controller (PowerShell):                                 |
-  |   Get-ADObject -Identity "CN=Default Query Policy,CN=Query-Policies,  |
-  |     CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration,  |
+  |   Get-ADObject -Identity "CN=Default Query Policy,CN=Query-Policies,   |
+  |     CN=Directory Service,CN=Windows NT,CN=Services,CN=Configuration,   |
   |     DC=company,DC=com" -Properties * | Select-Object lDAPAdminLimits   |
   |   # Look for MaxPageSize value                                         |
   |                                                                        |
   | Test pagination with ldapsearch:                                       |
-  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                  |
-  |     -b "<base-dn>" -E pr=1000/noprompt "(objectClass=group)" dn | \   |
+  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                   |
+  |     -b "<base-dn>" -E pr=1000/noprompt "(objectClass=group)" dn | \    |
   |     grep -c "^dn:"                                                     |
   |   # Count total groups returned                                        |
   |                                                                        |
@@ -1556,7 +1556,7 @@
   |   wabadmin version                                                     |
   |                                                                        |
   | Step 4: Test Incremental Sync                                          |
-  |   First sync may be slow, subsequent syncs use delta queries            |
+  |   First sync may be slow, subsequent syncs use delta queries           |
   |   Admin > Authentication Domains > [domain] > Synchronize Now          |
   |   Wait for completion and verify all groups present                    |
   +------------------------------------------------------------------------+
@@ -1597,12 +1597,12 @@
   Diagnostic Commands:
   +------------------------------------------------------------------------+
   | Verify service account can read groups:                                |
-  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                  |
+  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                   |
   |     -b "<base-dn>" "(objectClass=group)" dn member                     |
   |   # Should return group DNs and members, not "Insufficient access"     |
   |                                                                        |
   | Test specific OU access:                                               |
-  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                  |
+  |   ldapsearch -H ldaps://<dc>:636 -D "<bind-dn>" -W \                   |
   |     -b "OU=Security Groups,DC=company,DC=com" \                        |
   |     "(objectClass=group)" dn                                           |
   |                                                                        |
@@ -1685,7 +1685,7 @@
   | 1. Run manual sync: Admin > Auth Domains > [domain] > Synchronize      |
   | 2. Verify all groups synced:                                           |
   |    Admin > Groups > Filter by domain                                   |
-  |    Compare count with AD: (Get-ADGroup -Filter *).Count               |
+  |    Compare count with AD: (Get-ADGroup -Filter *).Count                |
   | 3. Check protected groups synced (Domain Admins, etc.)                 |
   | 4. Test user authorization with newly synced groups                    |
   | 5. Schedule automatic sync: Admin > Auth Domains > [domain] > Schedule |
@@ -1702,7 +1702,7 @@
 
 ```
 +===============================================================================+
-|                   TROUBLESHOOTING FLOWCHARTS                                 |
+|                   TROUBLESHOOTING FLOWCHARTS                                  |
 +===============================================================================+
 
   USER CANNOT LOGIN
