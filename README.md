@@ -36,7 +36,7 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 |           5-SITE ARCHITECTURE WITH ACCESS MANAGER INTEGRATION                 |
 +===============================================================================+
 |                                                                               |
-|  +----------------------+      +----------------------+                        |
+|  +----------------------+      +----------------------+                       |
 |  | Access Manager 1     |      | Access Manager 2     |                       |
 |  | (DC-A) - HA          | HA   | (DC-B) - HA          |                       |
 |  | SSO, MFA, Brokering  |<---->| SSO, MFA, Brokering  |                       |
@@ -46,14 +46,14 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 |                              |                                                |
 |      +-----------+-----------+-----------+-----------+                        |
 |      |           |           |           |           |                        |
-|  +---v---+   +---v---+   +---v---+   +---v---+   +---v---+                   |
-|  | Site1 |   | Site2 |   | Site3 |   | Site4 |   | Site5 |                   |
-|  | DC-1  |   | DC-2  |   | DC-3  |   | DC-4  |   | DC-5  |                   |
-|  +-------+   +-------+   +-------+   +-------+   +-------+                   |
+|  +---v---+   +---v---+   +---v---+   +---v---+   +---v---+                    |
+|  | Site1 |   | Site2 |   | Site3 |   | Site4 |   | Site5 |                    |
+|  | DC-1  |   | DC-2  |   | DC-3  |   | DC-4  |   | DC-5  |                    |
+|  +-------+   +-------+   +-------+   +-------+   +-------+                    |
 |                                                                               |
-|  Each Site (Geographically Distributed):                                               |
+|  Each Site (Geographically Distributed):                                      |         |
 |  +------------------------------------------------------------------------+   |
-|  |  HAProxy (2x HA) --> Bastion (2x HA) --> RDS --> OT Targets           |   |
+|  |  HAProxy (2x HA) --> Bastion (2x HA) --> RDS --> OT Targets            |   |
 |  |                            |                                           |   |
 |  |                     Native: Windows/Linux                              |   |
 |  +------------------------------------------------------------------------+   |
