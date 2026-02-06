@@ -1,6 +1,6 @@
-# WALLIX RDS Jump Host Setup for OT RemoteApp Access
+# WALLIX RDS Jump Host Setup
 
-> Configuration guide for WALLIX RDS servers providing secure RemoteApp access to OT systems (industrial control, SCADA)
+> Configuration guide for WALLIX RDS servers providing secure RemoteApp access to target systems
 
 ---
 
@@ -13,7 +13,7 @@
 5. [WALLIX RDS Installation](#wallix-rds-installation)
 6. [RemoteApp Configuration](#remoteapp-configuration)
 7. [Integration with WALLIX Bastion](#integration-with-wallix-bastion)
-8. [OT Target Configuration](#ot-target-configuration)
+8. [Target System Configuration](#target-system-configuration)
 9. [Security Hardening](#security-hardening)
 10. [Session Recording](#session-recording)
 11. [Testing Procedures](#testing-procedures)
@@ -25,12 +25,12 @@
 
 ### Purpose
 
-WALLIX RDS (Remote Desktop Service) provides a secure jump host for accessing OT (Operational Technology) systems through RemoteApp sessions. This architecture provides:
+WALLIX RDS (Remote Desktop Service) provides a secure jump host for accessing target systems through RemoteApp sessions. This architecture provides:
 
-- **Additional isolation layer** for critical OT infrastructure
-- **RDP-only access** via RemoteApp (no direct SSH/RDP to OT targets)
+- **Additional isolation layer** for critical infrastructure
+- **Controlled access** via published RemoteApp applications
 - **Full session recording** with OCR and keystroke logging
-- **Centralized credential management** for OT accounts
+- **Centralized credential management** for service accounts
 
 ### Deployment Model
 
@@ -40,19 +40,19 @@ WALLIX RDS (Remote Desktop Service) provides a secure jump host for accessing OT
 | **Total Deployment** | 5 RDS servers (1 per site) |
 | **Operating System** | Windows Server 2022 |
 | **Access Method** | RemoteApp via RDP |
-| **Target Systems** | OT workstations, ICS, SCADA |
+| **Target Systems** | As defined per deployment requirements |
 
-### Why Jump Host for OT?
+### Why Jump Host Architecture?
 
-OT systems require additional security controls:
+Jump host architecture provides additional security controls:
 
 | Requirement | Solution |
 |-------------|----------|
-| **Network Segregation** | RDS in DMZ, no direct OT network access from user endpoints |
-| **Protocol Restriction** | RDP-only, no SSH/Telnet/proprietary protocols |
+| **Network Segregation** | RDS in DMZ, no direct network access from user endpoints |
+| **Application Control** | Access only via published RemoteApp applications |
 | **Session Isolation** | Each user gets isolated RemoteApp session |
 | **Audit Trail** | Full session recording mandatory for compliance |
-| **Zero Trust** | Users never touch OT network directly |
+| **Zero Trust** | Users never access target networks directly |
 
 ---
 
@@ -89,19 +89,19 @@ OT systems require additional security controls:
 |                    +-------------+--------------+                             |
 |                    |      WALLIX RDS            |  Windows Server 2022        |
 |                    |      10.10.X.30            |  - RemoteApp Host           |
-|                    |      - RDP RemoteApp       |  - Session Recording        |
+|                    |      - Published Apps      |  - Session Recording        |
 |                    |      - OCR & Keystroke Log |  - Isolated Environment     |
 |                    +-------------+--------------+                             |
 |                                  |                                            |
 |                    +-------------+--------------+                             |
-|                    | RDP to OT Targets          |  Via RemoteApp Only         |
+|                    | Access to Target Systems   |  Via RemoteApp Only         |
 |                    v                            |                             |
 |  +----------------+----------------+-------------+-------------+              |
 |  |                |                |             |             |              |
 |  v                v                v             v             v              |
 |  +---------+  +---------+  +---------+  +---------+  +---------+              |
-|  | SCADA   |  | ICS     |  | HMI     |  | PLC     |  | OT      |  OT Systems  |
-|  | System  |  | Server  |  | Panel   |  | Gateway |  | Workst. |              |
+|  | Target  |  | Target  |  | Target  |  | Target  |  | Target  |  Target      |
+|  | System1 |  | System2 |  | System3 |  | System4 |  | System5 |  Systems     |
 |  +---------+  +---------+  +---------+  +---------+  +---------+              |
 |                                                                               |
 +===============================================================================+
@@ -121,7 +121,7 @@ OT systems require additional security controls:
 |  +--------------+        +--------------+        +--------------+             |
 |         |                       |                       |                     |
 |         v                       v                       v                     |
-|  OT Targets (Site 1)    OT Targets (Site 2)    OT Targets (Site 3)            |
+|  Targets (Site 1)       Targets (Site 2)       Targets (Site 3)               |
 |                                                                               |
 |  Site 4 (DC-4)          Site 5 (DC-5)                                         |
 |  +--------------+        +--------------+                                     |
@@ -130,7 +130,7 @@ OT systems require additional security controls:
 |  +--------------+        +--------------+                                     |
 |         |                       |                                             |
 |         v                       v                                             |
-|  OT Targets (Site 4)    OT Targets (Site 5)                                   |
+|  Targets (Site 4)       Targets (Site 5)                                      |
 |                                                                               |
 |  NOTE: Each RDS server is site-local, NO cross-site RDS access                |
 |                                                                               |
@@ -141,7 +141,7 @@ OT systems require additional security controls:
 
 ```
 +===============================================================================+
-|  OT ACCESS FLOW - FROM USER TO SCADA SYSTEM                                   |
+|  ACCESS FLOW - FROM USER TO TARGET SYSTEM                                     |
 +===============================================================================+
 |                                                                               |
 |  Step 1: User Authentication                                                  |
@@ -152,32 +152,32 @@ OT systems require additional security controls:
 |  Step 2: Session Request                  v                                   |
 |                            +---------------+----------------+                 |
 |                            | Credential Vault               |                 |
-|                            | - OT account auto-checkout     |                 |
+|                            | - Account auto-checkout        |                 |
 |                            +---------------+----------------+                 |
 |                                           |                                   |
 |  Step 3: RDP Proxy to RDS                 v                                   |
 |                            +---------------+----------------+                 |
 |                            | WALLIX RDS (RemoteApp)         |                 |
 |                            | - User gets isolated session   |                 |
-|                            | - RDP client appears on screen |                 |
+|                            | - RemoteApp appears on screen  |                 |
 |                            +---------------+----------------+                 |
 |                                           |                                   |
 |  Step 4: RemoteApp Launch                 v                                   |
 |                            +---------------+----------------+                 |
-|                            | Remote Desktop Connection      |                 |
-|                            | (mstsc.exe as RemoteApp)       |                 |
+|                            | Published Application          |                 |
+|                            | (Configured RemoteApp)         |                 |
 |                            +---------------+----------------+                 |
 |                                           |                                   |
-|  Step 5: OT Target Access                 v                                   |
+|  Step 5: Target Access                    v                                   |
 |                            +---------------+----------------+                 |
-|                            | SCADA / ICS / OT System        |                 |
+|                            | Target System                  |                 |
 |                            | - Session fully recorded       |                 |
 |                            | - OCR + keystroke logging      |                 |
 |                            +--------------------------------+                 |
 |                                                                               |
 |  Recording Points:                                                            |
 |  - WALLIX Bastion: Records RDP to RDS (user -> RemoteApp)                     |
-|  - WALLIX RDS: Records RemoteApp to OT target (RDS -> SCADA)                  |
+|  - WALLIX RDS: Records RemoteApp to target (RDS -> Target)                    |
 |                                                                               |
 +===============================================================================+
 ```
@@ -214,7 +214,7 @@ OT systems require additional security controls:
 | **RDS CAL (Device)** | 1 per concurrent user | Calculate per site |
 | **WALLIX RDS License** | Included in Bastion pool | N/A |
 
-**Example**: Site 1 has 50 OT users → 50 RDS Device CALs required
+**Example**: Site 1 has 50 concurrent users → 50 RDS Device CALs required
 
 ---
 
@@ -418,7 +418,9 @@ Test-NetConnection -ComputerName 10.10.1.12 -Port 443
 
 ### Overview
 
-RemoteApp allows publishing specific applications (e.g., Remote Desktop Connection) without providing full desktop access.
+RemoteApp allows publishing specific applications without providing full desktop access. The specific application to publish will be determined based on deployment requirements.
+
+> **Note**: The RemoteApp component (application to publish) is TBD and will be configured during deployment.
 
 ### Step 1: Install Remote Desktop Session Host Role
 
@@ -437,27 +439,35 @@ Get-WindowsFeature -Name RDS-RD-Server
 # Import RemoteApp PowerShell module
 Import-Module RemoteDesktop
 
-# Publish Remote Desktop Connection (mstsc.exe) as RemoteApp
-New-RDRemoteApp -CollectionName "OT Access" `
-  -DisplayName "OT Remote Desktop" `
-  -FilePath "C:\Windows\System32\mstsc.exe" `
-  -Alias "ot-rdp" `
+# Publish application as RemoteApp
+# Replace <APP_PATH>, <DISPLAY_NAME>, and <ALIAS> with actual values
+New-RDRemoteApp -CollectionName "Secure Access" `
+  -DisplayName "<DISPLAY_NAME>" `
+  -FilePath "<APP_PATH>" `
+  -Alias "<ALIAS>" `
   -ShowInWebAccess $true
 
+# Example: Publishing an application
+# New-RDRemoteApp -CollectionName "Secure Access" `
+#   -DisplayName "Application Name" `
+#   -FilePath "C:\Path\To\Application.exe" `
+#   -Alias "app-alias" `
+#   -ShowInWebAccess $true
+
 # Verify RemoteApp published
-Get-RDRemoteApp -CollectionName "OT Access"
+Get-RDRemoteApp -CollectionName "Secure Access"
 ```
 
 ### Step 3: Configure Session Collection
 
 ```powershell
 # Create RDS Session Collection
-New-RDSessionCollection -CollectionName "OT Access" `
+New-RDSessionCollection -CollectionName "Secure Access" `
   -SessionHost "rds-site1.domain.local" `
-  -Description "Secure access to OT systems via RemoteApp"
+  -Description "Secure access via RemoteApp"
 
 # Configure session timeout
-Set-RDSessionCollectionConfiguration -CollectionName "OT Access" `
+Set-RDSessionCollectionConfiguration -CollectionName "Secure Access" `
   -MaxIdleTimeMin 30 `
   -BrokenConnectionAction Disconnect `
   -MaxDisconnectionTimeMin 60
@@ -467,22 +477,24 @@ Set-RDSessionCollectionConfiguration -CollectionName "OT Access" `
 
 ```powershell
 # Grant AD group access to RemoteApp
-$users = @("DOMAIN\OT-Operators", "DOMAIN\OT-Engineers")
+# Replace with actual AD groups
+$users = @("DOMAIN\RemoteApp-Users", "DOMAIN\RemoteApp-Admins")
 
 foreach ($user in $users) {
-  Add-RDSessionHost -CollectionName "OT Access" `
+  Add-RDSessionHost -CollectionName "Secure Access" `
     -SessionHost "rds-site1.domain.local" `
     -UserGroup $user
 }
 
 # Verify user groups
-Get-RDSessionCollectionConfiguration -CollectionName "OT Access" | Select-Object UserGroup
+Get-RDSessionCollectionConfiguration -CollectionName "Secure Access" | Select-Object UserGroup
 ```
 
 ### Step 5: Configure RemoteApp RDP Parameters
 
 ```powershell
-# Create RDP file template for OT access
+# Create RDP file template
+# Update remoteapplicationprogram and remoteapplicationname with actual values
 $rdpContent = @"
 use multimon:i:0
 screen mode id:i:2
@@ -512,12 +524,12 @@ prompt for credentials:i:0
 negotiate security layer:i:1
 remoteapplicationmode:i:1
 alternate shell:s:rdpinit.exe
-remoteapplicationprogram:s:mstsc
-remoteapplicationname:s:OT Remote Desktop
+remoteapplicationprogram:s:<APP_ALIAS>
+remoteapplicationname:s:<APP_DISPLAY_NAME>
 remoteapplicationcmdline:s:
 "@
 
-$rdpContent | Out-File -FilePath "C:\RemoteApp\ot-access.rdp" -Encoding ASCII
+$rdpContent | Out-File -FilePath "C:\RemoteApp\secure-access.rdp" -Encoding ASCII
 ```
 
 ---
@@ -538,7 +550,7 @@ wabadmin rds add \
   --host "10.10.1.30" \
   --port 3389 \
   --type "windows2022" \
-  --description "Site 1 OT Jump Host"
+  --description "Site 1 Jump Host"
 
 # Generate shared secret
 wabadmin rds generate-secret --name "rds-site1"
@@ -550,57 +562,57 @@ wabadmin rds generate-secret --name "rds-site1"
 ```bash
 # Add RDS as a device
 wabadmin device add \
-  --name "rds-site1-ot" \
+  --name "rds-site1" \
   --host "10.10.1.30" \
-  --description "Site 1 OT RemoteApp Access" \
+  --description "Site 1 RemoteApp Access" \
   --device-type "rds"
 
 # Add RDP service
 wabadmin service add \
-  --device "rds-site1-ot" \
+  --device "rds-site1" \
   --service-type "rdp" \
   --port 3389 \
   --protocol "rdp"
 ```
 
-#### Step 3: Create Credential Vault for OT Accounts
+#### Step 3: Create Credential Vault for Accounts
 
 ```bash
-# Create domain for OT accounts
+# Create domain for service accounts
 wabadmin domain add \
-  --name "OT-Production" \
-  --description "OT system accounts"
+  --name "RDS-Production" \
+  --description "RDS service accounts"
 
-# Add OT service account
+# Add service account
 wabadmin account add \
-  --domain "OT-Production" \
-  --login "ot_admin" \
+  --domain "RDS-Production" \
+  --login "rds_admin" \
   --account-type "service" \
   --password-rotation-enabled true \
   --password-rotation-interval 30
 
 # Link account to RDS device
 wabadmin target add \
-  --device "rds-site1-ot" \
-  --account "ot_admin" \
-  --domain "OT-Production"
+  --device "rds-site1" \
+  --account "rds_admin" \
+  --domain "RDS-Production"
 ```
 
 #### Step 4: Configure Authorization
 
 ```bash
-# Create authorization for OT operators
+# Create authorization for RDS users
 wabadmin authorization add \
-  --name "OT-Access-Site1" \
-  --user-group "OT-Operators" \
-  --target-group "OT-RDS" \
+  --name "RDS-Access-Site1" \
+  --user-group "RDS-Users" \
+  --target-group "RDS-Targets" \
   --approval-required false \
   --recording-mandatory true \
   --session-timeout 3600
 
 # Enable session recording with OCR
 wabadmin authorization modify \
-  --name "OT-Access-Site1" \
+  --name "RDS-Access-Site1" \
   --recording-protocol "rdp" \
   --ocr-enabled true \
   --keystroke-logging true
@@ -608,16 +620,16 @@ wabadmin authorization modify \
 
 ---
 
-## OT Target Configuration
+## Target System Configuration
 
 ### Target System Preparation
 
-For each OT system accessible via WALLIX RDS:
+For each target system accessible via WALLIX RDS:
 
-#### Windows-based OT Targets
+#### Windows-based Targets
 
 ```powershell
-# On OT target (e.g., SCADA workstation)
+# On target system
 
 # Enable RDP
 Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' `
@@ -644,7 +656,7 @@ New-LocalUser -Name "wallix_rds" `
 Add-LocalGroupMember -Group "Remote Desktop Users" -Member "wallix_rds"
 ```
 
-#### Linux-based OT Targets (via RDP wrapper)
+#### Linux-based Targets (via RDP wrapper)
 
 ```bash
 # Install xrdp for RDP access
@@ -663,35 +675,35 @@ sudo useradd -m -s /bin/bash wallix_rds
 echo "wallix_rds:ComplexPassword123!" | sudo chpasswd
 ```
 
-### Bastion Configuration for OT Targets
+### Bastion Configuration for Targets
 
 ```bash
-# Add each OT target as a device
+# Add each target as a device
 wabadmin device add \
-  --name "scada-hmi-01" \
+  --name "target-01" \
   --host "10.50.1.10" \
-  --description "SCADA HMI Panel 01" \
+  --description "Target System 01" \
   --device-type "windows"
 
 # Add RDP service
 wabadmin service add \
-  --device "scada-hmi-01" \
+  --device "target-01" \
   --service-type "rdp" \
   --port 3389 \
   --protocol "rdp"
 
 # Add account credentials
 wabadmin account add \
-  --device "scada-hmi-01" \
+  --device "target-01" \
   --login "wallix_rds" \
   --password "ComplexPassword123!" \
   --auto-change-password true
 
 # Create connection policy (via RDS)
 wabadmin connection-policy add \
-  --name "OT-SCADA-Access" \
-  --via-device "rds-site1-ot" \
-  --target-device "scada-hmi-01" \
+  --name "Target-Access" \
+  --via-device "rds-site1" \
+  --target-device "target-01" \
   --protocol "rdp" \
   --recording-enabled true
 ```
@@ -791,20 +803,22 @@ Get-NetAdapter | ForEach-Object {
 #### Step 1: Restrict RemoteApp to Approved Applications Only
 
 ```powershell
-# Remove all published RemoteApps except RDP client
-Get-RDRemoteApp | Where-Object { $_.Alias -ne "ot-rdp" } | Remove-RDRemoteApp
+# Remove all published RemoteApps except approved application
+# Replace <APPROVED_ALIAS> with your configured alias
+Get-RDRemoteApp | Where-Object { $_.Alias -ne "<APPROVED_ALIAS>" } | Remove-RDRemoteApp
 
 # Verify only approved app is published
 Get-RDRemoteApp
-# Expected: Only "ot-rdp" (mstsc.exe)
+# Expected: Only the approved application alias
 ```
 
 #### Step 2: Disable RemoteApp Command Line
 
 ```powershell
 # Prevent users from passing arbitrary command-line arguments
-Set-RDRemoteApp -CollectionName "OT Access" `
-  -Alias "ot-rdp" `
+# Replace <ALIAS> with your configured alias
+Set-RDRemoteApp -CollectionName "Secure Access" `
+  -Alias "<ALIAS>" `
   -RequiredCommandLine "" `
   -CommandLineSetting DoNotAllow
 ```
@@ -818,17 +832,17 @@ Set-RDRemoteApp -CollectionName "OT Access" `
 ```bash
 # Enable full session recording for RDS access
 wabadmin recording-policy add \
-  --name "OT-RDS-Recording" \
+  --name "RDS-Recording" \
   --protocol "rdp" \
   --video-enabled true \
   --ocr-enabled true \
   --keystroke-logging true \
   --retention-days 365
 
-# Apply to all OT authorizations
+# Apply to authorizations
 wabadmin authorization modify \
-  --name "OT-Access-Site1" \
-  --recording-policy "OT-RDS-Recording"
+  --name "RDS-Access-Site1" \
+  --recording-policy "RDS-Recording"
 ```
 
 ### Recording Storage
@@ -899,18 +913,18 @@ mstsc /v:10.10.1.100 /w:1920 /h:1080
 # - HAProxy VIP redirects to Bastion
 # - Bastion prompts for MFA
 # - After auth, RemoteApp session to RDS starts
-# - User sees "OT Remote Desktop" RemoteApp
+# - User sees published RemoteApp application
 ```
 
 #### Test 2: RemoteApp Launch
 
 ```powershell
 # From WALLIX RDS RemoteApp session
-# Launch Remote Desktop Connection (mstsc.exe)
-# Connect to OT target: 10.50.1.10 (SCADA HMI)
+# Launch the published RemoteApp application
+# Connect to target system
 
 # Expected:
-# - RDP connection to OT target succeeds
+# - Connection to target succeeds
 # - Credentials auto-injected by Bastion
 # - Session recorded with video + OCR
 ```
@@ -954,7 +968,7 @@ mstsc /v:10.10.1.30
 #### Test 6: Concurrent Sessions
 
 ```powershell
-# Simulate 20 concurrent OT access sessions
+# Simulate 20 concurrent sessions
 1..20 | ForEach-Object -Parallel {
   mstsc /v:10.10.1.100 /admin
 }
@@ -972,7 +986,7 @@ Get-Counter '\Terminal Services Session(*)\*' -MaxSamples 10 -SampleInterval 5
 ssh admin@10.10.1.11
 wabadmin shutdown
 
-# Attempt OT access via RDS
+# Attempt access via RDS
 # Expected: HAProxy redirects to secondary (10.10.1.12), session succeeds
 ```
 
@@ -1011,13 +1025,13 @@ Enable-NetFirewallRule -DisplayName "WALLIX Bastion RDP Access"
 
 #### Issue 2: RemoteApp Not Launching
 
-**Symptoms**: RemoteApp session starts but mstsc.exe does not appear
+**Symptoms**: RemoteApp session starts but published application does not appear
 
 **Diagnosis**:
 
 ```powershell
 # Check RemoteApp configuration
-Get-RDRemoteApp -CollectionName "OT Access"
+Get-RDRemoteApp -CollectionName "Secure Access"
 
 # Check event logs
 Get-WinEvent -LogName "Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational" -MaxEvents 20
@@ -1026,12 +1040,12 @@ Get-WinEvent -LogName "Microsoft-Windows-TerminalServices-RemoteConnectionManage
 **Resolution**:
 
 ```powershell
-# Re-publish RemoteApp
-Remove-RDRemoteApp -CollectionName "OT Access" -Alias "ot-rdp"
-New-RDRemoteApp -CollectionName "OT Access" `
-  -DisplayName "OT Remote Desktop" `
-  -FilePath "C:\Windows\System32\mstsc.exe" `
-  -Alias "ot-rdp"
+# Re-publish RemoteApp (replace with actual values)
+Remove-RDRemoteApp -CollectionName "Secure Access" -Alias "<ALIAS>"
+New-RDRemoteApp -CollectionName "Secure Access" `
+  -DisplayName "<DISPLAY_NAME>" `
+  -FilePath "<APP_PATH>" `
+  -Alias "<ALIAS>"
 ```
 
 #### Issue 3: Session Recording Missing
@@ -1055,33 +1069,33 @@ tail -f "C:\Program Files\WALLIX\RDS\logs\recording.log"
 
 ```bash
 # Verify recording policy applied to authorization
-wabadmin authorization show --name "OT-Access-Site1"
+wabadmin authorization show --name "RDS-Access-Site1"
 
 # Force enable recording
 wabadmin authorization modify \
-  --name "OT-Access-Site1" \
+  --name "RDS-Access-Site1" \
   --recording-mandatory true
 
 # Clear disk space if needed
 wabadmin recording archive --older-than 90
 ```
 
-#### Issue 4: OT Target Credential Injection Fails
+#### Issue 4: Target Credential Injection Fails
 
-**Symptoms**: RDP connection to OT target prompts for credentials (should auto-inject)
+**Symptoms**: RDP connection to target prompts for credentials (should auto-inject)
 
 **Diagnosis**:
 
 ```bash
 # Check target configuration
-wabadmin target list --device "scada-hmi-01"
+wabadmin target list --device "target-01"
 
 # Verify account credentials
-wabadmin account show --device "scada-hmi-01" --login "wallix_rds"
+wabadmin account show --device "target-01" --login "wallix_rds"
 
 # Test credential checkout
 wabadmin account checkout \
-  --device "scada-hmi-01" \
+  --device "target-01" \
   --login "wallix_rds" \
   --duration 60
 ```
@@ -1091,14 +1105,14 @@ wabadmin account checkout \
 ```bash
 # Update account credentials
 wabadmin account modify \
-  --device "scada-hmi-01" \
+  --device "target-01" \
   --login "wallix_rds" \
   --password "NewPassword123!" \
   --credential-injection true
 
 # Test credential injection
 wabadmin target test \
-  --device "scada-hmi-01" \
+  --device "target-01" \
   --service "rdp" \
   --account "wallix_rds"
 ```
@@ -1143,7 +1157,7 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server" 
   -Name "MaxInstanceCount" -Value 50
 
 # Adjust session timeout for idle connections
-Set-RDSessionCollectionConfiguration -CollectionName "OT Access" `
+Set-RDSessionCollectionConfiguration -CollectionName "Secure Access" `
   -MaxIdleTimeMin 15 `
   -MaxDisconnectionTimeMin 30
 ```
@@ -1173,8 +1187,8 @@ After completing WALLIX RDS setup:
 ### Internal Documentation
 - PAM Core: [/docs/pam/](../docs/pam/)
 - Session Recording: [/docs/pam/09-session-management/](../docs/pam/09-session-management/)
-- OT Security Best Practices: [/docs/pam/14-best-practices/](../docs/pam/14-best-practices/)
+- Security Best Practices: [/docs/pam/14-best-practices/](../docs/pam/14-best-practices/)
 
 ---
 
-*WALLIX RDS provides secure, audited access to OT systems through RemoteApp isolation, ensuring compliance with industrial control system security standards.*
+*WALLIX RDS provides secure, audited access to target systems through RemoteApp isolation, ensuring compliance with security standards.*
