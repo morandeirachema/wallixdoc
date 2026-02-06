@@ -607,31 +607,31 @@ terraform show
 #### Datastore Requirements
 
 ```
-+===============================================================================+
-|  VMWARE STORAGE LAYOUT FOR WALLIX Bastion LAB                                        |
-+===============================================================================+
-|                                                                               |
-|  DATASTORE TYPE: VMFS 6 or NFS                                                |
-|  MINIMUM CAPACITY: 2 TB                                                       |
-|  RECOMMENDED: VMFS on SSD or NVMe for better performance                      |
-|                                                                               |
-|  STORAGE ALLOCATION:                                                          |
-|  ------------------                                                           |
-|  WALLIX Bastion Nodes (2x):         ~400 GB (200 GB each)                             |
-|  HAProxy Nodes (2x):        ~40 GB  (20 GB each)                              |
-|  Active Directory:          ~60 GB                                            |
-|  FortiAuthenticator:        ~40 GB                                            |
-|  WALLIX RDS:                ~100 GB                                           |
-|  SIEM/Monitoring:           ~600 GB                                           |
-|  Test Targets (10+ VMs):    ~500 GB                                           |
-|  Snapshots/Overhead:        ~260 GB (recommended 15% overhead)                |
-|  ------------------------                                                     |
-|  TOTAL:                     ~2 TB                                             |
-|                                                                               |
-|  THIN PROVISIONING: Recommended to optimize space usage                       |
-|  THICK PROVISIONING: Use for production WALLIX Bastion nodes for guaranteed IOPS      |
-|                                                                               |
-+===============================================================================+
++=================================================================================+
+|  VMWARE STORAGE LAYOUT FOR WALLIX Bastion LAB                                   |
++=================================================================================+
+|                                                                                 |
+|  DATASTORE TYPE: VMFS 6 or NFS                                                  |
+|  MINIMUM CAPACITY: 2 TB                                                         |
+|  RECOMMENDED: VMFS on SSD or NVMe for better performance                        |
+|                                                                                 |
+|  STORAGE ALLOCATION:                                                            |
+|  ------------------                                                             |
+|  WALLIX Bastion Nodes (2x):         ~400 GB (200 GB each)                       |
+|  HAProxy Nodes (2x):        ~40 GB  (20 GB each)                                | 
+|  Active Directory:          ~60 GB                                              |
+|  FortiAuthenticator:        ~40 GB                                              |
+|  WALLIX RDS:                ~100 GB                                             |
+|  SIEM/Monitoring:           ~600 GB                                             |
+|  Test Targets (10+ VMs):    ~500 GB                                             |
+|  Snapshots/Overhead:        ~260 GB (recommended 15% overhead)                  |
+|  ------------------------                                                       |
+|  TOTAL:                     ~2 TB                                               |
+|                                                                                 |
+|  THIN PROVISIONING: Recommended to optimize space usage                         |
+|  THICK PROVISIONING: Use for production WALLIX Bastion nodes for guaranteed IOPS|
+|                                                                                 |
++=================================================================================+
 ```
 
 #### Storage Best Practices

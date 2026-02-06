@@ -13,18 +13,18 @@ This guide covers deploying and configuring FortiAuthenticator to provide MFA (R
 |                    FORTIAUTHENTICATOR MFA ARCHITECTURE                        |
 +===============================================================================+
 |                                                                               |
-|  WALLIX Bastion Nodes                FortiAuthenticator           Active Directory   |
-|  =============                ====================         =================  |
+|  WALLIX Bastion Nodes            FortiAuthenticator           Active Directory|
+|  =============                   ====================         ================|
 |                                                                               |
-|  +-----------+                +-----------------+          +-----------+      |
-|  | WALLIX Bastion-1  |----RADIUS----->| FortiAuth       |---LDAP-->|    AD     |      |
-|  |10.10.1.11 |    (1812)      | 10.10.1.50      |  (389)   |10.10.0.10 |      |
-|  +-----------+                |                 |          +-----------+      |
-|                               | MFA Validation: |                             |
-|  +-----------+                | - LDAP Auth     |                             |
-|  | WALLIX Bastion-2  |----RADIUS----->| - TOTP/Token    |                             |
-|  |10.10.1.12 |                | - Push Notify   |                             |
-|  +-----------+                +-----------------+                             |
+|  +--------------+                +-----------------+          +-----------+   |
+|  |WALLIXBastion1|----RADIUS----->| FortiAuth       |---LDAP-->|    AD     |   |
+|  |10.10.1.11    |    (1812)      | 10.10.1.50      |  (389)   |10.10.0.10 |   |
+|  +--------------+                |                 |          +-----------+   |
+|                                  | MFA Validation: |                          |
+|  +--------------+                | - LDAP Auth     |                          |
+|  |WALLIXBastion2|----RADIUS----->| - TOTP/Token    |                          |
+|  |10.10.1.12    |                | - Push Notify   |                          |
+|  +--------------+                +-----------------+                          |
 |                                       |                                       |
 |                                       v                                       |
 |                               +-----------------+                             |
@@ -273,8 +273,8 @@ Click **Create New** and configure:
 |                                                                               |
 |  SEARCH OPTIONS                                                               |
 |  --------------                                                               |
-|  User Search Base:      OU=Users,OU=WALLIX Bastion,DC=lab,DC=local                    |
-|  Group Search Base:     OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local                   |
+|  User Search Base:      OU=Users,OU=WALLIX Bastion,DC=lab,DC=local            |
+|  Group Search Base:     OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local           |
 |                                                                               |
 |  [x] Enable LDAP Server                                                       |
 |                                                                               |
@@ -302,10 +302,10 @@ Click **Create New**:
 
 ```
 +===============================================================================+
-|  RADIUS CLIENT CONFIGURATION - WALLIX Bastion NODE 1                                  |
+|  RADIUS CLIENT CONFIGURATION - WALLIX Bastion NODE 1                          |
 +===============================================================================+
 |                                                                               |
-|  Name:                  WALLIX Bastion-Node1                                          |
+|  Name:                  WALLIX Bastion-Node1                                  |
 |  IP/Netmask:            10.10.1.11/32                                         |
 |  Secret:                WallixRadius2026!                                     |
 |  Authentication Type:   PAP                                                   |
@@ -317,10 +317,10 @@ Click **Create New** again for Node 2:
 
 ```
 +===============================================================================+
-|  RADIUS CLIENT CONFIGURATION - WALLIX Bastion NODE 2                                  |
+|  RADIUS CLIENT CONFIGURATION - WALLIX Bastion NODE 2                          |
 +===============================================================================+
 |                                                                               |
-|  Name:                  WALLIX Bastion-Node2                                          |
+|  Name:                  WALLIX Bastion-Node2                                  |
 |  IP/Netmask:            10.10.1.12/32                                         |
 |  Secret:                WallixRadius2026!                                     |
 |  Authentication Type:   PAP                                                   |
@@ -339,7 +339,7 @@ Click **Create New**:
 |  RADIUS POLICY CONFIGURATION                                                  |
 +===============================================================================+
 |                                                                               |
-|  Name:                  WALLIX Bastion-MFA-Policy                                     |
+|  Name:                  WALLIX Bastion-MFA-Policy                             |
 |  Authentication Method: Local user database or remote authentication          |
 |                                                                               |
 |  LDAP SETTINGS                                                                |
@@ -376,7 +376,7 @@ Click **Import > LDAP**:
 |                                                                               |
 |  LDAP Server:           LAB-AD                                                |
 |  Search Filter:         (objectClass=user)                                    |
-|  Base DN:               OU=Users,OU=WALLIX Bastion,DC=lab,DC=local                    |
+|  Base DN:               OU=Users,OU=WALLIX Bastion,DC=lab,DC=local            |
 |                                                                               |
 |  USERS TO IMPORT:                                                             |
 |  ----------------                                                             |
@@ -461,7 +461,7 @@ Click **Test Authentication**:
 |                                                                               |
 |  Username:              jadmin                                                |
 |  Password:              JohnAdmin123!                                         |
-|  RADIUS Client:         WALLIX Bastion-Node1                                          |
+|  RADIUS Client:         WALLIX Bastion-Node1                                  |
 |                                                                               |
 |  [Test Authentication]                                                        |
 |                                                                               |
@@ -469,7 +469,7 @@ Click **Test Authentication**:
 |  -------                                                                      |
 |  Status: Success (Access-Accept)                                              |
 |  Authentication Method: LDAP + FortiToken Mobile                              |
-|  User Groups: WALLIX Bastion-Admins, Linux-Admins, Windows-Admins                     |
+|  User Groups: WALLIX Bastion-Admins, Linux-Admins, Windows-Admins             |
 |                                                                               |
 +===============================================================================+
 ```
@@ -573,14 +573,14 @@ Need help? Contact IT Support.
 **Navigate to: Monitor > Authentication > RADIUS**
 
 ```
-+===============================================================================+
-| Time       | User      | Client        | Result        | Reason              |
-+===============================================================================+
-| 10:23:45   | jadmin    | WALLIX Bastion-Node1  | Success       | LDAP + Token OK     |
-| 10:22:13   | soperator | WALLIX Bastion-Node2  | Success       | LDAP + Token OK     |
-| 10:20:05   | totengineer| WALLIX Bastion-Node1 | Failed        | Invalid token       |
-| 10:18:32   | lnetwork  | WALLIX Bastion-Node2  | Success       | LDAP + Token OK     |
-+===============================================================================+
++===================================================================================+
+| Time       | User       | Client                | Result        | Reason          |
++===================================================================================+
+| 10:23:45   | jadmin     | WALLIX Bastion-Node1  | Success       | LDAP + Token OK |
+| 10:22:13   | soperator  | WALLIX Bastion-Node2  | Success       | LDAP + Token OK |
+| 10:20:05   | totengineer| WALLIX Bastion-Node1  | Failed        | Invalid token   |
+| 10:18:32   | lnetwork   | WALLIX Bastion-Node2  | Success       | LDAP + Token OK |
++===================================================================================+
 ```
 
 ### Enable Syslog Forwarding

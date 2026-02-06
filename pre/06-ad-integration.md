@@ -13,18 +13,18 @@ This guide covers integrating WALLIX Bastion with Active Directory for user auth
 |                    AD + MFA AUTHENTICATION FLOW                               |
 +===============================================================================+
 
-  User Login              WALLIX Bastion           FortiAuth         Active Directory
-  ==========              ======           =========         ================
+  User Login          WALLIX Bastion           FortiAuth       Active Directory
+  ==========          ======                   =========       ================
 
-  1. User enters     2. WALLIX Bastion sends  3. FortiAuth    4. FortiAuth
-     credentials        RADIUS req       validates        queries AD
-                                         TOTP code
+  1. User enters      2. WALLIX Bastion sends  3. FortiAuth    4. FortiAuth
+     credentials        RADIUS req             validates        queries AD
+                                               TOTP code
 
-  +----------+       +----------+      +----------+      +-------------+
-  |  jadmin  |------>| WALLIX Bastion   |----->|FortiAuth |----->|   DC-LAB    |
-  | password |HTTPS  |          |RADIUS|          | LDAP |             |
-  | + TOTP   |       |10.10.1.11|:1812 |10.10.1.50|:389  | 10.10.0.10  |
-  +----------+       +----------+      +----------+      +-------------+
+  +----------+       +-------------+      +----------+      +-------------+
+  |  jadmin  |------>|WALLIXBastion|----->|FortiAuth |----->|   DC-LAB    |
+  | password |HTTPS  |             |RADIUS|          | LDAP |             |
+  | + TOTP   |       |10.10.1.11   |:1812 |10.10.1.50|:389  | 10.10.0.10  |
+  +----------+       +-------------+      +----------+      +-------------+
                            |                  |                 |
                            |<-Access-Accept---|<--User Info-----|
                            |   + Attributes   |
@@ -91,7 +91,7 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 |                                                                               |
 |  BIND CREDENTIALS                                                             |
 |  ----------------                                                             |
-|  Bind DN:               CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,          |
+|  Bind DN:               CN=wallix-svc,OU=Service Accounts,OU=WALLIX Bastion,  |
 |                         DC=lab,DC=local                                       |
 |  Bind Password:         WallixSvc123!                                         |
 |                                                                               |
@@ -99,7 +99,7 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 |  ---------------                                                              |
 |  Base DN:               DC=lab,DC=local                                       |
 |  User Search Filter:    (&(objectClass=user)(sAMAccountName=%s))              |
-|  User Search Base:      OU=Users,OU=WALLIX Bastion,DC=lab,DC=local                    |
+|  User Search Base:      OU=Users,OU=WALLIX Bastion,DC=lab,DC=local            |
 |                                                                               |
 |  ATTRIBUTE MAPPING                                                            |
 |  -----------------                                                            |
@@ -199,16 +199,16 @@ Configuration > User Groups > Add
 ```
 Configuration > Authentication > LDAP > LAB.LOCAL > Group Mapping
 
-+===============================================================================+
-| AD Group (DN)                                       | WALLIX Bastion Group            |
-+===============================================================================+
-| CN=WALLIX Bastion-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local| LDAP-Admins             |
-| CN=WALLIX Bastion-Operators,OU=Groups,OU=WALLIX Bastion,DC=lab,...  | LDAP-Operators          |
-| CN=WALLIX Bastion-Auditors,OU=Groups,OU=WALLIX Bastion,DC=lab,...   | LDAP-Auditors           |
-| CN=Linux-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local | LDAP-Linux-Admins       |
-| CN=Windows-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,...    | LDAP-Windows-Admins     |
-| CN=OT-Engineers,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local | LDAP-OT-Engineers       |
-+===============================================================================+
++======================================================================================+
+| AD Group (DN)                                       | WALLIX Bastion Group           |
++======================================================================================+
+| CN=WALLIX Bastion-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local| LDAP-Admins    |
+| CN=WALLIX Bastion-Operators,OU=Groups,OU=WALLIX Bastion,DC=lab,...  | LDAP-Operators |
+| CN=WALLIX Bastion-Auditors,OU=Groups,OU=WALLIX Bastion,DC=lab,...   | LDAP-Auditors  |
+| CN=Linux-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local | LDAP-Linux-Admins      |
+| CN=Windows-Admins,OU=Groups,OU=WALLIX Bastion,DC=lab,...    | LDAP-Windows-Admins    |
+| CN=OT-Engineers,OU=Groups,OU=WALLIX Bastion,DC=lab,DC=local | LDAP-OT-Engineers      |
++======================================================================================+
 ```
 
 ### Via API

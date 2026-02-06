@@ -13,22 +13,22 @@ This guide covers deploying and configuring WALLIX RDS (Remote Desktop Session M
 |                    WALLIX RDS ARCHITECTURE                                    |
 +===============================================================================+
 |                                                                               |
-|  Users                WALLIX Bastion Cluster         WALLIX RDS        Windows Targets|
-|  =====                =============          ===========        ==============|
+|  Users                WALLIX Bastion Cluster WALLIX RDS        Windows Targets|
+|  =====                =============          ===========       ============== |
 |                                                                               |
-|  +------+             +-----------+          +-----------+      +-----------+ |
-|  |Client|---RDP----->| WALLIX Bastion    |---RDP--->| WALLIX    |--RDP> | Windows   | |
-|  |      |  (3389)    | (Proxy)   | (3390)   | RDS       |(3389) | Server    | |
-|  +------+            |10.10.1.11 |          |10.10.1.30 |       |10.10.2.30 | |
-|                      +-----------+          +-----------+       +-----------+ |
+|  +------+             +------------+         +-----------+      +-----------+ |
+|  |Client|---RDP----->|WALLIXBastion|---RDP-->| WALLIX    |--RDP>| Windows   | |
+|  |      |  (3389)    | (Proxy)     | (3390)  | RDS       |(3389)| Server    | |
+|  +------+            |10.10.1.11   |         |10.10.1.30 |      |10.10.2.30 | |
+|                      +-------------+         +-----------+      +-----------+ |
 |                             |                     |                           |
 |                             |                     |                           |
-|                      +-----------+          +-----------+                     |
-|                      | WALLIX Bastion    |          | Features: |                     |
-|                      | (Backup)  |          | - OCR     |                     |
-|                      |10.10.1.12 |          | - Video   |                     |
-|                      +-----------+          | - Metadata|                     |
-|                                             +-----------+                     |
+|                      +-------------+          +-----------+                   |
+|                      |WALLIXBastion|          | Features: |                   |
+|                      | (Backup)    |          | - OCR     |                   |
+|                      |10.10.1.12   |          | - Video   |                   |
+|                      +-------------+          | - Metadata|                   |
+|                                               +-----------+                   |
 |                                                    |                          |
 |                                                    v                          |
 |                                             +-----------+                     |
