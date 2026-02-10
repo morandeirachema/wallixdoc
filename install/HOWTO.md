@@ -159,20 +159,20 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 
    ```
    Site 1 (DC-1):
-   - HAProxy VIP:        10.1.1.10
-   - HAProxy-1:          10.1.1.11
-   - HAProxy-2:          10.1.1.12
-   - Bastion-1:          10.1.1.21
-   - Bastion-2:          10.1.1.22
-   - WALLIX RDS:         10.1.1.30
+   - HAProxy VIP:        10.10.1.100
+   - HAProxy-1:          10.10.1.5
+   - HAProxy-2:          10.10.1.6
+   - Bastion-1:          10.10.1.11
+   - Bastion-2:          10.10.1.12
+   - WALLIX RDS:         10.10.1.30
 
    Site 2 (DC-2):
-   - HAProxy VIP:        10.2.1.10
-   - HAProxy-1:          10.2.1.11
-   - HAProxy-2:          10.2.1.12
-   - Bastion-1:          10.2.1.21
-   - Bastion-2:          10.2.1.22
-   - WALLIX RDS:         10.2.1.30
+   - HAProxy VIP:        10.10.2.100
+   - HAProxy-1:          10.10.2.5
+   - HAProxy-2:          10.10.2.6
+   - Bastion-1:          10.10.2.11
+   - Bastion-2:          10.10.2.12
+   - WALLIX RDS:         10.10.2.30
 
    (Pattern repeats for Sites 3-5)
    ```
@@ -181,10 +181,10 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 
    ```bash
    # Site 1 Example
-   bastion-site1.company.local      A    10.1.1.10  (HAProxy VIP)
-   bastion1-site1.company.local     A    10.1.1.21
-   bastion2-site1.company.local     A    10.1.1.22
-   rds-site1.company.local          A    10.1.1.30
+   bastion-site1.company.com      A    10.10.1.100  (HAProxy VIP)
+   bastion1-site1.company.com     A    10.10.1.11
+   bastion2-site1.company.com     A    10.10.1.12
+   rds-site1.company.com          A    10.10.1.30
    ```
 
 3. **Firewall Rules**
@@ -215,7 +215,7 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 | Site 4 | 60 sessions | **Active-Passive** | Low load, easier operations |
 | Site 5 | 40 sessions | **Active-Passive** | Low load, easier operations |
 
-**Recommendation**: Start with **Active-Passive** for Site 1 during initial deployment for simplicity. Convert to Active-Active later if needed.
+**Recommendation**: While the decision matrix above suggests Active-Active for Site 1 based on expected load, consider starting with **Active-Passive** during initial deployment for simplicity. Convert to Active-Active later once the site is stabilized and the team is comfortable with operations.
 
 **Configuration References**:
 - Active-Active: [06-bastion-active-active.md](06-bastion-active-active.md)
@@ -289,23 +289,23 @@ The Access Manager infrastructure is managed by a separate team. This phase focu
 ```yaml
 # SSO Configuration
 sso_method: "SAML" | "OIDC" | "LDAP"
-idp_metadata_url: "https://am.company.local/saml/metadata"
-entity_id: "https://am.company.local"
-assertion_consumer_url: "https://bastion-siteX.company.local/auth/sso"
+idp_metadata_url: "https://am.company.com/saml/metadata"
+entity_id: "https://am.company.com"
+assertion_consumer_url: "https://bastion-siteX.company.com/auth/sso"
 
 # Session Brokering API
-brokering_api_url: "https://am.company.local/api/v1/sessions"
+brokering_api_url: "https://am.company.com/api/v1/sessions"
 api_key: "AM_API_KEY_REDACTED"
 api_secret: "AM_API_SECRET_REDACTED"
 
 # MFA Configuration
-fortiauth_radius_primary: "10.0.1.50"
-fortiauth_radius_secondary: "10.0.2.50"
+fortiauth_radius_primary: "10.20.0.60"
+fortiauth_radius_secondary: "10.20.0.61"
 radius_shared_secret: "RADIUS_SECRET_REDACTED"
 radius_timeout: 5
 
 # License Integration (Optional)
-license_pool_api: "https://am.company.local/api/v1/licenses"
+license_pool_api: "https://am.company.com/api/v1/licenses"
 license_pool_id: "bastion-pool-450"
 ```
 
@@ -322,9 +322,9 @@ license_pool_id: "bastion-pool-450"
 ```bash
 # On Bastion (Phase 3), configure SSO provider
 wabadmin sso configure --provider saml \
-  --idp-metadata "https://am.company.local/saml/metadata" \
-  --entity-id "https://bastion-site1.company.local" \
-  --assertion-consumer-url "https://bastion-site1.company.local/auth/sso"
+  --idp-metadata "https://am.company.com/saml/metadata" \
+  --entity-id "https://bastion-site1.company.com" \
+  --assertion-consumer-url "https://bastion-site1.company.com/auth/sso"
 ```
 
 **Test Plan**:
@@ -345,7 +345,7 @@ wabadmin sso configure --provider saml \
 ```yaml
 # RADIUS Client Configuration (on FortiAuthenticator)
 client_name: "WALLIX-Bastion-Site1"
-client_ip: "10.1.1.21"  # Bastion-1
+client_ip: "10.10.1.11"  # Bastion-1
 nas_id: "bastion-site1"
 shared_secret: "RADIUS_SECRET_REDACTED"
 token_type: "FortiToken"
@@ -356,8 +356,8 @@ token_type: "FortiToken"
 ```bash
 # Configure RADIUS authentication
 wabadmin auth configure --method radius \
-  --primary-server 10.0.1.50 \
-  --secondary-server 10.0.2.50 \
+  --primary-server 10.20.0.60 \
+  --secondary-server 10.20.0.61 \
   --shared-secret "RADIUS_SECRET_REDACTED" \
   --timeout 5 \
   --retry 3
@@ -384,11 +384,11 @@ wabadmin auth configure --method radius \
 routing_rules:
   - name: "Route by AD Site"
     condition: "user.ad_site == 'Site-1'"
-    target: "bastion-site1.company.local"
+    target: "bastion-site1.company.com"
 
   - name: "Route by User Group"
     condition: "user.groups contains 'IT-Admins'"
-    target: "bastion-site1.company.local"
+    target: "bastion-site1.company.com"
 
   - name: "Load Balance"
     condition: "true"  # Default
@@ -399,15 +399,15 @@ routing_rules:
 
 ```bash
 # Register Bastion with Access Manager
-curl -X POST https://am.company.local/api/v1/bastions \
+curl -X POST https://am.company.com/api/v1/bastions \
   -H "Authorization: Bearer AM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "bastion-site1",
-    "url": "https://bastion-site1.company.local",
+    "url": "https://bastion-site1.company.com",
     "api_key": "BASTION_API_KEY",
     "capacity": 90,
-    "health_check_url": "https://bastion-site1.company.local/health"
+    "health_check_url": "https://bastion-site1.company.com/health"
   }'
 ```
 
@@ -441,12 +441,12 @@ curl -X POST https://am.company.local/api/v1/bastions \
 
 ```bash
 # Create session via Access Manager
-curl -X POST https://am.company.local/api/v1/sessions \
+curl -X POST https://am.company.com/api/v1/sessions \
   -H "Authorization: Bearer AM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "user": "john.doe@company.local",
-    "target": "server01.company.local",
+    "user": "john.doe@company.com",
+    "target": "server01.company.com",
     "protocol": "ssh",
     "bastion_hint": "site1"
   }'
@@ -454,8 +454,8 @@ curl -X POST https://am.company.local/api/v1/sessions \
 # Response
 {
   "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "bastion_url": "https://bastion-site1.company.local",
-  "connection_string": "ssh://john.doe@bastion-site1.company.local:22",
+  "bastion_url": "https://bastion-site1.company.com",
+  "connection_string": "ssh://john.doe@bastion-site1.company.com:22",
   "expires_at": "2026-02-05T18:00:00Z"
 }
 ```
@@ -495,7 +495,7 @@ curl -X POST https://am.company.local/api/v1/sessions \
 **Configuration Summary**:
 
 ```bash
-# HAProxy-1 (10.1.1.11) and HAProxy-2 (10.1.1.12)
+# HAProxy-1 (10.10.1.5) and HAProxy-2 (10.10.1.6)
 
 # 1. Install HAProxy and Keepalived
 apt-get update
@@ -522,7 +522,7 @@ defaults
     timeout server  50000
 
 frontend bastion-web
-    bind *:443 ssl crt /etc/haproxy/certs/bastion-site1.pem
+    bind 10.10.1.100:443 ssl crt /etc/haproxy/certs/bastion-site1.pem
     mode http
     default_backend bastion-web-backend
 
@@ -531,8 +531,8 @@ backend bastion-web-backend
     balance roundrobin
     option httpchk GET /health
     http-check expect status 200
-    server bastion1 10.1.1.21:443 check ssl verify none
-    server bastion2 10.1.1.22:443 check ssl verify none
+    server bastion1 10.10.1.11:443 check ssl verify none
+    server bastion2 10.10.1.12:443 check ssl verify none
 
 frontend bastion-ssh
     bind *:22
@@ -543,8 +543,8 @@ backend bastion-ssh-backend
     mode tcp
     balance roundrobin
     option tcp-check
-    server bastion1 10.1.1.21:22 check
-    server bastion2 10.1.1.22:22 check
+    server bastion1 10.10.1.11:22 check
+    server bastion2 10.10.1.12:22 check
 
 frontend bastion-rdp
     bind *:3389
@@ -555,11 +555,11 @@ backend bastion-rdp-backend
     mode tcp
     balance roundrobin
     option tcp-check
-    server bastion1 10.1.1.21:3389 check
-    server bastion2 10.1.1.22:3389 check
+    server bastion1 10.10.1.11:3389 check
+    server bastion2 10.10.1.12:3389 check
 EOF
 
-# 3. Configure Keepalived (VIP: 10.1.1.10)
+# 3. Configure Keepalived (VIP: 10.10.1.100)
 cat > /etc/keepalived/keepalived.conf <<'EOF'
 vrrp_instance HAPROXY_VIP {
     state MASTER              # BACKUP on HAProxy-2
@@ -569,10 +569,10 @@ vrrp_instance HAPROXY_VIP {
     advert_int 1
     authentication {
         auth_type PASS
-        auth_pass SecurePassword123
+        auth_pass VRRP_SECRET_REDACTED
     }
     virtual_ipaddress {
-        10.1.1.10/24
+        10.10.1.100/24
     }
 }
 EOF
@@ -582,20 +582,20 @@ systemctl enable haproxy keepalived
 systemctl start haproxy keepalived
 
 # 5. Verify VIP
-ip addr show eth0 | grep 10.1.1.10
+ip addr show eth0 | grep 10.10.1.100
 ```
 
 **Validation**:
 
 ```bash
 # Test HAProxy stats
-curl http://10.1.1.10:8080/stats
+curl http://10.10.1.100:8404/stats
 
 # Test VIP failover
 # On HAProxy-1 (master)
 systemctl stop keepalived
 # Verify VIP moves to HAProxy-2
-ping 10.1.1.10
+ping 10.10.1.100
 ```
 
 **Deliverable**: HAProxy HA pair operational with VIP failover tested.
@@ -613,41 +613,41 @@ Follow [07-bastion-active-passive.md](07-bastion-active-passive.md)
 **Summary**:
 
 ```bash
-# On Bastion-1 (Primary: 10.1.1.21)
+# On Bastion-1 (Primary: 10.10.1.11)
 
 # 1. Initial appliance setup
-wabadmin setup --hostname bastion1-site1.company.local \
-               --ip 10.1.1.21 \
+wabadmin setup --hostname bastion1-site1.company.com \
+               --ip 10.10.1.11 \
                --netmask 255.255.255.0 \
-               --gateway 10.1.1.1 \
-               --dns 10.0.1.10 \
-               --ntp ntp.company.local
+               --gateway 10.10.1.1 \
+               --dns 10.20.0.10 \
+               --ntp ntp.company.com
 
 # 2. Configure as primary
 wabadmin ha configure --mode active-passive \
                       --role primary \
-                      --partner 10.1.1.22 \
-                      --vip 10.1.1.10 \
+                      --partner 10.10.1.12 \
+                      --vip 10.10.1.100 \
                       --cluster-password "SecureClusterPassword"
 
 # 3. Apply license
 wabadmin license apply --key "LICENSE_KEY_SITE1"
 
-# On Bastion-2 (Secondary: 10.1.1.22)
+# On Bastion-2 (Secondary: 10.10.1.12)
 
 # 1. Initial appliance setup
-wabadmin setup --hostname bastion2-site1.company.local \
-               --ip 10.1.1.22 \
+wabadmin setup --hostname bastion2-site1.company.com \
+               --ip 10.10.1.12 \
                --netmask 255.255.255.0 \
-               --gateway 10.1.1.1 \
-               --dns 10.0.1.10 \
-               --ntp ntp.company.local
+               --gateway 10.10.1.1 \
+               --dns 10.20.0.10 \
+               --ntp ntp.company.com
 
 # 2. Configure as secondary
 wabadmin ha configure --mode active-passive \
                       --role secondary \
-                      --partner 10.1.1.21 \
-                      --vip 10.1.1.10 \
+                      --partner 10.10.1.11 \
+                      --vip 10.10.1.100 \
                       --cluster-password "SecureClusterPassword"
 
 # 3. Verify cluster status
@@ -690,20 +690,20 @@ wabadmin ha failback
 
 # 1. Configure SSO (SAML)
 wabadmin sso configure --provider saml \
-  --idp-metadata "https://am.company.local/saml/metadata" \
-  --entity-id "https://bastion-site1.company.local" \
-  --assertion-consumer-url "https://bastion-site1.company.local/auth/sso"
+  --idp-metadata "https://am.company.com/saml/metadata" \
+  --entity-id "https://bastion-site1.company.com" \
+  --assertion-consumer-url "https://bastion-site1.company.com/auth/sso"
 
 # 2. Configure RADIUS MFA
 wabadmin auth configure --method radius \
-  --primary-server 10.0.1.50 \
-  --secondary-server 10.0.2.50 \
+  --primary-server 10.20.0.60 \
+  --secondary-server 10.20.0.61 \
   --shared-secret "RADIUS_SECRET_REDACTED" \
   --timeout 5 \
   --retry 3
 
 # 3. Configure LDAP/AD user sync
-wabadmin ldap configure --server ldap.company.local \
+wabadmin ldap configure --server ldap.company.com \
   --port 636 \
   --use-ssl \
   --base-dn "DC=company,DC=local" \
@@ -713,21 +713,21 @@ wabadmin ldap configure --server ldap.company.local \
   --sync-interval 300
 
 # 4. Test authentication
-wabadmin auth test --user john.doe@company.local
+wabadmin auth test --user john.doe@company.com
 ```
 
 **Validation**:
 
 ```bash
 # Test SSO login via web UI
-# 1. Open browser: https://bastion-site1.company.local
+# 1. Open browser: https://bastion-site1.company.com
 # 2. Click "Login with SSO"
 # 3. Redirect to Access Manager
 # 4. Authenticate with AD credentials + FortiToken MFA
 # 5. Return to Bastion dashboard
 
 # Test direct RADIUS authentication
-wabadmin auth test-radius --user john.doe@company.local --token 123456
+wabadmin auth test-radius --user john.doe@company.com --token 123456
 ```
 
 **Deliverable**: SSO and MFA authentication working end-to-end.
@@ -743,7 +743,7 @@ wabadmin auth test-radius --user john.doe@company.local --token 123456
 **Configuration Summary**:
 
 ```powershell
-# On WALLIX RDS (Windows Server 2022: 10.1.1.30)
+# On WALLIX RDS (Windows Server 2022: 10.10.1.30)
 
 # 1. Install RDS RemoteApp role
 Install-WindowsFeature -Name RDS-RD-Server -IncludeManagementTools
@@ -769,18 +769,18 @@ New-RDRemoteApp -CollectionName "OT-RemoteApps" `
 ```bash
 # On Bastion, add RDS target
 wabadmin target create --name "rds-site1" \
-                       --host "10.1.1.30" \
+                       --host "10.10.1.30" \
                        --protocol rdp \
                        --port 3389 \
                        --domain "COMPANY"
 
 # Grant access to test user
-wabadmin authorization create --user "john.doe@company.local" \
+wabadmin authorization create --user "john.doe@company.com" \
                               --target "rds-site1" \
                               --account "ot-access"
 
 # Test RDP connection via Bastion
-rdesktop -u john.doe@bastion-site1.company.local -p - 10.1.1.10:3389
+rdesktop -u john.doe@bastion-site1.company.com -p - 10.10.1.100:3389
 ```
 
 **Deliverable**: WALLIX RDS operational with RemoteApp access via Bastion.
@@ -793,22 +793,22 @@ rdesktop -u john.doe@bastion-site1.company.local -p - 10.1.1.10:3389
 
 ```bash
 # From Access Manager (or via API)
-curl -X POST https://am.company.local/api/v1/bastions \
+curl -X POST https://am.company.com/api/v1/bastions \
   -H "Authorization: Bearer AM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "bastion-site1",
-    "url": "https://bastion-site1.company.local",
+    "url": "https://bastion-site1.company.com",
     "api_key": "BASTION1_API_KEY",
     "api_secret": "BASTION1_API_SECRET",
     "capacity": 90,
     "location": "Site 1 DC",
-    "health_check_url": "https://bastion-site1.company.local/health",
+    "health_check_url": "https://bastion-site1.company.com/health",
     "health_check_interval": 30
   }'
 
 # Verify registration
-curl -X GET https://am.company.local/api/v1/bastions/bastion-site1 \
+curl -X GET https://am.company.com/api/v1/bastions/bastion-site1 \
   -H "Authorization: Bearer AM_API_KEY"
 ```
 
@@ -816,12 +816,12 @@ curl -X GET https://am.company.local/api/v1/bastions/bastion-site1 \
 
 ```bash
 # Test session brokering
-curl -X POST https://am.company.local/api/v1/sessions \
+curl -X POST https://am.company.com/api/v1/sessions \
   -H "Authorization: Bearer AM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "user": "john.doe@company.local",
-    "target": "server01.company.local",
+    "user": "john.doe@company.com",
+    "target": "server01.company.com",
     "protocol": "ssh",
     "bastion_hint": "site1"
   }'
@@ -842,7 +842,7 @@ wabadmin session list --active
 ```bash
 # Add Windows target
 wabadmin target create --name "win-server-01" \
-                       --host "win-server-01.company.local" \
+                       --host "win-server-01.company.com" \
                        --protocol rdp \
                        --port 3389 \
                        --domain "COMPANY" \
@@ -850,7 +850,7 @@ wabadmin target create --name "win-server-01" \
 
 # Add Linux target
 wabadmin target create --name "rhel-server-01" \
-                       --host "rhel-server-01.company.local" \
+                       --host "rhel-server-01.company.com" \
                        --protocol ssh \
                        --port 22 \
                        --description "RHEL 10"
@@ -858,22 +858,22 @@ wabadmin target create --name "rhel-server-01" \
 # Configure credentials (Password Manager)
 wabadmin credential create --target "win-server-01" \
                            --account "Administrator" \
-                           --password "SecurePassword123" \
+                           --password "TARGET_PASSWORD_REDACTED" \
                            --auto-change \
                            --change-interval 30
 
 wabadmin credential create --target "rhel-server-01" \
                            --account "root" \
-                           --password "SecurePassword123" \
+                           --password "TARGET_PASSWORD_REDACTED" \
                            --auto-change \
                            --change-interval 30
 
 # Grant access to test users
-wabadmin authorization create --user "john.doe@company.local" \
+wabadmin authorization create --user "john.doe@company.com" \
                               --target "win-server-01" \
                               --account "Administrator"
 
-wabadmin authorization create --user "jane.smith@company.local" \
+wabadmin authorization create --user "jane.smith@company.com" \
                               --target "rhel-server-01" \
                               --account "root"
 ```
@@ -882,10 +882,10 @@ wabadmin authorization create --user "jane.smith@company.local" \
 
 ```bash
 # Test SSH access via Bastion
-ssh john.doe@bastion-site1.company.local@rhel-server-01
+ssh john.doe@bastion-site1.company.com@rhel-server-01
 
 # Test RDP access via Bastion
-rdesktop -u john.doe@bastion-site1.company.local@win-server-01 -p - 10.1.1.10:3389
+rdesktop -u john.doe@bastion-site1.company.com@win-server-01 -p - 10.10.1.100:3389
 
 # Verify session recording
 wabadmin session list --recent 10
@@ -961,18 +961,18 @@ wabadmin session replay --id <session_id>
 # Site Deployment Template (Based on Site 1)
 
 ## 1. IP Address Allocation
-- HAProxy VIP: 10.X.1.10
-- HAProxy-1: 10.X.1.11
-- HAProxy-2: 10.X.1.12
-- Bastion-1: 10.X.1.21
-- Bastion-2: 10.X.1.22
-- WALLIX RDS: 10.X.1.30
+- HAProxy VIP: 10.10.X.100
+- HAProxy-1: 10.10.X.5
+- HAProxy-2: 10.10.X.6
+- Bastion-1: 10.10.X.11
+- Bastion-2: 10.10.X.12
+- WALLIX RDS: 10.10.X.30
 
 ## 2. DNS Records
-- bastion-siteX.company.local → 10.X.1.10
-- bastion1-siteX.company.local → 10.X.1.21
-- bastion2-siteX.company.local → 10.X.1.22
-- rds-siteX.company.local → 10.X.1.30
+- bastion-siteX.company.com → 10.10.X.100
+- bastion1-siteX.company.com → 10.10.X.11
+- bastion2-siteX.company.com → 10.10.X.12
+- rds-siteX.company.com → 10.10.X.30
 
 ## 3. Configuration Files
 - HAProxy: /etc/haproxy/haproxy.cfg (attached)
@@ -1043,21 +1043,21 @@ Total Time: ~8 hours (1 business day)
 
 ```bash
 # Site 2 (DC-2)
-HAProxy VIP:   10.2.1.10
-HAProxy-1:     10.2.1.11
-HAProxy-2:     10.2.1.12
-Bastion-1:     10.2.1.21
-Bastion-2:     10.2.1.22
-WALLIX RDS:    10.2.1.30
+HAProxy VIP:   10.10.2.100
+HAProxy-1:     10.10.2.5
+HAProxy-2:     10.10.2.6
+Bastion-1:     10.10.2.11
+Bastion-2:     10.10.2.12
+WALLIX RDS:    10.10.2.30
 ```
 
 **DNS Records**:
 
 ```bash
-bastion-site2.company.local      A    10.2.1.10
-bastion1-site2.company.local     A    10.2.1.21
-bastion2-site2.company.local     A    10.2.1.22
-rds-site2.company.local          A    10.2.1.30
+bastion-site2.company.com      A    10.10.2.100
+bastion1-site2.company.com     A    10.10.2.11
+bastion2-site2.company.com     A    10.10.2.12
+rds-site2.company.com          A    10.10.2.30
 ```
 
 **Deployment Steps** (using template):
@@ -1084,12 +1084,12 @@ rds-site2.company.local          A    10.2.1.30
 # - Add as target in Bastion
 
 # 5. Register with Access Manager (30 mins)
-curl -X POST https://am.company.local/api/v1/bastions \
+curl -X POST https://am.company.com/api/v1/bastions \
   -H "Authorization: Bearer AM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "bastion-site2",
-    "url": "https://bastion-site2.company.local",
+    "url": "https://bastion-site2.company.com",
     "api_key": "BASTION2_API_KEY",
     "api_secret": "BASTION2_API_SECRET",
     "capacity": 90,
@@ -1112,11 +1112,11 @@ curl -X POST https://am.company.local/api/v1/bastions \
 ```bash
 # Test multi-site routing
 # From Access Manager, create session with no bastion_hint
-curl -X POST https://am.company.local/api/v1/sessions \
+curl -X POST https://am.company.com/api/v1/sessions \
   -H "Authorization: Bearer AM_API_KEY" \
   -d '{
-    "user": "john.doe@company.local",
-    "target": "server02.company.local",
+    "user": "john.doe@company.com",
+    "target": "server02.company.com",
     "protocol": "ssh"
   }'
 
@@ -1135,9 +1135,9 @@ curl -X POST https://am.company.local/api/v1/sessions \
 
 | Site | HAProxy VIP | Bastion-1 | Bastion-2 | WALLIX RDS |
 |------|-------------|-----------|-----------|------------|
-| Site 3 | 10.3.1.10 | 10.3.1.21 | 10.3.1.22 | 10.3.1.30 |
-| Site 4 | 10.4.1.10 | 10.4.1.21 | 10.4.1.22 | 10.4.1.30 |
-| Site 5 | 10.5.1.10 | 10.5.1.21 | 10.5.1.22 | 10.5.1.30 |
+| Site 3 | 10.10.3.100 | 10.10.3.11 | 10.10.3.12 | 10.10.3.30 |
+| Site 4 | 10.10.4.100 | 10.10.4.11 | 10.10.4.12 | 10.10.4.30 |
+| Site 5 | 10.10.5.100 | 10.10.5.11 | 10.10.5.12 | 10.10.5.30 |
 
 **Parallel Deployment** (if resources permit):
 
@@ -1153,20 +1153,20 @@ curl -X POST https://am.company.local/api/v1/sessions \
 ```bash
 # Register all sites
 for site in site3 site4 site5; do
-  curl -X POST https://am.company.local/api/v1/bastions \
+  curl -X POST https://am.company.com/api/v1/bastions \
     -H "Authorization: Bearer AM_API_KEY" \
     -H "Content-Type: application/json" \
     -d "{
       \"name\": \"bastion-${site}\",
-      \"url\": \"https://bastion-${site}.company.local\",
+      \"url\": \"https://bastion-${site}.company.com\",
       \"api_key\": \"${site^^}_API_KEY\",
       \"capacity\": 90,
-      \"location\": \"Paris DC-${site#site}\"
+      \"location\": \"Site ${site#site} DC\"
     }"
 done
 
 # Verify all sites registered
-curl -X GET https://am.company.local/api/v1/bastions \
+curl -X GET https://am.company.com/api/v1/bastions \
   -H "Authorization: Bearer AM_API_KEY"
 ```
 
@@ -1207,7 +1207,7 @@ curl -X GET https://am.company.local/api/v1/bastions \
 # On Access Manager
 # Configure Bastion license pool (450 concurrent sessions shared)
 
-curl -X POST https://am.company.local/api/v1/licenses/pools \
+curl -X POST https://am.company.com/api/v1/licenses/pools \
   -H "Authorization: Bearer AM_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1227,7 +1227,7 @@ curl -X POST https://am.company.local/api/v1/licenses/pools \
 
 # On each Bastion, configure license pool client
 wabadmin license configure --pool-mode shared \
-                           --pool-server "https://am.company.local/api/v1/licenses" \
+                           --pool-server "https://am.company.com/api/v1/licenses" \
                            --pool-id "bastion-pool-450" \
                            --pool-api-key "LICENSE_POOL_API_KEY"
 
@@ -1255,7 +1255,7 @@ wabadmin license status
 # 4. Verify alerting at 90% threshold (405 sessions)
 
 # Check license pool via API
-curl -X GET https://am.company.local/api/v1/licenses/pool/bastion-pool-450 \
+curl -X GET https://am.company.com/api/v1/licenses/pool/bastion-pool-450 \
   -H "Authorization: Bearer AM_API_KEY"
 ```
 
@@ -1276,27 +1276,27 @@ routing_rules:
   - name: "Route by AD Site"
     priority: 1
     condition: "user.ad_site == 'Site-1'"
-    target: "bastion-site1.company.local"
+    target: "bastion-site1.company.com"
     enabled: true
 
   - name: "Route by AD Site"
     priority: 1
     condition: "user.ad_site == 'Site-2'"
-    target: "bastion-site2.company.local"
+    target: "bastion-site2.company.com"
     enabled: true
 
   # Rule 2: Route by user group
   - name: "IT Admins to Site 1"
     priority: 2
     condition: "user.groups contains 'IT-Admins'"
-    target: "bastion-site1.company.local"
+    target: "bastion-site1.company.com"
     enabled: true
 
   # Rule 3: OT users via RDS
   - name: "OT Users to Site 5"
     priority: 3
     condition: "user.groups contains 'OT-Operators'"
-    target: "bastion-site5.company.local"
+    target: "bastion-site5.company.com"
     enabled: true
 
   # Rule 4: Load balancing (default)
@@ -1433,7 +1433,7 @@ wabadmin api configure --rate-limit 1000 \
 
 # 5. Caching (Access Manager)
 # Enable session brokering cache (reduce API calls to Bastions)
-curl -X PATCH https://am.company.local/api/v1/config/cache \
+curl -X PATCH https://am.company.com/api/v1/config/cache \
   -H "Authorization: Bearer AM_API_KEY" \
   -d '{
     "enabled": true,
@@ -1548,6 +1548,8 @@ curl -X PATCH https://am.company.local/api/v1/config/cache \
 | Day 1-2 | Pilot | 10 | In Progress |
 | Day 3-5 | Early Adopters | 50 | Pending |
 | Day 6-10 | Full Rollout | All | Pending |
+
+**Emergency Procedures**: Ensure all teams have reviewed [12-contingency-plan.md](12-contingency-plan.md) and [13-break-glass-procedures.md](13-break-glass-procedures.md) before go-live. Break glass accounts must be created, tested, and sealed credentials stored securely.
 
 **Rollback Plan**:
 
@@ -1795,12 +1797,12 @@ wabadmin license status
 
 # User Management
 wabadmin user list
-wabadmin user create --username john.doe --email john.doe@company.local
+wabadmin user create --username john.doe --email john.doe@company.com
 wabadmin user grant-role --username john.doe --role admin
 
 # Target Management
 wabadmin target list
-wabadmin target create --name server01 --host 10.1.1.50 --protocol ssh
+wabadmin target create --name server01 --host 10.10.1.50 --protocol ssh
 wabadmin target delete --name server01
 
 # Authorization Management
@@ -1837,7 +1839,7 @@ systemctl status keepalived
 ip addr show eth0 | grep <VIP>
 
 # HAProxy Statistics
-curl http://localhost:8080/stats
+curl http://localhost:8404/stats
 
 # Test Backend Health
 haproxy -c -f /etc/haproxy/haproxy.cfg
@@ -1847,21 +1849,21 @@ haproxy -c -f /etc/haproxy/haproxy.cfg
 
 ```bash
 # Register Bastion
-curl -X POST https://am.company.local/api/v1/bastions \
+curl -X POST https://am.company.com/api/v1/bastions \
   -H "Authorization: Bearer AM_API_KEY" \
-  -d '{"name": "bastion-site1", "url": "https://bastion-site1.company.local"}'
+  -d '{"name": "bastion-site1", "url": "https://bastion-site1.company.com"}'
 
 # Check Bastion Health
-curl -X GET https://am.company.local/api/v1/bastions/bastion-site1/health \
+curl -X GET https://am.company.com/api/v1/bastions/bastion-site1/health \
   -H "Authorization: Bearer AM_API_KEY"
 
 # Create Session via Access Manager
-curl -X POST https://am.company.local/api/v1/sessions \
+curl -X POST https://am.company.com/api/v1/sessions \
   -H "Authorization: Bearer AM_API_KEY" \
   -d '{"user": "john.doe", "target": "server01", "protocol": "ssh"}'
 
 # Check License Pool
-curl -X GET https://am.company.local/api/v1/licenses/pool/bastion-pool-450 \
+curl -X GET https://am.company.com/api/v1/licenses/pool/bastion-pool-450 \
   -H "Authorization: Bearer AM_API_KEY"
 ```
 
@@ -1900,7 +1902,7 @@ ss -tunlp
 #### Issue 1: HAProxy VIP Not Responding
 
 **Symptoms**:
-- Cannot connect to HAProxy VIP (10.X.1.10)
+- Cannot connect to HAProxy VIP (10.10.X.100)
 - Keepalived logs show VRRP errors
 
 **Diagnosis**:
@@ -1911,7 +1913,7 @@ systemctl status keepalived
 journalctl -u keepalived -f
 
 # Check VIP assignment
-ip addr show eth0 | grep 10.X.1.10
+ip addr show eth0 | grep 10.10.X.100
 
 # Check VRRP packets
 tcpdump -i eth0 vrrp
@@ -1979,7 +1981,7 @@ wabadmin ha status
 wabadmin sso status
 
 # Check SAML metadata
-curl https://am.company.local/saml/metadata
+curl https://am.company.com/saml/metadata
 
 # Check Bastion logs
 wabadmin log view --filter sso
@@ -1990,13 +1992,13 @@ wabadmin log view --filter sso
 ```bash
 # Re-import SAML metadata
 wabadmin sso configure --provider saml \
-  --idp-metadata "https://am.company.local/saml/metadata"
+  --idp-metadata "https://am.company.com/saml/metadata"
 
 # Verify certificate validity
-openssl s_client -connect am.company.local:443 -showcerts
+openssl s_client -connect am.company.com:443 -showcerts
 
 # Test SSO flow manually
-# Browser: https://bastion-site1.company.local/auth/sso
+# Browser: https://bastion-site1.company.com/auth/sso
 ```
 
 **Reference**: [03-access-manager-integration.md](03-access-manager-integration.md#sso-troubleshooting)
@@ -2021,8 +2023,8 @@ diag debug application radiusd -1
 diag debug enable
 
 # Check network connectivity
-nc -zvu 10.0.1.50 1812
-nc -zvu 10.0.1.50 1813
+nc -zvu 10.20.0.60 1812
+nc -zvu 10.20.0.60 1813
 ```
 
 **Resolution**:
@@ -2032,7 +2034,7 @@ nc -zvu 10.0.1.50 1813
 wabadmin auth configure --method radius --timeout 10
 
 # Test with secondary RADIUS server
-wabadmin auth configure --method radius --primary-server 10.0.2.50
+wabadmin auth configure --method radius --primary-server 10.20.0.61
 
 # Verify shared secret
 wabadmin auth test-radius --user john.doe --debug
@@ -2091,7 +2093,7 @@ wabadmin recording cleanup --older-than 90
 wabadmin license status
 
 # Check license pool via Access Manager
-curl -X GET https://am.company.local/api/v1/licenses/pool/bastion-pool-450 \
+curl -X GET https://am.company.com/api/v1/licenses/pool/bastion-pool-450 \
   -H "Authorization: Bearer AM_API_KEY"
 
 # List active sessions
@@ -2108,7 +2110,7 @@ wabadmin session cleanup --idle-timeout 3600
 # Contact WALLIX licensing team
 
 # Temporary: Increase warning threshold
-curl -X PATCH https://am.company.local/api/v1/licenses/pools/bastion-pool-450 \
+curl -X PATCH https://am.company.com/api/v1/licenses/pools/bastion-pool-450 \
   -d '{"warning_threshold": 95}'
 ```
 
@@ -2116,11 +2118,20 @@ curl -X PATCH https://am.company.local/api/v1/licenses/pools/bastion-pool-450 \
 
 ---
 
+### Contingency and Emergency Access
+
+For comprehensive recovery procedures and emergency access when normal channels are unavailable:
+
+- **Disaster Recovery**: [12-contingency-plan.md](12-contingency-plan.md) - Failure scenarios, backup strategy, recovery procedures
+- **Break Glass Access**: [13-break-glass-procedures.md](13-break-glass-procedures.md) - Emergency access when SSO, MFA, or PAM is down
+
+---
+
 ### Escalation Procedures
 
 #### Level 1: Internal Operations Team
 
-**Contact**: operations@company.local
+**Contact**: operations@company.com
 **Response Time**: 1 hour (business hours), 4 hours (after hours)
 **Scope**: Common issues, restarts, configuration changes
 
@@ -2128,7 +2139,7 @@ curl -X PATCH https://am.company.local/api/v1/licenses/pools/bastion-pool-450 \
 
 #### Level 2: Infrastructure Team
 
-**Contact**: infrastructure@company.local
+**Contact**: infrastructure@company.com
 **Response Time**: 4 hours
 **Scope**: Network issues, hardware failures, clustering issues
 

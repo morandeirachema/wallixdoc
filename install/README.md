@@ -4,6 +4,26 @@
 
 ---
 
+## Table of Contents
+
+1. [Architecture Overview](#architecture-overview)
+2. [Key Architecture Principles](#key-architecture-principles)
+3. [Integration with Access Manager](#integration-with-access-manager)
+4. [Deployment Timeline](#deployment-timeline)
+5. [Installation Documentation Structure](#installation-documentation-structure)
+6. [Hardware Requirements (Per Site)](#hardware-requirements-per-site)
+7. [Network Requirements](#network-requirements)
+8. [Licensing Summary](#licensing-summary)
+9. [Site Locations](#site-locations)
+10. [Target Systems](#target-systems)
+11. [Deployment Models](#deployment-models)
+12. [Prerequisites Checklist](#prerequisites-checklist)
+13. [Quick Start Guide](#quick-start-guide)
+14. [Support and Resources](#support-and-resources)
+15. [Version Information](#version-information)
+
+---
+
 ## Architecture Overview
 
 This installation guide covers the deployment of a multi-site WALLIX PAM infrastructure:
@@ -132,6 +152,10 @@ The WALLIX Access Manager provides centralized management:
 - [09-licensing.md](09-licensing.md) - License pools and integration
 - [10-testing-validation.md](10-testing-validation.md) - End-to-end testing procedures
 - [11-architecture-diagrams.md](11-architecture-diagrams.md) - Network diagrams and port reference
+
+### Emergency & Recovery
+- [12-contingency-plan.md](12-contingency-plan.md) - Disaster recovery, backup strategy, failure scenarios
+- [13-break-glass-procedures.md](13-break-glass-procedures.md) - Emergency access when normal PAM channels are unavailable
 
 ### Quick Start
 - **[HOWTO.md](HOWTO.md)** - Main step-by-step installation guide
@@ -384,3 +408,8 @@ Before starting deployment:
 *For questions or clarifications, refer to the detailed installation guides linked above.*
 
 **Next Step**: Review [HOWTO.md](HOWTO.md) for step-by-step deployment instructions.
+
+---
+
+**Document Version**: 1.0
+**Last Updated**: February 2026
