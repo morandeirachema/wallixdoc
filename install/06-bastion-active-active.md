@@ -332,7 +332,7 @@ ipmitool -I lanplus -H 10.10.1.112 -U ipmi_admin -P <PASSWORD> power status
 **Node 1:**
 ```bash
 # Set hostname
-hostnamectl set-hostname bastion1-site1.wallix.company.local
+hostnamectl set-hostname bastion1-site1.company.com
 
 # Set timezone to UTC
 timedatectl set-timezone UTC
@@ -344,7 +344,7 @@ timedatectl status
 
 **Node 2:**
 ```bash
-hostnamectl set-hostname bastion2-site1.wallix.company.local
+hostnamectl set-hostname bastion2-site1.company.com
 timedatectl set-timezone UTC
 ```
 
@@ -354,9 +354,9 @@ timedatectl set-timezone UTC
 ```bash
 cat >> /etc/hosts <<'EOF'
 # WALLIX Bastion Cluster
-10.10.1.11    bastion1-site1.wallix.company.local bastion1
-10.10.1.12    bastion2-site1.wallix.company.local bastion2
-10.10.1.100   bastion-site1.wallix.company.local bastion-vip
+10.10.1.11    bastion1-site1.company.com bastion1
+10.10.1.12    bastion2-site1.company.com bastion2
+10.10.1.100   bastion-site1.company.com bastion-vip
 
 # IPMI/iLO
 10.10.1.111   bastion1-ipmi

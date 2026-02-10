@@ -285,7 +285,7 @@ wabadmin network-config --interface bond0 --ip 10.10.X.11/24 --gateway 10.10.X.1
 wabadmin network-config --interface bond1 --ip 192.168.100.11/24 --no-gateway
 
 # Set hostname
-wabadmin hostname-set bastion-node1.wallix.company.local
+wabadmin hostname-set bastion-node1.company.com
 
 # Configure DNS servers
 wabadmin dns-set --primary 10.20.0.10 --secondary 10.20.0.11
@@ -305,7 +305,7 @@ Interface: bond1
   IP: 192.168.100.11/24
   Status: UP
 
-Hostname: bastion-node1.wallix.company.local
+Hostname: bastion-node1.company.com
 DNS: 10.20.0.10, 10.20.0.11
 ```
 
@@ -355,7 +355,7 @@ wabadmin network-config --interface bond0 --ip 10.10.X.12/24 --gateway 10.10.X.1
 wabadmin network-config --interface bond1 --ip 192.168.100.12/24 --no-gateway
 
 # Hostname
-wabadmin hostname-set bastion-node2.wallix.company.local
+wabadmin hostname-set bastion-node2.company.com
 
 # NTP, DNS, and storage configuration identical to Node 1
 ```
@@ -1008,7 +1008,7 @@ https://10.10.X.10
 # Initial wizard (first-time setup):
 # - Set admin password
 # - Upload license file
-# - Configure hostname: bastion-vip.wallix.company.local
+# - Configure hostname: bastion-vip.company.com
 # - Configure email/SMTP for alerts
 ```
 

@@ -306,19 +306,19 @@ This document provides comprehensive instructions for deploying and configuring 
 
 ```bash
 # Forward DNS (A records)
-haproxy1-siteX.wallix.company.local    A    10.10.X.5
-haproxy2-siteX.wallix.company.local    A    10.10.X.6
-bastion-siteX.wallix.company.local     A    10.10.X.100   # VIP
+haproxy1-siteX.company.com    A    10.10.X.5
+haproxy2-siteX.company.com    A    10.10.X.6
+bastion-siteX.company.com     A    10.10.X.100   # VIP
 
 # Reverse DNS (PTR records)
-10.10.X.5    PTR    haproxy1-siteX.wallix.company.local
-10.10.X.6    PTR    haproxy2-siteX.wallix.company.local
-10.10.X.100  PTR    bastion-siteX.wallix.company.local
+10.10.X.5    PTR    haproxy1-siteX.company.com
+10.10.X.6    PTR    haproxy2-siteX.company.com
+10.10.X.100  PTR    bastion-siteX.company.com
 ```
 
 **SSL Certificates:**
-- Certificate CN/SAN must match VIP hostname: `bastion-siteX.wallix.company.local`
-- Wildcard certificate: `*.wallix.company.local` (recommended)
+- Certificate CN/SAN must match VIP hostname: `bastion-siteX.company.com`
+- Wildcard certificate: `*.company.com` (recommended)
 - Chain file required: certificate + intermediate CA + root CA
 - Private key in PEM format
 
@@ -347,7 +347,7 @@ Installer Options:
   - Location: Europe/Paris (adjust per site)
   - Keyboard: US (or local)
   - Hostname: haproxy1-site1 (or haproxy2-site1)
-  - Domain: wallix.company.local
+  - Domain: company.com
   - Root password: <strong password>
   - Create user: wallixadmin / <strong password>
 
@@ -813,7 +813,7 @@ backend wallix_bastion_https
     cookie BASTIONSRV insert indirect nocache httponly secure
 
     # Health checks
-    option httpchk GET /health HTTP/1.1\r\nHost:\ bastion-site1.wallix.company.local
+    option httpchk GET /health HTTP/1.1\r\nHost:\ bastion-site1.company.com
     http-check expect status 200
 
     # Backend servers
@@ -1135,15 +1135,15 @@ logger -t keepalived "VRRP state changed to $STATE on $HOSTNAME"
 case $STATE in
     MASTER)
         echo "$TIMESTAMP - $HOSTNAME transitioned to MASTER state. VIP $VIP is now active." | \
-            mail -s "WALLIX HAProxy: $HOSTNAME is now MASTER" admin@company.local
+            mail -s "WALLIX HAProxy: $HOSTNAME is now MASTER" admin@company.com
         ;;
     BACKUP)
         echo "$TIMESTAMP - $HOSTNAME transitioned to BACKUP state. VIP $VIP released." | \
-            mail -s "WALLIX HAProxy: $HOSTNAME is now BACKUP" admin@company.local
+            mail -s "WALLIX HAProxy: $HOSTNAME is now BACKUP" admin@company.com
         ;;
     FAULT)
         echo "$TIMESTAMP - $HOSTNAME entered FAULT state. Check HAProxy service immediately!" | \
-            mail -s "ALERT: WALLIX HAProxy $HOSTNAME FAULT" admin@company.local
+            mail -s "ALERT: WALLIX HAProxy $HOSTNAME FAULT" admin@company.com
         ;;
 esac
 
@@ -1264,7 +1264,7 @@ openssl rsa -in /etc/haproxy/certs/wallix-bastion.pem -noout -modulus | openssl 
 # Both MD5 hashes must match
 
 # Check certificate chain
-openssl s_client -connect 127.0.0.1:443 -servername bastion-site1.wallix.company.local < /dev/null
+openssl s_client -connect 127.0.0.1:443 -servername bastion-site1.company.com < /dev/null
 # Expected: "Verify return code: 0 (ok)"
 ```
 
@@ -1277,11 +1277,11 @@ openssl s_client -connect 127.0.0.1:443 -servername bastion-site1.wallix.company
 apt install -y certbot
 
 # Obtain certificate (HTTP-01 challenge)
-certbot certonly --standalone -d bastion-site1.wallix.company.local
+certbot certonly --standalone -d bastion-site1.company.com
 
 # Combine for HAProxy
-cat /etc/letsencrypt/live/bastion-site1.wallix.company.local/privkey.pem \
-    /etc/letsencrypt/live/bastion-site1.wallix.company.local/fullchain.pem \
+cat /etc/letsencrypt/live/bastion-site1.company.com/privkey.pem \
+    /etc/letsencrypt/live/bastion-site1.company.com/fullchain.pem \
     > /etc/haproxy/certs/wallix-bastion.pem
 
 chmod 600 /etc/haproxy/certs/wallix-bastion.pem
@@ -1294,7 +1294,7 @@ Create `/etc/cron.daily/renew-haproxy-cert`:
 
 ```bash
 #!/bin/bash
-certbot renew --quiet --deploy-hook "cat /etc/letsencrypt/live/bastion-site1.wallix.company.local/privkey.pem /etc/letsencrypt/live/bastion-site1.wallix.company.local/fullchain.pem > /etc/haproxy/certs/wallix-bastion.pem && systemctl reload haproxy"
+certbot renew --quiet --deploy-hook "cat /etc/letsencrypt/live/bastion-site1.company.com/privkey.pem /etc/letsencrypt/live/bastion-site1.company.com/fullchain.pem > /etc/haproxy/certs/wallix-bastion.pem && systemctl reload haproxy"
 ```
 
 Make executable:
@@ -1361,7 +1361,7 @@ backend wallix_bastion_https_passthrough
 
 ```haproxy
 backend wallix_bastion_https
-    option httpchk GET /health HTTP/1.1\r\nHost:\ bastion-site1.wallix.company.local
+    option httpchk GET /health HTTP/1.1\r\nHost:\ bastion-site1.company.com
     http-check expect status 200
 
     server bastion1 10.10.1.11:443 check ssl verify none inter 5s rise 2 fall 3
@@ -1541,7 +1541,7 @@ scrape_configs:
 
 **Import pre-built HAProxy dashboard:**
 
-1. Open Grafana: http://grafana.company.local
+1. Open Grafana: http://grafana.company.com
 2. Navigate to **Dashboards** → **Import**
 3. Enter dashboard ID: **12693** (HAProxy 2 Full)
 4. Select Prometheus data source
@@ -1825,7 +1825,7 @@ echo "enable server wallix_bastion_https/bastion1" | socat stdio /var/run/haprox
 openssl x509 -in /etc/haproxy/certs/wallix-bastion.pem -noout -dates
 
 # Verify certificate chain
-openssl s_client -connect 10.10.1.100:443 -servername bastion-site1.wallix.company.local
+openssl s_client -connect 10.10.1.100:443 -servername bastion-site1.company.com
 
 # Check HAProxy logs
 journalctl -u haproxy | grep -i ssl
@@ -1954,7 +1954,7 @@ tcpdump -i bond0 port 443  # HTTPS traffic
 tcpdump -i bond0 proto 112  # VRRP traffic
 
 # SSL/TLS debugging
-openssl s_client -connect 10.10.X.100:443 -servername bastion-siteX.wallix.company.local
+openssl s_client -connect 10.10.X.100:443 -servername bastion-siteX.company.com
 openssl verify -CAfile /etc/ssl/certs/ca-certificates.crt /etc/haproxy/certs/wallix-bastion.pem
 
 # Log analysis

@@ -617,105 +617,105 @@ Logging: Enable (security events)
 #### Access Manager Datacenters
 
 ```
-am1.wallix.company.local        A    10.100.1.10   (Access Manager DC-A)
-am2.wallix.company.local        A    10.100.2.10   (Access Manager DC-B)
-am.wallix.company.local         A    10.100.1.10   (Primary alias)
-am.wallix.company.local         A    10.100.2.10   (Secondary alias - round robin)
+am1.company.com        A    10.100.1.10   (Access Manager DC-A)
+am2.company.com        A    10.100.2.10   (Access Manager DC-B)
+am.company.com         A    10.100.1.10   (Primary alias)
+am.company.com         A    10.100.2.10   (Secondary alias - round robin)
 ```
 
 #### Site 1 (Site 1 DC)
 
 ```
-bastion-site1.wallix.company.local        A    10.10.1.100   (HAProxy VIP)
-haproxy1-site1.wallix.company.local       A    10.10.1.5     (HAProxy Primary)
-haproxy2-site1.wallix.company.local       A    10.10.1.6     (HAProxy Backup)
-bastion1-site1.wallix.company.local       A    10.10.1.11    (Bastion Node 1)
-bastion2-site1.wallix.company.local       A    10.10.1.12    (Bastion Node 2)
-rds-site1.wallix.company.local            A    10.10.1.30    (RDS Jump Host)
+bastion-site1.company.com        A    10.10.1.100   (HAProxy VIP)
+haproxy1-site1.company.com       A    10.10.1.5     (HAProxy Primary)
+haproxy2-site1.company.com       A    10.10.1.6     (HAProxy Backup)
+bastion1-site1.company.com       A    10.10.1.11    (Bastion Node 1)
+bastion2-site1.company.com       A    10.10.1.12    (Bastion Node 2)
+rds-site1.company.com            A    10.10.1.30    (RDS Jump Host)
 ```
 
 #### Site 2 (Site 2 DC)
 
 ```
-bastion-site2.wallix.company.local        A    10.10.2.100
-haproxy1-site2.wallix.company.local       A    10.10.2.5
-haproxy2-site2.wallix.company.local       A    10.10.2.6
-bastion1-site2.wallix.company.local       A    10.10.2.11
-bastion2-site2.wallix.company.local       A    10.10.2.12
-rds-site2.wallix.company.local            A    10.10.2.30
+bastion-site2.company.com        A    10.10.2.100
+haproxy1-site2.company.com       A    10.10.2.5
+haproxy2-site2.company.com       A    10.10.2.6
+bastion1-site2.company.com       A    10.10.2.11
+bastion2-site2.company.com       A    10.10.2.12
+rds-site2.company.com            A    10.10.2.30
 ```
 
 #### Site 3 (Site 3 DC)
 
 ```
-bastion-site3.wallix.company.local        A    10.10.3.100
-haproxy1-site3.wallix.company.local       A    10.10.3.5
-haproxy2-site3.wallix.company.local       A    10.10.3.6
-bastion1-site3.wallix.company.local       A    10.10.3.11
-bastion2-site3.wallix.company.local       A    10.10.3.12
-rds-site3.wallix.company.local            A    10.10.3.30
+bastion-site3.company.com        A    10.10.3.100
+haproxy1-site3.company.com       A    10.10.3.5
+haproxy2-site3.company.com       A    10.10.3.6
+bastion1-site3.company.com       A    10.10.3.11
+bastion2-site3.company.com       A    10.10.3.12
+rds-site3.company.com            A    10.10.3.30
 ```
 
 #### Site 4 (Site 4 DC)
 
 ```
-bastion-site4.wallix.company.local        A    10.10.4.100
-haproxy1-site4.wallix.company.local       A    10.10.4.5
-haproxy2-site4.wallix.company.local       A    10.10.4.6
-bastion1-site4.wallix.company.local       A    10.10.4.11
-bastion2-site4.wallix.company.local       A    10.10.4.12
-rds-site4.wallix.company.local            A    10.10.4.30
+bastion-site4.company.com        A    10.10.4.100
+haproxy1-site4.company.com       A    10.10.4.5
+haproxy2-site4.company.com       A    10.10.4.6
+bastion1-site4.company.com       A    10.10.4.11
+bastion2-site4.company.com       A    10.10.4.12
+rds-site4.company.com            A    10.10.4.30
 ```
 
 #### Site 5 (Site 5 DC)
 
 ```
-bastion-site5.wallix.company.local        A    10.10.5.100
-haproxy1-site5.wallix.company.local       A    10.10.5.5
-haproxy2-site5.wallix.company.local       A    10.10.5.6
-bastion1-site5.wallix.company.local       A    10.10.5.11
-bastion2-site5.wallix.company.local       A    10.10.5.12
-rds-site5.wallix.company.local            A    10.10.5.30
+bastion-site5.company.com        A    10.10.5.100
+haproxy1-site5.company.com       A    10.10.5.5
+haproxy2-site5.company.com       A    10.10.5.6
+bastion1-site5.company.com       A    10.10.5.11
+bastion2-site5.company.com       A    10.10.5.12
+rds-site5.company.com            A    10.10.5.30
 ```
 
 #### Shared Infrastructure
 
 ```
-fortiauth.wallix.company.local            A    10.20.0.60    (Primary)
-fortiauth-ha.wallix.company.local         A    10.20.0.61    (Secondary)
-ntp1.wallix.company.local                 A    10.20.0.20
-ntp2.wallix.company.local                 A    10.20.0.21
-siem.wallix.company.local                 A    10.20.0.50
+fortiauth.company.com            A    10.20.0.60    (Primary)
+fortiauth-ha.company.com         A    10.20.0.61    (Secondary)
+ntp1.company.com                 A    10.20.0.20
+ntp2.company.com                 A    10.20.0.21
+siem.company.com                 A    10.20.0.50
 ```
 
 ### 6.2 Reverse DNS Records (PTR)
 
 ```
-10.100.1.10    PTR    am1.wallix.company.local
-10.100.2.10    PTR    am2.wallix.company.local
+10.100.1.10    PTR    am1.company.com
+10.100.2.10    PTR    am2.company.com
 
-10.10.1.100    PTR    bastion-site1.wallix.company.local
-10.10.1.11     PTR    bastion1-site1.wallix.company.local
-10.10.1.12     PTR    bastion2-site1.wallix.company.local
+10.10.1.100    PTR    bastion-site1.company.com
+10.10.1.11     PTR    bastion1-site1.company.com
+10.10.1.12     PTR    bastion2-site1.company.com
 
-10.10.2.100    PTR    bastion-site2.wallix.company.local
-10.10.2.11     PTR    bastion1-site2.wallix.company.local
-10.10.2.12     PTR    bastion2-site2.wallix.company.local
+10.10.2.100    PTR    bastion-site2.company.com
+10.10.2.11     PTR    bastion1-site2.company.com
+10.10.2.12     PTR    bastion2-site2.company.com
 
-10.10.3.100    PTR    bastion-site3.wallix.company.local
-10.10.3.11     PTR    bastion1-site3.wallix.company.local
-10.10.3.12     PTR    bastion2-site3.wallix.company.local
+10.10.3.100    PTR    bastion-site3.company.com
+10.10.3.11     PTR    bastion1-site3.company.com
+10.10.3.12     PTR    bastion2-site3.company.com
 
-10.10.4.100    PTR    bastion-site4.wallix.company.local
-10.10.4.11     PTR    bastion1-site4.wallix.company.local
-10.10.4.12     PTR    bastion2-site4.wallix.company.local
+10.10.4.100    PTR    bastion-site4.company.com
+10.10.4.11     PTR    bastion1-site4.company.com
+10.10.4.12     PTR    bastion2-site4.company.com
 
-10.10.5.100    PTR    bastion-site5.wallix.company.local
-10.10.5.11     PTR    bastion1-site5.wallix.company.local
-10.10.5.12     PTR    bastion2-site5.wallix.company.local
+10.10.5.100    PTR    bastion-site5.company.com
+10.10.5.11     PTR    bastion1-site5.company.com
+10.10.5.12     PTR    bastion2-site5.company.com
 
-10.20.0.60     PTR    fortiauth.wallix.company.local
-10.20.0.61     PTR    fortiauth-ha.wallix.company.local
+10.20.0.60     PTR    fortiauth.company.com
+10.20.0.61     PTR    fortiauth-ha.company.com
 ```
 
 ### 6.3 SSL Certificate Requirements
@@ -723,17 +723,17 @@ siem.wallix.company.local                 A    10.20.0.50
 #### Wildcard Certificate (Recommended)
 
 ```
-Common Name (CN): *.wallix.company.local
+Common Name (CN): *.company.com
 Subject Alternative Names (SAN):
-  - *.wallix.company.local
-  - wallix.company.local
-  - bastion-site1.wallix.company.local
-  - bastion-site2.wallix.company.local
-  - bastion-site3.wallix.company.local
-  - bastion-site4.wallix.company.local
-  - bastion-site5.wallix.company.local
-  - am1.wallix.company.local
-  - am2.wallix.company.local
+  - *.company.com
+  - company.com
+  - bastion-site1.company.com
+  - bastion-site2.company.com
+  - bastion-site3.company.com
+  - bastion-site4.company.com
+  - bastion-site5.company.com
+  - am1.company.com
+  - am2.company.com
 ```
 
 **Alternatively**: Use individual certificates per site with Let's Encrypt or internal CA.
@@ -938,8 +938,8 @@ chronyc sourcestats
 
 ```bash
 # Forward DNS lookups
-nslookup bastion-site1.wallix.company.local
-nslookup am1.wallix.company.local
+nslookup bastion-site1.company.com
+nslookup am1.company.com
 # Expected: Correct IP addresses returned
 
 # Reverse DNS lookups
@@ -952,7 +952,7 @@ nslookup 10.100.1.10
 
 ```bash
 # Test HAProxy VIP certificate
-echo | openssl s_client -connect 10.10.1.100:443 -servername bastion-site1.wallix.company.local 2>/dev/null | openssl x509 -noout -text
+echo | openssl s_client -connect 10.10.1.100:443 -servername bastion-site1.company.com 2>/dev/null | openssl x509 -noout -text
 # Expected: Certificate CN/SAN matches domain, valid dates
 
 # Check certificate chain
@@ -1035,7 +1035,7 @@ curl -k http://10.10.1.5:8404/stats
 
 ```bash
 # From user workstation
-ssh -p 22 user@bastion-site1.wallix.company.local
+ssh -p 22 user@bastion-site1.company.com
 # Expected: WALLIX login prompt, MFA challenge, successful authentication
 ```
 
@@ -1043,7 +1043,7 @@ ssh -p 22 user@bastion-site1.wallix.company.local
 
 ```bash
 # From Windows workstation
-mstsc /v:bastion-site1.wallix.company.local:3389
+mstsc /v:bastion-site1.company.com:3389
 # Expected: WALLIX RDP gateway, credential prompt, target desktop displayed
 ```
 
@@ -1051,7 +1051,7 @@ mstsc /v:bastion-site1.wallix.company.local:3389
 
 ```bash
 # From browser
-https://bastion-site1.wallix.company.local
+https://bastion-site1.company.com
 # Expected: WALLIX web UI login page, valid SSL certificate, no errors
 ```
 
@@ -1121,7 +1121,7 @@ ip route show
 ss -tunap
 
 # DNS resolution
-dig bastion-site1.wallix.company.local
+dig bastion-site1.company.com
 
 # Traceroute with TCP (bypass ICMP blocking)
 tcptraceroute 10.100.1.10 443

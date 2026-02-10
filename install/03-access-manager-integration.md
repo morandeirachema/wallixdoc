@@ -500,13 +500,13 @@ Access Manager integrates with FortiAuthenticator to provide centralized MFA for
 
    Client 1:
    Name:           AccessManager-1
-   Client IP:      10.20.1.10 (AM1 IP)
+   Client IP:      10.100.1.10 (AM1 IP)
    Secret:         [Strong shared secret]
    Description:    Access Manager Primary
 
    Client 2:
    Name:           AccessManager-2
-   Client IP:      10.20.1.11 (AM2 IP)
+   Client IP:      10.100.2.10 (AM2 IP)
    Secret:         [Same shared secret]
    Description:    Access Manager Standby
 
@@ -1162,8 +1162,8 @@ nslookup bastion-site1.company.com
 # Expected: Correct IP addresses returned
 
 # Verify reverse DNS
-nslookup 10.20.1.10  # AM1 IP
-nslookup 10.20.1.11  # AM2 IP
+nslookup 10.100.1.10  # AM1 IP
+nslookup 10.100.2.10  # AM2 IP
 
 # Expected: Correct hostnames returned
 ```

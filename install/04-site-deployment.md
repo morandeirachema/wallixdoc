@@ -534,7 +534,7 @@ vrrp_instance VI_1 {
 
     authentication {
         auth_type PASS
-        auth_pass SecurePassword123!
+        auth_pass VRRP_SECRET_REDACTED
     }
 
     virtual_ipaddress {
@@ -581,7 +581,7 @@ vrrp_instance VI_1 {
 
     authentication {
         auth_type PASS
-        auth_pass SecurePassword123!
+        auth_pass VRRP_SECRET_REDACTED
     }
 
     virtual_ipaddress {
