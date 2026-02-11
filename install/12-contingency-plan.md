@@ -51,8 +51,8 @@ This document defines recovery procedures for every component in the 5-site WALL
 |                                                                               |
 |  Access Manager Layer:                                                        |
 |  +-------------------+          +-------------------+                         |
-|  | AM-1 (DC-A)       |   HA    | AM-2 (DC-B)       |                         |
-|  | 10.100.1.10       |<------->| 10.100.2.10       |                         |
+|  | AM-1 (DC-A)       |   HA     | AM-2 (DC-B)       |                         |
+|  | 10.100.1.10       |<-------> | 10.100.2.10       |                         |
 |  +-------------------+          +-------------------+                         |
 |                                                                               |
 |  Site Layer (x5):                                                             |

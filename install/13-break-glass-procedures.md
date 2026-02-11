@@ -19,19 +19,41 @@
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [When to Invoke Break Glass](#when-to-invoke-break-glass)
-3. [Break Glass Account Inventory](#break-glass-account-inventory)
-4. [Emergency Access Procedures](#emergency-access-procedures)
-   - [Scenario A: Access Manager Down](#scenario-a-access-manager-down)
-   - [Scenario B: FortiAuthenticator Down](#scenario-b-fortiauthenticator-down)
-   - [Scenario C: HAProxy Down](#scenario-c-haproxy-down)
-   - [Scenario D: Bastion Cluster Down](#scenario-d-bastion-cluster-down)
-   - [Scenario E: Full Site Down](#scenario-e-full-site-down)
-   - [Scenario F: Complete PAM Stack Down](#scenario-f-complete-pam-stack-down)
-5. [Break Glass Account Management](#break-glass-account-management)
-6. [Post Break Glass Procedures](#post-break-glass-procedures)
-7. [Authorization and Approval Matrix](#authorization-and-approval-matrix)
+- [Break Glass Procedures - Emergency Access](#break-glass-procedures---emergency-access)
+  - [Document Information](#document-information)
+  - [Table of Contents](#table-of-contents)
+  - [Overview](#overview)
+  - [When to Invoke Break Glass](#when-to-invoke-break-glass)
+    - [Invocation Criteria](#invocation-criteria)
+    - [Severity Classification](#severity-classification)
+  - [Break Glass Account Inventory](#break-glass-account-inventory)
+    - [Pre-Created Emergency Accounts](#pre-created-emergency-accounts)
+      - [Bastion Break Glass Accounts](#bastion-break-glass-accounts)
+      - [Target System Break Glass Accounts](#target-system-break-glass-accounts)
+      - [Infrastructure Break Glass Accounts](#infrastructure-break-glass-accounts)
+    - [Credential Storage](#credential-storage)
+  - [Emergency Access Procedures](#emergency-access-procedures)
+    - [Scenario A: Access Manager Down](#scenario-a-access-manager-down)
+    - [Scenario B: FortiAuthenticator Down](#scenario-b-fortiauthenticator-down)
+    - [Scenario C: HAProxy Down](#scenario-c-haproxy-down)
+    - [Scenario D: Bastion Cluster Down](#scenario-d-bastion-cluster-down)
+    - [Scenario E: Full Site Down](#scenario-e-full-site-down)
+    - [Scenario F: Complete PAM Stack Down](#scenario-f-complete-pam-stack-down)
+  - [Break Glass Account Management](#break-glass-account-management)
+    - [Account Creation](#account-creation)
+    - [Secure Storage](#secure-storage)
+    - [Credential Rotation](#credential-rotation)
+    - [Quarterly Testing](#quarterly-testing)
+  - [Post Break Glass Procedures](#post-break-glass-procedures)
+    - [Step 1: Audit Trail](#step-1-audit-trail)
+    - [Step 2: Re-Secure Systems](#step-2-re-secure-systems)
+    - [Step 3: Credential Rotation](#step-3-credential-rotation)
+    - [Step 4: Incident Report](#step-4-incident-report)
+  - [Authorization and Approval Matrix](#authorization-and-approval-matrix)
+    - [Approval Authority](#approval-authority)
+    - [Approval Process](#approval-process)
+    - [Emergency Contact List](#emergency-contact-list)
+  - [Cross-References](#cross-references)
 
 ---
 
@@ -50,7 +72,7 @@ Break glass procedures provide emergency access to critical systems when normal 
 +===============================================================================+
 |                                                                               |
 |  Normal Access Flow:                                                          |
-|  User → Access Manager (SSO) → FortiAuth (MFA) → HAProxy → Bastion → Target  |
+|  User → Access Manager (SSO) → FortiAuth (MFA) → HAProxy → Bastion → Target   |
 |                                                                               |
 |  Break Glass Bypass Levels:                                                   |
 |                                                                               |
