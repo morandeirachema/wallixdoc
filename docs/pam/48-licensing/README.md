@@ -163,11 +163,11 @@ WALLIX products use a **concurrent session-based** licensing model with perpetua
 
 ## Multi-Site Licensing Scenario
 
-### Your Deployment: 4 Sites with HA
+### Your Deployment: 5 Sites with HA
 
 **Architecture:**
-- **4 Sites** (Site A, Site B, Site C, Site D)
-- **8 WALLIX Bastion nodes** (2 per site in HA)
+- **5 Sites** (Site 1, Site 2, Site 3, Site 4, Site 5)
+- **10 WALLIX Bastion nodes** (2 per site in HA)
 - **2 WALLIX Access Manager instances**
 
 ```
@@ -230,7 +230,7 @@ TOTAL LICENSES                   | 5        |              | 2,250 sessions
 ```
 Component                        | Quantity | Sessions     | Notes
 ---------------------------------|----------|--------------|------------------
-WALLIX Bastion Enterprise        | 1 license| 2000 sessions| Shared across all 4 sites
+WALLIX Bastion Enterprise        | 1 license| 2000 sessions| Shared across all 5 sites
 WALLIX Access Manager Enterprise | 1 license| 250 sessions | Shared across AM instances
 ---------------------------------|----------|--------------|------------------
 TOTAL LICENSES                   | 2        | 2,250 total  | Centralized management
@@ -308,7 +308,7 @@ Required_Sessions = 72 sessions
 
 #### Step 3: Multi-Site Session Distribution
 
-For 4-site deployment with 2000 total sessions:
+For 5-site deployment with 2000 total sessions:
 
 | Site | Purpose | Allocated Sessions | % of Total |
 |------|---------|-------------------|------------|

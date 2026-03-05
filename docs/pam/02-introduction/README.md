@@ -1,4 +1,4 @@
-# 01 - Introduction to WALLIX PAM
+# 02 - Introduction to WALLIX PAM
 
 ## Table of Contents
 

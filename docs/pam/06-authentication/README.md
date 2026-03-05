@@ -1,4 +1,4 @@
-# 05 - Authentication & Identity
+# 06 - Authentication & Identity
 
 ## Table of Contents
 

@@ -1,4 +1,4 @@
-# 47 - Fortigate Integration
+# 46 - Fortigate Integration
 
 ## Fortigate Firewall and FortiAuthenticator MFA Integration with WALLIX Bastion
 
@@ -23,7 +23,7 @@ This section covers comprehensive integration of Fortinet products with WALLIX B
 
 ## Architecture Overview
 
-### 4-Site Synchronized Architecture
+### 5-Site Multi-Datacenter Architecture
 
 ```
 +===============================================================================+

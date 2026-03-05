@@ -234,7 +234,7 @@ This documentation achieves A++ quality through:
 - **Comprehensive troubleshooting**: Error codes, logs, remediation steps
 - **Integration-ready configs**: Production-ready Fortigate, HAProxy, AD configs
 - **Production-ready samples**: Tested Ansible playbooks, Terraform modules, API scripts
-- **Multi-site architecture**: Complete 4-site deployment with HA and sync
+- **Multi-site architecture**: Complete 5-site deployment with HA and Access Manager integration
 - **Compliance mapping**: Direct mapping to SOC2, ISO27001, NIS2 controls
 - **CLI reference**: Complete wabadmin command reference with examples
 - **Operational runbooks**: Daily/weekly/monthly operational procedures

@@ -1,4 +1,4 @@
-# 46 - Kerberos and SPNEGO Authentication
+# 35 - Kerberos and SPNEGO Authentication
 
 ## Table of Contents
 

@@ -1,4 +1,4 @@
-# 03 - Core Components Deep Dive
+# 04 - Core Components Deep Dive
 
 ## Table of Contents
 

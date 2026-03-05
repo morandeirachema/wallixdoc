@@ -1,4 +1,4 @@
-# 45 - LDAP/Active Directory Integration and Troubleshooting
+# 34 - LDAP/Active Directory Integration and Troubleshooting
 
 ## Table of Contents
 

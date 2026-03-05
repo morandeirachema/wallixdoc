@@ -1,4 +1,4 @@
-# 12 - Troubleshooting
+# 13 - Troubleshooting
 
 ## Table of Contents
 

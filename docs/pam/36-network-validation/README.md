@@ -1,4 +1,4 @@
-# 47 - Network Configuration and Validation
+# 36 - Network Configuration and Validation
 
 ## Table of Contents
 
@@ -2653,7 +2653,7 @@ cat /sys/class/net/eth0/statistics/*errors
 
 **Related Documentation:**
 - [Install Guide: Network Validation](/install/08-validation-testing.md) - Deployment validation
-- [Install Guide: Architecture Diagrams](/install/09-architecture-diagrams.md) - Network topology
+- [Install Guide: Architecture Diagrams](/install/11-architecture-diagrams.md) - Network topology
 
 **Official Resources:**
 - [WALLIX Documentation](https://pam.wallix.one/documentation)

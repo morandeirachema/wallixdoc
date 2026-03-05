@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>Enterprise Privileged Access Management</strong><br/>
-  <em>4-Site Synchronized Architecture with Fortinet MFA Integration</em><br/><br/>
+  <em>5-Site Multi-Datacenter Architecture with Fortinet MFA Integration</em><br/><br/>
   <strong>WALLIX BASTION</strong> + <strong>FORTINET</strong>
 </p>
 
@@ -16,7 +16,7 @@
 
 ## Project Overview
 
-This repository contains comprehensive documentation for deploying **WALLIX Bastion PAM** with **FortiAuthenticator MFA** in a 4-site synchronized enterprise architecture.
+This repository contains comprehensive documentation for deploying **WALLIX Bastion PAM** with **FortiAuthenticator MFA** in a 5-site multi-datacenter enterprise architecture.
 
 | Aspect | Details |
 |--------|---------|
@@ -92,17 +92,17 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 
 ```
 wallixdoc/
-├── docs/pam/                    # 46 PAM Documentation Sections
+├── docs/pam/                    # 48 PAM Documentation Sections
 │   ├── 00-05   Getting Started
 │   ├── 06-09   Authentication & Sessions
 │   ├── 10-14   API, HA & Operations
 │   ├── 15-25   Reference & Compliance
 │   ├── 26-39   Infrastructure & Security
-│   └── 40-46   Advanced Features & Fortigate
+│   └── 40-48   Advanced Features, Access Manager & Licensing
 │
 ├── install/                     # Multi-Site Deployment Guides
 │   ├── HOWTO.md                 # Complete installation walkthrough
-│   └── 00-10 *.md               # Step-by-step procedures
+│   └── 00-13 *.md               # Step-by-step procedures
 │
 ├── pre/                         # Pre-Production Lab (14 guides)
 │   ├── 01-infrastructure        # VMware vSphere/ESXi setup
@@ -124,7 +124,7 @@ wallixdoc/
 | **Project Manager** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) |
 | **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) |
 | **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate MFA](./docs/pam/46-fortigate-integration/README.md) |
-| **Network Engineer** | [Architecture Diagrams](./install/09-architecture-diagrams.md) → [Load Balancer](./docs/pam/32-load-balancer/README.md) |
+| **Network Engineer** | [Architecture Diagrams](./install/11-architecture-diagrams.md) → [Load Balancer](./docs/pam/32-load-balancer/README.md) |
 | **Identity/IAM Team** | [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) → [Kerberos](./docs/pam/35-kerberos-authentication/README.md) |
 | **DevOps Engineer** | [API Reference](./docs/pam/17-api-reference/README.md) → [Ansible](./examples/ansible/README.md) |
 | **Compliance Officer** | [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence](./docs/pam/37-compliance-evidence/README.md) |
@@ -254,8 +254,8 @@ wabadmin license-info
 ---
 
 <p align="center">
-  <strong>46 Documentation Sections</strong> ·
-  <strong>4-Site Architecture</strong> ·
+  <strong>48 Documentation Sections</strong> ·
+  <strong>5-Site Architecture</strong> ·
   <strong>FortiAuthenticator MFA</strong>
 </p>
 

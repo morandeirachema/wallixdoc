@@ -1,4 +1,4 @@
-# 34 - Just-In-Time (JIT) Access
+# 25 - Just-In-Time (JIT) Access
 
 ## Table of Contents
 

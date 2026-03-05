@@ -1,4 +1,4 @@
-# 06 - Authorization & Access Control
+# 07 - Authorization & Access Control
 
 ## Table of Contents
 

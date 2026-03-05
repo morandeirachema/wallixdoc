@@ -1,4 +1,4 @@
-# 49 - Command Filtering and Restriction
+# 38 - Command Filtering and Restriction
 
 ## Table of Contents
 

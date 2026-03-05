@@ -1,4 +1,4 @@
-# 42 - Load Balancer Configuration Guide
+# 32 - Load Balancer Configuration Guide
 
 ## Table of Contents
 
@@ -2554,7 +2554,7 @@ awk '$10 > 5 {print $7,$10}' /var/log/nginx/access.log | sort -t' ' -k2 -rn | he
 - [10 - High Availability & Disaster Recovery](../11-high-availability/README.md)
 - [24 - Cloud Deployment](../16-cloud-deployment/README.md)
 - [28 - System Requirements](../19-system-requirements/README.md)
-- [Install - Architecture Diagrams](../../install/09-architecture-diagrams.md)
+- [Install - Architecture Diagrams](../../install/11-architecture-diagrams.md)
 
 ## External References
 
@@ -2575,7 +2575,7 @@ awk '$10 > 5 {print $7,$10}' /var/log/nginx/access.log | sort -t' ' -k2 -rn | he
 - [36 - Network Validation](../36-network-validation/README.md) - Health checks and monitoring
 
 **Related Documentation:**
-- [Install Guide: Architecture](/install/09-architecture-diagrams.md) - Load balancer topology
+- [Install Guide: Architecture](/install/11-architecture-diagrams.md) - Load balancer topology
 - [Pre-Production Lab: HAProxy](/pre/03-haproxy-setup.md) - HAProxy configuration
 
 **Official Resources:**

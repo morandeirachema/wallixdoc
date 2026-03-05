@@ -1,4 +1,4 @@
-# 41 - wabadmin CLI Reference
+# 31 - wabadmin CLI Reference
 
 > Complete command-line reference for WALLIX Bastion 12.x administration.
 

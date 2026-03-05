@@ -1,4 +1,4 @@
-# 02 - WALLIX Architecture
+# 03 - WALLIX Architecture
 
 ## Table of Contents
 
@@ -691,7 +691,7 @@ Format: JSON
 
 **Related Documentation:**
 - [Install Guide](/install/HOWTO.md) - Multi-site deployment architecture
-- [Install: Architecture Diagrams](/install/09-architecture-diagrams.md) - Network diagrams and ports
+- [Install: Architecture Diagrams](/install/11-architecture-diagrams.md) - Network diagrams and ports
 
 **Official Resources:**
 - [WALLIX Documentation](https://pam.wallix.one/documentation)

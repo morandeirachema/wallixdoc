@@ -1,4 +1,4 @@
-# 08 - Session Management
+# 09 - Session Management
 
 ## Table of Contents
 

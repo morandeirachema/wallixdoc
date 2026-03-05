@@ -1,4 +1,4 @@
-# 00 - Quick Start Guide
+# 01 - Quick Start Guide
 
 ## Your First 30 Minutes with WALLIX Bastion
 

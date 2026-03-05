@@ -1,4 +1,4 @@
-# 60 - Privileged Task Automation
+# 45 - Privileged Task Automation
 
 ## Table of Contents
 

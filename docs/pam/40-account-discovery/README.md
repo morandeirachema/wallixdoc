@@ -1,4 +1,4 @@
-# 53 - Account Discovery and Onboarding
+# 40 - Account Discovery and Onboarding
 
 ## Table of Contents
 

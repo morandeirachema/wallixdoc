@@ -1,4 +1,4 @@
-# 48 - Compliance Evidence Collection and Automation
+# 37 - Compliance Evidence Collection and Automation
 
 This section provides comprehensive guidance for collecting, automating, and presenting compliance evidence using WALLIX Bastion across major regulatory frameworks.
 

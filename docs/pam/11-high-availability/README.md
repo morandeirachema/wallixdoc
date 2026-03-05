@@ -1,4 +1,4 @@
-# 10 - High Availability & Disaster Recovery
+# 11 - High Availability & Disaster Recovery
 
 ## Table of Contents
 
@@ -1727,7 +1727,7 @@ if __name__ == "__main__":
 
 **Related Documentation:**
 - [Install Guide](/install/HOWTO.md) - HA cluster deployment
-- [Install: Architecture](/install/09-architecture-diagrams.md) - HA architecture diagrams
+- [Install: Architecture](/install/11-architecture-diagrams.md) - HA architecture diagrams
 
 **Official Resources:**
 - [WALLIX Documentation](https://pam.wallix.one/documentation)

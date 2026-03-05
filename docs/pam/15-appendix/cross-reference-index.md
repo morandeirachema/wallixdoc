@@ -186,7 +186,7 @@ This index provides rapid access to topics across all 47 documentation sections.
 | **Architecture Overview** | 03 | [Architecture](../03-architecture/README.md) | Deployment models, component architecture |
 | **System Requirements** | 19 | [System Requirements](../19-system-requirements/README.md) | Hardware sizing, CPU, memory, storage |
 | **Installation Guide** | 01 | [Quick Start](../01-quick-start/README.md) | Initial installation and configuration |
-| **Multi-Site Deployment** | 03, 11 | [Architecture](../03-architecture/README.md), [High Availability](../11-high-availability/README.md) | 4-site synchronized architecture |
+| **Multi-Site Deployment** | 03, 11 | [Architecture](../03-architecture/README.md), [High Availability](../11-high-availability/README.md) | 5-site multi-datacenter architecture |
 | **On-Premises Deployment** | 16 | [Deployment Options](../16-cloud-deployment/README.md) | Bare metal and VM deployment patterns |
 | **Capacity Planning** | 26 | [Performance Benchmarks](../26-performance-benchmarks/README.md) | Sizing, session capacity, load testing |
 | **Performance Tuning** | 19, 26 | [System Requirements](../19-system-requirements/README.md), [Performance](../26-performance-benchmarks/README.md) | Database tuning, kernel parameters |
@@ -221,7 +221,7 @@ This index provides rapid access to topics across all 47 documentation sections.
 
 ### Installation Guides
 - [Installation HOWTO](../../../install/HOWTO.md) - Complete multi-site installation walkthrough
-- [Architecture Diagrams](../../../install/09-architecture-diagrams.md) - Network diagrams and port reference
+- [Architecture Diagrams](../../../install/11-architecture-diagrams.md) - Network diagrams and port reference
 - [Pre-Production Lab Setup](../../../pre/README.md) - Lab environment configuration
 
 ### Automation Examples

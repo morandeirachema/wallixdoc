@@ -1,4 +1,4 @@
-# 44 - Password Rotation Troubleshooting
+# 33 - Password Rotation Troubleshooting
 
 ## Table of Contents
 

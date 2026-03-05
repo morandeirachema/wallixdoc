@@ -28,7 +28,7 @@
 
 ## Architecture Overview
 
-### 4-Site Synchronized Architecture (Single CPD)
+### 5-Site Multi-Datacenter Architecture
 
 ```
 +===============================================================================+
@@ -663,7 +663,7 @@ Authentication > RADIUS Service > Clients
    Description:    WALLIX Bastion Secondary Node Site 1
 ```
 
-**Repeat for all WALLIX nodes across all 4 sites.**
+**Repeat for all WALLIX nodes across all 5 sites.**
 
 ### 5.4 Failover Behavior
 
@@ -2643,7 +2643,7 @@ Tools:
 
 | Topic | Location | Description |
 |-------|----------|-------------|
-| Architecture Diagrams | [install/09-architecture-diagrams.md](../install/09-architecture-diagrams.md) | Detailed architecture with port diagrams |
+| Architecture Diagrams | [install/11-architecture-diagrams.md](../install/11-architecture-diagrams.md) | Detailed architecture with port diagrams |
 | Network Validation | [docs/pam/36-network-validation/README.md](pam/36-network-validation/README.md) | Network validation procedures, DNS/NTP config |
 | Load Balancer Config | [docs/pam/32-load-balancer/README.md](pam/32-load-balancer/README.md) | HAProxy configuration and health checks |
 | High Availability | [docs/pam/11-high-availability/README.md](pam/11-high-availability/README.md) | HA cluster networking and ports |

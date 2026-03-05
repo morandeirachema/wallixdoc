@@ -1,4 +1,4 @@
-# 24 - Deployment Options
+# 16 - Deployment Options
 
 > **Note**: This documentation focuses on **on-premises deployment**. For cloud-specific guidance, refer to the official WALLIX documentation linked below.
 
