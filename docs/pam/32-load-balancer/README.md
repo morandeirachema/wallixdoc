@@ -2588,5 +2588,5 @@ awk '$10 > 5 {print $7,$10}' /var/log/nginx/access.log | sort -t' ' -k2 -rn | he
 | Item | Value |
 |------|-------|
 | Document Version | 1.0 |
-| WALLIX Bastion Version | 12.1.x |
+| WALLIX Bastion Version | 12.3.2 |
 | Last Updated | January 2026 |

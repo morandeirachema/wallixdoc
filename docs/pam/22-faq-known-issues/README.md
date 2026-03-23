@@ -593,7 +593,7 @@ A: Behavior depends on license type:
 
 ## Known Issues
 
-### Version 12.1.x
+### Version 12.3.2
 
 | Issue ID | Description | Workaround | Status |
 |----------|-------------|------------|--------|
@@ -673,10 +673,11 @@ A: Behavior depends on license type:
 
 | From Version | To Version | Direct Upgrade | Notes |
 |--------------|------------|----------------|-------|
-| 12.0.x | 12.1.x | ✓ Yes | Recommended |
-| 11.x | 12.1.x | ✓ Yes | See migration guide |
-| 10.x | 12.1.x | ✗ No | Upgrade to 11.x first |
-| 9.x | 12.1.x | ✗ No | Upgrade to 10.x, then 11.x |
+| 12.0.x | 12.3.2 | ✓ Yes | Recommended |
+| 12.1.x | 12.3.2 | ✓ Yes | Recommended |
+| 11.x | 12.3.2 | ✓ Yes | See migration guide |
+| 10.x | 12.3.2 | ✗ No | Upgrade to 11.x first |
+| 9.x | 12.3.2 | ✗ No | Upgrade to 10.x, then 11.x |
 
 ### API Version Compatibility
 

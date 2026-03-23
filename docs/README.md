@@ -153,7 +153,7 @@ Compliance      → pam/24 → pam/25 → pam/09 → pam/39 → pam/07
 
 | Product | Version |
 |---------|---------|
-| WALLIX Bastion | 12.x (12.0, 12.1.x) |
+| WALLIX Bastion | 12.x (12.0, 12.1.x, 12.3.2) |
 | WALLIX Access Manager | 5.x |
 | WALLIX PEDM | 3.x |
 | FortiAuthenticator | 6.4+ |

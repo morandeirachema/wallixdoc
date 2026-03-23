@@ -6,13 +6,13 @@
 
 ## Document Information
 
-| Property | Value |
-|----------|-------|
-| **Purpose** | Network topology and connectivity requirements for 5-site deployment |
+| Property             | Value |
+|----------------------|-------|
+| **Purpose**          | Network topology and connectivity requirements for 5-site deployment |
 | **Deployment Model** | 5 datacenter sites + 2 Access Manager datacenters (DC-A, DC-B) |
-| **Network Type** | MPLS (Access Managers ↔ Bastions only) |
-| **Version** | WALLIX Bastion 12.1.x |
-| **Last Updated** | February 2026 |
+| **Network Type**     | MPLS (Access Managers ↔ Bastions only) |
+| **Version**          | WALLIX Bastion 12.3.2 |
+| **Last Updated**     | February 2026 |
 
 ---
 
@@ -96,9 +96,8 @@
 |    +-----v-----------+                      +------v----------+               |
 |    | WALLIX Bastion-1|   HA Cluster Sync    | WALLIX Bastion-2|               |
 |    | 10.10.X.11      |<-------------------->| 10.10.X.12      |               |
-|    |                 | MariaDB: 3306/tcp    |                 |               |
-|    |                 | Corosync: 5404-6 UDP |                 |               |
-|    |                 | PCSD: 2224/tcp       |                 |               |
+|    |                 | SSH Tunnel: 2242/tcp |                 |               |
+|    |                 | MariaDB: 3306-7/tcp  |                 |               |
 |    +-----------------+                      +-----------------+               |
 |          |                                         |                          |
 |          +-------------------+---------------------+                          |
@@ -148,29 +147,29 @@
 
 ### 2.2 MPLS Requirements
 
-| Requirement | Specification |
-|-------------|---------------|
+| Requirement            | Specification |
+|------------------------|---------------|
 | **Bandwidth per Site** | Minimum 100 Mbps (recommend 1 Gbps) |
-| **Latency** | < 50ms round-trip (Access Manager ↔ Bastion) |
-| **Redundancy** | Dual MPLS paths recommended per site |
-| **QoS** | Session traffic priority (DSCP EF/AF41) |
-| **MTU** | 1500 bytes minimum (jumbo frames 9000 recommended) |
-| **BGP/OSPF** | Dynamic routing required for failover |
+| **Latency**            | < 50ms round-trip (Access Manager ↔ Bastion) |
+| **Redundancy**         | Dual MPLS paths recommended per site |
+| **QoS**                | Session traffic priority (DSCP EF/AF41) |
+| **MTU**                | 1500 bytes minimum (jumbo frames 9000 recommended) |
+| **BGP/OSPF**           | Dynamic routing required for failover |
 
 ### 2.3 MPLS IP Addressing
 
-| Network | CIDR | Purpose | Location |
-|---------|------|---------|----------|
-| **Access Manager DC-A** | 10.100.1.0/24 | Access Manager 1 | Datacenter A |
-| **Access Manager DC-B** | 10.100.2.0/24 | Access Manager 2 | Datacenter B |
-| **Site 1 (Site 1 DC)** | 10.10.1.0/24 | HAProxy, Bastion, RDS | Datacenter Site A |
-| **Site 2 (Site 2 DC)** | 10.10.2.0/24 | HAProxy, Bastion, RDS | Datacenter Site B |
-| **Site 3 (Site 3 DC)** | 10.10.3.0/24 | HAProxy, Bastion, RDS | Datacenter Site C |
-| **Site 4 (Site 4 DC)** | 10.10.4.0/24 | HAProxy, Bastion, RDS | Datacenter Site D |
-| **Site 5 (Site 5 DC)** | 10.10.5.0/24 | HAProxy, Bastion, RDS | Datacenter Site E |
-| **Authentication Services** | 10.20.0.0/24 | FortiAuthenticator, AD/LDAP | Shared Infrastructure |
-| **Target Systems (Win)** | 10.30.0.0/16 | Windows Server 2022 | Production |
-| **Target Systems (Linux)** | 10.40.0.0/16 | RHEL 9/10 | Production |
+| Network                     | CIDR          | Purpose                     | Location |
+|-----------------------------|---------------|-----------------------------|----------|
+| **Access Manager DC-A**     | 10.100.1.0/24 | Access Manager 1            | Datacenter A |
+| **Access Manager DC-B**     | 10.100.2.0/24 | Access Manager 2            | Datacenter B |
+| **Site 1 (Site 1 DC)**      | 10.10.1.0/24  | HAProxy, Bastion, RDS       | Datacenter Site A |
+| **Site 2 (Site 2 DC)**      | 10.10.2.0/24  | HAProxy, Bastion, RDS       | Datacenter Site B |
+| **Site 3 (Site 3 DC)**      | 10.10.3.0/24  | HAProxy, Bastion, RDS       | Datacenter Site C |
+| **Site 4 (Site 4 DC)**      | 10.10.4.0/24  | HAProxy, Bastion, RDS       | Datacenter Site D |
+| **Site 5 (Site 5 DC)**      | 10.10.5.0/24  | HAProxy, Bastion, RDS       | Datacenter Site E |
+| **Authentication Services** | 10.20.0.0/24  | FortiAuthenticator, AD/LDAP | Shared Infrastructure |
+| **Target Systems (Win)**    | 10.30.0.0/16  | Windows Server 2022         | Production |
+| **Target Systems (Linux)**  | 10.40.0.0/16  | RHEL 9/10                   | Production |
 
 ---
 
@@ -180,96 +179,96 @@
 
 #### DC-A (Primary Access Manager)
 
-| Component | IP Address | VLAN | Purpose |
-|-----------|------------|------|---------|
+| Component        | IP Address  | VLAN     | Purpose |
+|------------------|-------------|----------|---------|
 | Access Manager 1 | 10.100.1.10 | VLAN 100 | SSO, MFA, Session Brokering |
-| AM1 Management | 10.100.1.11 | VLAN 101 | Admin interface (out-of-band) |
-| AM1 Gateway | 10.100.1.1 | VLAN 100 | Default gateway (MPLS router) |
+| AM1 Management   | 10.100.1.11 | VLAN 101 | Admin interface (out-of-band) |
+| AM1 Gateway      | 10.100.1.1  | VLAN 100 | Default gateway (MPLS router) |
 
 #### DC-B (Secondary Access Manager)
 
-| Component | IP Address | VLAN | Purpose |
-|-----------|------------|------|---------|
+| Component        | IP Address  | VLAN     | Purpose |
+|------------------|-------------|----------|---------|
 | Access Manager 2 | 10.100.2.10 | VLAN 200 | SSO, MFA, Session Brokering |
-| AM2 Management | 10.100.2.11 | VLAN 201 | Admin interface (out-of-band) |
-| AM2 Gateway | 10.100.2.1 | VLAN 200 | Default gateway (MPLS router) |
+| AM2 Management   | 10.100.2.11 | VLAN 201 | Admin interface (out-of-band) |
+| AM2 Gateway      | 10.100.2.1  | VLAN 200 | Default gateway (MPLS router) |
 
 ### 3.2 Site 1 (Site 1 DC)
 
-| Component | IP Address | VLAN | Purpose |
-|-----------|------------|------|---------|
-| Fortigate Firewall | 10.10.1.1 | VLAN 11 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.1.5 | VLAN 11 | Load balancer |
-| HAProxy-2 (Backup) | 10.10.1.6 | VLAN 11 | Load balancer (VRRP) |
-| HAProxy VIP | 10.10.1.100 | VLAN 11 | Virtual IP (user entry point) |
-| WALLIX Bastion-1 | 10.10.1.11 | VLAN 11 | HA cluster node 1 |
-| WALLIX Bastion-2 | 10.10.1.12 | VLAN 11 | HA cluster node 2 |
-| WALLIX RDS | 10.10.1.30 | VLAN 11 | Jump host (OT RemoteApp) |
-| Default Gateway | 10.10.1.1 | VLAN 11 | Fortigate internal interface |
+| Component           | IP Address  | VLAN    | Purpose |
+|---------------------|-------------|---------|---------|
+| Fortigate Firewall  | 10.10.1.1   | VLAN 11 | Perimeter security |
+| HAProxy-1 (Primary) | 10.10.1.5   | VLAN 11 | Load balancer |
+| HAProxy-2 (Backup)  | 10.10.1.6   | VLAN 11 | Load balancer (VRRP) |
+| HAProxy VIP         | 10.10.1.100 | VLAN 11 | Virtual IP (user entry point) |
+| WALLIX Bastion-1    | 10.10.1.11  | VLAN 11 | HA cluster node 1 |
+| WALLIX Bastion-2    | 10.10.1.12  | VLAN 11 | HA cluster node 2 |
+| WALLIX RDS          | 10.10.1.30  | VLAN 11 | Jump host (OT RemoteApp) |
+| Default Gateway     | 10.10.1.1   | VLAN 11 | Fortigate internal interface |
 
 ### 3.3 Site 2 (Site 2 DC)
 
-| Component | IP Address | VLAN | Purpose |
-|-----------|------------|------|---------|
-| Fortigate Firewall | 10.10.2.1 | VLAN 12 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.2.5 | VLAN 12 | Load balancer |
-| HAProxy-2 (Backup) | 10.10.2.6 | VLAN 12 | Load balancer (VRRP) |
-| HAProxy VIP | 10.10.2.100 | VLAN 12 | Virtual IP (user entry point) |
-| WALLIX Bastion-1 | 10.10.2.11 | VLAN 12 | HA cluster node 1 |
-| WALLIX Bastion-2 | 10.10.2.12 | VLAN 12 | HA cluster node 2 |
-| WALLIX RDS | 10.10.2.30 | VLAN 12 | Jump host (OT RemoteApp) |
-| Default Gateway | 10.10.2.1 | VLAN 12 | Fortigate internal interface |
+| Component           | IP Address  | VLAN    | Purpose |
+|---------------------|-------------|---------|---------|
+| Fortigate Firewall  | 10.10.2.1   | VLAN 12 | Perimeter security |
+| HAProxy-1 (Primary) | 10.10.2.5   | VLAN 12 | Load balancer |
+| HAProxy-2 (Backup)  | 10.10.2.6   | VLAN 12 | Load balancer (VRRP) |
+| HAProxy VIP         | 10.10.2.100 | VLAN 12 | Virtual IP (user entry point) |
+| WALLIX Bastion-1    | 10.10.2.11  | VLAN 12 | HA cluster node 1 |
+| WALLIX Bastion-2    | 10.10.2.12  | VLAN 12 | HA cluster node 2 |
+| WALLIX RDS          | 10.10.2.30  | VLAN 12 | Jump host (OT RemoteApp) |
+| Default Gateway     | 10.10.2.1   | VLAN 12 | Fortigate internal interface |
 
 ### 3.4 Site 3 (Site 3 DC)
 
-| Component | IP Address | VLAN | Purpose |
-|-----------|------------|------|---------|
-| Fortigate Firewall | 10.10.3.1 | VLAN 13 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.3.5 | VLAN 13 | Load balancer |
-| HAProxy-2 (Backup) | 10.10.3.6 | VLAN 13 | Load balancer (VRRP) |
-| HAProxy VIP | 10.10.3.100 | VLAN 13 | Virtual IP (user entry point) |
-| WALLIX Bastion-1 | 10.10.3.11 | VLAN 13 | HA cluster node 1 |
-| WALLIX Bastion-2 | 10.10.3.12 | VLAN 13 | HA cluster node 2 |
-| WALLIX RDS | 10.10.3.30 | VLAN 13 | Jump host (OT RemoteApp) |
-| Default Gateway | 10.10.3.1 | VLAN 13 | Fortigate internal interface |
+| Component           | IP Address  | VLAN    | Purpose |
+|---------------------|-------------|---------|---------|
+| Fortigate Firewall  | 10.10.3.1   | VLAN 13 | Perimeter security |
+| HAProxy-1 (Primary) | 10.10.3.5   | VLAN 13 | Load balancer |
+| HAProxy-2 (Backup)  | 10.10.3.6   | VLAN 13 | Load balancer (VRRP) |
+| HAProxy VIP         | 10.10.3.100 | VLAN 13 | Virtual IP (user entry point) |
+| WALLIX Bastion-1    | 10.10.3.11  | VLAN 13 | HA cluster node 1 |
+| WALLIX Bastion-2    | 10.10.3.12  | VLAN 13 | HA cluster node 2 |
+| WALLIX RDS          | 10.10.3.30  | VLAN 13 | Jump host (OT RemoteApp) |
+| Default Gateway     | 10.10.3.1   | VLAN 13 | Fortigate internal interface |
 
 ### 3.5 Site 4 (Site 4 DC)
 
-| Component | IP Address | VLAN | Purpose |
-|-----------|------------|------|---------|
-| Fortigate Firewall | 10.10.4.1 | VLAN 14 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.4.5 | VLAN 14 | Load balancer |
-| HAProxy-2 (Backup) | 10.10.4.6 | VLAN 14 | Load balancer (VRRP) |
-| HAProxy VIP | 10.10.4.100 | VLAN 14 | Virtual IP (user entry point) |
-| WALLIX Bastion-1 | 10.10.4.11 | VLAN 14 | HA cluster node 1 |
-| WALLIX Bastion-2 | 10.10.4.12 | VLAN 14 | HA cluster node 2 |
-| WALLIX RDS | 10.10.4.30 | VLAN 14 | Jump host (OT RemoteApp) |
-| Default Gateway | 10.10.4.1 | VLAN 14 | Fortigate internal interface |
+| Component           | IP Address  | VLAN    | Purpose |
+|---------------------|-------------|---------|---------|
+| Fortigate Firewall  | 10.10.4.1   | VLAN 14 | Perimeter security |
+| HAProxy-1 (Primary) | 10.10.4.5   | VLAN 14 | Load balancer |
+| HAProxy-2 (Backup)  | 10.10.4.6   | VLAN 14 | Load balancer (VRRP) |
+| HAProxy VIP         | 10.10.4.100 | VLAN 14 | Virtual IP (user entry point) |
+| WALLIX Bastion-1    | 10.10.4.11  | VLAN 14 | HA cluster node 1 |
+| WALLIX Bastion-2    | 10.10.4.12  | VLAN 14 | HA cluster node 2 |
+| WALLIX RDS          | 10.10.4.30  | VLAN 14 | Jump host (OT RemoteApp) |
+| Default Gateway     | 10.10.4.1   | VLAN 14 | Fortigate internal interface |
 
 ### 3.6 Site 5 (Site 5 DC)
 
-| Component | IP Address | VLAN | Purpose |
-|-----------|------------|------|---------|
-| Fortigate Firewall | 10.10.5.1 | VLAN 15 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.5.5 | VLAN 15 | Load balancer |
-| HAProxy-2 (Backup) | 10.10.5.6 | VLAN 15 | Load balancer (VRRP) |
-| HAProxy VIP | 10.10.5.100 | VLAN 15 | Virtual IP (user entry point) |
-| WALLIX Bastion-1 | 10.10.5.11 | VLAN 15 | HA cluster node 1 |
-| WALLIX Bastion-2 | 10.10.5.12 | VLAN 15 | HA cluster node 2 |
-| WALLIX RDS | 10.10.5.30 | VLAN 15 | Jump host (OT RemoteApp) |
-| Default Gateway | 10.10.5.1 | VLAN 15 | Fortigate internal interface |
+| Component           | IP Address  | VLAN    | Purpose |
+|---------------------|-------------|---------|---------|
+| Fortigate Firewall  | 10.10.5.1   | VLAN 15 | Perimeter security |
+| HAProxy-1 (Primary) | 10.10.5.5   | VLAN 15 | Load balancer |
+| HAProxy-2 (Backup)  | 10.10.5.6   | VLAN 15 | Load balancer (VRRP) |
+| HAProxy VIP         | 10.10.5.100 | VLAN 15 | Virtual IP (user entry point) |
+| WALLIX Bastion-1    | 10.10.5.11  | VLAN 15 | HA cluster node 1 |
+| WALLIX Bastion-2    | 10.10.5.12  | VLAN 15 | HA cluster node 2 |
+| WALLIX RDS          | 10.10.5.30  | VLAN 15 | Jump host (OT RemoteApp) |
+| Default Gateway     | 10.10.5.1   | VLAN 15 | Fortigate internal interface |
 
 ### 3.7 Shared Infrastructure
 
-| Component | IP Address | VLAN | Purpose |
-|-----------|------------|------|---------|
-| FortiAuthenticator (Primary) | 10.20.0.60 | VLAN 20 | MFA (RADIUS) |
+| Component                      | IP Address | VLAN    | Purpose |
+|--------------------------------|------------|---------|---------|
+| FortiAuthenticator (Primary)   | 10.20.0.60 | VLAN 20 | MFA (RADIUS) |
 | FortiAuthenticator (Secondary) | 10.20.0.61 | VLAN 20 | MFA (RADIUS backup) |
-| Active Directory DC1 | 10.20.0.10 | VLAN 20 | LDAP/authentication |
-| Active Directory DC2 | 10.20.0.11 | VLAN 20 | LDAP/authentication (backup) |
-| NTP Server 1 | 10.20.0.20 | VLAN 20 | Time synchronization |
-| NTP Server 2 | 10.20.0.21 | VLAN 20 | Time synchronization (backup) |
-| SIEM (Splunk/Elastic) | 10.20.0.50 | VLAN 20 | Log aggregation |
+| Active Directory DC1           | 10.20.0.10 | VLAN 20 | LDAP/authentication |
+| Active Directory DC2           | 10.20.0.11 | VLAN 20 | LDAP/authentication (backup) |
+| NTP Server 1                   | 10.20.0.20 | VLAN 20 | Time synchronization |
+| NTP Server 2                   | 10.20.0.21 | VLAN 20 | Time synchronization (backup) |
+| SIEM (Splunk/Elastic)          | 10.20.0.50 | VLAN 20 | Log aggregation |
 
 ---
 
@@ -279,92 +278,91 @@
 
 #### Users → HAProxy (VIP)
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| End Users | HAProxy VIP (10.10.X.100) | 443 | TCP/HTTPS | Web UI, API access |
-| End Users | HAProxy VIP (10.10.X.100) | 22 | TCP/SSH | SSH proxy sessions |
-| End Users | HAProxy VIP (10.10.X.100) | 3389 | TCP/RDP | RDP proxy sessions |
-| End Users | HAProxy VIP (10.10.X.100) | 80 | TCP/HTTP | HTTP → HTTPS redirect |
+| Source    | Destination               | Port | Protocol  | Purpose |
+|-----------|---------------------------|------|-----------|---------|
+| End Users | HAProxy VIP (10.10.X.100) | 443  | TCP/HTTPS | Web UI, API access |
+| End Users | HAProxy VIP (10.10.X.100) | 22   | TCP/SSH   | SSH proxy sessions |
+| End Users | HAProxy VIP (10.10.X.100) | 3389 | TCP/RDP   | RDP proxy sessions |
+| End Users | HAProxy VIP (10.10.X.100) | 80   | TCP/HTTP  | HTTP → HTTPS redirect |
 
 #### HAProxy → WALLIX Bastion (Backend)
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| HAProxy-1 (10.10.X.5) | Bastion-1 (10.10.X.11) | 443 | TCP/HTTPS | Load balanced HTTPS |
-| HAProxy-1 (10.10.X.5) | Bastion-2 (10.10.X.12) | 443 | TCP/HTTPS | Load balanced HTTPS |
-| HAProxy-1 (10.10.X.5) | Bastion-1 (10.10.X.11) | 22 | TCP/SSH | SSH health check |
-| HAProxy-2 (10.10.X.6) | Bastion-1 (10.10.X.11) | 443 | TCP/HTTPS | Backup HAProxy path |
-| HAProxy-2 (10.10.X.6) | Bastion-2 (10.10.X.12) | 443 | TCP/HTTPS | Backup HAProxy path |
+| Source                | Destination            | Port | Protocol  | Purpose |
+|-----------------------|------------------------|------|-----------|---------|
+| HAProxy-1 (10.10.X.5) | Bastion-1 (10.10.X.11) | 443  | TCP/HTTPS | Load balanced HTTPS |
+| HAProxy-1 (10.10.X.5) | Bastion-2 (10.10.X.12) | 443  | TCP/HTTPS | Load balanced HTTPS |
+| HAProxy-1 (10.10.X.5) | Bastion-1 (10.10.X.11) | 22   | TCP/SSH   | SSH health check |
+| HAProxy-2 (10.10.X.6) | Bastion-1 (10.10.X.11) | 443  | TCP/HTTPS | Backup HAProxy path |
+| HAProxy-2 (10.10.X.6) | Bastion-2 (10.10.X.12) | 443  | TCP/HTTPS | Backup HAProxy path |
 
 ### 4.2 Access Manager Integration
 
 #### Access Manager → WALLIX Bastion (MPLS)
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| AM1 (10.100.1.10) | Bastion Site 1-5 | 443 | TCP/HTTPS | SSO callbacks, session brokering |
-| AM1 (10.100.1.10) | Bastion Site 1-5 | 22 | TCP/SSH | SSH session brokering (optional) |
-| AM2 (10.100.2.10) | Bastion Site 1-5 | 443 | TCP/HTTPS | SSO callbacks, session brokering |
-| AM2 (10.100.2.10) | Bastion Site 1-5 | 22 | TCP/SSH | SSH session brokering (optional) |
+| Source            | Destination      | Port | Protocol  | Purpose |
+|-------------------|------------------|------|-----------|---------|
+| AM1 (10.100.1.10) | Bastion Site 1-5 | 443  | TCP/HTTPS | SSO callbacks, session brokering |
+| AM1 (10.100.1.10) | Bastion Site 1-5 | 22   | TCP/SSH   | SSH session brokering (optional) |
+| AM2 (10.100.2.10) | Bastion Site 1-5 | 443  | TCP/HTTPS | SSO callbacks, session brokering |
+| AM2 (10.100.2.10) | Bastion Site 1-5 | 22   | TCP/SSH   | SSH session brokering (optional) |
 
 #### WALLIX Bastion → Access Manager (MPLS)
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion Site 1-5 | AM1 (10.100.1.10) | 443 | TCP/HTTPS | SSO authentication requests |
-| Bastion Site 1-5 | AM2 (10.100.2.10) | 443 | TCP/HTTPS | SSO authentication (failover) |
-| Bastion Site 1-5 | AM1 (10.100.1.10) | 443 | TCP/HTTPS | License check-in/check-out |
+| Source           | Destination       | Port | Protocol  | Purpose |
+|------------------|-------------------|------|-----------|---------|
+| Bastion Site 1-5 | AM1 (10.100.1.10) | 443  | TCP/HTTPS | SSO authentication requests |
+| Bastion Site 1-5 | AM2 (10.100.2.10) | 443  | TCP/HTTPS | SSO authentication (failover) |
+| Bastion Site 1-5 | AM1 (10.100.1.10) | 443  | TCP/HTTPS | License check-in/check-out |
 
 #### Access Manager HA (DC-A ↔ DC-B)
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| AM1 (10.100.1.10) | AM2 (10.100.2.10) | 443 | TCP/HTTPS | Configuration sync |
-| AM1 (10.100.1.10) | AM2 (10.100.2.10) | 3306 | TCP/MariaDB | Database replication |
-| AM1 (10.100.1.10) | AM2 (10.100.2.10) | 5404-5406 | UDP/Corosync | Cluster heartbeat |
+| Source            | Destination       | Port      | Protocol     | Purpose |
+|-------------------|-------------------|-----------|--------------|---------|
+| AM1 (10.100.1.10) | AM2 (10.100.2.10) | 443       | TCP/HTTPS    | Configuration sync |
+| AM1 (10.100.1.10) | AM2 (10.100.2.10) | 3306      | TCP/MariaDB  | Database replication |
+| AM1 (10.100.1.10) | AM2 (10.100.2.10) | 443       | TCP/HTTPS    | Cluster heartbeat |
 
 ### 4.3 Authentication & MFA
 
 #### WALLIX Bastion → FortiAuthenticator
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion Site 1-5 | FortiAuth (10.20.0.60) | 1812 | UDP/RADIUS | User authentication (MFA) |
-| Bastion Site 1-5 | FortiAuth (10.20.0.60) | 1813 | UDP/RADIUS | Accounting/audit logs |
-| Bastion Site 1-5 | FortiAuth (10.20.0.61) | 1812 | UDP/RADIUS | Failover authentication |
-| Bastion Site 1-5 | FortiAuth (10.20.0.61) | 1813 | UDP/RADIUS | Failover accounting |
+| Source           | Destination            | Port | Protocol   | Purpose |
+|------------------|------------------------|------|------------|---------|
+| Bastion Site 1-5 | FortiAuth (10.20.0.60) | 1812 | TCP+UDP/RADIUS | User authentication (MFA) |
+| Bastion Site 1-5 | FortiAuth (10.20.0.60) | 1813 | TCP+UDP/RADIUS | Accounting/audit logs |
+| Bastion Site 1-5 | FortiAuth (10.20.0.61) | 1812 | TCP+UDP/RADIUS | Failover authentication |
+| Bastion Site 1-5 | FortiAuth (10.20.0.61) | 1813 | TCP+UDP/RADIUS | Failover accounting |
 
 #### WALLIX Bastion → Active Directory
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 389 | TCP/LDAP | User/group lookups |
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 636 | TCP/LDAPS | Secure LDAP (preferred) |
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 3268 | TCP/GC | Global Catalog queries |
+| Source           | Destination         | Port | Protocol   | Purpose |
+|------------------|---------------------|------|------------|---------|
+| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 389  | TCP/LDAP   | User/group lookups |
+| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 636  | TCP/LDAPS  | Secure LDAP (preferred) |
+| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 3268 | TCP/GC     | Global Catalog queries |
 | Bastion Site 1-5 | AD DC1 (10.20.0.10) | 3269 | TCP/GC-SSL | Secure Global Catalog |
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 88 | TCP/UDP | Kerberos authentication |
-| Bastion Site 1-5 | AD DC2 (10.20.0.11) | 636 | TCP/LDAPS | Failover LDAP |
+| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 88   | TCP/UDP    | Kerberos authentication |
+| Bastion Site 1-5 | AD DC2 (10.20.0.11) | 636  | TCP/LDAPS  | Failover LDAP |
 
 #### FortiAuthenticator → Active Directory
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| FortiAuth (10.20.0.60) | AD DC1 (10.20.0.10) | 389 | TCP/LDAP | User synchronization |
-| FortiAuth (10.20.0.60) | AD DC1 (10.20.0.10) | 636 | TCP/LDAPS | Secure user sync |
+| Source                 | Destination         | Port | Protocol  | Purpose |
+|------------------------|---------------------|------|-----------|---------|
+| FortiAuth (10.20.0.60) | AD DC1 (10.20.0.10) | 389  | TCP/LDAP  | User synchronization |
+| FortiAuth (10.20.0.60) | AD DC1 (10.20.0.10) | 636  | TCP/LDAPS | Secure user sync |
 
 ### 4.4 WALLIX Bastion HA Cluster (Per Site)
 
 #### Bastion-1 ↔ Bastion-2 (HA Sync)
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 3306 | TCP/MariaDB | Database replication |
-| Bastion-2 (10.10.X.12) | Bastion-1 (10.10.X.11) | 3306 | TCP/MariaDB | Database replication |
-| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 2224 | TCP/PCSD | Pacemaker management |
-| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 3121 | TCP/Pacemaker | Cluster communication |
-| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 5404 | UDP/Corosync | Cluster multicast |
-| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 5405 | UDP/Corosync | Cluster unicast |
-| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 5406 | UDP/Corosync | Cluster failover |
+| Source                 | Destination            | Port | Protocol      | Purpose |
+|------------------------|------------------------|------|---------------|---------|
+| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 2242 | TCP/SSH       | SSH tunnel for DB replication (autossh) |
+| Bastion-2 (10.10.X.12) | Bastion-1 (10.10.X.11) | 2242 | TCP/SSH       | SSH tunnel for DB replication (autossh) |
+| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 3306 | TCP/MariaDB   | Database replication (via SSH tunnel) |
+| Bastion-2 (10.10.X.12) | Bastion-1 (10.10.X.11) | 3306 | TCP/MariaDB   | Database replication (via SSH tunnel) |
+| Bastion-1 (10.10.X.11) | Bastion-2 (10.10.X.12) | 3307 | TCP/MariaDB   | Replication source port |
+| Bastion-2 (10.10.X.12) | Bastion-1 (10.10.X.11) | 3307 | TCP/MariaDB   | Replication source port |
 
 **CRITICAL**: These ports MUST be isolated on a dedicated VLAN or physically separate network for security.
 
@@ -372,9 +370,9 @@
 
 #### HAProxy-1 ↔ HAProxy-2 (VRRP)
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| HAProxy-1 (10.10.X.5) | HAProxy-2 (10.10.X.6) | 112 | IP/VRRP | Keepalived heartbeat |
+| Source                | Destination           | Port | Protocol | Purpose |
+|-----------------------|-----------------------|------|----------|---------|
+| HAProxy-1 (10.10.X.5) | HAProxy-2 (10.10.X.6) | 112  | IP/VRRP  | Keepalived heartbeat |
 
 **Note**: VRRP uses IP protocol 112 (not TCP/UDP). Ensure firewalls allow this protocol.
 
@@ -382,54 +380,54 @@
 
 #### WALLIX Bastion → Windows Targets
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion Site 1-5 | Windows (10.30.0.0/16) | 3389 | TCP/RDP | Remote Desktop sessions |
+| Source           | Destination            | Port | Protocol  | Purpose |
+|------------------|------------------------|------|-----------|---------|
+| Bastion Site 1-5 | Windows (10.30.0.0/16) | 3389 | TCP/RDP   | Remote Desktop sessions |
 | Bastion Site 1-5 | Windows (10.30.0.0/16) | 5985 | TCP/WinRM | Password rotation (HTTP) |
 | Bastion Site 1-5 | Windows (10.30.0.0/16) | 5986 | TCP/WinRM | Password rotation (HTTPS) |
 
 #### WALLIX Bastion → Linux Targets
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion Site 1-5 | RHEL (10.40.0.0/16) | 22 | TCP/SSH | SSH sessions, password rotation |
+| Source           | Destination         | Port | Protocol | Purpose |
+|------------------|---------------------|------|----------|---------|
+| Bastion Site 1-5 | RHEL (10.40.0.0/16) | 22   | TCP/SSH  | SSH sessions, password rotation |
 
 #### WALLIX RDS → OT Targets
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| RDS (10.10.X.30) | OT Windows | 3389 | TCP/RDP | RemoteApp RDP sessions |
+| Source           | Destination | Port | Protocol | Purpose |
+|------------------|-------------|------|----------|---------|
+| RDS (10.10.X.30) | OT Windows  | 3389 | TCP/RDP  | RemoteApp RDP sessions |
 
 ### 4.7 Management & Monitoring
 
 #### WALLIX Bastion → NTP Servers
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion Site 1-5 | NTP1 (10.20.0.20) | 123 | UDP/NTP | Time synchronization |
-| Bastion Site 1-5 | NTP2 (10.20.0.21) | 123 | UDP/NTP | Time sync (backup) |
-| HAProxy Site 1-5 | NTP1 (10.20.0.20) | 123 | UDP/NTP | Time synchronization |
+| Source           | Destination       | Port | Protocol | Purpose |
+|------------------|-------------------|------|----------|---------|
+| Bastion Site 1-5 | NTP1 (10.20.0.20) | 123  | UDP/NTP  | Time synchronization |
+| Bastion Site 1-5 | NTP2 (10.20.0.21) | 123  | UDP/NTP  | Time sync (backup) |
+| HAProxy Site 1-5 | NTP1 (10.20.0.20) | 123  | UDP/NTP  | Time synchronization |
 
 #### WALLIX Bastion → SIEM
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion Site 1-5 | SIEM (10.20.0.50) | 514 | UDP/Syslog | Audit log forwarding |
+| Source           | Destination       | Port | Protocol       | Purpose |
+|------------------|-------------------|------|----------------|---------|
+| Bastion Site 1-5 | SIEM (10.20.0.50) | 514  | UDP/Syslog     | Audit log forwarding |
 | Bastion Site 1-5 | SIEM (10.20.0.50) | 6514 | TCP/Syslog-TLS | Secure log forwarding |
 
 #### Monitoring → WALLIX Bastion
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
+| Source     | Destination      | Port | Protocol | Purpose |
+|------------|------------------|------|----------|---------|
 | Prometheus | Bastion Site 1-5 | 9100 | TCP/HTTP | Node Exporter metrics |
-| SNMP NMS | Bastion Site 1-5 | 161 | UDP/SNMP | SNMP queries |
+| SNMP NMS   | Bastion Site 1-5 | 161  | UDP/SNMP | SNMP queries |
 
 #### WALLIX Bastion → SMTP (Email Alerts)
 
-| Source | Destination | Port | Protocol | Purpose |
-|--------|-------------|------|----------|---------|
-| Bastion Site 1-5 | Mail Server | 25 | TCP/SMTP | Email notifications |
-| Bastion Site 1-5 | Mail Server | 587 | TCP/SMTP | SMTP with STARTTLS |
+| Source           | Destination | Port | Protocol | Purpose |
+|------------------|-------------|------|----------|---------|
+| Bastion Site 1-5 | Mail Server | 25   | TCP/SMTP | Email notifications |
+| Bastion Site 1-5 | Mail Server | 587  | TCP/SMTP | SMTP with STARTTLS |
 
 ---
 
@@ -497,7 +495,7 @@ Source Zone: Management
 Source Address: Bastion-1 (10.10.X.11), Bastion-2 (10.10.X.12)
 Destination Zone: Authentication
 Destination Address: FortiAuth (10.20.0.60, 10.20.0.61)
-Service: RADIUS (1812/1813 UDP)
+Service: RADIUS (1812/1813 TCP+UDP)
 Action: ACCEPT
 NAT: None
 Logging: Enable
@@ -536,7 +534,7 @@ Source Zone: HA_Cluster
 Source Address: Bastion-1 (10.10.X.11)
 Destination Zone: HA_Cluster
 Destination Address: Bastion-2 (10.10.X.12)
-Service: MariaDB (3306), PCSD (2224), Pacemaker (3121), Corosync (5404-5406 UDP)
+Service: SSH Admin (2242), MariaDB (3306), MariaDB Repl Source (3307)
 Action: ACCEPT
 NAT: None
 Logging: Enable
@@ -593,10 +591,10 @@ Logging: Enable (security events)
 |  ALLOW: HAProxy → Bastion (443, 22)                                           |
 |  ALLOW: Bastion → Access Manager (443) via MPLS                               |
 |  ALLOW: Access Manager → Bastion (443, 22) via MPLS                           |
-|  ALLOW: Bastion → FortiAuthenticator (1812/1813 UDP)                          |
+|  ALLOW: Bastion → FortiAuthenticator (1812/1813 TCP+UDP)                      |
 |  ALLOW: Bastion → Active Directory (636, 3269, 88)                            |
 |  ALLOW: Bastion → Targets (3389, 22, 5985/5986)                               |
-|  ALLOW: Bastion-1 ↔ Bastion-2 (3306, 2224, 3121, 5404-5406) [HA VLAN]         |
+|  ALLOW: Bastion-1 ↔ Bastion-2 (2242, 3306, 3307) [HA VLAN]                    |
 |  ALLOW: HAProxy-1 ↔ HAProxy-2 (IP proto 112) [VRRP]                           |
 |  ALLOW: Bastion → NTP (123 UDP)                                               |
 |  ALLOW: Bastion → SIEM (514 UDP, 6514 TCP)                                    |
@@ -880,17 +878,17 @@ ip addr show | grep 10.10.1.100
 
 ```bash
 # From Bastion-1 (10.10.1.11)
-# Test MariaDB replication port
+# Test SSH tunnel port for HA replication
+nc -zv 10.10.1.12 2242
+# Expected: Connection succeeded
+
+# Test MariaDB replication port (via SSH tunnel)
 nc -zv 10.10.1.12 3306
 # Expected: Connection succeeded
 
-# Test Pacemaker PCSD port
-nc -zv 10.10.1.12 2224
+# Test MariaDB replication source port
+nc -zv 10.10.1.12 3307
 # Expected: Connection succeeded
-
-# Test Corosync ports (UDP)
-timeout 2 nc -uzv 10.10.1.12 5405
-# Expected: Connection succeeded (or timeout with UDP)
 ```
 
 #### Test 6: FortiAuthenticator RADIUS Connectivity
@@ -1078,9 +1076,9 @@ if ! nc -uzv -w 2 10.20.0.60 1812 2>&1 | grep -q succeeded; then
   echo "[$DATE] ERROR: FortiAuth RADIUS unreachable" >> $LOGFILE
 fi
 
-# Check HA cluster status
-if ! systemctl is-active --quiet corosync; then
-  echo "[$DATE] ERROR: Corosync not running" >> $LOGFILE
+# Check HA replication status
+if ! sudo bastion-replication --monitoring > /dev/null 2>&1; then
+  echo "[$DATE] ERROR: HA Database Replication issue detected" >> $LOGFILE
 fi
 
 echo "[$DATE] Health check completed" >> $LOGFILE
@@ -1101,7 +1099,7 @@ echo "*/5 * * * * /usr/local/bin/wallix-health-check.sh" | crontab -
 |-------|----------|------------|
 | **MPLS Link Down** | Cannot reach Access Manager | Check MPLS router BGP/OSPF, verify physical links |
 | **HAProxy VIP Not Responding** | Users cannot connect | Check Keepalived status, verify VRRP on both nodes |
-| **Bastion HA Split-Brain** | Both nodes active | Check Corosync network, verify quorum, restart cluster |
+| **Bastion HA Replication Down** | Data not syncing between nodes | Run `bastion-replication --monitoring`, check SSH tunnel (port 2242), verify autossh service |
 | **RADIUS Timeout** | MFA authentication fails | Verify FortiAuth reachable, check RADIUS shared secret |
 | **LDAP Bind Failures** | User lookups fail | Check AD connectivity (636), verify service account credentials |
 | **Session Recording Lag** | RDP/SSH sessions slow | Check disk I/O on Bastion (recording storage), verify network throughput |
@@ -1150,7 +1148,7 @@ tcpdump -i any -n 'udp port 1812 or udp port 1813'
 - WALLIX Bastion Network Requirements: https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf
 - FortiAuthenticator RADIUS Configuration: https://docs.fortinet.com/product/fortiauthenticator
 - HAProxy VRRP Configuration: https://www.haproxy.org/
-- Pacemaker Cluster Setup: https://clusterlabs.org/pacemaker/
+- WALLIX Bastion HA Database Replication: See deployment guide section 5
 
 ---
 

@@ -5,7 +5,7 @@
 | Property | Value |
 |----------|-------|
 | **Purpose** | Comprehensive networking requirements for WALLIX Bastion in client professional environments |
-| **Version** | Aligned with WALLIX Bastion 12.1.x |
+| **Version** | Aligned with WALLIX Bastion 12.3.2 |
 | **Last Updated** | February 2026 |
 | **Target Systems** | Windows Server 2022, RHEL 9/10 |
 | **Deployment Type** | On-premises only (bare metal and VMs) |
@@ -96,9 +96,8 @@
 |  |  WALLIX Bastion-1         |<---->|  WALLIX Bastion-2  |                    |
 |  |      10.10.1.11           |      |      10.10.1.12    |                    |
 |  |                           |      |                    |                    |
-|  |  MariaDB Replication: 3306/tcp (bi-directional)       |                    |
-|  |  Corosync HA: 5404-5406/udp                           |                    |
-|  |  PCSD: 2224/tcp, 3121/tcp                             |                    | 
+|  |  MariaDB Replication: 3306-7/tcp (bi-directional)     |                    |
+|  |  SSH Tunnel: 2242/tcp                                  |                    |
 |  +-----------+---------------+      +--------------------+                    |
 |              |                           |                                    |
 |              +------------+--------------+                                    |
@@ -311,22 +310,13 @@
 |  HA CLUSTER PORTS (WALLIX Node-to-Node Communication)                         |
 +===============================================================================+
 |                                                                               |
-|  PACEMAKER/COROSYNC CLUSTER                                                   |
-|  ===========================                                                  |
+|  BASTION-REPLICATION (HA Database Replication)                                |
+|  =============================================                               |
 |  Port    Protocol   Service          Direction    Description                 |
 |  ----    --------   -------          ---------    -----------                 |
-|  2224    TCP        PCSD             Bidirect     Pacemaker web UI/API        |
-|  3121    TCP        Pacemaker        Bidirect     Pacemaker remote            |
-|  5403    TCP        Corosync QNet    Bidirect     Quorum device               |
-|  5404    UDP        Corosync         Bidirect     Cluster multicast           |
-|  5405    UDP        Corosync         Bidirect     Cluster unicast             |
-|  5406    UDP        Corosync         Bidirect     Cluster communication       |
-|                                                                               |
-|  DATABASE REPLICATION                                                         |
-|  =====================                                                        |
-|  Port    Protocol   Service          Direction    Description                 |
-|  ----    --------   -------          ---------    -----------                 |
-|  3306    TCP        MariaDB          Bidirect     Streaming replication       |
+|  2242    TCP        SSH Tunnel       Bidirect     SSH tunnel for replication  |
+|  3306    TCP        MariaDB          Bidirect     Replication destination     |
+|  3307    TCP        MariaDB Repl Src Bidirect     Replication source          |
 |                                                                               |
 |  Note: These ports must ONLY be accessible between cluster nodes              |
 |  Isolate on dedicated VLAN for security                                       |
@@ -495,9 +485,9 @@
 | 22 | TCP | SSH Admin | Admins | SSH to WALLIX OS |
 | 161 | UDP | SNMP | NMS | SNMP monitoring |
 | 9100 | TCP | Prometheus | Monitoring | Metrics collection |
-| 3306 | TCP | MariaDB | HA Peer | Database replication (internal) |
-| 2224 | TCP | PCSD | HA Peer | Pacemaker cluster management |
-| 5404-5406 | UDP | Corosync | HA Peer | Cluster heartbeat |
+| 2242 | TCP | SSH Tunnel | HA Peer | SSH tunnel for HA replication |
+| 3306 | TCP | MariaDB | HA Peer | Database replication destination |
+| 3307 | TCP | MariaDB Repl Src | HA Peer | Database replication source |
 
 ### 4.2 Outbound Ports from WALLIX (to Targets/Services)
 
@@ -525,13 +515,9 @@
 
 | Port | Protocol | Service | Direction | Description |
 |------|----------|---------|-----------|-------------|
-| 3306 | TCP | MariaDB | Bidirectional | Streaming replication |
-| 2224 | TCP | PCSD | Bidirectional | Pacemaker web UI/API |
-| 3121 | TCP | Pacemaker | Bidirectional | Pacemaker remote |
-| 5403 | TCP | Corosync QNet | Bidirectional | Quorum device |
-| 5404 | UDP | Corosync | Bidirectional | Cluster multicast |
-| 5405 | UDP | Corosync | Bidirectional | Cluster unicast |
-| 5406 | UDP | Corosync | Bidirectional | Cluster communication |
+| 2242 | TCP | SSH Tunnel | Bidirectional | SSH tunnel for HA replication |
+| 3306 | TCP | MariaDB | Bidirectional | Replication destination |
+| 3307 | TCP | MariaDB Repl Src | Bidirectional | Replication source |
 | 443 | TCP | HTTPS | Bidirectional | Cluster API/sync |
 
 ---
@@ -887,18 +873,12 @@ iptables -A INPUT -p tcp --dport 80 -m state --state NEW -j ACCEPT
 # Replace 10.10.1.12 with your peer node IP
 PEER_NODE="10.10.1.12"
 
-# Corosync cluster communication
-iptables -A INPUT -s ${PEER_NODE} -p udp --dport 5404 -j ACCEPT
-iptables -A INPUT -s ${PEER_NODE} -p udp --dport 5405 -j ACCEPT
-iptables -A INPUT -s ${PEER_NODE} -p udp --dport 5406 -j ACCEPT
+# bastion-replication SSH tunnel
+iptables -A INPUT -s ${PEER_NODE} -p tcp --dport 2242 -j ACCEPT
 
-# Pacemaker
-iptables -A INPUT -s ${PEER_NODE} -p tcp --dport 2224 -j ACCEPT
-iptables -A INPUT -s ${PEER_NODE} -p tcp --dport 3121 -j ACCEPT
-iptables -A INPUT -s ${PEER_NODE} -p tcp --dport 5403 -j ACCEPT
-
-# MariaDB streaming replication
+# MariaDB replication (destination and source)
 iptables -A INPUT -s ${PEER_NODE} -p tcp --dport 3306 -j ACCEPT
+iptables -A INPUT -s ${PEER_NODE} -p tcp --dport 3307 -j ACCEPT
 
 #------------------------------------------------------------------------------
 # CROSS-SITE SYNC (from remote sites)
@@ -1023,14 +1003,10 @@ iptables -A OUTPUT -d ${NMS_IP} -p udp --dport 162 -j ACCEPT
 # HA CLUSTER COMMUNICATION
 #------------------------------------------------------------------------------
 
-# To peer node
-iptables -A OUTPUT -d ${PEER_NODE} -p udp --dport 5404 -j ACCEPT
-iptables -A OUTPUT -d ${PEER_NODE} -p udp --dport 5405 -j ACCEPT
-iptables -A OUTPUT -d ${PEER_NODE} -p udp --dport 5406 -j ACCEPT
-iptables -A OUTPUT -d ${PEER_NODE} -p tcp --dport 2224 -j ACCEPT
-iptables -A OUTPUT -d ${PEER_NODE} -p tcp --dport 3121 -j ACCEPT
-iptables -A OUTPUT -d ${PEER_NODE} -p tcp --dport 5403 -j ACCEPT
+# To peer node - bastion-replication
+iptables -A OUTPUT -d ${PEER_NODE} -p tcp --dport 2242 -j ACCEPT
 iptables -A OUTPUT -d ${PEER_NODE} -p tcp --dport 3306 -j ACCEPT
+iptables -A OUTPUT -d ${PEER_NODE} -p tcp --dport 3307 -j ACCEPT
 iptables -A OUTPUT -d ${PEER_NODE} -p tcp --dport 443 -j ACCEPT
 
 #------------------------------------------------------------------------------
@@ -1147,14 +1123,11 @@ table inet filter {
         # HA CLUSTER COMMUNICATION (peer node only)
         #----------------------------------------------------------------------
 
-        # Corosync
-        ip saddr $PEER_NODE udp dport { 5404, 5405, 5406 } accept
+        # bastion-replication SSH tunnel
+        ip saddr $PEER_NODE tcp dport 2242 accept
 
-        # Pacemaker
-        ip saddr $PEER_NODE tcp dport { 2224, 3121, 5403 } accept
-
-        # MariaDB replication
-        ip saddr $PEER_NODE tcp dport 3306 accept
+        # MariaDB replication (destination and source)
+        ip saddr $PEER_NODE tcp dport { 3306, 3307 } accept
 
         #----------------------------------------------------------------------
         # CROSS-SITE SYNC
@@ -1264,9 +1237,8 @@ table inet filter {
         # HA CLUSTER COMMUNICATION
         #----------------------------------------------------------------------
 
-        # To peer node
-        ip daddr $PEER_NODE udp dport { 5404, 5405, 5406 } accept
-        ip daddr $PEER_NODE tcp dport { 2224, 3121, 5403, 3306, 443 } accept
+        # To peer node - bastion-replication
+        ip daddr $PEER_NODE tcp dport { 2242, 3306, 3307, 443 } accept
 
         #----------------------------------------------------------------------
         # CROSS-SITE SYNC
@@ -1365,19 +1337,14 @@ firewall-cmd --permanent --zone=wallix-public \
 **Zone: wallix-cluster (HA Communication)**
 
 ```bash
-# Corosync cluster ports
+# bastion-replication SSH tunnel
 firewall-cmd --permanent --zone=wallix-cluster \
-    --add-port=5404-5406/udp
+    --add-port=2242/tcp
 
-# Pacemaker ports
+# MariaDB replication (destination and source)
 firewall-cmd --permanent --zone=wallix-cluster \
-    --add-port=2224/tcp \
-    --add-port=3121/tcp \
-    --add-port=5403/tcp
-
-# MariaDB replication
-firewall-cmd --permanent --zone=wallix-cluster \
-    --add-port=3306/tcp
+    --add-port=3306/tcp \
+    --add-port=3307/tcp
 
 # HTTPS for cluster API
 firewall-cmd --permanent --zone=wallix-cluster \
@@ -1577,7 +1544,7 @@ Firewall Rules:
 - VLAN 120 → VLAN 100: LDAPS, RADIUS, DNS, NTP
 - VLAN 120 → VLAN 140: RDP, WinRM
 - VLAN 120 → VLAN 150: SSH
-- VLAN 120 → VLAN 160: HA cluster (Corosync, MariaDB)
+- VLAN 120 → VLAN 160: HA cluster (bastion-replication, MariaDB)
 - Block all other inter-VLAN traffic
 ```
 
@@ -1601,8 +1568,8 @@ Firewall Rules:
 | Password rotation fails (Linux) | SSH port blocked to target | 22/tcp | `nc -zv target.company.com 22` |
 | LDAP authentication fails | LDAP/LDAPS port blocked | 389/636 tcp | `ldapsearch -H ldaps://ad.company.com -x` |
 | Kerberos SSO not working | Kerberos port blocked | 88 tcp/udp | `nc -zuv ad.company.com 88` |
-| HA cluster split-brain | Corosync ports blocked | 5404-5406 udp | `corosync-cfgtool -s` |
-| HA cluster node offline | Cluster communication issue | 5404-5406 udp, 2224/3121 tcp | `crm status` |
+| HA cluster split-brain | Replication tunnel blocked | 2242/tcp, 3307/tcp | `bastion-replication --monitoring` |
+| HA cluster node offline | Cluster communication issue | 2242/tcp, 3306-7/tcp | `bastion-replication --monitoring` |
 | Database replication lag | MariaDB port blocked | 3306/tcp | `nc -zv peer-node.company.com 3306` |
 | Database replication stopped | Replication failure | 3306/tcp | `mysql -e "SHOW SLAVE STATUS\G"` |
 | Time drift issues | NTP port blocked | 123/udp | `chronyc tracking` |
@@ -1759,7 +1726,7 @@ tcpdump -i eth0 -n port 443 -w /tmp/https-traffic.pcap
 tcpdump -i eth0 -n "port 1812 or port 1813" -w /tmp/radius-traffic.pcap
 
 # Capture cluster traffic
-tcpdump -i eth1 -n "portrange 5404-5406 or port 3306" -w /tmp/cluster-traffic.pcap
+tcpdump -i eth1 -n "port 2242 or port 3306 or port 3307" -w /tmp/cluster-traffic.pcap
 
 # Capture and display in real-time
 tcpdump -i eth0 -n port 443 -A
@@ -2050,8 +2017,8 @@ ping -M do -s 1400 wallix.company.com
 | User Workstation | WALLIX VIP | 22 | TCP | ☐ | SSH Proxy |
 | User Workstation | WALLIX VIP | 3389 | TCP | ☐ | RDP Proxy |
 | WALLIX Node 1 | WALLIX Node 2 | 3306 | TCP | ☐ | MariaDB replication |
-| WALLIX Node 1 | WALLIX Node 2 | 5404-5406 | UDP | ☐ | Corosync cluster |
-| WALLIX Node 1 | WALLIX Node 2 | 2224 | TCP | ☐ | Pacemaker PCSD |
+| WALLIX Node 1 | WALLIX Node 2 | 2242 | TCP | ☐ | SSH tunnel (bastion-replication) |
+| WALLIX Node 1 | WALLIX Node 2 | 3307 | TCP | ☐ | MariaDB replication source |
 | WALLIX Node 1 | Active Directory | 636 | TCP | ☐ | LDAPS |
 | WALLIX Node 1 | Active Directory | 389 | TCP | ☐ | LDAP |
 | WALLIX Node 1 | FortiAuth Primary | 1812 | UDP | ☐ | RADIUS Auth |
@@ -2155,12 +2122,9 @@ test_tcp_port $WALLIX_VIP 3389 "RDP Proxy"
 echo
 
 echo "=== Testing HA Cluster Communication ==="
-test_tcp_port $WALLIX_NODE2 3306 "MariaDB replication"
-test_udp_port $WALLIX_NODE2 5404 "Corosync multicast"
-test_udp_port $WALLIX_NODE2 5405 "Corosync unicast"
-test_udp_port $WALLIX_NODE2 5406 "Corosync communication"
-test_tcp_port $WALLIX_NODE2 2224 "Pacemaker PCSD"
-test_tcp_port $WALLIX_NODE2 3121 "Pacemaker remote"
+test_tcp_port $WALLIX_NODE2 2242 "SSH tunnel (bastion-replication)"
+test_tcp_port $WALLIX_NODE2 3306 "MariaDB replication destination"
+test_tcp_port $WALLIX_NODE2 3307 "MariaDB replication source"
 echo
 
 echo "=== Testing Active Directory ==="
@@ -2281,9 +2245,9 @@ Only open ports required for specific functions:
   - 3389/tcp (RDP Proxy)
 
 ✓ HA Cluster (isolated VLAN):
-  - 3306/tcp (MariaDB)
-  - 5404-5406/udp (Corosync)
-  - 2224/tcp, 3121/tcp (Pacemaker)
+  - 2242/tcp (SSH tunnel, bastion-replication)
+  - 3306/tcp (MariaDB replication destination)
+  - 3307/tcp (MariaDB replication source)
 
 ✓ Authentication:
   - 636/tcp (LDAPS to AD)
@@ -2664,7 +2628,7 @@ Tools:
 | HAProxy Documentation | https://www.haproxy.org/documentation.html | HAProxy load balancer docs |
 | Keepalived Documentation | https://www.keepalived.org/documentation.html | Keepalived VRRP documentation |
 | MariaDB Replication | https://mariadb.com/kb/en/replication/ | MariaDB replication documentation |
-| Corosync/Pacemaker | https://clusterlabs.org/pacemaker/doc/ | HA cluster documentation |
+| WALLIX Bastion HA | https://pam.wallix.one/documentation/admin-doc/ | WALLIX Bastion HA and bastion-replication documentation |
 | iptables Tutorial | https://www.frozentux.net/iptables-tutorial/ | Comprehensive iptables guide |
 | nftables Wiki | https://wiki.nftables.org/ | nftables documentation and examples |
 
@@ -2686,9 +2650,9 @@ AUTHENTICATION:
   1813/udp  - RADIUS Acct (FortiAuthenticator)
 
 HA CLUSTER:
-  3306/tcp  - MariaDB Replication
-  5404-5406/udp - Corosync
-  2224/tcp  - Pacemaker PCSD
+  2242/tcp  - SSH Tunnel (bastion-replication)
+  3306/tcp  - MariaDB Replication Destination
+  3307/tcp  - MariaDB Replication Source
 
 MANAGEMENT:
   123/udp   - NTP
@@ -2714,8 +2678,7 @@ nc -zuv <host> <port>
 wabadmin auth radius test "FortiAuth-Primary"
 
 # Check cluster status
-crm status
-corosync-cfgtool -s
+bastion-replication --monitoring
 
 # Check MariaDB replication
 mysql -e "SHOW SLAVE STATUS\G"

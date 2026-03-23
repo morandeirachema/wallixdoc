@@ -782,7 +782,7 @@
   +------------------+------------------------------------------------------+
   | Hardware         | 16 vCPU, 64 GB RAM, NVMe SSD                         |
   | OS               | Debian 12 (Bookworm)                                 |
-  | WALLIX Version   | 12.1.x                                               |
+  | WALLIX Version   | 12.3.2                                               |
   | MariaDB          | 10.11.x with optimized settings                      |
   | Network          | 10 Gbps, < 1ms latency to targets                    |
   +------------------+------------------------------------------------------+

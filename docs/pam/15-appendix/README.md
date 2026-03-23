@@ -556,7 +556,7 @@ To ensure consistency across all 47 documentation sections, use these standardiz
    - UI shows "Authorizations" → use "Authorizations"
 
 5. **Version Specificity**: Always specify versions when relevant
-   - "WALLIX Bastion 12.1.x" not "WALLIX Bastion 12"
+   - "WALLIX Bastion 12.3.2" not "WALLIX Bastion 12"
    - "Debian 12 (Bookworm)" not "Debian"
    - "REST API v3.12" not "REST API"
 

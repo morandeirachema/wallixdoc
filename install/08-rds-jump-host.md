@@ -202,7 +202,7 @@ Jump host architecture provides additional security controls:
 |-----------|---------|------------------|
 | **Windows Server 2022** | Standard or Datacenter | Yes (per server) |
 | **Remote Desktop Services** | Included in WS2022 | RDS CAL required per user |
-| **WALLIX RDS Agent** | 12.1.x | Included with Bastion license |
+| **WALLIX RDS Agent** | 12.3.2 | Included with Bastion license |
 | **.NET Framework** | 4.8+ | Included in WS2022 |
 | **PowerShell** | 5.1+ | Included in WS2022 |
 
@@ -312,7 +312,7 @@ Contact WALLIX support or download from customer portal:
 
 ```
 https://pam.wallix.one/downloads/rds/
-Filename: wallix-rds-12.1.x-win64.msi
+Filename: wallix-rds-12.3.2-win64.msi
 ```
 
 #### Step 2: Prerequisites Check
@@ -343,10 +343,10 @@ Set-NetFirewallRule -DisplayName "Remote Desktop*" -Enabled False
 
 ```powershell
 # Silent installation
-msiexec /i wallix-rds-12.1.x-win64.msi /qn /L*v wallix-rds-install.log
+msiexec /i wallix-rds-12.3.2-win64.msi /qn /L*v wallix-rds-install.log
 
 # Interactive installation (recommended for first-time setup)
-.\wallix-rds-12.1.x-win64.msi
+.\wallix-rds-12.3.2-win64.msi
 ```
 
 **Installation Wizard Options**:
@@ -367,7 +367,7 @@ Get-Service -Name "WALLIXRDSService"
 
 # Verify installed version
 Get-ItemProperty HKLM:\Software\WALLIX\RDS | Select-Object Version
-# Expected: 12.1.x
+# Expected: 12.3.2
 ```
 
 #### Step 3: Configure Connection to Bastion

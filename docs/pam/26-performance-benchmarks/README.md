@@ -142,7 +142,7 @@
   +------------------------------------------------------------------------+
   | Component          | Version                                           |
   +--------------------+---------------------------------------------------+
-  | WALLIX Bastion     | 12.1.x                                            |
+  | WALLIX Bastion     | 12.3.2                                            |
   | Operating System   | Debian 12 (Bookworm)                              |
   | PostgreSQL         | 16.x with optimized settings                      |
   | Kernel             | 6.1.x with performance tuning                     |

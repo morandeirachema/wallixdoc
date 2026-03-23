@@ -11,7 +11,7 @@
 | **Purpose** | Comprehensive network architecture reference |
 | **Scope** | 5 Bastion sites + 2 Access Managers + FortiAuthenticator |
 | **Network Type** | MPLS (private network) |
-| **Version** | WALLIX Bastion 12.1.x |
+| **Version** | WALLIX Bastion 12.3.2 |
 | **Last Updated** | February 2026 |
 
 ---
@@ -197,10 +197,10 @@
 |  +------v--------------+                         +----------v------------+    |
 |  | WALLIX Bastion-1    |    HA Cluster Sync      | WALLIX Bastion-2      |    |
 |  | 10.10.1.11          |<----------------------->| 10.10.1.12            |    |
-|  |                     |  MariaDB: 3306/TCP      |                       |    |
-|  | +-----------------+ |  Corosync: 5404-6/UDP   | +-----------------+   |    |
-|  | | Session Manager | |  Pacemaker: 2224/TCP    | | Session Manager |   |    |
-|  | | - SSH Proxy     | |  PCSD: 3121/TCP         | | - SSH Proxy     |   |    |
+|  |                     |  SSH Tunnel: 2242/TCP   |                       |    |
+|  | +-----------------+ |  MariaDB: 3306-7/TCP    | +-----------------+   |    |
+|  | | Session Manager | |  (via autossh)          | | Session Manager |   |    |
+|  | | - SSH Proxy     | |                         | | - SSH Proxy     |   |    |
 |  | | - RDP Proxy     | |                         | | - RDP Proxy     |   |    |
 |  | | - VNC Proxy     | |                         | | - VNC Proxy     |   |    |
 |  | +-----------------+ |                         | +-----------------+   |    |
@@ -214,13 +214,13 @@
 |  |                     |                         |                       |    |
 |  | +-----------------+ |                         | +-----------------+   |    |
 |  | | MariaDB 10.11   |<+----------------------->| | MariaDB 10.11    |   |    |
-|  | | (Primary/Sync)  | | Galera Replication OR   | | (Primary/Sync)  |   |    |
-|  | |                 | | Async Replication       | | (Replica)       |   |    |
+|  | | (Primary/Sync)  | | bastion-replication     | | (Primary/Sync)  |   |    |
+|  | |                 | | (SSH tunnel/autossh)    | | (Replica)       |   |    |
 |  | +-----------------+ |                         | +-----------------+   |    |
 |  |                     |                         |                       |    |
 |  | +-----------------+ |                         | +-----------------+   |    |
-|  | | Pacemaker/      | |                         | | Pacemaker/      |   |    |
-|  | | Corosync        | |                         | | Corosync        |   |    |
+|  | | bastion-        | |                         | | bastion-        |   |    |
+|  | | replication     | |                         | | replication     |   |    |
 |  | +-----------------+ |                         | +-----------------+   |    |
 |  +---------------------+                         +-----------------------+    |
 |         |                                                   |                 |
@@ -582,13 +582,12 @@
 |                                                                               |
 |  Source              | Destination        | Port     | Protocol | Purpose     |
 |  --------------------+--------------------+----------+----------+----------   |
+|  Bastion-1 (X.11)    | Bastion-2 (X.12)   | 2242     | TCP      | SSH Tunnel  |
+|  Bastion-2 (X.12)    | Bastion-1 (X.11)   | 2242     | TCP      | SSH Tunnel  |
 |  Bastion-1 (X.11)    | Bastion-2 (X.12)   | 3306     | TCP      | MariaDB     |
 |  Bastion-2 (X.12)    | Bastion-1 (X.11)   | 3306     | TCP      | MariaDB     |
-|  Bastion-1 (X.11)    | Bastion-2 (X.12)   | 2224     | TCP      | PCSD        |
-|  Bastion-1 (X.11)    | Bastion-2 (X.12)   | 3121     | TCP      | Pacemaker   |
-|  Bastion-1 (X.11)    | Bastion-2 (X.12)   | 5404     | UDP      | Corosync    |
-|  Bastion-1 (X.11)    | Bastion-2 (X.12)   | 5405     | UDP      | Corosync    |
-|  Bastion-1 (X.11)    | Bastion-2 (X.12)   | 5406     | UDP      | Corosync    |
+|  Bastion-1 (X.11)    | Bastion-2 (X.12)   | 3307     | TCP      | MariaDB Src |
+|  Bastion-2 (X.12)    | Bastion-1 (X.11)   | 3307     | TCP      | MariaDB Src |
 |                                                                               |
 |  SECURITY CRITICAL:                                                           |
 |  ==================                                                           |
@@ -599,12 +598,9 @@
 |                                                                               |
 |  Port Details:                                                                |
 |  =============                                                                |
-|  - 3306: MariaDB replication (Galera or Async)                                |
-|  - 2224: PCSD (Pacemaker/Corosync configuration)                              |
-|  - 3121: Pacemaker cluster communication                                      |
-|  - 5404: Corosync multicast (cluster heartbeat)                               |
-|  - 5405: Corosync unicast (cluster messaging)                                 |
-|  - 5406: Corosync additional channel (optional)                               |
+|  - 2242: SSH tunnel for DB replication (managed by autossh)                    |
+|  - 3306: MariaDB replication (inbound, via SSH tunnel)                        |
+|  - 3307: MariaDB replication source port (outbound)                           |
 |                                                                               |
 +===============================================================================+
 ```
@@ -630,9 +626,7 @@
 |  --------------------+--------------------+-------+----------+-------------   |
 |  AM1 (100.1.10)      | AM2 (100.2.10)     | 443   | TCP/HTTPS| Config sync    |
 |  AM1 (100.1.10)      | AM2 (100.2.10)     | 3306  | TCP      | DB replication |
-|  AM1 (100.1.10)      | AM2 (100.2.10)     | 5404  | UDP      | Corosync       |
-|  AM1 (100.1.10)      | AM2 (100.2.10)     | 5405  | UDP      | Corosync       |
-|  AM1 (100.1.10)      | AM2 (100.2.10)     | 5406  | UDP      | Corosync       |
+|  AM1 (100.1.10)      | AM2 (100.2.10)     | 443   | TCP      | HTTPS Sync     |
 |                                                                               |
 +===============================================================================+
 ```
@@ -772,8 +766,7 @@
 |  636   | TCP/LDAPS   | Bastion → AD                 | Secure LDAP             |
 |  1812  | UDP/RADIUS  | Bastion → FortiAuth          | RADIUS auth             |
 |  1813  | UDP/RADIUS  | Bastion → FortiAuth          | RADIUS accounting       |
-|  2224  | TCP         | Bastion-1 ↔ Bastion-2        | PCSD (Pacemaker)        |
-|  3121  | TCP         | Bastion-1 ↔ Bastion-2        | Pacemaker cluster       |
+|  2242  | TCP/SSH     | Bastion-1 ↔ Bastion-2        | SSH tunnel (autossh)    |
 |  3268  | TCP/GC      | Bastion → AD                 | Global Catalog          |
 |  3269  | TCP/GC-SSL  | Bastion → AD                 | GC Secure               |
 |  3306  | TCP/MariaDB | Bastion-1 ↔ Bastion-2        | DB replication          |
@@ -782,9 +775,7 @@
 |  3389  | TCP/RDP     | Bastion → Windows Targets    | RDP target access       |
 |  3389  | TCP/RDP     | Bastion → RDS                | RDS jump host           |
 |  3389  | TCP/RDP     | RDS → OT Targets             | OT RemoteApp            |
-|  5404  | UDP/Corosync| Bastion-1 ↔ Bastion-2        | Cluster heartbeat       |
-|  5405  | UDP/Corosync| Bastion-1 ↔ Bastion-2        | Cluster messaging       |
-|  5406  | UDP/Corosync| Bastion-1 ↔ Bastion-2        | Cluster additional      |
+|  3307  | TCP/MariaDB | Bastion-1 ↔ Bastion-2        | Replication source      |
 |  5985  | TCP/WinRM   | Bastion → Windows Targets    | Password rotation       | 
 |  5986  | TCP/WinRM   | Bastion → Windows Targets    | Password rotation TLS   |
 |  6514  | TCP/TLS     | Bastion → SIEM               | Secure syslog           |
@@ -830,7 +821,7 @@
 |  Bastion-1 HA:      192.168.1.11                                              |
 |  Bastion-2 HA:      192.168.1.12                                              |
 |  Subnet:            192.168.1.0/24 (254 usable IPs)                           |
-|  Allowed Traffic:   MariaDB(3306), Pacemaker(2224,3121), Corosync(5404-6)     |
+|  Allowed Traffic:   SSH Tunnel(2242), MariaDB(3306/3307)                      |
 |  Security:          NO routing to other VLANs (physically isolated)           |
 |                                                                               |
 |  VLAN 112 (Management) - Out-of-Band Access:                                  |
@@ -1045,7 +1036,7 @@
 
 - WALLIX Bastion Network Requirements: https://pam.wallix.one/documentation
 - HAProxy Configuration Guide: https://www.haproxy.org/
-- Pacemaker Cluster Architecture: https://clusterlabs.org/pacemaker/
+- WALLIX Bastion HA Database Replication: See deployment guide section 5
 
 ---
 

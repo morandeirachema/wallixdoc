@@ -171,7 +171,7 @@ This document provides curated links to official WALLIX documentation, tools, an
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| WALLIX Bastion | 12.1.x | Current release |
+| WALLIX Bastion | 12.3.2 | Current release |
 | Operating System | Debian 12 (Bookworm) | Required for new installs |
 | Database | MariaDB 10.5+ | Required |
 | Terraform Provider | 0.14.x | API v3.12 support |

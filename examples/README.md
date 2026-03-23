@@ -183,7 +183,7 @@ wabadmin api-key create --user admin --name "automation-key"
 
 | Provider Version | API Version | Terraform | WALLIX Bastion Version |
 |------------------|-------------|-----------|----------------|
-| 0.14.x | v3.12 | >= 1.0 | 12.1.x |
+| 0.14.x | v3.12 | >= 1.0 | 12.3.2 |
 | 0.13.x | v3.6 | >= 0.14 | 12.0.x |
 
 ---
@@ -247,5 +247,5 @@ done
 </p>
 
 <p align="center">
-  <sub>WALLIX Bastion Examples • Version 2.0 • February 2026</sub>
+  <sub>WALLIX Bastion Examples • Version 2.0 • March 2026</sub>
 </p>

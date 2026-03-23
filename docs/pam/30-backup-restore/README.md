@@ -1851,8 +1851,9 @@ sudo /opt/wab/scripts/pitr-restore.sh \
 | Backup Version | Restore Version | Method | Notes |
 |----------------|-----------------|--------|-------|
 | 12.0.x | 12.0.x | Direct | Full compatibility |
-| 12.0.x | 12.1.x | Migration | Run upgrade after restore |
-| 12.1.x | 12.1.x | Direct | Full compatibility |
+| 12.0.x | 12.3.2 | Migration | Run upgrade after restore |
+| 12.1.x | 12.3.2 | Migration | Run upgrade after restore |
+| 12.3.2 | 12.3.2 | Direct | Full compatibility |
 | 11.x | 12.x | Not supported | Upgrade to 12.0 first |
 
 ### Cross-Version Restore Procedure

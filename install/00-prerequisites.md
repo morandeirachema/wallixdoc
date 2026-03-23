@@ -271,32 +271,39 @@ Adjust according to your network design.
 
 ### Firewall Rules: Access Manager ↔ Bastion
 
-| Source | Destination | Port | Protocol | Purpose | Mandatory |
-|--------|-------------|------|----------|---------|-----------|
-| Access Manager | Bastion (HAProxy VIP) | 443 | TCP/HTTPS | API, session brokering | Yes |
-| Bastion | Access Manager | 443 | TCP/HTTPS | SSO callbacks, health checks | Yes |
-| Bastion | FortiAuthenticator | 1812 | UDP | RADIUS authentication | Yes |
-| Bastion | FortiAuthenticator | 1813 | UDP | RADIUS accounting | Yes |
-| Bastion | Active Directory | 389 | TCP | LDAP authentication | Yes |
-| Bastion | Active Directory | 636 | TCP | LDAPS (secure LDAP) | Recommended |
-| Bastion | Active Directory | 88 | TCP/UDP | Kerberos authentication | Optional |
-| Bastion | Active Directory | 464 | TCP/UDP | Kerberos password change | Optional |
-| Bastion | NTP Server | 123 | UDP | Time synchronization | Yes |
-| Bastion | DNS Server | 53 | UDP/TCP | Name resolution | Yes |
-| Bastion | SIEM/Syslog | 514 | UDP | Syslog (unencrypted) | Optional |
-| Bastion | SIEM/Syslog | 6514 | TCP | Syslog over TLS | Recommended |
+| Source         | Destination           | Port | Protocol  | Purpose                      | Mandatory |
+|----------------|-----------------------|------|-----------|------------------------------|-----------|
+| Access Manager | Bastion (HAProxy VIP) | 443  | TCP/HTTPS | API, session brokering       | Yes |
+| Bastion        | Access Manager        | 443  | TCP/HTTPS | SSO callbacks, health checks | Yes |
+| Bastion        | FortiAuthenticator    | 1812 | TCP/UDP   | RADIUS authentication        | Yes |
+| Bastion        | FortiAuthenticator    | 1813 | TCP/UDP   | RADIUS accounting            | Yes |
+| Bastion        | Active Directory      | 389  | TCP       | LDAP authentication          | Yes |
+| Bastion        | Active Directory      | 636  | TCP       | LDAPS (secure LDAP)          | Recommended |
+| Bastion        | Active Directory      | 88   | TCP/UDP   | Kerberos authentication      | Optional |
+| Bastion        | Active Directory      | 464  | TCP/UDP   | Kerberos password change     | Optional |
+| Bastion        | NTP Server            | 123  | UDP       | Time synchronization         | Yes |
+| Bastion        | DNS Server            | 53   | UDP/TCP   | Name resolution              | Yes |
+| Admin Network  | Bastion               | 2242 | TCP       | CLI administration (SSH)     | Yes |
+| Bastion        | SMTP Server           | 25   | TCP       | SMTP notifications           | Yes |
+| Bastion        | SMTP Server           | 465  | TCP       | SMTPS notifications          | Optional |
+| Bastion        | SMTP Server           | 587  | TCP       | SMTP+STARTTLS notifications  | Recommended |
+| Bastion        | TACACS+ Server        | 49   | TCP/UDP   | TACACS+ authentication       | Optional |
+| Bastion        | SIEM/Syslog           | 514  | UDP       | Syslog (unencrypted)         | Optional |
+| Bastion        | SIEM/Syslog           | 6514 | TCP       | Syslog over TLS              | Recommended |
 
 ---
 
 ### Firewall Rules: Bastion ↔ Bastion (HA Cluster, Within Site)
 
-| Source | Destination | Port | Protocol | Purpose | Mandatory |
-|--------|-------------|------|----------|---------|-----------|
-| Bastion-1 | Bastion-2 | 3306 | TCP | MariaDB replication | Yes |
-| Bastion-2 | Bastion-1 | 3306 | TCP | MariaDB replication | Yes |
-| Bastion-1 | Bastion-2 | 5404-5406 | UDP | Corosync cluster heartbeat | Yes (if using Pacemaker/Corosync) |
-| Bastion-1 | Bastion-2 | 2224 | TCP | Pacemaker cluster | Yes (if using Pacemaker) |
-| Bastion-1 | Bastion-2 | 443 | TCP/HTTPS | Configuration sync | Yes |
+| Source    | Destination | Port      | Protocol  | Purpose                              | Mandatory |
+|-----------|-------------|-----------|-----------|--------------------------------------|-----------|
+| Bastion-1 | Bastion-2   | 2242      | TCP       | SSH tunnel for DB replication (autossh) | Yes |
+| Bastion-2 | Bastion-1   | 2242      | TCP       | SSH tunnel for DB replication (autossh) | Yes |
+| Bastion-1 | Bastion-2   | 3306      | TCP       | MariaDB replication (via SSH tunnel)   | Yes |
+| Bastion-2 | Bastion-1   | 3306      | TCP       | MariaDB replication (via SSH tunnel)   | Yes |
+| Bastion-1 | Bastion-2   | 3307      | TCP       | MariaDB replication source port        | Yes |
+| Bastion-2 | Bastion-1   | 3307      | TCP       | MariaDB replication source port        | Yes |
+| Bastion-1 | Bastion-2   | 443       | TCP/HTTPS | Configuration sync                     | Yes |
 
 **IMPORTANT**: There is NO direct Bastion-to-Bastion communication BETWEEN sites (Site 1 ↔ Site 2, etc.). All inter-site coordination happens via Access Managers.
 
@@ -304,28 +311,28 @@ Adjust according to your network design.
 
 ### Firewall Rules: HAProxy ↔ Bastion (Within Site)
 
-| Source | Destination | Port | Protocol | Purpose | Mandatory |
-|--------|-------------|------|----------|---------|-----------|
-| HAProxy | Bastion-1 | 443 | TCP/HTTPS | Load balancing to Bastion | Yes |
-| HAProxy | Bastion-2 | 443 | TCP/HTTPS | Load balancing to Bastion | Yes |
-| HAProxy | Bastion-1 | 22 | TCP | SSH proxy | Yes |
-| HAProxy | Bastion-2 | 22 | TCP | SSH proxy | Yes |
-| HAProxy | Bastion-1 | 3389 | TCP | RDP proxy | Yes |
-| HAProxy | Bastion-2 | 3389 | TCP | RDP proxy | Yes |
+| Source  | Destination | Port | Protocol  | Purpose                   | Mandatory |
+|---------|-------------|------|-----------|---------------------------|-----------|
+| HAProxy | Bastion-1   | 443  | TCP/HTTPS | Load balancing to Bastion | Yes |
+| HAProxy | Bastion-2   | 443  | TCP/HTTPS | Load balancing to Bastion | Yes |
+| HAProxy | Bastion-1   | 22   | TCP       | SSH proxy                 | Yes |
+| HAProxy | Bastion-2   | 22   | TCP       | SSH proxy                 | Yes |
+| HAProxy | Bastion-1   | 3389 | TCP       | RDP proxy                 | Yes |
+| HAProxy | Bastion-2   | 3389 | TCP       | RDP proxy                 | Yes |
 
 ---
 
 ### Firewall Rules: Bastion → Target Systems
 
-| Source | Destination | Port | Protocol | Purpose | Mandatory |
-|--------|-------------|------|----------|---------|-----------|
-| Bastion | Windows Servers | 3389 | TCP | RDP access | Yes |
-| Bastion | Windows Servers | 5985-5986 | TCP | WinRM (HTTP/HTTPS) | Optional |
-| Bastion | Linux Servers (RHEL 10/9) | 22 | TCP | SSH access | Yes |
-| Bastion | Database Servers | 1521 | TCP | Oracle DB | As needed |
-| Bastion | Database Servers | 3306 | TCP | MySQL/MariaDB | As needed |
-| Bastion | Database Servers | 5432 | TCP | PostgreSQL | As needed |
-| Bastion | Database Servers | 1433 | TCP | Microsoft SQL Server | As needed |
+| Source  | Destination               | Port       | Protocol | Purpose              | Mandatory |
+|---------|---------------------------|------------|----------|----------------------|-----------|
+| Bastion | Windows Servers           | 3389       | TCP      | RDP access           | Yes |
+| Bastion | Windows Servers           | 5985-5986  | TCP      | WinRM (HTTP/HTTPS)   | Optional |
+| Bastion | Linux Servers (RHEL 10/9) | 22         | TCP      | SSH access           | Yes |
+| Bastion | Database Servers          | 1521       | TCP      | Oracle DB            | As needed |
+| Bastion | Database Servers          | 3306       | TCP      | MySQL/MariaDB        | As needed |
+| Bastion | Database Servers          | 5432       | TCP      | PostgreSQL           | As needed |
+| Bastion | Database Servers          | 1433       | TCP      | Microsoft SQL Server | As needed |
 
 ---
 
@@ -371,7 +378,7 @@ Firewall Rules:
 [ ] Bastion → NTP, DNS allowed
 [ ] Bastion → Target systems (SSH 22, RDP 3389, etc.) allowed
 [ ] HAProxy → Bastion nodes (HTTPS 443, SSH 22, RDP 3389) allowed
-[ ] Bastion-1 ↔ Bastion-2 (MariaDB 3306, Corosync 5404-5406) allowed (per site)
+[ ] Bastion-1 ↔ Bastion-2 (SSH 2242, MariaDB 3306/3307) allowed (per site)
 [ ] Bastion → SIEM/Syslog (514/6514) allowed (optional)
 
 IP Addressing:
@@ -394,20 +401,20 @@ VLANs and Subnets:
 
 ### Operating Systems
 
-| Component | Operating System | Version | Notes |
-|-----------|------------------|---------|-------|
-| **WALLIX Bastion** | Pre-installed on appliance | WALLIX Bastion 12.1.x | Hardened Linux (Debian-based) |
-| **HAProxy** | Debian 12 (Bookworm) or RHEL 9 | Latest stable | 64-bit |
-| **WALLIX RDS** | Windows Server 2022 | Standard or Datacenter | 64-bit |
+| Component          | Operating System               | Version                | Notes |
+|--------------------|--------------------------------|------------------------|-------|
+| **WALLIX Bastion** | Pre-installed on appliance     | WALLIX Bastion 12.3.2  | Hardened Linux (Debian-based) |
+| **HAProxy**        | Debian 12 (Bookworm) or RHEL 9 | Latest stable          | 64-bit |
+| **WALLIX RDS**     | Windows Server 2022            | Standard or Datacenter | 64-bit |
 
 ### Database Requirements
 
 WALLIX Bastion includes an embedded MariaDB database.
 
-| Component | Version | Notes |
-|-----------|---------|-------|
-| **MariaDB** | 10.11+ | Included with WALLIX Bastion 12.x |
-| **HA Replication** | MariaDB Galera or Streaming | For Active-Active or Active-Passive |
+| Component          | Version                     | Notes |
+|--------------------|-----------------------------|-------|
+| **MariaDB**        | 10.11+                      | Included with WALLIX Bastion 12.x |
+| **HA Replication** | `bastion-replication` (built-in) | Master/Master or Master/Slave mode |
 
 **Note**: For WALLIX Bastion 12.x, MariaDB 10.6+ is REQUIRED. MariaDB 10.11+ is recommended for optimal performance.
 
@@ -415,24 +422,24 @@ WALLIX Bastion includes an embedded MariaDB database.
 
 ### External Dependencies
 
-| Service | Purpose | Version/Notes |
-|---------|---------|---------------|
-| **Active Directory** | User authentication and authorization | AD DS 2012 R2+ |
-| **FortiAuthenticator** | MFA (RADIUS) | Version 6.4+ |
-| **NTP Server** | Time synchronization | NTP or Chrony |
-| **DNS Server** | Name resolution | Internal DNS recommended |
-| **SIEM/Syslog** | Centralized logging | Splunk, QRadar, ELK, etc. (optional) |
+| Service                | Purpose                               | Version/Notes |
+|------------------------|---------------------------------------|---------------|
+| **Active Directory**   | User authentication and authorization | AD DS 2012 R2+ |
+| **FortiAuthenticator** | MFA (RADIUS)                          | Version 6.4+ |
+| **NTP Server**         | Time synchronization                  | NTP or Chrony |
+| **DNS Server**         | Name resolution                       | Internal DNS recommended |
+| **SIEM/Syslog**        | Centralized logging                   | Splunk, QRadar, ELK, etc. (optional) |
 
 ---
 
 ### Browser Requirements (End Users)
 
-| Browser | Minimum Version | Notes |
-|---------|----------------|-------|
-| Google Chrome | 90+ | Recommended |
-| Mozilla Firefox | 90+ | Supported |
-| Microsoft Edge | 90+ | Chromium-based |
-| Safari | 14+ | macOS/iOS |
+| Browser         | Minimum Version | Notes |
+|-----------------|-----------------|-------|
+| Google Chrome   | 90+             | Recommended |
+| Mozilla Firefox | 90+             | Supported |
+| Microsoft Edge  | 90+             | Chromium-based |
+| Safari          | 14+             | macOS/iOS |
 
 **Requirements**:
 - JavaScript enabled
@@ -444,11 +451,11 @@ WALLIX Bastion includes an embedded MariaDB database.
 
 ### Client Software (Administrators)
 
-| Client | Purpose | Notes |
-|--------|---------|-------|
-| OpenSSH | SSH client | Linux/macOS/Windows 10+ |
-| PuTTY | SSH client | Windows |
-| mstsc.exe | RDP client | Windows built-in |
+| Client                   | Purpose    | Notes |
+|--------------------------|------------|-------|
+| OpenSSH                  | SSH client | Linux/macOS/Windows 10+ |
+| PuTTY                    | SSH client | Windows |
+| mstsc.exe                | RDP client | Windows built-in |
 | Microsoft Remote Desktop | RDP client | macOS/iOS/Android |
 
 ---
@@ -461,7 +468,7 @@ WALLIX Bastion includes an embedded MariaDB database.
 +===============================================================================+
 
 WALLIX Bastion Appliances:
-[ ] WALLIX Bastion 12.1.x pre-installed on hardware appliances
+[ ] WALLIX Bastion 12.3.2 pre-installed on hardware appliances
 [ ] License keys obtained from WALLIX (see Licensing section)
 [ ] MariaDB 10.11+ included in appliance image
 
@@ -488,20 +495,95 @@ External Services:
 
 ---
 
+### WALLIX Bastion Disk Space Requirements
+
+Per the official WALLIX Bastion 12.3.2 deployment guide:
+
+| Partition | Quota/Limit | Notes |
+|-----------|-------------|-------|
+| `/var/log` | 10 GB (9.8 GB usable + 200 MiB buffer) | System logs; enforced via btrfs quota |
+| `/home` | 4 GB (+ 200 MiB buffer) | User data; enforced via btrfs quota |
+| `/var/wab` | No fixed quota | Session recordings; size depends on usage |
+
+**Disk Space Monitoring Thresholds**:
+
+| Condition | Trigger | Action |
+|-----------|---------|--------|
+| Almost full | 90% usage on `/` or `/var/log` or `/var/wab` | Notification every 2 hours |
+| Full | < 100 MiB free on `/` or `/var/wab`, or < 100 MiB free quota on `/var/log` | SSH/RDP proxies shut down; notification every 15 minutes |
+| Recovery | 500 MiB available on affected partition | Proxies restored; notifications stop |
+
+> **Note**: If `/var/log` or `/home` exceeds quota during install/upgrade, the quota is not activated automatically. Use `btrfs quota enable` and `btrfs qgroup limit` to manually re-enable.
+
+---
+
+### HA Database Replication Prerequisites
+
+Before configuring WALLIX Bastion HA (Master/Master or Master/Slave):
+
+| Requirement | Reason |
+|-------------|--------|
+| All nodes on same subnet (max 1 router between) | Prevents latency and HA issues |
+| All nodes running the same WALLIX Bastion version | Prevents replication errors |
+| Encryption initialized on all nodes | Ensures secure replication |
+| All nodes synchronized via NTP to the same timezone | Prevents replication timestamp issues; cross-timezone replication not supported |
+| IPv4 addresses only (no FQDN/IPv6) | FQDN and IPv6 not supported in HA configuration |
+| Dedicated admin interface recommended per node | Separates admin traffic from user traffic |
+
+**HA Limitations**:
+- Audit tables are NOT replicated (each node maintains its own)
+- SMTP server must be configured on each node independently
+- API provisioning must not be simultaneous on both nodes (Master/Master)
+- VM cloning is not supported for creating HA nodes
+- Password changes and rotation schedules only on primary Master
+- In Master/Slave: no "change password at check-in"; approvals only on Master
+- In Master/Master: approvals are replicated between both nodes
+
+**Not replicated between nodes**: Audit, Recording Options, Configuration Options, Connection Messages, Audit Logs, Network, Time Service, SNMP, SMTP Server, Service Control, SIEM Integration, GPG fingerprint, device certificates.
+
+---
+
+### Compatibility Matrix (WALLIX Bastion 12.3.2)
+
+**RDP Target Servers**:
+- Windows 7/8/8.1/10/11 Pro and Enterprise
+- Windows Server 2003 / 2008 / 2008 R2 / 2012 / 2012 R2 / 2016 / 2019 / 2022 / 2025
+- xRDP
+
+**SSH Clients**: Cygwin, FileZilla, OpenSSH, PuTTY, WinSCP
+
+**SSH Servers**: Cisco IOS SSH Server, OpenSSH
+
+**RDP Clients**: FreeRDP (Linux), rdesktop (Linux), Remmina, Remote Desktop Connection / MSTSC (Windows)
+
+**VNC Servers**: macOS Screen Sharing, RealVNC (up to v6.11), TigerVNC, TightVNC, UltraVNC
+
+**REST API**: v3.8, v3.12
+
+**SAML Identity Providers**: AWS IAM Identity Center, GCP, inWebo, Microsoft Entra ID (ex Azure AD), Okta, PingIdentity, WALLIX IDaaS (ex Trustelem)
+
+**Supported ICAP Servers**: ClamAV+c-icap, Falcongaze Secure Tower, Forcepoint WebSense, GLIMPS Malware, McAfee Web Gateway, FortiSandbox (>=4.4.6), Trend Vision One ZTSA
+
+**Smart Cards**: Gemalto SafeNet IDPrime MD, Yubico YubiKey 5 NFC
+
+**Web Browsers**: Chrome (2 latest stable), Edge (2 latest stable), Firefox (2 latest + ESR), Safari (2 latest, default UI only)
+
+---
+
 ## Access Manager Prerequisites
 
 **IMPORTANT**: The 2 WALLIX Access Managers are managed by a separate team and are NOT part of this deployment. However, we need to coordinate with the Access Manager team for integration.
 
 ### Access Manager Information Needed
 
-| Information | Description | Responsibility |
-|-------------|-------------|----------------|
-| **Access Manager URLs** | HTTPS endpoints for both AM instances | AM team provides |
-| **Access Manager IPs** | IP addresses of AM1 and AM2 | AM team provides |
-| **HA Configuration** | Active-Passive details (which is primary) | AM team provides |
-| **API Endpoints** | REST API URLs for session brokering | AM team provides |
-| **API Credentials** | Service account for Bastion → AM communication | AM team creates |
-| **SSL Certificates** | CA certificates for HTTPS communication | AM team provides |
+| Information             | Description                                    | Responsibility |
+|-------------------------|------------------------------------------------|----------------|
+| **Access Manager URLs** | HTTPS endpoints for both AM instances          | AM team provides |
+| **Access Manager IPs**  | IP addresses of AM1 and AM2                    | AM team provides |
+| **HA Configuration**    | Active-Passive details (which is primary)      | AM team provides |
+| **API Endpoints**       | REST API URLs for session brokering            | AM team provides |
+| **API Credentials**     | Service account for Bastion → AM communication | AM team creates |
+| **SSL Certificates**    | CA certificates for HTTPS communication        | AM team provides |
 
 ---
 
@@ -509,12 +591,12 @@ External Services:
 
 The Access Managers provide the following services to the Bastion sites:
 
-| Service | Description | Integration Method |
-|---------|-------------|--------------------|
-| **SSO Integration** | Single Sign-On for end users | SAML 2.0 or OIDC |
-| **MFA** | Multi-factor authentication via FortiAuthenticator | RADIUS proxy through AM |
-| **Session Brokering** | Routes user sessions to appropriate Bastion site | REST API calls |
-| **License Integration** | Centralized license pool management (optional) | AM API |
+| Service                 | Description                                        | Integration Method |
+|-------------------------|----------------------------------------------------|--------------------|
+| **SSO Integration**     | Single Sign-On for end users                       | SAML 2.0 or OIDC |
+| **MFA**                 | Multi-factor authentication via FortiAuthenticator | RADIUS proxy through AM |
+| **Session Brokering**   | Routes user sessions to appropriate Bastion site   | REST API calls |
+| **License Integration** | Centralized license pool management (optional)     | AM API |
 
 ---
 
@@ -577,11 +659,11 @@ The licensing is split into two separate pools:
 
 #### Access Manager License Pool
 
-| Component | Quantity | Concurrent Sessions | Notes |
-|-----------|----------|---------------------|-------|
-| Access Manager 1 | 1 | Part of 500 session pool | Managed by AM team |
-| Access Manager 2 | 1 | Part of 500 session pool | Managed by AM team |
-| **Total AM Sessions** | - | **500 concurrent** | Shared between 2 AM instances |
+| Component             | Quantity | Concurrent Sessions      | Notes |
+|-----------------------|----------|--------------------------|-------|
+| Access Manager 1      | 1        | Part of 500 session pool | Managed by AM team |
+| Access Manager 2      | 1        | Part of 500 session pool | Managed by AM team |
+| **Total AM Sessions** | -        | **500 concurrent**       | Shared between 2 AM instances |
 
 **License Type**: Concurrent sessions (not named users)
 
@@ -591,14 +673,14 @@ The licensing is split into two separate pools:
 
 #### Bastion License Pool
 
-| Component | Quantity | Concurrent Sessions | Notes |
-|-----------|----------|---------------------|-------|
-| Site 1 Bastion Cluster | 2 appliances | Shared pool | Active-Active or Active-Passive |
-| Site 2 Bastion Cluster | 2 appliances | Shared pool | Active-Active or Active-Passive |
-| Site 3 Bastion Cluster | 2 appliances | Shared pool | Active-Active or Active-Passive |
-| Site 4 Bastion Cluster | 2 appliances | Shared pool | Active-Active or Active-Passive |
-| Site 5 Bastion Cluster | 2 appliances | Shared pool | Active-Active or Active-Passive |
-| **Total Bastion Sessions** | 10 appliances | **450 concurrent** | Shared across all 5 sites |
+| Component                  | Quantity      | Concurrent Sessions | Notes |
+|----------------------------|---------------|---------------------|-------|
+| Site 1 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
+| Site 2 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
+| Site 3 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
+| Site 4 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
+| Site 5 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
+| **Total Bastion Sessions** | 10 appliances | **450 concurrent**  | Shared across all 5 sites |
 
 **License Type**: Concurrent sessions (not named users)
 
@@ -610,20 +692,20 @@ The licensing is split into two separate pools:
 
 ### Total Licensed Capacity
 
-| Pool | Concurrent Sessions | Notes |
-|------|---------------------|-------|
-| Access Manager | 500 | Managed by AM team |
-| Bastion | 450 | Managed by Bastion team |
-| **Total** | **950** | Combined capacity |
+| Pool           | Concurrent Sessions | Notes |
+|----------------|---------------------|-------|
+| Access Manager | 500                 | Managed by AM team |
+| Bastion        | 450                 | Managed by Bastion team |
+| **Total**      | **950**             | Combined capacity |
 
 ---
 
 ### License Activation
 
-| Component | Activation Method | Notes |
-|-----------|-------------------|-------|
-| **Access Manager** | License server or online activation | Managed by AM team |
-| **Bastion** | License file uploaded via Web UI or CLI | Requires license key from WALLIX |
+| Component          | Activation Method                       | Notes |
+|--------------------|-----------------------------------------|-------|
+| **Access Manager** | License server or online activation     | Managed by AM team |
+| **Bastion**        | License file uploaded via Web UI or CLI | Requires license key from WALLIX |
 
 **License File Format**: `.lic` file provided by WALLIX
 
@@ -796,24 +878,24 @@ Audit and Compliance:
 
 ### DNS Requirements
 
-| Record Type | Hostname | IP Address | Purpose |
-|-------------|----------|------------|---------|
-| A | bastion-site1.company.com | 10.10.1.100 | HAProxy VIP (Site 1) |
-| A | bastion-site2.company.com | 10.10.2.100 | HAProxy VIP (Site 2) |
-| A | bastion-site3.company.com | 10.10.3.100 | HAProxy VIP (Site 3) |
-| A | bastion-site4.company.com | 10.10.4.100 | HAProxy VIP (Site 4) |
-| A | bastion-site5.company.com | 10.10.5.100 | HAProxy VIP (Site 5) |
-| CNAME | bastion.company.com | bastion-site1.company.com | User-facing alias (optional) |
+| Record Type | Hostname                  | IP Address                | Purpose |
+|-------------|---------------------------|---------------------------|---------|
+| A           | bastion-site1.company.com | 10.10.1.100               | HAProxy VIP (Site 1) |
+| A           | bastion-site2.company.com | 10.10.2.100               | HAProxy VIP (Site 2) |
+| A           | bastion-site3.company.com | 10.10.3.100               | HAProxy VIP (Site 3) |
+| A           | bastion-site4.company.com | 10.10.4.100               | HAProxy VIP (Site 4) |
+| A           | bastion-site5.company.com | 10.10.5.100               | HAProxy VIP (Site 5) |
+| CNAME       | bastion.company.com       | bastion-site1.company.com | User-facing alias (optional) |
 
 **Additional DNS Records (Internal)**:
 
-| Record Type | Hostname | IP Address | Purpose |
-|-------------|----------|------------|---------|
-| A | bastion1-node1.company.com | 10.10.1.11 | Site 1 Bastion Node 1 |
-| A | bastion1-node2.company.com | 10.10.1.12 | Site 1 Bastion Node 2 |
-| A | haproxy1-1.company.com | 10.10.1.5 | Site 1 HAProxy-1 |
-| A | haproxy1-2.company.com | 10.10.1.6 | Site 1 HAProxy-2 |
-| ... | (repeat for Sites 2-5) | ... | ... |
+| Record Type | Hostname                   | IP Address | Purpose |
+|-------------|----------------------------|------------|---------|
+| A           | bastion1-node1.company.com | 10.10.1.11 | Site 1 Bastion Node 1 |
+| A           | bastion1-node2.company.com | 10.10.1.12 | Site 1 Bastion Node 2 |
+| A           | haproxy1-1.company.com     | 10.10.1.5  | Site 1 HAProxy-1 |
+| A           | haproxy1-2.company.com     | 10.10.1.6  | Site 1 HAProxy-2 |
+| ...         | (repeat for Sites 2-5)     | ...        | ... |
 
 **DNS Resolution Requirements**:
 - Forward DNS: All Bastion and HAProxy hostnames resolvable
@@ -825,12 +907,12 @@ Audit and Compliance:
 
 ### NTP Requirements
 
-| Requirement | Description | Notes |
-|-------------|-------------|-------|
-| **NTP Servers** | Minimum 2 NTP servers | Redundancy |
-| **Time Synchronization** | All Bastion nodes synchronized within 1 second | Critical for Kerberos and audit logs |
-| **Time Zone** | UTC or consistent time zone across all sites | Recommended: UTC |
-| **NTP Protocol** | NTPv4 or Chrony | Chrony recommended for better accuracy |
+| Requirement               | Description                                    | Notes |
+|---------------------------|------------------------------------------------|-------|
+| **NTP Servers**           | Minimum 2 NTP servers                          | Redundancy |
+| **Time Synchronization**  | All Bastion nodes synchronized within 1 second | Critical for Kerberos and audit logs |
+| **Time Zone**             | UTC or consistent time zone across all sites   | Recommended: UTC |
+| **NTP Protocol**          | NTPv4 or Chrony                                | Chrony recommended for better accuracy |
 
 **NTP Server Candidates**:
 - Internal NTP server (Active Directory DCs)
@@ -883,24 +965,24 @@ Time Synchronization Testing:
 
 ### Backup Targets
 
-| Component | Backup Frequency | Retention Period | Estimated Size |
-|-----------|------------------|------------------|----------------|
-| **WALLIX Configuration** | Daily | 30 days | 100 MB per site |
-| **WALLIX Database** | Daily | 30 days | 1-10 GB per site (depends on usage) |
-| **Session Recordings** | Continuous | 90 days (configurable) | 2 TB per site (depends on session volume) |
-| **HAProxy Configuration** | After changes | 30 days | 10 MB per site |
-| **Audit Logs** | Daily | 365 days | 10-50 GB per site per year |
+| Component                   | Backup Frequency | Retention Period       | Estimated Size |
+|-----------------------------|------------------|------------------------|----------------|
+| **WALLIX Configuration**    | Daily            | 30 days                | 100 MB per site |
+| **WALLIX Database**         | Daily            | 30 days                | 1-10 GB per site (depends on usage) |
+| **Session Recordings**      | Continuous       | 90 days (configurable) | 2 TB per site (depends on session volume) |
+| **HAProxy Configuration**   | After changes    | 30 days                | 10 MB per site |
+| **Audit Logs**              | Daily            | 365 days               | 10-50 GB per site per year |
 
 ---
 
 ### Backup Storage Options
 
-| Option | Description | Pros | Cons |
-|--------|-------------|------|------|
-| **NFS Share** | Network File System mount | Native Linux support, easy integration | Requires NFS server |
-| **CIFS/SMB Share** | Windows file share | Integrates with Windows environments | Requires Samba client |
-| **S3-compatible Storage** | Object storage (AWS S3, MinIO) | Scalable, off-site storage | Requires S3 API support |
-| **Dedicated Backup Appliance** | Veeam, Commvault, Veritas | Enterprise backup features | Additional licensing cost |
+| Option                         | Description                    | Pros                                   | Cons |
+|--------------------------------|--------------------------------|----------------------------------------|------|
+| **NFS Share**                  | Network File System mount      | Native Linux support, easy integration | Requires NFS server |
+| **CIFS/SMB Share**             | Windows file share             | Integrates with Windows environments   | Requires Samba client |
+| **S3-compatible Storage**      | Object storage (AWS S3, MinIO) | Scalable, off-site storage             | Requires S3 API support |
+| **Dedicated Backup Appliance** | Veeam, Commvault, Veritas      | Enterprise backup features             | Additional licensing cost |
 
 ---
 
@@ -908,13 +990,13 @@ Time Synchronization Testing:
 
 **Per-Site Backup Storage** (example for 90-day retention):
 
-| Data Type | Size | Notes |
-|-----------|------|-------|
-| Configuration backups | 3 GB | 100 MB × 30 days |
-| Database backups | 300 GB | 10 GB × 30 days |
-| Session recordings | 2 TB | 90 days retention |
-| Audit logs | 5 GB | 1 year retention |
-| **Total per site** | **~2.3 TB** | Approximate |
+| Data Type             | Size        | Notes |
+|-----------------------|-------------|-------|
+| Configuration backups | 3 GB        | 100 MB × 30 days |
+| Database backups      | 300 GB      | 10 GB × 30 days |
+| Session recordings    | 2 TB        | 90 days retention |
+| Audit logs            | 5 GB        | 1 year retention |
+| **Total per site**    | **~2.3 TB** | Approximate |
 
 **Total for 5 Sites**: ~11.5 TB (with 90-day recording retention)
 
@@ -924,12 +1006,12 @@ Time Synchronization Testing:
 
 ### Backup Infrastructure
 
-| Component | Specification | Notes |
-|-----------|---------------|-------|
-| **Backup Server** | Dedicated NAS or backup appliance | Separate from production |
-| **Storage Capacity** | 15-20 TB | For 5 sites with 90-day retention |
-| **Network Connectivity** | 1 GbE minimum | 10 GbE recommended for faster backups |
-| **Redundancy** | RAID 6 or RAID 10 | Protect against disk failures |
+| Component                | Specification                     | Notes |
+|--------------------------|-----------------------------------|-------|
+| **Backup Server**        | Dedicated NAS or backup appliance | Separate from production |
+| **Storage Capacity**     | 15-20 TB                          | For 5 sites with 90-day retention |
+| **Network Connectivity** | 1 GbE minimum                     | 10 GbE recommended for faster backups |
+| **Redundancy**           | RAID 6 or RAID 10                 | Protect against disk failures |
 | **Off-Site Replication** | Replicate to secondary datacenter | Disaster recovery |
 
 ---
@@ -1000,7 +1082,7 @@ NETWORK (All Sites):
 [ ] Network connectivity tested between all components
 
 SOFTWARE (All Sites):
-[ ] WALLIX Bastion 12.1.x verified on appliances
+[ ] WALLIX Bastion 12.3.2 verified on appliances
 [ ] Debian 12 or RHEL 9 installed on HAProxy servers
 [ ] Windows Server 2022 installed on RDS servers
 [ ] Operating system updates applied
@@ -1065,7 +1147,7 @@ This prerequisites document outlines all requirements for deploying 5 WALLIX Bas
 
 - **Hardware**: 10 HAProxy servers, 10 Bastion appliances, 5 RDS servers
 - **Network**: MPLS connectivity (100+ Mbps per site), firewall rules, IP addressing
-- **Software**: WALLIX Bastion 12.1.x, Debian 12/RHEL 9 for HAProxy, Windows Server 2022 for RDS
+- **Software**: WALLIX Bastion 12.3.2, Debian 12/RHEL 9 for HAProxy, Windows Server 2022 for RDS
 - **Access Manager**: SSO, MFA, session brokering (managed by separate team)
 - **Licensing**: 500 AM sessions + 450 Bastion sessions (split pools)
 - **Security**: SSL certificates, service accounts, encryption keys, firewall rules
@@ -1083,22 +1165,22 @@ This prerequisites document outlines all requirements for deploying 5 WALLIX Bas
 
 ## Related Documentation
 
-| Document | Description |
-|----------|-------------|
-| [README.md](README.md) | Main installation guide overview |
-| [01-network-design.md](01-network-design.md) | MPLS topology, connectivity, detailed port matrix |
-| [02-ha-architecture.md](02-ha-architecture.md) | Active-Active vs Active-Passive comparison |
+| Document                                                             | Description |
+|----------------------------------------------------------------------|-------------|
+| [README.md](README.md)                                               | Main installation guide overview |
+| [01-network-design.md](01-network-design.md)                         | MPLS topology, connectivity, detailed port matrix |
+| [02-ha-architecture.md](02-ha-architecture.md)                       | Active-Active vs Active-Passive comparison |
 | [03-access-manager-integration.md](03-access-manager-integration.md) | SSO, MFA, brokering, licensing integration |
-| [04-site-deployment.md](04-site-deployment.md) | Per-site deployment template |
-| [HOWTO.md](HOWTO.md) | Step-by-step installation walkthrough |
+| [04-site-deployment.md](04-site-deployment.md)                       | Per-site deployment template |
+| [HOWTO.md](HOWTO.md)                                                 | Step-by-step installation walkthrough |
 
 ---
 
 ## Version Information
 
-| Item | Value |
-|------|-------|
-| Documentation Version | 1.0 |
-| WALLIX Bastion Version | 12.1.x |
-| Last Updated | February 2026 |
-| Author | PAM Deployment Team |
+| Item                   | Value |
+|------------------------|-------|
+| Documentation Version  | 1.0 |
+| WALLIX Bastion Version | 12.3.2 |
+| Last Updated           | February 2026 |
+| Author                 | PAM Deployment Team |

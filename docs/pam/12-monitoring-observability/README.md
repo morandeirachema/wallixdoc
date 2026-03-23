@@ -65,7 +65,7 @@
 ```bash
 # Basic service health
 curl -sk https://wallix.company.com/health
-# Returns: {"status": "healthy", "version": "12.1.x"}
+# Returns: {"status": "healthy", "version": "12.3.2"}
 
 # Detailed health check
 curl -sk https://wallix.company.com/api/health/detailed

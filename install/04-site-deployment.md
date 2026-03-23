@@ -257,8 +257,8 @@ Configure firewall rules for site-internal and external connectivity:
 | HAProxy-2 | Bastion-1, Bastion-2 | 3389 | TCP | RDP proxy |
 | Bastion-1 | Bastion-2 | 3306 | TCP | MariaDB replication |
 | Bastion-2 | Bastion-1 | 3306 | TCP | MariaDB replication |
-| Bastion-1 | Bastion-2 | 5404-5406 | UDP | Corosync (if Active-Active) |
-| Bastion-1 | Bastion-2 | 2224 | TCP | Pacemaker (if Active-Active) |
+| Bastion-1 | Bastion-2 | 2242 | TCP | SSH tunnel for DB replication |
+| Bastion-1 | Bastion-2 | 3307 | TCP | MariaDB replication source |
 | Bastion-1, Bastion-2 | WALLIX RDS | 3389 | TCP | RDP to jump host |
 
 **Outbound from Site:**
@@ -710,10 +710,10 @@ See [06-bastion-active-active.md](06-bastion-active-active.md) for complete inst
 
 **Quick Overview:**
 
-1. Configure MariaDB multi-master replication (Galera or MaxScale)
-2. Configure Pacemaker/Corosync cluster
-3. Enable session state synchronization
-4. Test cluster split-brain protection
+1. Run `bastion-replication --create-conf-file` (select Master/Master)
+2. Run `bastion-replication --install`
+3. Verify with `bastion-replication --monitoring`
+4. Configure non-replicated items on each node (SMTP, SIEM, etc.)
 5. Verify load balancing through HAProxy
 
 **Option B: Active-Passive Configuration**
@@ -722,9 +722,10 @@ See [07-bastion-active-passive.md](07-bastion-active-passive.md) for complete in
 
 **Quick Overview:**
 
-1. Configure MariaDB primary-replica replication
-2. Configure automated failover (Pacemaker or manual)
-3. Test failover procedure
+1. Run `bastion-replication --create-conf-file` (select Master/Slave)
+2. Run `bastion-replication --install`
+3. Verify with `bastion-replication --monitoring`
+4. Test failover with `bastion-replication --elevate-master`
 4. Verify passive node readiness
 5. Document manual failover steps
 
@@ -1368,7 +1369,7 @@ Total Duration: 10 weeks (same, but more resource-intensive)
 | Item | Value |
 |------|-------|
 | Documentation Version | 1.0 |
-| WALLIX Bastion Version | 12.1.x |
+| WALLIX Bastion Version | 12.3.2 |
 | Last Updated | February 2026 |
 
 ---

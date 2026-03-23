@@ -982,4 +982,4 @@ wabadmin approval deny <id> --reason "..."
 
 *Document Version: 1.0*
 *Last Updated: February 2026*
-*Applies to: WALLIX Bastion 12.1.x*
+*Applies to: WALLIX Bastion 12.3.2*

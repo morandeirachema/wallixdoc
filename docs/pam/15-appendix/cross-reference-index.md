@@ -268,7 +268,7 @@ wabadmin diagnostics-bundle
 | Item | Version |
 |------|---------|
 | Documentation Version | 8.0 |
-| WALLIX Bastion | 12.1.x |
+| WALLIX Bastion | 12.3.2 |
 | API Version | v3.12 |
 | Last Updated | February 2026 |
 

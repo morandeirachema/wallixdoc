@@ -279,7 +279,7 @@ See [09-licensing.md](09-licensing.md) for detailed configuration and integratio
 
 **Cons:**
 - More complex configuration (MariaDB multi-master replication)
-- Requires split-brain protection (Pacemaker/Corosync)
+- Requires `bastion-replication` Master/Master configuration
 - Session state synchronization overhead
 
 **Use Case**: Sites with 100+ concurrent sessions, high availability critical
@@ -380,7 +380,7 @@ Before starting deployment:
 
 | Component | Version |
 |-----------|---------|
-| WALLIX Bastion | 12.1.x |
+| WALLIX Bastion | 12.3.2 |
 | WALLIX Access Manager | 5.2.x |
 | FortiAuthenticator | 6.4+ |
 | HAProxy | 2.8+ |

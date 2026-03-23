@@ -436,7 +436,7 @@ log "SOC 2 evidence collection complete: ${EVIDENCE_DIR}"
 - **Organization**: [Organization Name]
 - **Audit Period**: [Start Date] to [End Date]
 - **Report Generated**: [Generation Date]
-- **WALLIX Bastion Version**: 12.1.x
+- **WALLIX Bastion Version**: 12.3.2
 
 ---
 

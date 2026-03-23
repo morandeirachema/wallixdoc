@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/WALLIX_Bastion-12.1.x-0066cc?style=for-the-badge" alt="WALLIX"/>
+  <img src="https://img.shields.io/badge/WALLIX_Bastion-12.3.2-0066cc?style=for-the-badge" alt="WALLIX"/>
   <img src="https://img.shields.io/badge/FortiAuthenticator-6.4+-ee3124?style=for-the-badge" alt="FortiAuth"/>
   <img src="https://img.shields.io/badge/ISO_27001-Compliant-228b22?style=for-the-badge" alt="ISO"/>
 </p>
@@ -149,7 +149,7 @@ wallixdoc/
 
 | Component | Specification |
 |-----------|---------------|
-| **WALLIX Bastion** | Version 12.1.x (HW Appliance) |
+| **WALLIX Bastion** | Version 12.3.2 (HW Appliance) |
 | **FortiAuthenticator** | Version 6.4+ (HW Appliance) |
 | **Operating System** | Debian 12 (Bookworm) |
 | **Database** | MariaDB 10.11+ with streaming replication |
@@ -260,5 +260,5 @@ wabadmin license-info
 </p>
 
 <p align="center">
-  <sub>WALLIX Bastion 12.1.x · FortiAuthenticator 6.4+ · February 2026</sub>
+  <sub>WALLIX Bastion 12.3.2 · FortiAuthenticator 6.4+ · March 2026</sub>
 </p>

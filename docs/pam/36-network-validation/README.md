@@ -2639,7 +2639,7 @@ cat /sys/class/net/eth0/statistics/*errors
 | Item | Value |
 |------|-------|
 | Document Version | 1.0 |
-| WALLIX Bastion Version | 12.1.x |
+| WALLIX Bastion Version | 12.3.2 |
 | Last Updated | January 2026 |
 
 ---

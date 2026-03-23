@@ -21,7 +21,7 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 |--------|---------------|----------------|
 | **Capacity Utilization** | 100% (both nodes serve traffic) | 50% (standby idle) |
 | **Failover Time** | < 1 second (transparent) | 30-60 seconds |
-| **Complexity** | High (multi-master DB, cluster management) | Medium (simple primary/standby) |
+| **Complexity** | Medium (bastion-replication Master/Master) | Low (bastion-replication Master/Slave) |
 | **Session Continuity** | Full (no interruption) | Partial (brief disruption) |
 | **Best For** | High load (100+ sessions), maximum uptime | Lower load (<100 sessions), simplicity |
 
@@ -94,7 +94,7 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 |  |  | (PRIMARY)                 |<+-+->| (PRIMARY)                 | |        |
 |  |  |                           | | |  |                           | |        |
 |  |  | Multi-Master Replication  | | |  | Multi-Master Replication  | |        |
-|  |  | Galera/MaxScale           | | |  | Galera/MaxScale           | |        |
+|  |  | bastion-replication       | | |  | bastion-replication       | |        |
 |  |  +---------------------------+ | |  +---------------------------+ |        |
 |  |                                | |                                |        |
 |  +--------------------------------+ +--------------------------------+        |
@@ -109,9 +109,9 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 |                                                                               |
 |  CLUSTER MANAGEMENT                                                           |
 |  ==================                                                           |
-|  - Pacemaker/Corosync for cluster coordination                                |
-|  - STONITH/fencing for split-brain protection                                 |
-|  - Quorum-based decisions (requires 3+ nodes or quorum device)                |
+|  - bastion-replication for database replication (Master/Master or Master/Slave)|
+|  - SSH tunnel via autossh for secure replication channel                      |
+|  - HAProxy/Keepalived for VIP management and load balancing                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -125,10 +125,10 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 4. Session persistence maintained via cookie (HTTPS) or source IP hash (SSH/RDP)
 
 **Database Synchronization:**
-1. MariaDB Galera Cluster provides multi-master replication
+1. `bastion-replication` in Master/Master mode provides multi-master replication
 2. Both nodes can read and write to database
 3. Synchronous replication ensures data consistency
-4. Automatic conflict resolution with last-write-wins or timestamp-based
+4. Built-in conflict resolution managed by bastion-replication
 
 **Failover Process:**
 1. HAProxy health checks detect node failure (every 2-5 seconds)
@@ -165,12 +165,11 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 
 ### Cons
 
-**1. Complex Configuration**
-- MariaDB multi-master replication setup
-- Galera Cluster or MaxScale required
-- Pacemaker/Corosync cluster management
-- STONITH/fencing configuration
-- More moving parts = more failure points
+**1. Configuration Considerations**
+- MariaDB multi-master replication via `bastion-replication`
+- Both nodes must be configured with `bastion-replication --create-conf-file` (Master/Master)
+- HAProxy/Keepalived for load balancing and VIP management
+- More components involved than Master/Slave mode
 
 **2. Database Complexity**
 - Multi-master conflicts possible
@@ -178,23 +177,21 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 - Conflict resolution overhead
 - Potential for data inconsistency if misconfigured
 
-**3. Split-Brain Risk**
-- Network partition can cause both nodes to become primary
-- Requires STONITH (Shoot The Other Node In The Head) fencing
-- Quorum device or 3rd node needed for tie-breaking
-- Incorrect quorum can cause service outage
+**3. Replication Monitoring**
+- Replication health must be monitored via `bastion-replication --monitoring`
+- Network issues between nodes can cause replication lag
+- Notifications can be configured with `bastion-replication --install-notification`
 
 **4. Troubleshooting Complexity**
 - Harder to diagnose issues
-- Replication lag monitoring required
-- Cluster state management
-- Need expertise in distributed systems
+- Replication lag monitoring required (`bastion-replication --monitoring`)
+- Replication state management across both masters
+- Need expertise in bastion-replication administration
 
 **5. Resource Overhead**
-- Cluster management daemons consume resources
 - Replication overhead (network, CPU, disk I/O)
-- Health check traffic
-- Synchronization overhead
+- Health check traffic (HAProxy + bastion-replication monitoring)
+- Synchronization overhead between Master/Master nodes
 
 ### Use Cases
 
@@ -225,30 +222,19 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 
 **Infrastructure:**
 - HAProxy 2.8+ in HA configuration (2 instances + Keepalived)
-- MariaDB 10.11+ with Galera Cluster or MaxScale
-- Pacemaker 2.1+ and Corosync 3.1+
+- WALLIX Bastion 12.3.2 with built-in `bastion-replication` (Master/Master mode)
 - Shared NFS/iSCSI storage for recordings
 - Low-latency network between nodes (< 5ms RTT)
 
 **Software Components:**
 ```bash
-# Clustering
-pacemaker               # Cluster resource manager
-corosync                # Cluster communication
-pcs                     # Pacemaker configuration tool
-
-# Database HA
-mariadb-server-10.11    # Database server
-galera-4                # Galera Cluster plugin
-maxscale                # Database proxy/router (alternative)
+# Database HA (built into WALLIX Bastion)
+bastion-replication     # Built-in replication tool (Master/Master mode)
+                        # Manages MariaDB replication + SSH tunnel (autossh)
 
 # Load Balancing
 haproxy 2.8+            # Load balancer
 keepalived              # VRRP for HAProxy HA
-
-# Fencing (split-brain protection)
-fence-agents            # STONITH agents
-fence-agents-ipmilan    # IPMI fencing
 ```
 
 **Network Configuration:**
@@ -259,18 +245,17 @@ fence-agents-ipmilan    # IPMI fencing
 |                                                                               |
 |  Interface Bonding (Recommended):                                             |
 |  - bond0: Primary traffic (active-backup or LACP)                             |
-|  - bond1: Cluster heartbeat (dedicated VLAN)                                  |
+|  - bond1: Replication traffic (dedicated VLAN, recommended)                   |
 |                                                                               |
 |  IP Addressing:                                                               |
 |  - Node 1: 10.x.x.11/24 (bond0)                                               |
 |  - Node 2: 10.x.x.12/24 (bond0)                                               |
 |  - VIP: 10.x.x.10/24 (HAProxy virtual IP)                                     |
 |                                                                               |
-|  Heartbeat Network:                                                           |
-|  - Node 1: 192.168.100.11/24 (bond1)                                          |
-|  - Node 2: 192.168.100.12/24 (bond1)                                          |
-|  - Dedicated VLAN for cluster communication                                   |
-|  - Redundant path for split-brain prevention                                  |
+|  Replication Network:                                                         |
+|  - SSH tunnel port 2242 (autossh, managed by bastion-replication)             |
+|  - MariaDB replication port 3306/3307                                         |
+|  - Dedicated VLAN recommended for replication traffic                         |
 |                                                                               |
 +===============================================================================+
 ```
@@ -361,27 +346,26 @@ fence-agents-ipmilan    # IPMI fencing
 **Failover Process:**
 1. **Detection (6 seconds):** Standby detects 3 consecutive missed heartbeats
 2. **Validation (5 seconds):** Confirms primary is truly down (not network glitch)
-3. **STONITH (optional, 10 seconds):** Fence primary via IPMI/iLO to prevent split-brain
-4. **Database Promotion (10 seconds):** Promote MariaDB replica to primary
-5. **Service Start (15 seconds):** Start WALLIX Bastion services on standby
-6. **VIP Migration (5 seconds):** Assign VIP to standby, send gratuitous ARP
-7. **Service Ready (10 seconds):** Accept new connections
+3. **Database Promotion (10 seconds):** Run `bastion-replication --elevate-master` on standby
+4. **Service Start (15 seconds):** Start WALLIX Bastion services on standby
+5. **VIP Migration (5 seconds):** Keepalived assigns VIP to standby, send gratuitous ARP
+6. **Service Ready (10 seconds):** Accept new connections
 
 **Total Failover Time: 30-60 seconds**
 
 **Failback (Manual):**
-1. Repair original primary node
-2. Configure as new standby
-3. Start replication from current primary
-4. Wait for replication to catch up
-5. Optional: Fail back to original primary (requires second failover)
+1. Repair original master node
+2. Configure as new slave using `bastion-replication --add-slave`
+3. Resync data if needed with `bastion-replication --dump-resync`
+4. Wait for replication to catch up (`bastion-replication --monitoring`)
+5. Optional: Fail back to original master (requires `bastion-replication --elevate-master`)
 
 ### Pros
 
 **1. Simple Configuration**
 - Single primary database (no multi-master complexity)
-- Standard MariaDB async replication
-- Straightforward Pacemaker config
+- `bastion-replication` Master/Slave mode handles all replication setup
+- Straightforward configuration via `bastion-replication --create-conf-file`
 - Easier to understand and maintain
 
 **2. Fast Failover (Relative to Manual)**
@@ -399,7 +383,7 @@ fence-agents-ipmilan    # IPMI fencing
 **4. Lower Resource Overhead**
 - No multi-master replication overhead
 - Single node serving traffic (lower network utilization)
-- Simpler cluster management
+- Simpler bastion-replication management (Master/Slave)
 - Fewer background processes
 
 **5. Better Data Consistency**
@@ -468,28 +452,18 @@ fence-agents-ipmilan    # IPMI fencing
 ### Technical Requirements
 
 **Infrastructure:**
-- 2x WALLIX Bastion HW appliances
-- Pacemaker 2.1+ and Corosync 3.1+
+- 2x WALLIX Bastion HW appliances (WALLIX Bastion 12.3.2)
 - Shared NFS/iSCSI storage for recordings
-- Dedicated heartbeat network (recommended)
+- Dedicated replication network (recommended)
 
 **Software Components:**
 ```bash
-# Clustering
-pacemaker               # Cluster resource manager
-corosync                # Cluster communication
-pcs                     # Pacemaker configuration tool
-
-# Database HA
-mariadb-server-10.11    # Database server
-# No Galera needed - simple async replication
+# Database HA (built into WALLIX Bastion)
+bastion-replication     # Built-in replication tool (Master/Slave mode)
+                        # Manages MariaDB replication + SSH tunnel (autossh)
 
 # Virtual IP
 keepalived              # VRRP for VIP management
-
-# Fencing (recommended)
-fence-agents            # STONITH agents
-fence-agents-ipmilan    # IPMI fencing
 ```
 
 **Network Configuration:**
@@ -500,18 +474,18 @@ fence-agents-ipmilan    # IPMI fencing
 |                                                                               |
 |  Interface Bonding (Recommended):                                             |
 |  - bond0: Primary traffic (active-backup or LACP)                             |
-|  - bond1: Cluster heartbeat (dedicated VLAN, optional but recommended)        |
+|  - bond1: Replication traffic (dedicated VLAN, optional but recommended)      |
 |                                                                               |
 |  IP Addressing:                                                               |
-|  - Node 1: 10.x.x.11/24 (bond0) - Primary                                     |
-|  - Node 2: 10.x.x.12/24 (bond0) - Standby                                     |
+|  - Node 1: 10.x.x.11/24 (bond0) - Primary (Master)                            |
+|  - Node 2: 10.x.x.12/24 (bond0) - Standby (Slave)                             |
 |  - VIP: 10.x.x.10/24 (Floating IP managed by Keepalived)                      |
 |                                                                               |
-|  Heartbeat Network (Optional but Recommended):                                |
-|  - Node 1: 192.168.100.11/24 (bond1)                                          |
-|  - Node 2: 192.168.100.12/24 (bond1)                                          |
-|  - Dedicated VLAN for cluster heartbeat                                       |
-|  - Reduces false failover from production network issues                      |
+|  Replication Network (Optional but Recommended):                              |
+|  - SSH tunnel port 2242 (autossh, managed by bastion-replication)             |
+|  - MariaDB replication port 3306/3307                                         |
+|  - Dedicated VLAN for replication traffic                                     |
+|  - Reduces impact on production network                                       |
 |                                                                               |
 +===============================================================================+
 ```
@@ -607,12 +581,12 @@ fence-agents-ipmilan    # IPMI fencing
 |  | Setup Complexity     | High                | Medium                      | |
 |  | Configuration        | Complex             | Simple                      | |
 |  | Troubleshooting      | Difficult           | Easy                        | |
-|  | Expertise Required   | Distributed systems | Basic HA clustering         | |
+|  | Expertise Required   | bastion-replication  | Basic bastion-replication    | |
 |  | Management Overhead  | High                | Low                         | |
 |  | Monitoring Points    | Many                | Few                         | |
 |  | Failure Modes        | Complex             | Well-understood             | |
 |  | Database Conflicts   | Possible            | Not applicable              | |
-|  | Split-Brain Risk     | Higher              | Lower                       | |
+|  | Split-Brain Risk     | N/A (no quorum)     | N/A                         | |
 |  +----------------------+---------------------+-----------------------------+ |
 |                                                                               |
 |  OPERATIONAL TASKS                                                            |
@@ -627,7 +601,7 @@ fence-agents-ipmilan    # IPMI fencing
 |  | Restore from Backup              | Complex       | Simple                | |
 |  | Troubleshoot Replication         | Difficult     | Easy                  | |
 |  | Monitor Cluster Health           | Many metrics  | Few metrics           | |
-|  | Resolve Split-Brain              | Complex       | Rare, simpler         | |
+|  | Resync After Failure             | --dump-resync | --dump-resync         | |
 |  +----------------------------------+---------------+-----------------------+ |
 |                                                                               |
 +===============================================================================+
@@ -684,49 +658,58 @@ fence-agents-ipmilan    # IPMI fencing
 |  DATABASE REPLICATION COMPARISON                                              |
 +===============================================================================+
 |                                                                               |
-|  ACTIVE-ACTIVE: MULTI-MASTER (GALERA)                                         |
-|  =====================================                                        |
+|  ACTIVE-ACTIVE: MASTER/MASTER (bastion-replication)                           |
+|  ==================================================                          |
 |                                                                               |
 |  Architecture:                                                                |
-|    Node 1 MariaDB (Primary) <===> Node 2 MariaDB (Primary)                    |
-|    Bidirectional synchronous replication                                      |
+|    Node 1 MariaDB (Master) <===> Node 2 MariaDB (Master)                     |
+|    Bidirectional replication via bastion-replication + SSH tunnel (port 2242)  |
+|                                                                               |
+|  Setup:                                                                       |
+|    bastion-replication --create-conf-file   # Select Master/Master mode       |
+|    bastion-replication --install            # Install and start replication    |
+|    bastion-replication --install-monitoring # Enable health monitoring         |
 |                                                                               |
 |  Characteristics:                                                             |
 |  + Both nodes can write                                                       |
-|  + Synchronous replication (data consistency)                                 |
-|  + Automatic conflict resolution                                              |
-|  + Quorum-based commit (requires majority)                                    |
+|  + Replication managed entirely by bastion-replication                        |
+|  + No external cluster manager required (built-in bastion-replication)       |
+|  + SSH tunnel provides secure replication channel                             |
+|  + Monitoring via bastion-replication --monitoring                            |
 |  - Conflict possible (same row updated simultaneously)                        |
 |  - Higher latency (sync overhead)                                             |
-|  - Requires 3rd node or quorum device for split-brain prevention              |
-|                                                                               |
-|  Write Conflict Example:                                                      |
-|    Node 1: UPDATE users SET status='active' WHERE id=123;                     |
-|    Node 2: UPDATE users SET status='locked' WHERE id=123;                     |
-|    Resolution: Last-write-wins or timestamp-based (configurable)              |
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
-|  ACTIVE-PASSIVE: MASTER-REPLICA (ASYNC)                                       |
-|  =======================================                                      |
+|  ACTIVE-PASSIVE: MASTER/SLAVE (bastion-replication)                           |
+|  ==================================================                          |
 |                                                                               |
 |  Architecture:                                                                |
-|    Node 1 MariaDB (Primary) -----> Node 2 MariaDB (Replica)                   |
-|    Unidirectional asynchronous replication                                    |
+|    Node 1 MariaDB (Master) -----> Node 2 MariaDB (Slave)                     |
+|    Unidirectional replication via bastion-replication + SSH tunnel (port 2242) |
+|                                                                               |
+|  Setup:                                                                       |
+|    bastion-replication --create-conf-file   # Select Master/Slave mode        |
+|    bastion-replication --install            # Install and start replication    |
+|    bastion-replication --install-monitoring # Enable health monitoring         |
+|                                                                               |
+|  Failover:                                                                    |
+|    bastion-replication --elevate-master     # Promote slave to master          |
 |                                                                               |
 |  Characteristics:                                                             |
-|  + Simple configuration                                                       |
-|  + No write conflicts (only primary writes)                                   |
+|  + Simple configuration via bastion-replication                               |
+|  + No write conflicts (only master writes)                                    |
 |  + Lower latency (async replication)                                          |
-|  + Replica can lag during high load                                           |
-|  - Potential data loss (if primary fails before replication)                  |
-|  - Replica read-only (cannot serve writes)                                    |
+|  + Slave can lag during high load                                             |
+|  - Potential data loss (if master fails before replication)                   |
+|  - Slave read-only (cannot serve writes)                                      |
 |                                                                               |
 |  Replication Lag Example:                                                     |
-|    Primary: 1000 transactions/sec                                             |
-|    Replica: 950 transactions/sec (50 TPS lag)                                 |
+|    Master: 1000 transactions/sec                                              |
+|    Slave: 950 transactions/sec (50 TPS lag)                                   |
 |    Lag Time: Grows during peak, catches up during low load                    |
 |    Max Acceptable Lag: < 5 seconds                                            |
+|    Monitor: bastion-replication --monitoring                                  |
 |                                                                               |
 +===============================================================================+
 ```
@@ -812,16 +795,16 @@ fence-agents-ipmilan    # IPMI fencing
 |  --------------------+------------------------+---------------------------    |
 |                                                                               |
 |  Key Skills Required for Active-Active:                                       |
-|  - MariaDB Galera Cluster configuration and troubleshooting                   |
-|  - Pacemaker/Corosync cluster management                                      |
-|  - Split-brain scenario resolution                                            |
-|  - HAProxy advanced configuration                                             |
-|  - Network troubleshooting (multicast, heartbeat)                             |
-|  - Performance tuning for distributed systems                                 |
+|  - bastion-replication Master/Master configuration and monitoring             |
+|  - HAProxy advanced configuration and load balancing                          |
+|  - Keepalived VRRP management                                                |
+|  - Network troubleshooting (SSH tunnels, replication ports)                   |
+|  - MariaDB replication troubleshooting                                        |
+|  - bastion-replication --dump-resync for recovery scenarios                   |
 |                                                                               |
 |  Key Skills Required for Active-Passive:                                      |
-|  - Basic Pacemaker/Corosync                                                   |
-|  - MariaDB replication setup                                                  |
+|  - bastion-replication Master/Slave configuration                             |
+|  - bastion-replication --elevate-master for failover                          |
 |  - VIP/Keepalived configuration                                               |
 |  - Standard Linux administration                                              |
 |                                                                               |
@@ -863,20 +846,18 @@ fence-agents-ipmilan    # IPMI fencing
 |                                                                               |
 |  Active-Passive:                                                              |
 |  - Day 1-2: Base OS installation, network config                              |
-|  - Day 3: MariaDB replication setup                                           |
-|  - Day 4: Pacemaker cluster configuration                                     |
-|  - Day 5: VIP/Keepalived setup                                                |
-|  - Day 6-7: Testing and validation                                            |
-|  Total: 7 days (1 week)                                                       |
+|  - Day 3: bastion-replication Master/Slave setup                              |
+|  - Day 4: VIP/Keepalived setup                                                |
+|  - Day 5: Testing and validation                                              |
+|  Total: 5 days                                                                |
 |                                                                               |
 |  Active-Active:                                                               |
 |  - Day 1-2: Base OS installation, network config                              |
-|  - Day 3-4: MariaDB Galera Cluster setup                                      |
-|  - Day 5-6: Pacemaker/Corosync advanced config                                |
-|  - Day 7-8: HAProxy HA setup and testing                                      |
-|  - Day 9-10: Split-brain testing, STONITH config                              |
-|  - Day 11-14: Comprehensive testing, tuning                                   |
-|  Total: 14 days (2 weeks)                                                     |
+|  - Day 3-4: bastion-replication Master/Master setup                           |
+|  - Day 5-6: HAProxy HA setup and testing                                      |
+|  - Day 7-8: Failover testing, monitoring setup                                |
+|  - Day 9-10: Comprehensive testing, tuning                                    |
+|  Total: 10 days                                                               |
 |                                                                               |
 +===============================================================================+
 ```
@@ -1087,44 +1068,36 @@ If you start with Active-Passive and need to migrate to Active-Active:
 |                                                                               |
 |  PREREQUISITES                                                                |
 |  =============                                                                |
-|  - Active-Passive cluster running stably                                      |
-|  - Team trained on Active-Active concepts                                     |
+|  - Active-Passive (Master/Slave) cluster running stably                       |
+|  - Team trained on bastion-replication Master/Master concepts                 |
 |  - HAProxy HA pair deployed                                                   |
-|  - Maintenance window approved (4-8 hours)                                    |
+|  - Maintenance window approved (2-4 hours)                                    |
 |                                                                               |
 |  MIGRATION STEPS                                                              |
 |  ===============                                                              |
 |                                                                               |
 |  1. Prepare (1-2 days before)                                                 |
 |     - Backup both nodes (database, config, keys)                              |
-|     - Document current Active-Passive config                                  |
+|     - Document current Master/Slave config                                    |
 |     - Test HAProxy configuration in lab                                       |
-|     - Prepare Galera Cluster configuration                                    |
+|     - Prepare Master/Master configuration file                                |
 |                                                                               |
-|  2. Stop Active-Passive Cluster (Maintenance Window Start)                    |
+|  2. Stop Current Replication (Maintenance Window Start)                       |
 |     - Stop WALLIX services on both nodes                                      |
-|     - Stop Pacemaker/Corosync                                                 |
-|     - Disable VIP                                                             |
+|     - bastion-replication --stop                                              |
 |                                                                               |
-|  3. Convert Database to Galera Cluster (2-3 hours)                            |
-|     - Install Galera packages on both nodes                                   |
-|     - Configure Galera on Node 1 (bootstrap)                                  |
-|     - Configure Galera on Node 2 (join cluster)                               |
-|     - Verify cluster size = 2, status = Primary                               |
+|  3. Reconfigure bastion-replication for Master/Master (1-2 hours)             |
+|     - bastion-replication --create-conf-file  # Select Master/Master mode     |
+|     - bastion-replication --install           # Install new replication       |
+|     - bastion-replication --monitoring        # Verify replication status     |
 |                                                                               |
-|  4. Reconfigure Pacemaker for Active-Active (1-2 hours)                       |
-|     - Update cluster resources (remove VIP management)                        |
-|     - Configure resources to run on both nodes                                |
-|     - Add anti-affinity constraints if needed                                 |
-|     - Configure STONITH/fencing                                               |
-|                                                                               |
-|  5. Configure HAProxy (1 hour)                                                |
+|  4. Configure HAProxy (1 hour)                                                |
 |     - Add both Bastion nodes to backend pool                                  |
 |     - Configure health checks                                                 |
 |     - Set load balancing algorithm (roundrobin)                               |
 |     - Enable session persistence (cookies for HTTPS)                          |
 |                                                                               |
-|  6. Start Services and Test (1-2 hours)                                       |
+|  5. Start Services and Test (1-2 hours)                                       |
 |     - Start WALLIX services on both nodes                                     |
 |     - Verify both nodes show as active                                        |
 |     - Test connections via HAProxy VIP                                        |
@@ -1132,8 +1105,13 @@ If you start with Active-Passive and need to migrate to Active-Active:
 |     - Test session persistence                                                |
 |     - Test failover (stop one node, verify seamless failover)                 |
 |                                                                               |
+|  6. Enable Monitoring and Notifications (30 min)                              |
+|     - bastion-replication --install-monitoring                                |
+|     - bastion-replication --install-notification                              |
+|     - Verify monitoring via bastion-replication --monitoring                  |
+|                                                                               |
 |  7. Monitor and Validate (24 hours)                                           |
-|     - Monitor Galera cluster status                                           |
+|     - Monitor replication status via bastion-replication --monitoring         |
 |     - Check for replication lag/conflicts                                     |
 |     - Verify load balancing working correctly                                 |
 |     - Check session distribution across nodes                                 |
@@ -1141,13 +1119,14 @@ If you start with Active-Passive and need to migrate to Active-Active:
 |  ROLLBACK PLAN                                                                |
 |  =============                                                                |
 |  If migration fails:                                                          |
-|  - Restore database from backup                                               |
-|  - Reconfigure MariaDB async replication                                      |
-|  - Restore Active-Passive Pacemaker config                                    |
+|  - bastion-replication --stop                                                 |
+|  - Restore database from backup (bastion-replication --dump-resync)           |
+|  - bastion-replication --create-conf-file  # Select Master/Slave mode         |
+|  - bastion-replication --install                                              |
 |  - Re-enable VIP on primary node                                              |
 |  - Start services                                                             |
 |                                                                               |
-|  TOTAL MIGRATION TIME: 4-8 hours (maintenance window)                         |
+|  TOTAL MIGRATION TIME: 2-4 hours (maintenance window)                         |
 |                                                                               |
 +===============================================================================+
 ```
@@ -1156,11 +1135,11 @@ If you start with Active-Passive and need to migrate to Active-Active:
 
 **For Your 5-Site Deployment:**
 
-1. **If you are unsure:** Start with **Active-Passive** for Site 1
-   - Faster deployment (1 week vs 2 weeks)
+1. **If you are unsure:** Start with **Active-Passive** (Master/Slave) for Site 1
+   - Faster deployment (5 days vs 10 days)
    - Lower risk for initial rollout
-   - Team learns HA basics
-   - Can migrate to Active-Active later if needed
+   - Team learns bastion-replication basics
+   - Can migrate to Active-Active (Master/Master) later if needed
 
 2. **If you have clear high-load requirements (> 100 sessions per site):** Use **Active-Active** from the start
    - Avoid migration complexity later
@@ -1199,4 +1178,4 @@ After choosing your HA model:
 
 ---
 
-*Document Version: 1.0 | Last Updated: 2026-02-05*
+*Document Version: 1.1 | Last Updated: 2026-03-23*

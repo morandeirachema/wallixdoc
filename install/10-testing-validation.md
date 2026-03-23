@@ -11,7 +11,7 @@
 | **Purpose** | End-to-end testing and validation procedures |
 | **Scope** | 5 Bastion sites + 2 Access Managers + FortiAuthenticator |
 | **Timeline** | Phase 8-9 testing (Week 9 of deployment) |
-| **Version** | WALLIX Bastion 12.1.x |
+| **Version** | WALLIX Bastion 12.3.2 |
 | **Last Updated** | February 2026 |
 
 ---
@@ -227,39 +227,85 @@ wabadmin license-info
 - [ ] Database reachable and synchronized
 - [ ] License valid with available session slots
 
-#### Test 1.2.2: Bastion HA Cluster Status
+#### Test 1.2.2: Bastion HA Replication Status
 
 ```bash
-# Check cluster status (Active-Active OR Active-Passive)
+# Check replication status on each Bastion node (run as root)
 
-# For Active-Active:
-wabadmin cluster-status
-# Expected: Both nodes ACTIVE
+# For Master/Master:
+# On primary Master node:
+bastion-replication --monitoring
+# Expected output:
+#   Replication mode: master-master
+#   Local role: master
+#   Remote role: master
+#   Replication status: OK
+#   Seconds behind: 0
 
-crm status
-# Expected: Online: [ bastion1-site1 bastion2-site1 ]
+# On secondary Master node:
+bastion-replication --monitoring
+# Expected output:
+#   Replication mode: master-master
+#   Local role: master
+#   Remote role: master
+#   Replication status: OK
+#   Seconds behind: 0
 
-# Check MariaDB Galera cluster
-mysql -e "SHOW STATUS LIKE 'wsrep_cluster_size';"
-# Expected: wsrep_cluster_size = 2
+# For Master/Slave:
+# On Master node:
+bastion-replication --monitoring
+# Expected output:
+#   Replication mode: master-slave
+#   Local role: master
+#   Remote role: slave
+#   Replication status: OK
 
-# For Active-Passive:
-wabadmin cluster-status
-# Expected: Node1 PRIMARY, Node2 STANDBY
-
-crm status
-# Expected: Primary: bastion1-site1, Standby: bastion2-site1
-
-# Check MariaDB replication
-mysql -e "SHOW SLAVE STATUS\G"
-# Expected: Slave_IO_Running: Yes, Slave_SQL_Running: Yes
+# On Slave node:
+bastion-replication --monitoring
+# Expected output:
+#   Replication mode: master-slave
+#   Local role: slave
+#   Remote role: master
+#   Replication status: OK
+#   Seconds behind: 0
 ```
 
 **Expected Results:**
-- [ ] Cluster recognized and operational
-- [ ] Database replication working (Active-Active or Active-Passive)
-- [ ] Pacemaker/Corosync cluster healthy
-- [ ] No split-brain condition detected
+- [ ] `bastion-replication --monitoring` reports OK on both nodes
+- [ ] Replication mode matches expected topology (master-master or master-slave)
+- [ ] Seconds behind is 0 (no replication lag)
+- [ ] No replication errors reported
+
+#### Test 1.2.2b: Replication Exclusions Validation
+
+```bash
+# Verify that node-specific settings are NOT replicated
+# These must be configured independently on each node:
+
+# Check SMTP configuration on each node
+# Node 1:
+ssh admin@bastion1-site1.company.com
+wabadmin smtp-status
+# Expected: SMTP configured with node-specific relay
+
+# Node 2:
+ssh admin@bastion2-site1.company.com
+wabadmin smtp-status
+# Expected: SMTP configured independently (may differ from Node 1)
+
+# Verify SIEM/syslog forwarding is configured per node
+# Each node should send logs independently
+
+# Verify network settings are node-specific
+# (IP address, hostname, DNS — NOT replicated)
+```
+
+**Expected Results:**
+- [ ] SMTP settings configured independently on each node
+- [ ] SMTP delivery functional on each node separately
+- [ ] SIEM/syslog forwarding configured per node
+- [ ] Network settings (IP, hostname) are node-specific
+- [ ] Audit tables are node-local (not replicated)
 
 #### Test 1.2.3: Bastion Credential Vault
 
@@ -361,16 +407,12 @@ systemctl status wallix-access-manager
 # Check HA replication status
 wab-am ha-status
 # Expected: Primary: AM1, Standby: AM2, Replication: Active
-
-# Check database replication
-mysql -e "SHOW SLAVE STATUS\G"
-# Expected: Slave_IO_Running: Yes, Slave_SQL_Running: Yes
 ```
 
 **Expected Results:**
 - [ ] Access Manager service running on both nodes
 - [ ] HA pair synchronized and healthy
-- [ ] Database replication active
+- [ ] Replication active between AM nodes
 - [ ] Session broker active
 
 #### Test 1.4.2: Access Manager Session Brokering
@@ -870,44 +912,60 @@ systemctl start haproxy keepalived
 
 ### 4.2 Bastion HA Failover
 
-#### Test 4.2.1: Bastion Node Failure (Active-Active)
+#### Test 4.2.1: Bastion Replication Failover (Master/Master)
 
 ```bash
-# Test Active-Active cluster failover
+# Test Master/Master replication failover
 
-# Initial state: Both Bastion nodes active, load balanced
+# Initial state: Both Bastion nodes active as masters, load balanced
 
-# Step 1: Verify cluster status
-wabadmin cluster-status
-# Expected: Node1 ACTIVE (50% load), Node2 ACTIVE (50% load)
+# Step 1: Verify replication status on both nodes (run as root)
+ssh admin@bastion1-site1.company.com
+bastion-replication --monitoring
+# Expected: Replication mode: master-master, Status: OK
 
-# Step 2: Initiate user sessions
+ssh admin@bastion2-site1.company.com
+bastion-replication --monitoring
+# Expected: Replication mode: master-master, Status: OK
+
+# Step 2: Verify bidirectional replication
+# Create a test object on Node 1 (via web UI or API)
+# Expected: Object appears on Node 2 within seconds
+
+# Create a test object on Node 2
+# Expected: Object appears on Node 1 within seconds
+
+# Step 3: Initiate user sessions
 # 10 users connected, distributed across both nodes
 
-# Step 3: Simulate Bastion Node 1 failure
+# Step 4: Simulate Bastion Node 1 failure
 ssh admin@bastion1-site1.company.com
 systemctl stop wallix-bastion
 
-# Step 4: Monitor failover via HAProxy
+# Step 5: Monitor failover via HAProxy
 # HAProxy health check detects Node 1 down
 # All traffic redirected to Node 2
 
 echo "show servers state" | socat stdio /var/lib/haproxy/stats
 # Expected: bastion1 DOWN, bastion2 UP
 
-# Step 5: Verify user sessions
+# Step 6: Verify user sessions
 # Expected: Users on Node 1 experience brief interruption (< 5s)
 #           Users on Node 2 unaffected
 #           New sessions all routed to Node 2
 
-# Step 6: Check Node 2 load
+# Step 7: Check Node 2 load
 wabadmin sessions --count
 # Expected: All sessions on Node 2 (100% load)
 
-# Step 7: Restore Node 1
+# Step 8: Restore Node 1
 systemctl start wallix-bastion
 
-# Expected: HAProxy detects Node 1 UP, resumes load balancing
+# Step 9: Verify replication resync after restoration
+bastion-replication --monitoring
+# Expected: Replication status: OK, Seconds behind: 0
+
+# HAProxy detects Node 1 UP, resumes load balancing
 ```
 
 **Expected Results:**
@@ -915,53 +973,62 @@ systemctl start wallix-bastion
 - [ ] Failed node removed from rotation
 - [ ] Surviving node handles 100% load
 - [ ] Session interruption < 5 seconds for affected users
+- [ ] Replication resynchronizes after node restoration
 - [ ] Automatic rebalancing after restoration
 
-#### Test 4.2.2: Bastion Node Failure (Active-Passive)
+#### Test 4.2.2: Bastion Replication Failover (Master/Slave)
 
 ```bash
-# Test Active-Passive cluster failover
+# Test Master/Slave replication failover
 
-# Initial state: Node 1 PRIMARY (active), Node 2 STANDBY (passive)
+# Initial state: Node 1 MASTER (active), Node 2 SLAVE (standby)
 
-# Step 1: Verify cluster status
-wabadmin cluster-status
-# Expected: Node1 PRIMARY (100% load), Node2 STANDBY (0% load)
+# Step 1: Verify replication status (run as root)
+ssh admin@bastion1-site1.company.com
+bastion-replication --monitoring
+# Expected: Local role: master, Remote role: slave, Status: OK
+
+ssh admin@bastion2-site1.company.com
+bastion-replication --monitoring
+# Expected: Local role: slave, Remote role: master, Status: OK
 
 # Step 2: Initiate user sessions
 # 10 users connected to Node 1 via VIP
 
-# Step 3: Simulate Node 1 failure
+# Step 3: Simulate Node 1 (Master) failure
 ssh admin@bastion1-site1.company.com
-systemctl stop wallix-bastion pacemaker corosync
+systemctl stop wallix-bastion
 
-# Step 4: Monitor failover (30-60 seconds)
-# Pacemaker detects failure, promotes Node 2 to PRIMARY
-
+# Step 4: Promote Slave to Master (run as root on Node 2)
 ssh admin@bastion2-site1.company.com
-wabadmin cluster-status
-# Expected: Node2 now PRIMARY
+bastion-replication --elevate-master
+# Expected: Node 2 promoted from slave to master
 
-# Step 5: Verify VIP migration
-ip addr show | grep 10.10.1.10
-# Expected: VIP migrated to Node 2
+# Step 5: Verify promotion
+bastion-replication --monitoring
+# Expected: Local role: master, Replication status: OK
 
-# Step 6: Verify user sessions
-# Expected: All sessions disconnected (30-60s outage)
-#           Users must reconnect to Node 2
+# Step 6: Verify user access
+# Users reconnect to Node 2 (now master)
+# Expected: Full functionality available on promoted node
 
-# Step 7: Restore Node 1
-systemctl start wallix-bastion pacemaker corosync
+# Step 7: Restore original Node 1 and resync
+# After Node 1 is repaired/restarted:
+ssh admin@bastion1-site1.company.com
+bastion-replication --dump-resync
+# Expected: Node 1 resynchronizes data from Node 2 (current master)
 
-# Expected: Node 1 becomes STANDBY, Node 2 remains PRIMARY
+# Step 8: Verify resync completion
+bastion-replication --monitoring
+# Expected: Replication status: OK, Seconds behind: 0
 ```
 
 **Expected Results:**
-- [ ] Pacemaker detects failure within 6 seconds
-- [ ] Node 2 promoted to PRIMARY within 30-60 seconds
-- [ ] VIP migrated to new PRIMARY
-- [ ] Users disconnected, must reconnect
-- [ ] Node 1 rejoins as STANDBY after restoration
+- [ ] `bastion-replication --elevate-master` promotes slave successfully
+- [ ] Promoted node has full master functionality
+- [ ] Users can reconnect to promoted node
+- [ ] `bastion-replication --dump-resync` resynchronizes restored node
+- [ ] Replication fully operational after resync
 
 ### 4.3 Access Manager Failover
 
@@ -1255,12 +1322,9 @@ ssh admin@bastion1-site1.company.com
 ping -c 3 bastion1-site2.company.com
 # Expected: Destination Host Unreachable (BLOCKED)
 
-# Test 2: External access to Bastion HA cluster ports should FAIL
+# Test 2: External access to Bastion database port should FAIL
 nc -zv bastion1-site1.company.com 3306
 # Expected: Connection refused (MariaDB port blocked)
-
-nc -zv bastion1-site1.company.com 2224
-# Expected: Connection refused (Pacemaker PCSD blocked)
 
 # Test 3: Bastion → Internet (unless explicit proxy) should FAIL
 ssh admin@bastion1-site1.company.com
@@ -1274,7 +1338,7 @@ curl -k https://10.10.1.11:443
 
 **Expected Results:**
 - [ ] Inter-site Bastion traffic blocked
-- [ ] HA cluster ports not accessible externally
+- [ ] Database ports not accessible externally
 - [ ] Internet access blocked (unless approved)
 - [ ] Direct node access restricted (VIP mandatory)
 
@@ -1296,7 +1360,6 @@ done
 # Step 2: Attempt valid login
 curl -X POST https://bastion-site1.company.com/api/login \
   -d '{"username":"jsmith","password":"correctpassword"}'
-
 # Expected: HTTP 403 Forbidden - Account locked
 
 # Step 3: Verify lockout logged
@@ -1384,34 +1447,30 @@ echo | openssl s_client -connect bastion-site1.company.com:443 -showcerts
 - [ ] Valid certificate with complete chain
 - [ ] Perfect Forward Secrecy (PFS) enabled
 
-#### Test 6.3.2: Database Encryption
+#### Test 6.3.2: Database Replication Encryption
 
 ```bash
-# Test MariaDB replication encryption
+# Test database replication encryption
 
-# Step 1: Check MariaDB TLS configuration
-ssh admin@bastion1-site1.company.com
-mysql -e "SHOW VARIABLES LIKE 'have_ssl';"
-# Expected: have_ssl = YES
+# Step 1: Verify replication is using encrypted transport
+# Run as root on each Bastion node:
+bastion-replication --monitoring
+# Expected: Replication status OK (replication uses encrypted transport)
 
-# Step 2: Verify replication uses TLS
-mysql -e "SHOW SLAVE STATUS\G" | grep Master_SSL
-# Expected: Master_SSL_Allowed: Yes
+# Step 2: Verify Bastion version (confirms 12.3.2 encryption defaults)
+bastion-replication --version
+# Expected: Version 12.3.2 (or matching installed version)
 
-# Step 3: Test database connection encryption
-mysql --ssl-mode=REQUIRED -e "STATUS" | grep SSL
-# Expected: SSL: Cipher in use is [strong cipher]
-
-# Step 4: Check data-at-rest encryption (if configured)
-mysql -e "SHOW VARIABLES LIKE 'innodb_encryption%';"
-# Expected: innodb_encryption = ON (if implemented)
+# Step 3: Verify via web UI
+# Navigate to: Configuration > Replication
+# Expected: Replication status shows encrypted connection
 ```
 
 **Expected Results:**
-- [ ] MariaDB replication encrypted (TLS)
-- [ ] Database connections require TLS
-- [ ] Strong cipher suites for database encryption
-- [ ] Data-at-rest encryption enabled (optional)
+- [ ] Database replication encrypted in transit
+- [ ] `bastion-replication --version` confirms expected version
+- [ ] Replication monitoring shows no errors
+- [ ] Encryption settings align with WALLIX Bastion 12.3.2 defaults
 
 ---
 
@@ -1438,14 +1497,14 @@ mysql -e "SHOW VARIABLES LIKE 'innodb_encryption%';"
 |----|----------|--------|--------|--------|
 | **P-01** | Session establishment time | < 2 seconds | _____ s | [ ] Pass |
 | **P-02** | HAProxy failover time | < 3 seconds | _____ s | [ ] Pass |
-| **P-03** | Bastion HA failover time (Active-Active) | < 5 seconds | _____ s | [ ] Pass |
-| **P-04** | Bastion HA failover time (Active-Passive) | < 60 seconds | _____ s | [ ] Pass |
-| **P-05** | Concurrent sessions per site | ≥ 100 | _____ | [ ] Pass |
+| **P-03** | Bastion HA failover time (Master/Master) | < 5 seconds | _____ s | [ ] Pass |
+| **P-04** | Bastion HA failover time (Master/Slave) | < 60 seconds | _____ s | [ ] Pass |
+| **P-05** | Concurrent sessions per site | >= 100 | _____ | [ ] Pass |
 | **P-06** | Session recording disk I/O | < 200 MB/s | _____ MB/s | [ ] Pass |
 | **P-07** | CPU utilization (50 sessions) | < 60% | _____ % | [ ] Pass |
 | **P-08** | Memory utilization (50 sessions) | < 70% | _____ % | [ ] Pass |
 | **P-09** | Network throughput (file transfer) | > 8 MB/s | _____ MB/s | [ ] Pass |
-| **P-10** | MPLS latency (Bastion ↔ AM) | < 50 ms | _____ ms | [ ] Pass |
+| **P-10** | MPLS latency (Bastion <-> AM) | < 50 ms | _____ ms | [ ] Pass |
 
 ### 7.3 Security Acceptance Criteria
 
@@ -1456,8 +1515,8 @@ mysql -e "SHOW VARIABLES LIKE 'innodb_encryption%';"
 | **S-03** | Account lockout after failed logins | [ ] Pass | Brute force test |
 | **S-04** | Session timeout enforced | [ ] Pass | Inactivity test |
 | **S-05** | Inter-site Bastion traffic blocked | [ ] Pass | Connectivity test |
-| **S-06** | HA cluster ports not externally accessible | [ ] Pass | Port scan results |
-| **S-07** | MariaDB replication encrypted | [ ] Pass | MySQL status check |
+| **S-06** | Database ports not externally accessible | [ ] Pass | Port scan results |
+| **S-07** | Database replication encrypted | [ ] Pass | bastion-replication check |
 | **S-08** | All user actions audited | [ ] Pass | Audit log review |
 | **S-09** | Session recordings encrypted at rest | [ ] Pass | Storage encryption check |
 | **S-10** | MFA required for all user authentication | [ ] Pass | Authentication tests |
@@ -1467,7 +1526,7 @@ mysql -e "SHOW VARIABLES LIKE 'innodb_encryption%';"
 | ID | Criteria | Target | Status |
 |----|----------|--------|--------|
 | **A-01** | HAProxy HA pair functional | 99.99% | [ ] Pass |
-| **A-02** | Bastion HA cluster functional | 99.9%+ | [ ] Pass |
+| **A-02** | Bastion HA replication functional | 99.9%+ | [ ] Pass |
 | **A-03** | Access Manager HA functional | 99.99% | [ ] Pass |
 | **A-04** | FortiAuth failover functional | < 5s | [ ] Pass |
 | **A-05** | Session data replicated across nodes | Real-time | [ ] Pass |
@@ -1580,7 +1639,7 @@ After successful testing and validation:
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: February 2026
+**Document Version**: 1.1
+**Last Updated**: March 2026
 **Validated By**: QA Team
 **Approval Status**: Ready for Production Validation

@@ -233,7 +233,7 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 
    ```bash
    # WALLIX Bastion ISO
-   wget https://download.wallix.com/bastion/12.1/wallix-bastion-12.1.x.iso
+   wget https://download.wallix.com/bastion/12.3/wallix-bastion-12.3.2.iso
 
    # HAProxy packages
    apt-get update && apt-get install -y haproxy keepalived
@@ -243,7 +243,7 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 
    ```bash
    # Burn ISO to USB for appliance installation
-   dd if=wallix-bastion-12.1.x.iso of=/dev/sdX bs=4M status=progress
+   dd if=wallix-bastion-12.3.2.iso of=/dev/sdX bs=4M status=progress
    sync
    ```
 
@@ -658,7 +658,7 @@ wabadmin ha status
 
 Follow [06-bastion-active-active.md](06-bastion-active-active.md)
 
-**Note**: Active-Active requires additional MariaDB multi-master replication configuration and Pacemaker/Corosync setup. Defer to later phase if complexity is a concern.
+**Note**: Active-Active requires `bastion-replication` Master/Master configuration. Refer to the official WALLIX Bastion 12.3.2 deployment guide.
 
 **Validation**:
 
@@ -1870,12 +1870,8 @@ curl -X GET https://am.company.com/api/v1/licenses/pool/bastion-pool-450 \
 ### Monitoring and Diagnostics
 
 ```bash
-# Cluster Health (Pacemaker)
-crm status
-crm_mon -1
-
-# Database Replication (MariaDB)
-mysql -e "SHOW SLAVE STATUS\G"
+# HA Database Replication Health
+sudo bastion-replication --monitoring
 
 # System Resources
 top
@@ -1945,23 +1941,22 @@ iptables -I INPUT -p vrrp -j ACCEPT
 # Check cluster status
 wabadmin ha status
 
-# Check Pacemaker/Corosync
-crm status
-corosync-quorumtool
+# Check HA Database Replication
+sudo bastion-replication --monitoring
 ```
 
 **Resolution**:
 
 ```bash
-# Stop secondary node
-wabadmin ha demote --force
+# Stop replication
+sudo bastion-replication --stop
 
-# Restart cluster services
-systemctl restart pacemaker
-systemctl restart corosync
+# Resync and restart replication
+sudo bastion-replication --dump-resync
+sudo bastion-replication --start
 
-# Verify primary/secondary roles
-wabadmin ha status
+# Verify replication status
+sudo bastion-replication --monitoring
 ```
 
 **Reference**: [07-bastion-active-passive.md](07-bastion-active-passive.md#split-brain-recovery)

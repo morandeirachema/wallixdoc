@@ -262,7 +262,7 @@ curl -X PATCH https://am.company.com/api/v1/bastions/bastion-siteX \
 
 **Detection**:
 - HAProxy health check marks the node as DOWN
-- Cluster partner detects peer failure (Pacemaker/Corosync or HA heartbeat)
+- Cluster partner detects peer failure (`bastion-replication --monitoring`)
 - Active sessions on the failed node are interrupted
 
 **Impact**: Active sessions on the failed node are lost. New sessions routed to surviving node automatically.
@@ -865,38 +865,156 @@ done
 
 ## Planned Maintenance Procedures
 
-### Rolling Bastion Upgrade
+### Standalone Bastion Upgrade (WALLIX Bastion 12.3.2)
 
 ```bash
-# Upgrade Bastion nodes one at a time to maintain availability
+# Official upgrade procedure using BastionSecureUpgrade
 
-# 1. Pre-upgrade backup
-wabadmin backup create --output /backup/pre-upgrade-$(date +%Y%m%d).tar.gz
+# 1. Pre-upgrade: Create backup via GUI
+#    System > Backup/Restore > Create Backup
+#    Use an encryption key between 16 and 128 characters
+#    Store the backup and key securely offsite
 
-# 2. Drain sessions from node to be upgraded
-# On HAProxy, set node to maintenance mode:
-echo "set server bastion-web-backend/bastion1 state maint" | \
-  socat stdio /run/haproxy/admin.sock
+# 2. Upload ISO to Bastion via SCP (port 2242, wabupgrade account)
+scp -P 2242 <BASTION_ISO_NAME>.iso wabupgrade@<BASTION_IP>:/home/wabupgrade/
+scp -P 2242 <BASTION_ISO_NAME>.iso.sha256sum.sig wabupgrade@<BASTION_IP>:/home/wabupgrade/
+scp -P 2242 <BASTION_ISO_NAME>.iso.sha256sum wabupgrade@<BASTION_IP>:/home/wabupgrade/
 
-# Wait for active sessions to complete (or set timeout)
-wabadmin session list --active --node bastion1
+# 3. Run upgrade (as wabupgrade user)
+ssh -p 2242 wabupgrade@<BASTION_IP>
+BastionSecureUpgrade -i /home/wabupgrade/<BASTION_ISO_NAME>.iso \
+  -c /home/wabupgrade/<BASTION_ISO_NAME>.iso.sha256sum \
+  -s /home/wabupgrade/<BASTION_ISO_NAME>.iso.sha256sum.sig
 
-# 3. Upgrade the drained node
-wabadmin upgrade apply --version 12.1.x --accept-eula
-
-# 4. Verify upgraded node
-wabadmin status
-wabadmin ha status
-
-# 5. Re-enable node in HAProxy
-echo "set server bastion-web-backend/bastion1 state ready" | \
-  socat stdio /run/haproxy/admin.sock
-
-# 6. Repeat for second node
-
-# 7. Post-upgrade validation
-wabadmin session test --target test-server --account test
+# 4. Reboot after successful upgrade (as wabadmin -> root)
+reboot
 ```
+
+### HA Cluster Bastion Upgrade (WALLIX Bastion 12.3.2)
+
+```bash
+# Official HA upgrade procedure — all nodes must be upgraded together
+
+# 1. Pre-upgrade: Create backup on ALL nodes
+#    On each node: System > Backup/Restore > Create Backup
+#    Use an encryption key between 16 and 128 characters
+#    Store all backups and keys securely offsite
+- [ ] Backup created on primary Master node
+- [ ] Backup created on secondary node(s)
+- [ ] All backups stored offsite with encryption keys
+
+# 2. Stop replication (from primary Master as root)
+bastion-replication --stop
+
+# 3. Upload ISO to ALL nodes via SCP (port 2242, wabupgrade account)
+scp -P 2242 <BASTION_ISO_NAME>.iso wabupgrade@<NODE_IP>:/home/wabupgrade/
+scp -P 2242 <BASTION_ISO_NAME>.iso.sha256sum.sig wabupgrade@<NODE_IP>:/home/wabupgrade/
+scp -P 2242 <BASTION_ISO_NAME>.iso.sha256sum wabupgrade@<NODE_IP>:/home/wabupgrade/
+
+# 4. Run BastionSecureUpgrade on ALL nodes (can be run in parallel)
+ssh -p 2242 wabupgrade@<NODE_IP>
+BastionSecureUpgrade -i /home/wabupgrade/<BASTION_ISO_NAME>.iso \
+  -c /home/wabupgrade/<BASTION_ISO_NAME>.iso.sha256sum \
+  -s /home/wabupgrade/<BASTION_ISO_NAME>.iso.sha256sum.sig
+
+# 5. Reboot ALL nodes (as wabadmin -> root)
+reboot
+
+# 6. After reboot, resync data from primary Master (as root)
+bastion-replication --dump-resync
+
+# 7. Start replication (from primary Master as root)
+bastion-replication --start
+
+# 8. Verify replication status (from primary Master as root)
+bastion-replication --monitoring
+```
+
+**HA Upgrade Checklist**:
+- [ ] Backups created on all nodes with encryption keys stored securely
+- [ ] Replication stopped on primary Master
+- [ ] ISO uploaded to all nodes
+- [ ] BastionSecureUpgrade completed successfully on all nodes
+- [ ] All nodes rebooted
+- [ ] Replication resynchronized via `--dump-resync`
+- [ ] Replication restarted and verified via `--monitoring`
+
+### Post-Upgrade Verification
+
+```bash
+# 1. Verify Bastion version
+#    Access Bastion web UI and confirm version is 12.3.2
+
+# 2. Check crypto algorithms and HTTP security level
+WABSecurityLevel
+# Default HTTP security level is "high", which enables:
+#   ECDHE-ECDSA-AES256-GCM-SHA384
+#   ECDHE-RSA-AES256-GCM-SHA384
+#   ECDHE-ECDSA-AES128-GCM-SHA256
+#   ECDHE-RSA-AES128-GCM-SHA256
+
+# 3. Verify services are running
+#    Check Bastion web UI is accessible
+#    Test SSH and RDP proxy connectivity
+
+# 4. Verify HA cluster health (if applicable)
+bastion-replication --monitoring
+```
+
+**Post-Upgrade Validation Checklist**:
+- [ ] Bastion version confirmed as 12.3.2
+- [ ] Crypto algorithms verified with `WABSecurityLevel`
+- [ ] Web UI accessible
+- [ ] SSH proxy functional
+- [ ] RDP proxy functional
+- [ ] Session recording working
+- [ ] HA replication healthy (if applicable)
+
+### Upgrade Rollback Procedures
+
+#### Virtual Appliances
+
+```bash
+# Rollback by restoring VM snapshot taken before upgrade
+# 1. Power off the Bastion VM
+# 2. Restore the VM snapshot taken before the upgrade
+# 3. Power on the VM
+# 4. Verify Bastion services are operational
+# 5. If HA cluster: repeat on all nodes, then resync replication
+bastion-replication --dump-resync
+bastion-replication --start
+bastion-replication --monitoring
+```
+
+#### Physical Appliances
+
+```bash
+# Rollback requires reinstall from ISO + restore backup
+
+# 1. Create a bootable USB from the previous version ISO
+# 2. Reinstall WALLIX Bastion from the USB
+
+# 3. Restore configuration backup
+wallix-config-restore.py
+
+# 4. Import session recordings from backup
+WABSessionLogImport
+
+# 5. Verify Bastion services are operational
+
+# 6. If HA cluster: repeat on all nodes, then resync replication
+bastion-replication --dump-resync
+bastion-replication --start
+bastion-replication --monitoring
+```
+
+**Rollback Checklist**:
+- [ ] Bastion restored to previous version
+- [ ] Configuration restored (policies, authorizations, accounts)
+- [ ] Session recordings imported
+- [ ] Services operational and accessible
+- [ ] HA replication healthy (if applicable)
+- [ ] Access Manager connectivity verified
 
 ### HAProxy Patching
 
