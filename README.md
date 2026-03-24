@@ -153,7 +153,7 @@ wallixdoc/
 | **FortiAuthenticator** | Version 6.4+ (HW Appliance) |
 | **Operating System** | Debian 12 (Bookworm) |
 | **Database** | MariaDB 10.11+ with streaming replication |
-| **Clustering** | Pacemaker/Corosync |
+| **Clustering** | bastion-replication + Keepalived |
 | **Load Balancer** | HAProxy 2.x with Keepalived VRRP |
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS |
 | **Protocols** | SSH, RDP, WinRM, HTTPS |
@@ -227,11 +227,11 @@ systemctl status wallix-bastion
 wabadmin status
 
 # Cluster Health
-crm status
-pcs status
+bastion-replication --status
 
 # Database Replication
 mysql -e "SHOW SLAVE STATUS\G"
+mysql -e "SHOW MASTER STATUS\G"
 
 # Audit Log
 wabadmin audit --last 20

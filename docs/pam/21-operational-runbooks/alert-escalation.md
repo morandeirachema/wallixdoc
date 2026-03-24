@@ -65,7 +65,7 @@ curl -sk https://wallix.company.com/
 # If VIP works, HA is functioning
 
 # Step 3: Check cluster status
-ssh admin@wallix-node2 "pcs status"
+ssh admin@wallix-node2 "wabadmin bastion-replication --status"
 ```
 
 ### Investigation (5-15 minutes)

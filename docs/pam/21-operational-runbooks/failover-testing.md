@@ -23,7 +23,7 @@ This document provides comprehensive procedures for testing WALLIX Bastion clust
   3. NETWORK FAILOVER                   4. APPLICATION FAILOVER
   ===================                   =======================
   - Load balancer failover              - WALLIX Bastion service restart
-  - VIP failover (Pacemaker)            - MariaDB failover
+  - VIP failover (Keepalived)            - MariaDB failover
   - DNS failover                        - Session continuity
   - Multi-site failover                 - Authentication continuity
 
@@ -51,27 +51,26 @@ PRE-TEST CHECKLIST
 
 ---
 
-## Test 1: Planned VIP Failover (Pacemaker)
+## Test 1: Planned VIP Failover (Keepalived)
 
 ### Objective
 Verify VIP moves cleanly between nodes during planned maintenance.
 
 ### Prerequisites
 - Both WALLIX Bastion nodes healthy
-- Pacemaker cluster running
+- Keepalived service running on both nodes
 - No active sessions (or users warned)
 
 ### Procedure
 
 ```bash
 # Step 1: Check current cluster status
-pcs status
+wabadmin bastion-replication --status
+systemctl status keepalived
 
 # Expected output:
-# Cluster name: wallix-cluster
-# Online: [ wallix-node1 wallix-node2 ]
-# Resources:
-#   * vip-wallix (ocf::heartbeat:IPaddr2): Started wallix-node1
+# bastion-replication: active, peer connected
+# Keepalived: active (running), VRRP instance VI_1 - MASTER on wallix-node1
 
 # Step 2: Identify which node has VIP
 ip addr show | grep 10.10.1.100
@@ -81,8 +80,8 @@ ip addr show | grep 10.10.1.100
 # Terminal 1: Ping VIP
 ping 10.10.1.100
 
-# Terminal 2: Watch cluster status
-watch -n 1 pcs status
+# Terminal 2: Watch Keepalived status
+journalctl -fu keepalived
 
 # Terminal 3: Monitor web UI
 while true; do
@@ -90,8 +89,8 @@ while true; do
   sleep 1
 done
 
-# Step 4: Initiate failover - put node1 in standby
-pcs node standby wallix-node1
+# Step 4: Initiate failover - stop Keepalived on node1 to release VIP
+ssh wallix-node1 "systemctl stop keepalived"
 
 # Step 5: Observe failover
 # - VIP should move to node2
@@ -99,8 +98,8 @@ pcs node standby wallix-node1
 # - Web UI should recover within 10 seconds
 
 # Step 6: Verify new state
-pcs status
-# vip-wallix should show: Started wallix-node2
+ssh wallix-node2 "ip addr show | grep 10.10.1.100"
+wabadmin bastion-replication --status
 
 # Step 7: Test functionality
 # - Login to web UI
@@ -108,10 +107,11 @@ pcs status
 # - Start a test session
 
 # Step 8: Restore node1
-pcs node unstandby wallix-node1
+ssh wallix-node1 "systemctl start keepalived"
 
 # Step 9: Verify both nodes online
-pcs status
+wabadmin bastion-replication --status
+systemctl status keepalived
 ```
 
 ### Expected Results
@@ -169,14 +169,14 @@ Verify automatic failover when a node becomes unavailable.
 
 ```bash
 # Step 1: Identify current VIP holder
-pcs status | grep vip-wallix
+ip addr show | grep 10.10.1.100
 
 # Step 2: Start monitoring (same as Test 1)
 
 # Step 3: Simulate node failure (choose one method)
 
-# Method A: Stop Pacemaker service
-ssh wallix-node1 "systemctl stop pacemaker"
+# Method A: Stop WALLIX Bastion and Keepalived services
+ssh wallix-node1 "systemctl stop wallix-bastion && systemctl stop keepalived"
 
 # Method B: Network disconnect (if VM)
 # Disconnect network adapter from vSphere/Hyper-V
@@ -185,20 +185,20 @@ ssh wallix-node1 "systemctl stop pacemaker"
 ssh wallix-node1 "echo c > /proc/sysrq-trigger"
 
 # Step 4: Observe automatic failover
-# Pacemaker should detect failure within 15-30 seconds
+# Keepalived should detect failure within 3-10 seconds
 # VIP should move to surviving node
 
 # Step 5: Verify services on surviving node
-pcs status
+wabadmin bastion-replication --status
 curl -sk https://10.10.1.100/
 
 # Step 6: Restore failed node
 # - Power on / reconnect network
-# - Start Pacemaker: systemctl start pacemaker
-# - Verify node rejoins cluster
+# - Start services: systemctl start wallix-bastion && systemctl start keepalived
+# - Verify bastion-replication re-synchronizes
 
 # Step 7: Verify cluster fully healthy
-pcs status
+wabadmin bastion-replication --status
 ```
 
 ### Expected Results
@@ -418,11 +418,12 @@ Q4 - October
 ### VIP Stuck on Wrong Node
 
 ```bash
-# Force VIP back to preferred node
-pcs resource move vip-wallix wallix-node1
+# Force VIP back to preferred node by adjusting Keepalived priority
+# On the preferred node, restart Keepalived with higher priority
+ssh wallix-node1 "systemctl restart keepalived"
 
-# Clear location constraint after move
-pcs resource clear vip-wallix
+# Verify VIP moved
+ip addr show | grep 10.10.1.100
 ```
 
 ### MariaDB Split-Brain
@@ -439,14 +440,19 @@ systemctl stop mariadb
 # 4. Rebuild replica from primary
 ```
 
-### Cluster Won't Form
+### Replication Won't Synchronize
 
 ```bash
-# Reset cluster completely
-pcs cluster destroy --all
-pcs cluster setup wallix-cluster wallix-node1 wallix-node2
-pcs cluster start --all
-pcs cluster enable --all
+# Restart bastion-replication on both nodes
+ssh wallix-node1 "systemctl restart wallix-bastion"
+ssh wallix-node2 "systemctl restart wallix-bastion"
+
+# Verify replication status
+wabadmin bastion-replication --status
+
+# Restart Keepalived on both nodes
+ssh wallix-node1 "systemctl restart keepalived"
+ssh wallix-node2 "systemctl restart keepalived"
 ```
 
 ---
@@ -454,21 +460,18 @@ pcs cluster enable --all
 ## Appendix: Monitoring Commands
 
 ```bash
-# Cluster status
-pcs status
-crm_mon -1
+# Replication status
+wabadmin bastion-replication --status
 
-# Resource status
-pcs resource show
+# Keepalived / VIP status
+systemctl status keepalived
+ip addr show | grep 10.10.1.100
 
-# Node status
-pcs node status
+# WALLIX Bastion service status
+wabadmin status
 
-# Cluster properties
-pcs property list
-
-# Recent cluster events
-pcs status --full
+# Keepalived logs (recent events)
+journalctl -u keepalived --since "10 minutes ago"
 
 # MariaDB replication
 sudo mysql -e "SHOW SLAVE STATUS\G"

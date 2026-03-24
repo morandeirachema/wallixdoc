@@ -55,10 +55,10 @@ wabadmin status
 **2. Check Cluster Health (HA Deployments)**
 ```bash
 # View cluster status
-crm status
+bastion-replication --status
 
 # Check for any failed resources
-crm_mon -1 | grep -E "(Failed|Stopped)"
+bastion-replication --status | grep -E "(Failed|Stopped)"
 
 # Expected: All resources "Started", no failures
 ```
@@ -799,14 +799,13 @@ sudo mysql -e "SHOW SLAVE STATUS\G"
 **Step-by-Step Commands**
 ```bash
 # 1. Verify cluster health
-crm status
-crm_verify -L
+bastion-replication --status
 
-# 2. Put Node B in standby
-crm node standby node-b
+# 2. Stop WALLIX services on Node B for maintenance
+ssh node-b 'systemctl stop wallix-bastion'
 
-# 3. Verify failover
-crm status  # All resources should be on node-a
+# 3. Verify Node A is serving traffic
+bastion-replication --status
 
 # 4. Perform maintenance on Node B
 ssh node-b
@@ -814,15 +813,15 @@ apt update && apt upgrade -y
 systemctl restart wallix-bastion
 exit
 
-# 5. Bring Node B online
-crm node online node-b
+# 5. Restart WALLIX services on Node B
+ssh node-b 'systemctl start wallix-bastion'
 
 # 6. Wait and verify Node B
 sleep 60
-crm status
+bastion-replication --status
 
-# 7. Put Node A in standby
-crm node standby node-a
+# 7. Stop WALLIX services on Node A for maintenance
+ssh node-a 'systemctl stop wallix-bastion'
 
 # 8. Perform maintenance on Node A
 ssh node-a
@@ -830,11 +829,11 @@ apt update && apt upgrade -y
 systemctl restart wallix-bastion
 exit
 
-# 9. Bring Node A online
-crm node online node-a
+# 9. Restart WALLIX services on Node A
+ssh node-a 'systemctl start wallix-bastion'
 
 # 10. Final verification
-crm status
+bastion-replication --status
 wabadmin health-check
 ```
 
@@ -985,23 +984,23 @@ systemctl start wallix-bastion
 
 ```bash
 # 1. Identify current state
-crm status
+bastion-replication --status
 
 # 2. Identify which node has latest data
 # Check MariaDB on each node
 sudo mysql -e "SHOW SLAVE STATUS\G" | grep "Exec_Master_Log_Pos"
 
-# 3. Force one node as primary
-crm node standby <outdated-node>
+# 3. Stop WALLIX services on outdated node
+ssh <outdated-node> 'systemctl stop wallix-bastion'
 
-# 4. Clean up resources
-crm resource cleanup
+# 4. Verify replication status
+bastion-replication --status
 
-# 5. Bring standby back
-crm node online <outdated-node>
+# 5. Restart WALLIX services on outdated node
+ssh <outdated-node> 'systemctl start wallix-bastion'
 
 # 6. Verify synchronization
-crm status
+bastion-replication --status
 wabadmin sync-status
 ```
 
@@ -1331,16 +1330,17 @@ wabadmin account rotate <account_id> --force
 
   ALERT: Cluster Node Failure
   +------------------------------------------------------------------------+
-  | Trigger: Pacemaker reports node offline or failed resources            |
+  | Trigger: bastion-replication detects node failure or Keepalived VRRP   |
+  |          transitions to FAULT state                                     |
   | Response Time: Immediate (< 5 minutes)                                 |
   |                                                                        |
   | Steps:                                                                 |
-  | 1. Check cluster status: crm status                                    |
-  | 2. Verify services on surviving node are running                       |
+  | 1. Check replication status: wabadmin bastion-replication --status      |
+  | 2. Verify services on surviving node: wabadmin status                   |
   | 3. Check network between nodes: ping <other-node>                      |
-  | 4. Check corosync: corosync-quorumtool -s                              |
-  | 5. If node is recoverable, bring online: crm node online <node>        |
-  | 6. If not recoverable, clean up: crm resource cleanup                  |
+  | 4. Check Keepalived: systemctl status keepalived                        |
+  | 5. If node is recoverable, restart services on failed node              |
+  | 6. Verify bastion-replication re-synchronizes                           |
   | 7. Plan node recovery during maintenance window                        |
   +------------------------------------------------------------------------+
 
@@ -1474,7 +1474,7 @@ systemctl status wallix-bastion
 wabadmin status
 wabadmin health-check
 wabadmin license-info
-crm status
+bastion-replication --status
 ```
 
 ### User Management

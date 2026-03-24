@@ -215,7 +215,8 @@ DMZ INTERNAL
 ----------------------
 | haproxy-1/2     | wallix-node1/2    | 443,22    | Load balanced traffic       |
 | wallix-node1    | wallix-node2      | 3306      | MariaDB replication         |
-| wallix-node1    | wallix-node2      | 5404-5406 | Corosync cluster            |
+| wallix-node1    | wallix-node2      | 2242      | bastion-replication SSH tunnel |
+| wallix-node1    | wallix-node2      | 3307      | MariaDB replication source  |
 | haproxy-1       | haproxy-2         | 8405      | VRRP/Keepalived             |
 | monitor-lab     | WALLIX nodes      | 9100      | Prometheus metrics          |
 

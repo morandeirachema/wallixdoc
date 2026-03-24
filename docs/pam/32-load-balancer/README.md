@@ -255,7 +255,7 @@ WALLIX Bastion handles multiple traffic types requiring different load balancing
 |              +----------------+----------------+                          |
 |                               |                                           |
 |                    +----------+----------+                                |
-|                    |   PostgreSQL HA     |                                |
+|                    |   MariaDB HA        |                                |
 |                    |   (Primary/Replica) |                                |
 |                    +---------------------+                                |
 |                                                                           |
@@ -2045,7 +2045,7 @@ output "load_balancer_fqdn" {
 |                                                                           |
 |   {                                                                       |
 |       "status": "healthy",                                                |
-|       "version": "12.1.3",                                                |
+|       "version": "12.3.2",                                                |
 |       "node": "wallix-node1",                                             |
 |       "timestamp": "2026-01-31T10:30:00Z",                                |
 |       "components": {                                                     |
@@ -2109,7 +2109,7 @@ check_health() {
 
 # Check individual services
 check_services() {
-    local services=("wabengine" "wabwebui" "nginx" "postgresql")
+    local services=("wabengine" "wabwebui" "nginx" "mariadb")
     local failed=0
 
     for service in "${services[@]}"; do
@@ -2306,7 +2306,7 @@ done
 |                                                                           |
 |   Resolution:                                                             |
 |   1. Check backend server status:                                        |
-|      $ systemctl status wallix-bastion nginx postgresql                  |
+|      $ systemctl status wallix-bastion nginx mariadb                  |
 |   2. Verify network connectivity:                                        |
 |      $ curl -v https://10.0.1.11:443/health                              |
 |   3. Check load balancer logs:                                           |

@@ -180,7 +180,7 @@ ss -tlnp | grep 514
 curl -s localhost:9600/_node/stats/pipelines | jq '.pipelines'
 
 # Test Logstash input manually
-echo "CEF:0|WALLIX|WALLIX Bastion|12.1|100|Test|1|msg=test" | nc -w1 localhost 514
+echo "CEF:0|WALLIX|WALLIX Bastion|12.3.2|100|Test|1|msg=test" | nc -w1 localhost 514
 ```
 
 ### Check Packet Capture on SIEM
@@ -190,7 +190,7 @@ echo "CEF:0|WALLIX|WALLIX Bastion|12.1|100|Test|1|msg=test" | nc -w1 localhost 5
 tcpdump -i any port 514 -A -c 20
 
 # Should see CEF formatted messages:
-# CEF:0|WALLIX|WALLIX Bastion|12.1|100|User Login|5|src=10.10.1.50...
+# CEF:0|WALLIX|WALLIX Bastion|12.3.2|100|User Login|5|src=10.10.1.50...
 ```
 
 ---
@@ -200,12 +200,12 @@ tcpdump -i any port 514 -A -c 20
 ### Expected CEF Format
 
 ```
-CEF:0|WALLIX|WALLIX Bastion|12.1|<event_id>|<event_name>|<severity>|<extensions>
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|<event_id>|<event_name>|<severity>|<extensions>
 
 Example events:
-CEF:0|WALLIX|WALLIX Bastion|12.1|100|User Login Success|3|src=10.10.1.100 suser=jadmin outcome=success
-CEF:0|WALLIX|WALLIX Bastion|12.1|101|User Login Failed|7|src=10.10.1.100 suser=baduser outcome=failure reason=invalid_password
-CEF:0|WALLIX|WALLIX Bastion|12.1|200|Session Started|3|src=10.10.1.100 suser=jadmin dhost=linux-test duser=root proto=SSH
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|100|User Login Success|3|src=10.10.1.100 suser=jadmin outcome=success
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|101|User Login Failed|7|src=10.10.1.100 suser=baduser outcome=failure reason=invalid_password
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|200|Session Started|3|src=10.10.1.100 suser=jadmin dhost=linux-test duser=root proto=SSH
 ```
 
 ### Splunk CEF Parsing

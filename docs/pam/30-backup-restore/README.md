@@ -33,7 +33,7 @@ WALLIX Bastion contains several critical data components that require regular ba
 
 | Component | Location | Criticality | Frequency |
 |-----------|----------|-------------|-----------|
-| PostgreSQL Database | `/var/lib/postgresql/` | Critical | Daily |
+| MariaDB Database | `/var/lib/mysql/` | Critical | Daily |
 | Configuration Files | `/etc/opt/wab/` | Critical | Daily + on change |
 | Encryption Keys | `/var/opt/wab/keys/` | Critical | On change |
 | Session Recordings | `/var/wab/recorded/` | High | Continuous |
@@ -114,7 +114,7 @@ WALLIX Bastion contains several critical data components that require regular ba
 |  |     WALLIX Bastion        |                                               |
 |  |                           |                                               |
 |  |  +---------------------+  |                                               |
-|  |  | PostgreSQL Database |--+---> pg_dump / pg_basebackup                  |
+|  |  | MariaDB Database    |--+---> mariadb-dump / mariabackup                |
 |  |  +---------------------+  |              |                                |
 |  |                           |              v                                |
 |  |  +---------------------+  |     +------------------+                      |
@@ -159,7 +159,7 @@ WALLIX Bastion contains several critical data components that require regular ba
 |                                     |                                        |
 |                                     v                                        |
 |            +-----------------------------------------------+                 |
-|            |              PostgreSQL Database              |   3.           |
+|            |              MariaDB Database                |   3.           |
 |            +-----------------------------------------------+                 |
 |                                     |                                        |
 |                                     v                                        |
@@ -211,10 +211,10 @@ log "Starting full WALLIX Bastion backup"
 log "Enabling maintenance mode..."
 wabadmin maintenance-mode --enable --message "System backup in progress" 2>/dev/null || true
 
-# 2. Backup PostgreSQL database
-log "Backing up PostgreSQL database..."
-sudo -u postgres pg_dump -Fc -Z 9 -f "${BACKUP_DIR}/database.dump" wab
-log "Database backup completed: $(du -h ${BACKUP_DIR}/database.dump | cut -f1)"
+# 2. Backup MariaDB database
+log "Backing up MariaDB database..."
+mariadb-dump --single-transaction --routines --triggers --all-databases | gzip > "${BACKUP_DIR}/database.sql.gz"
+log "Database backup completed: $(du -h ${BACKUP_DIR}/database.sql.gz | cut -f1)"
 
 # 3. Backup configuration files
 log "Backing up configuration files..."
@@ -303,7 +303,7 @@ sudo /opt/wab/scripts/full-backup.sh
 # Expected output:
 # [2026-01-31 02:00:01] Starting full WALLIX Bastion backup
 # [2026-01-31 02:00:02] Enabling maintenance mode...
-# [2026-01-31 02:00:15] Backing up PostgreSQL database...
+# [2026-01-31 02:00:15] Backing up MariaDB database...
 # [2026-01-31 02:02:30] Database backup completed: 1.2G
 # [2026-01-31 02:02:31] Backing up configuration files...
 # [2026-01-31 02:02:45] Configuration backup completed
@@ -328,109 +328,119 @@ sudo /opt/wab/scripts/full-backup.sh
 
 ## Database Backup
 
-### PostgreSQL pg_dump Backup
+### MariaDB mariadb-dump Backup
 
 ```bash
-# Logical backup with pg_dump (recommended for smaller databases)
-sudo -u postgres pg_dump -Fc -Z 9 -f /backup/wallix/database.dump wab
+# Logical backup with mariadb-dump (recommended for smaller databases)
+mariadb-dump --single-transaction --routines --triggers \
+    --databases wab | gzip > /backup/wallix/database.sql.gz
 
 # Options explanation:
-# -Fc : Custom format (compressed, supports parallel restore)
-# -Z 9 : Maximum compression level
-# -f  : Output file
+# --single-transaction : Consistent snapshot without locking tables
+# --routines           : Include stored procedures and functions
+# --triggers           : Include triggers
+# --databases wab      : Specify the wab database
 
 # Verify backup integrity
-sudo -u postgres pg_restore --list /backup/wallix/database.dump | head -20
+gunzip -c /backup/wallix/database.sql.gz | head -30
 
 # Expected output:
-# ;
-# ; Archive created at 2026-01-31 02:00:15 UTC
-# ;     dbname: wab
-# ;     TOC Entries: 847
-# ;     Compression: 9
-# ;     Dump Version: 15.4
-# ;     Format: CUSTOM
-# ;     Integer: 4 bytes
-# ;     Offset: 8 bytes
-# ;     Dumped from database version: 15.4
-# ;     Dumped by pg_dump version: 15.4
-# ;
-# ; Selected TOC Entries:
-# ;
-# 3456; 1259 16385 TABLE public accounts postgres
-# 3457; 1259 16392 TABLE public authorizations postgres
+# -- MariaDB dump 10.19  Distrib 10.11.6-MariaDB
+# --
+# -- Host: localhost    Database: wab
+# -- ------------------------------------------------------
+# -- Server version	10.11.6-MariaDB
+# --
+# -- Current Database: `wab`
+# --
+# CREATE DATABASE /*!32312 IF NOT EXISTS*/ `wab` ...
+# USE `wab`;
+# --
+# -- Table structure for table `accounts`
+# --
+# CREATE TABLE `accounts` (
 # ...
 ```
 
-### PostgreSQL pg_basebackup (Physical Backup)
+### MariaDB mariabackup (Physical Backup)
 
 ```bash
-# Physical backup with pg_basebackup (recommended for large databases)
+# Physical backup with mariabackup (recommended for large databases)
 # Supports point-in-time recovery
 
 # Create backup directory
 mkdir -p /backup/wallix/basebackup
 
-# Run physical backup with WAL files included
-sudo -u postgres pg_basebackup \
-    -D /backup/wallix/basebackup/$(date +%Y%m%d) \
-    -Ft \
-    -z \
-    -Xs \
-    -P \
-    -v
+# Run physical backup
+mariabackup --backup \
+    --target-dir=/backup/wallix/basebackup/$(date +%Y%m%d) \
+    --user=root
+
+# Prepare the backup (apply committed transactions, roll back uncommitted)
+mariabackup --prepare \
+    --target-dir=/backup/wallix/basebackup/$(date +%Y%m%d)
 
 # Options explanation:
-# -D  : Target directory
-# -Ft : Tar format
-# -z  : Compress with gzip
-# -Xs : Include WAL files using streaming
-# -P  : Show progress
-# -v  : Verbose output
+# --backup     : Perform a backup
+# --target-dir : Destination directory for backup files
+# --user       : MariaDB user for authentication
+# --prepare    : Apply log to make backup consistent
 
 # Expected output:
-# pg_basebackup: initiating base backup, waiting for checkpoint to complete
-# pg_basebackup: checkpoint completed
-# pg_basebackup: write-ahead log start point: 0/2000028 on timeline 1
-# pg_basebackup: starting background WAL receiver
-# pg_basebackup: created temporary replication slot "pg_basebackup_12345"
-# 24891/24891 kB (100%), 1/1 tablespace
-# pg_basebackup: write-ahead log end point: 0/2000138
-# pg_basebackup: waiting for background process to finish streaming ...
-# pg_basebackup: syncing data to disk ...
-# pg_basebackup: renaming backup_manifest.tmp to backup_manifest
-# pg_basebackup: base backup completed
+# [00] 2026-01-31 02:00:15 Connecting to MariaDB server host: localhost
+# [00] 2026-01-31 02:00:15 Using server version 10.11.6-MariaDB
+# [00] 2026-01-31 02:00:15 mariabackup based on MariaDB server 10.11.6
+# [00] 2026-01-31 02:00:15 Executing BACKUP STAGE START
+# [00] 2026-01-31 02:00:15 Starting to backup non-InnoDB tables and files
+# [00] 2026-01-31 02:00:16 Executing BACKUP STAGE FLUSH
+# [00] 2026-01-31 02:00:16 Starting to backup InnoDB log and files
+# [01] 2026-01-31 02:00:16 Copying ./ibdata1 to /backup/wallix/basebackup/20260131/ibdata1
+# [00] 2026-01-31 02:01:30 Executing BACKUP STAGE END
+# [00] 2026-01-31 02:01:30 Backup created in directory '/backup/wallix/basebackup/20260131'
+# [00] 2026-01-31 02:01:30 completed OK!
 ```
 
-### Streaming Backup with WAL Archiving
+### Binary Log Archiving for Point-in-Time Recovery
 
 ```bash
-# Configure WAL archiving in postgresql.conf
-cat >> /etc/postgresql/15/main/postgresql.conf << 'EOF'
+# Configure binary logging in MariaDB server configuration
+cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
 
-# WAL Archiving Configuration
-archive_mode = on
-archive_command = 'test ! -f /backup/wallix/wal/%f && cp %p /backup/wallix/wal/%f'
-archive_timeout = 300
-wal_level = replica
-max_wal_senders = 3
-wal_keep_size = 1GB
+# Binary Log Configuration
+[mysqld]
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 14
+max_binlog_size = 256M
+sync_binlog = 1
 EOF
 
-# Create WAL archive directory
-mkdir -p /backup/wallix/wal
-chown postgres:postgres /backup/wallix/wal
+# Create binary log archive directory
+mkdir -p /backup/wallix/binlog
+chown mysql:mysql /backup/wallix/binlog
 
-# Restart PostgreSQL to apply changes
-systemctl restart postgresql
+# Restart MariaDB to apply changes
+systemctl restart mariadb
 
-# Verify WAL archiving is working
-sudo -u postgres psql -c "SELECT * FROM pg_stat_archiver;"
+# Verify binary logging is working
+mariadb -e "SHOW MASTER STATUS\G"
 
 # Expected output:
-#  archived_count | last_archived_wal |      last_archived_time       | failed_count | last_failed_wal | last_failed_time |          stats_reset
-# ----------------+-------------------+-------------------------------+--------------+-----------------+------------------+-------------------------------
-#              42 | 00000001000000000000002A | 2026-01-31 02:15:00.123456+00 |            0 |                 |                  | 2026-01-01 00:00:00.000000+00
+# *************************** 1. row ***************************
+#              File: mariadb-bin.000042
+#          Position: 156892
+#      Binlog_Do_DB:
+#  Binlog_Ignore_DB:
+#
+# Archive binary logs to backup location
+mariadb -e "SHOW BINARY LOGS;" | tail -5
+
+# Expected output:
+# mariadb-bin.000038	256000000
+# mariadb-bin.000039	256000000
+# mariadb-bin.000040	256000000
+# mariadb-bin.000041	256000000
+# mariadb-bin.000042	156892
 ```
 
 ---
@@ -737,7 +747,7 @@ log "Encryption key backup completed"
 cat > /etc/systemd/system/wallix-backup.service << 'EOF'
 [Unit]
 Description=WALLIX Bastion Full Backup
-After=network.target postgresql.service wallix-bastion.service
+After=network.target mariadb.service wallix-bastion.service
 
 [Service]
 Type=oneshot
@@ -804,15 +814,15 @@ systemctl list-timers wallix-backup.timer
 ```bash
 #!/bin/bash
 # /opt/wab/scripts/db-incremental.sh
-# PostgreSQL incremental backup using WAL archiving
+# MariaDB incremental backup using binary logs
 
 set -e
 
 BACKUP_DIR="/backup/wallix/db-incremental"
-WAL_ARCHIVE="/backup/wallix/wal"
+BINLOG_ARCHIVE="/backup/wallix/binlog"
 DATE=$(date +%Y%m%d_%H%M%S)
 
-mkdir -p "${BACKUP_DIR}"
+mkdir -p "${BACKUP_DIR}" "${BINLOG_ARCHIVE}"
 
 log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
@@ -820,33 +830,33 @@ log() {
 
 log "Starting database incremental backup..."
 
-# Force WAL switch to ensure current transactions are archived
-sudo -u postgres psql -c "SELECT pg_switch_wal();" > /dev/null
+# Flush binary logs to start a new log file
+mariadb -e "FLUSH BINARY LOGS;"
 
-# Record current WAL position
-WAL_POS=$(sudo -u postgres psql -t -c "SELECT pg_current_wal_lsn();")
-log "Current WAL position: ${WAL_POS}"
+# Record current binary log position
+BINLOG_POS=$(mariadb -N -e "SHOW MASTER STATUS\G" | grep -E "File|Position")
+log "Current binary log position: ${BINLOG_POS}"
 
 # Create incremental backup manifest
 cat > "${BACKUP_DIR}/incremental-${DATE}.manifest" << EOF
 {
     "timestamp": "$(date -Iseconds)",
-    "wal_position": "${WAL_POS}",
+    "binlog_position": "$(mariadb -N -e "SELECT CONCAT(@@log_bin_basename, ' ', @@gtid_current_pos);")",
     "hostname": "$(hostname -f)",
     "type": "incremental"
 }
 EOF
 
-# Archive any pending WAL files
-log "Archiving pending WAL files..."
-sudo -u postgres pg_archivecleanup "${WAL_ARCHIVE}" "$(ls -t ${WAL_ARCHIVE}/*.gz 2>/dev/null | head -1 | xargs basename 2>/dev/null || echo 'none')" 2>/dev/null || true
+# Copy binary logs to archive directory
+log "Archiving binary logs..."
+cp /var/log/mysql/mariadb-bin.* "${BINLOG_ARCHIVE}/" 2>/dev/null || true
 
-# Compress old WAL files
-find "${WAL_ARCHIVE}" -type f -name "0000*" ! -name "*.gz" -mmin +60 -exec gzip {} \;
+# Compress old binary log archives
+find "${BINLOG_ARCHIVE}" -type f -name "mariadb-bin.*" ! -name "*.gz" -mmin +60 -exec gzip {} \;
 
-# Count archived WAL files since last full backup
-WAL_COUNT=$(find "${WAL_ARCHIVE}" -type f -name "*.gz" | wc -l)
-log "Total archived WAL files: ${WAL_COUNT}"
+# Count archived binary log files since last full backup
+BINLOG_COUNT=$(find "${BINLOG_ARCHIVE}" -type f -name "*.gz" | wc -l)
+log "Total archived binary log files: ${BINLOG_COUNT}"
 
 # Cleanup old manifests (keep last 100)
 ls -t "${BACKUP_DIR}"/incremental-*.manifest 2>/dev/null | tail -n +101 | xargs -r rm -f
@@ -901,8 +911,8 @@ verify_database() {
     log "Verifying database backup: $(basename ${dump_file})"
 
     # Check dump file can be read
-    if sudo -u postgres pg_restore --list "${dump_file}" > /dev/null 2>&1; then
-        local table_count=$(sudo -u postgres pg_restore --list "${dump_file}" | grep -c "TABLE")
+    if gunzip -t "${dump_file}" 2>/dev/null; then
+        local table_count=$(gunzip -c "${dump_file}" | grep -c "^CREATE TABLE")
         log "PASS: Database backup contains ${table_count} tables"
         return 0
     else
@@ -1080,13 +1090,13 @@ EXTRACTED_DIR=$(ls -d "${RESTORE_DIR}"/*/ | head -1)
 
 # Restore database
 log "Restoring database..."
-sudo -u postgres dropdb --if-exists wab_restore_test
-sudo -u postgres createdb wab_restore_test
-sudo -u postgres pg_restore -d wab_restore_test "${EXTRACTED_DIR}/database.dump"
+mariadb -e "DROP DATABASE IF EXISTS wab_restore_test;"
+mariadb -e "CREATE DATABASE wab_restore_test;"
+gunzip -c "${EXTRACTED_DIR}/database.sql.gz" | sed 's/`wab`/`wab_restore_test`/g' | mariadb wab_restore_test
 
 # Verify database
 log "Verifying restored database..."
-ACCOUNT_COUNT=$(sudo -u postgres psql -t -d wab_restore_test -c "SELECT COUNT(*) FROM accounts;")
+ACCOUNT_COUNT=$(mariadb -N -e "SELECT COUNT(*) FROM wab_restore_test.accounts;")
 log "Restored accounts: ${ACCOUNT_COUNT}"
 
 # Restore configuration (to temp location)
@@ -1102,7 +1112,7 @@ fi
 
 # Cleanup
 log "Cleaning up test restore..."
-sudo -u postgres dropdb --if-exists wab_restore_test
+mariadb -e "DROP DATABASE IF EXISTS wab_restore_test;"
 rm -rf "${RESTORE_DIR}"
 
 # Restart services
@@ -1145,9 +1155,9 @@ aws s3 sync "${BACKUP_DIR}/" "${S3_BUCKET}/backups/" \
     --include "wallix-full-backup-*.tar.gz" \
     --no-progress
 
-# Sync WAL archives for PITR
-log "Syncing WAL archives..."
-aws s3 sync "${BACKUP_DIR}/wal/" "${S3_BUCKET}/wal/" \
+# Sync binary log archives for PITR
+log "Syncing binary log archives..."
+aws s3 sync "${BACKUP_DIR}/binlog/" "${S3_BUCKET}/binlog/" \
     --profile "${AWS_PROFILE}" \
     --storage-class STANDARD_IA \
     --no-progress
@@ -1202,12 +1212,12 @@ for backup in "${BACKUP_DIR}"/wallix-full-backup-*.tar.gz; do
     fi
 done
 
-# Upload WAL archives
-log "Syncing WAL archives..."
+# Upload binary log archives
+log "Syncing binary log archives..."
 az storage blob upload-batch \
     --account-name "${STORAGE_ACCOUNT}" \
-    --destination "${CONTAINER}/wal" \
-    --source "${BACKUP_DIR}/wal" \
+    --destination "${CONTAINER}/binlog" \
+    --source "${BACKUP_DIR}/binlog" \
     --pattern "*.gz" \
     --tier Cool \
     --only-show-errors
@@ -1249,10 +1259,10 @@ rsync -av --progress \
     "${BACKUP_DIR}/" \
     "${MOUNT_POINT}/backups/"
 
-# Sync WAL archives
+# Sync binary log archives
 rsync -av --progress \
-    "${BACKUP_DIR}/wal/" \
-    "${MOUNT_POINT}/wal/"
+    "${BACKUP_DIR}/binlog/" \
+    "${MOUNT_POINT}/binlog/"
 
 # Verify sync
 LATEST_LOCAL=$(ls -t "${BACKUP_DIR}"/wallix-full-backup-*.tar.gz | head -1)
@@ -1304,7 +1314,7 @@ log "Offsite NFS sync completed"
 |   Step 1: Prepare System                                                      |
 |   Step 2: Restore Encryption Keys                                             |
 |   Step 3: Restore SSL Certificates                                            |
-|   Step 4: Restore PostgreSQL Database                                         |
+|   Step 4: Restore MariaDB Database                                            |
 |   Step 5: Restore Configuration Files                                         |
 |   Step 6: Restore License                                                     |
 |   Step 7: Verify and Start Services                                           |
@@ -1362,7 +1372,7 @@ fi
 # Stop services if running
 step "Stopping WALLIX services..."
 systemctl stop wallix-bastion 2>/dev/null || true
-systemctl stop postgresql 2>/dev/null || true
+systemctl stop mariadb 2>/dev/null || true
 
 # Extract backup
 log "STEP 1: EXTRACTING BACKUP"
@@ -1412,17 +1422,17 @@ echo "SSL certificates restored"
 
 # Restore database
 log "STEP 4: RESTORING DATABASE"
-step "Starting PostgreSQL..."
-systemctl start postgresql
+step "Starting MariaDB..."
+systemctl start mariadb
 
 step "Dropping existing database..."
-sudo -u postgres dropdb --if-exists wab 2>/dev/null || true
+mariadb -e "DROP DATABASE IF EXISTS wab;" 2>/dev/null || true
 
 step "Creating fresh database..."
-sudo -u postgres createdb wab
+mariadb -e "CREATE DATABASE wab;"
 
 step "Restoring database from dump..."
-sudo -u postgres pg_restore -d wab -v "${EXTRACTED_DIR}/database.dump" 2>&1 | tail -20
+gunzip -c "${EXTRACTED_DIR}/database.sql.gz" | mariadb wab 2>&1 | tail -20
 
 echo "Database restored"
 
@@ -1519,7 +1529,7 @@ sudo /opt/wab/scripts/full-restore.sh \
 # Backup manifest:
 # {
 #     "backup_date": "2026-01-31T02:00:01+00:00",
-#     "bastion_version": "12.1.3",
+#     "bastion_version": "12.3.2",
 #     "hostname": "wallix-prod.company.com",
 #     ...
 # }
@@ -1550,11 +1560,11 @@ sudo /opt/wab/scripts/full-restore.sh \
 
 ```bash
 #!/bin/bash
-# Restore only the PostgreSQL database
+# Restore only the MariaDB database
 
 BACKUP_FILE=$1
 if [ -z "${BACKUP_FILE}" ]; then
-    echo "Usage: $0 <database.dump>"
+    echo "Usage: $0 <database.sql.gz>"
     exit 1
 fi
 
@@ -1570,22 +1580,22 @@ systemctl stop wallix-bastion
 
 # Backup current database
 log "Creating safety backup of current database..."
-sudo -u postgres pg_dump -Fc wab > /tmp/wab-pre-restore-$(date +%Y%m%d_%H%M%S).dump
+mariadb-dump --single-transaction --databases wab | gzip > /tmp/wab-pre-restore-$(date +%Y%m%d_%H%M%S).sql.gz
 
 # Drop and recreate database
 log "Dropping existing database..."
-sudo -u postgres dropdb wab
+mariadb -e "DROP DATABASE IF EXISTS wab;"
 
 log "Creating new database..."
-sudo -u postgres createdb wab
+mariadb -e "CREATE DATABASE wab;"
 
 # Restore from backup
 log "Restoring database..."
-sudo -u postgres pg_restore -d wab -v "${BACKUP_FILE}" 2>&1
+gunzip -c "${BACKUP_FILE}" | mariadb wab 2>&1
 
 # Verify restore
 log "Verifying restore..."
-TABLE_COUNT=$(sudo -u postgres psql -t -d wab -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';")
+TABLE_COUNT=$(mariadb -N -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'wab';")
 log "Restored ${TABLE_COUNT} tables"
 
 # Start services
@@ -1701,25 +1711,26 @@ log "Session recordings restore completed"
 ### PITR Configuration
 
 ```bash
-# Enable Point-in-Time Recovery prerequisites in postgresql.conf
+# Enable Point-in-Time Recovery prerequisites in MariaDB server configuration
 
-cat >> /etc/postgresql/15/main/postgresql.conf << 'EOF'
+cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
 
 # Point-in-Time Recovery Configuration
-wal_level = replica
-archive_mode = on
-archive_command = 'test ! -f /backup/wallix/wal/%f && cp %p /backup/wallix/wal/%f'
-archive_timeout = 300
-max_wal_senders = 5
-wal_keep_size = 2GB
+[mysqld]
+log_bin = /var/log/mysql/mariadb-bin
+binlog_format = ROW
+expire_logs_days = 14
+max_binlog_size = 256M
+sync_binlog = 1
+server_id = 1
 EOF
 
-# Create WAL archive directory
-mkdir -p /backup/wallix/wal
-chown postgres:postgres /backup/wallix/wal
+# Create binary log archive directory
+mkdir -p /backup/wallix/binlog
+chown mysql:mysql /backup/wallix/binlog
 
-# Restart PostgreSQL
-systemctl restart postgresql
+# Restart MariaDB
+systemctl restart mariadb
 ```
 
 ### PITR Restore Procedure
@@ -1733,7 +1744,7 @@ set -e
 
 BASE_BACKUP=$1
 TARGET_TIME=$2
-WAL_ARCHIVE="/backup/wallix/wal"
+BINLOG_ARCHIVE="/backup/wallix/binlog"
 
 if [ -z "${BASE_BACKUP}" ] || [ -z "${TARGET_TIME}" ]; then
     echo "Usage: $0 <base-backup-dir> <target-timestamp>"
@@ -1752,54 +1763,32 @@ log "Target time: ${TARGET_TIME}"
 # Stop services
 log "Stopping services..."
 systemctl stop wallix-bastion
-systemctl stop postgresql
+systemctl stop mariadb
 
 # Backup current data directory
-PG_DATA="/var/lib/postgresql/15/main"
+MYSQL_DATA="/var/lib/mysql"
 log "Backing up current data directory..."
-mv "${PG_DATA}" "${PG_DATA}.pre-pitr.$(date +%Y%m%d_%H%M%S)"
+mv "${MYSQL_DATA}" "${MYSQL_DATA}.pre-pitr.$(date +%Y%m%d_%H%M%S)"
 
-# Extract base backup
-log "Extracting base backup..."
-mkdir -p "${PG_DATA}"
-tar -xzf "${BASE_BACKUP}/base.tar.gz" -C "${PG_DATA}"
-
-# Extract pg_wal from backup
-if [ -f "${BASE_BACKUP}/pg_wal.tar.gz" ]; then
-    tar -xzf "${BASE_BACKUP}/pg_wal.tar.gz" -C "${PG_DATA}/pg_wal"
-fi
-
-# Create recovery configuration
-log "Configuring recovery..."
-cat > "${PG_DATA}/postgresql.auto.conf" << EOF
-# Recovery configuration for PITR
-restore_command = 'cp ${WAL_ARCHIVE}/%f %p'
-recovery_target_time = '${TARGET_TIME}'
-recovery_target_action = 'promote'
-EOF
-
-# Create recovery signal file
-touch "${PG_DATA}/recovery.signal"
+# Restore base backup using mariabackup
+log "Restoring base backup..."
+mariabackup --copy-back --target-dir="${BASE_BACKUP}"
 
 # Set permissions
-chown -R postgres:postgres "${PG_DATA}"
-chmod 700 "${PG_DATA}"
+chown -R mysql:mysql "${MYSQL_DATA}"
 
-# Start PostgreSQL in recovery mode
-log "Starting PostgreSQL in recovery mode..."
-systemctl start postgresql
+# Start MariaDB
+log "Starting MariaDB..."
+systemctl start mariadb
 
-# Wait for recovery to complete
-log "Waiting for recovery to complete..."
-while [ -f "${PG_DATA}/recovery.signal" ]; do
-    echo -n "."
-    sleep 5
-done
-echo ""
+# Apply binary logs up to target time
+log "Applying binary logs up to ${TARGET_TIME}..."
+mysqlbinlog --stop-datetime="${TARGET_TIME}" \
+    ${BINLOG_ARCHIVE}/mariadb-bin.* | mariadb
 
 # Verify recovery
 log "Recovery completed. Verifying..."
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+mariadb -e "SELECT NOW() AS current_time, 'Recovery complete' AS status;"
 
 # Start WALLIX services
 log "Starting WALLIX services..."
@@ -1828,16 +1817,15 @@ sudo /opt/wab/scripts/pitr-restore.sh \
 # [2026-01-31 11:00:00] Target time: 2026-01-31 10:44:00
 # [2026-01-31 11:00:01] Stopping services...
 # [2026-01-31 11:00:05] Backing up current data directory...
-# [2026-01-31 11:00:15] Extracting base backup...
-# [2026-01-31 11:01:30] Configuring recovery...
-# [2026-01-31 11:01:31] Starting PostgreSQL in recovery mode...
-# [2026-01-31 11:01:35] Waiting for recovery to complete...
-# ............
+# [2026-01-31 11:00:15] Restoring base backup...
+# [2026-01-31 11:01:30] Starting MariaDB...
+# [2026-01-31 11:01:35] Applying binary logs up to 2026-01-31 10:44:00...
 # [2026-01-31 11:03:15] Recovery completed. Verifying...
-#  pg_is_in_recovery
-# -------------------
-#  f
-# (1 row)
+# +---------------------+-------------------+
+# | current_time        | status            |
+# +---------------------+-------------------+
+# | 2026-01-31 11:03:15 | Recovery complete |
+# +---------------------+-------------------+
 # [2026-01-31 11:03:16] Starting WALLIX services...
 # [2026-01-31 11:03:45] Point-in-Time Recovery completed to 2026-01-31 10:44:00
 ```
@@ -1915,7 +1903,7 @@ log "Versions compatible, proceeding with restore..."
 
 # Stop services
 systemctl stop wallix-bastion 2>/dev/null || true
-systemctl stop postgresql 2>/dev/null || true
+systemctl stop mariadb 2>/dev/null || true
 
 # Restore encryption keys
 log "Restoring encryption keys..."
@@ -1931,10 +1919,10 @@ tar -xzf "${EXTRACTED_DIR}/ssl-certs.tar.gz" -C /
 
 # Restore database
 log "Restoring database..."
-systemctl start postgresql
-sudo -u postgres dropdb --if-exists wab
-sudo -u postgres createdb wab
-sudo -u postgres pg_restore -d wab "${EXTRACTED_DIR}/database.dump"
+systemctl start mariadb
+mariadb -e "DROP DATABASE IF EXISTS wab;"
+mariadb -e "CREATE DATABASE wab;"
+gunzip -c "${EXTRACTED_DIR}/database.sql.gz" | mariadb wab
 
 # Restore configuration
 log "Restoring configuration..."
@@ -2033,17 +2021,17 @@ else
     log "Backup integrity OK"
 fi
 
-# Check WAL archiving (for PITR)
-WAL_ARCHIVE_DIR="${BACKUP_DIR}/wal"
-LATEST_WAL=$(ls -t "${WAL_ARCHIVE_DIR}"/*.gz 2>/dev/null | head -1)
+# Check binary log archiving (for PITR)
+BINLOG_ARCHIVE_DIR="${BACKUP_DIR}/binlog"
+LATEST_BINLOG=$(ls -t "${BINLOG_ARCHIVE_DIR}"/*.gz 2>/dev/null | head -1)
 
-if [ -n "${LATEST_WAL}" ]; then
-    WAL_AGE_MINUTES=$(( ($(date +%s) - $(stat -c %Y "${LATEST_WAL}")) / 60 ))
+if [ -n "${LATEST_BINLOG}" ]; then
+    BINLOG_AGE_MINUTES=$(( ($(date +%s) - $(stat -c %Y "${LATEST_BINLOG}")) / 60 ))
 
-    if [ ${WAL_AGE_MINUTES} -gt 30 ]; then
-        send_alert "WARNING" "WAL archiving may be stalled - last archive ${WAL_AGE_MINUTES} minutes ago"
+    if [ ${BINLOG_AGE_MINUTES} -gt 30 ]; then
+        send_alert "WARNING" "Binary log archiving may be stalled - last archive ${BINLOG_AGE_MINUTES} minutes ago"
     else
-        log "WAL archiving OK: ${WAL_AGE_MINUTES} minutes ago"
+        log "Binary log archiving OK: ${BINLOG_AGE_MINUTES} minutes ago"
     fi
 fi
 
@@ -2101,7 +2089,7 @@ EOF
 |--------|---------|----------|
 | Backup age | > 24 hours | > 48 hours |
 | Storage usage | > 80% | > 90% |
-| WAL archive lag | > 15 minutes | > 30 minutes |
+| Binary log archive lag | > 15 minutes | > 30 minutes |
 | Backup verification | N/A | Failed |
 | Offsite sync age | > 24 hours | > 48 hours |
 
@@ -2236,7 +2224,7 @@ log_audit() {
 /opt/wab/scripts/full-backup.sh
 
 # Database backup only
-sudo -u postgres pg_dump -Fc -Z 9 wab > /backup/wallix/database.dump
+mariadb-dump --single-transaction --routines --triggers --databases wab | gzip > /backup/wallix/database.sql.gz
 
 # Configuration backup
 tar -czf /backup/wallix/config.tar.gz /etc/opt/wab/
@@ -2255,7 +2243,7 @@ ls -lah /backup/wallix/wallix-full-backup-*.tar.gz
 /opt/wab/scripts/full-restore.sh /backup/wallix/backup.tar.gz /root/.key-password
 
 # Database restore only
-sudo -u postgres pg_restore -d wab /backup/wallix/database.dump
+gunzip -c /backup/wallix/database.sql.gz | mariadb wab
 
 # Configuration restore
 tar -xzf /backup/wallix/config.tar.gz -C /
@@ -2276,8 +2264,8 @@ stat -c %y /backup/wallix/wallix-full-backup-*.tar.gz | tail -1
 # Check backup storage
 df -h /backup/wallix
 
-# Check WAL archiving
-sudo -u postgres psql -c "SELECT * FROM pg_stat_archiver;"
+# Check binary logging status
+mariadb -e "SHOW MASTER STATUS\G"
 ```
 
 ---
@@ -2294,8 +2282,8 @@ sudo -u postgres psql -c "SELECT * FROM pg_stat_archiver;"
 
 - [WALLIX Documentation Portal](https://pam.wallix.one/documentation)
 - [WALLIX Administration Guide](https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf)
-- [PostgreSQL Backup Documentation](https://www.postgresql.org/docs/15/backup.html)
-- [PostgreSQL PITR Documentation](https://www.postgresql.org/docs/15/continuous-archiving.html)
+- [MariaDB Backup Documentation](https://mariadb.com/kb/en/backing-up-and-restoring-databases/)
+- [MariaDB Point-in-Time Recovery](https://mariadb.com/kb/en/point-in-time-recovery/)
 
 ---
 

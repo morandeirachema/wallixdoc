@@ -571,14 +571,14 @@ sudo mysql wallix -e "REPAIR TABLE users, sessions, audit_log;"
 
 **Scenario 3: HA Failover Not Working**
 ```bash
-# Check cluster status
-crm status
+# Check replication and HA status
+bastion-replication --status
 
-# Force failover if needed
-crm resource move wallix-bastion node-b
+# Force failover if needed (run on target node)
+bastion-replication --elevate-master  # on target node
 
-# After recovery, clear constraints
-crm resource clear wallix-bastion
+# Verify replication after recovery
+bastion-replication --status
 ```
 
 ### Escalation Matrix
@@ -626,9 +626,8 @@ sudo mysql -e "SHOW MASTER STATUS;"
 # Boot node with latest data
 # Start in standalone mode
 
-# Disable cluster temporarily
-systemctl stop pacemaker
-systemctl stop corosync
+# Stop WALLIX services temporarily
+systemctl stop wallix-bastion
 
 # Start WALLIX standalone
 systemctl start mariadb
@@ -661,20 +660,22 @@ sudo mysql -e "START SLAVE;"
 sudo mysql -e "SHOW SLAVE STATUS\G"
 ```
 
-**Step 5: Restore Cluster**
+**Step 5: Restore HA Replication**
 ```bash
-# On both nodes:
-systemctl start corosync
-systemctl start pacemaker
+# On both nodes, start WALLIX services:
+systemctl start wallix-bastion
+systemctl start keepalived
 
-# Verify cluster status
-crm status
-crm_verify -L
+# Verify HA replication status
+bastion-replication --status
 
 # Test failover
-crm node standby node-b
+# Stop services on node-b for maintenance
+systemctl stop wallix-bastion  # on node-b
 # Verify services on node-a
-crm node online node-b
+bastion-replication --status
+# Restart services on node-b
+systemctl start wallix-bastion  # on node-b
 ```
 
 ---

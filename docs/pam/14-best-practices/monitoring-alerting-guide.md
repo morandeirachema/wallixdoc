@@ -19,7 +19,7 @@ This guide covers proactive monitoring of WALLIX Bastion to ensure high availabi
   - Disk space (< 10% free)
   - Database connectivity
   - Certificate expiration (< 14 days)
-  - Cluster split-brain
+  - Replication failure
 
   WARNING (Alert within hours)
   ============================

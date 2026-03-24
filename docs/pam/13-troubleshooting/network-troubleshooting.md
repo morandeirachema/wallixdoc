@@ -49,15 +49,14 @@ This guide covers troubleshooting network-related problems with WALLIX Bastion.
 # Step 1: Check if VIP is assigned
 ip addr show | grep 10.10.1.100
 
-# Step 2: If not assigned, check Pacemaker
-pcs status
+# Step 2: If not assigned, check replication status
+bastion-replication --monitoring
 
 # Step 3: Check which node should have VIP
-pcs resource show vip-wallix
+bastion-replication --monitoring --verbose
 
-# Step 4: If VIP stuck, force move
-pcs resource move vip-wallix [node-name]
-pcs resource clear vip-wallix  # Remove constraint after move
+# Step 4: If VIP stuck, force promote the other node
+bastion-replication --elevate-master
 ```
 
 ### Load Balancer Health Check Failing
@@ -110,7 +109,7 @@ iptables -L -n | grep 22
 | WALLIX Bastion | Targets | 22 | TCP | `nc -zv linux-test 22` |
 | WALLIX Bastion | Targets | 3389 | TCP | `nc -zv windows-test 3389` |
 | Node1 | Node2 | 3306 | TCP | `nc -zv node2 3306` |
-| Node1 | Node2 | 5405 | UDP | `nc -zuv node2 5405` |
+| Node1 | Node2 | 2242 | TCP | `nc -zv node2 2242` |
 
 ### Test All Ports Script
 

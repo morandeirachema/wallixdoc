@@ -92,15 +92,15 @@ This index provides rapid access to topics across all 47 documentation sections.
 
 | Topic | Section | Link | Description |
 |-------|---------|------|-------------|
-| **HA Clustering** | 11 | [High Availability](../11-high-availability/README.md) | Pacemaker/Corosync active-active clustering |
+| **HA Clustering** | 11 | [High Availability](../11-high-availability/README.md) | bastion-replication active-active clustering |
 | **MariaDB Replication** | 11 | [High Availability](../11-high-availability/README.md) | Database replication, stream replication |
 | **Failover Configuration** | 11 | [High Availability](../11-high-availability/README.md) | Automatic failover, VIP management |
 | **Disaster Recovery** | 29 | [Disaster Recovery](../29-disaster-recovery/README.md) | DR runbooks, RTO/RPO planning, PITR |
 | **Backup and Restore** | 30 | [Backup and Restore](../30-backup-restore/README.md) | Full/selective backup, disaster recovery |
 | **Multi-Site Replication** | 11 | [High Availability](../11-high-availability/README.md) | Cross-site synchronization |
-| **Split-Brain Prevention** | 11 | [High Availability](../11-high-availability/README.md) | Fencing, quorum management |
+| **Replication Failure Prevention** | 11 | [High Availability](../11-high-availability/README.md) | Master promotion, quorum management |
 | **Health Checks** | 32 | [Load Balancer](../32-load-balancer/README.md) | HAProxy health monitoring |
-| **Cluster Status** | 11, 31 | [High Availability](../11-high-availability/README.md), [wabadmin](../31-wabadmin-reference/README.md) | Monitoring cluster health with crm_mon |
+| **Cluster Status** | 11, 31 | [High Availability](../11-high-availability/README.md), [wabadmin](../31-wabadmin-reference/README.md) | Monitoring cluster health with bastion-replication --monitoring |
 | **Upgrade Procedures** | 20 | [Upgrade Guide](../20-upgrade-guide/README.md) | Rolling upgrades for HA clusters |
 
 ---
@@ -119,7 +119,7 @@ This index provides rapid access to topics across all 47 documentation sections.
 | **Performance Issues** | 13, 26 | [Troubleshooting](../13-troubleshooting/README.md), [Performance](../26-performance-benchmarks/README.md) | Slow sessions, database performance |
 | **Database Issues** | 13, 11 | [Troubleshooting](../13-troubleshooting/README.md), [High Availability](../11-high-availability/README.md) | MariaDB replication lag, corruption |
 | **Certificate Errors** | 28 | [Certificate Management](../28-certificate-management/README.md) | SSL/TLS certificate troubleshooting |
-| **Cluster Issues** | 11, 13 | [High Availability](../11-high-availability/README.md), [Troubleshooting](../13-troubleshooting/README.md) | Split-brain, node failures |
+| **Cluster Issues** | 11, 13 | [High Availability](../11-high-availability/README.md), [Troubleshooting](../13-troubleshooting/README.md) | Replication failures, node failures |
 | **Fortigate Integration Issues** | 46 | [Fortigate Integration](../46-fortigate-integration/README.md) | VPN, MFA, routing problems |
 
 ---
@@ -245,8 +245,8 @@ systemctl status wallix-bastion
 wabadmin audit --last 50
 
 # Check HA cluster health
-crm status
-crm_mon -1
+bastion-replication --monitoring
+bastion-replication --monitoring --verbose
 
 # Database replication status
 mysql -e "SHOW SLAVE STATUS\G"

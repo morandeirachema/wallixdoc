@@ -22,7 +22,7 @@ This document provides curated links to official WALLIX documentation, tools, an
 |----------|-----|--------------|
 | **User Guide** | [bastion_en_user_guide.pdf](https://pam.wallix.one/documentation/user-doc/bastion_en_user_guide.pdf) | 2025 |
 | **Administration Guide** | [bastion_en_administration_guide.pdf](https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf) | 2025 |
-| **Deployment Guide (12.0.2)** | [bastion_12.0.2_en_deployment_guide.pdf](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf) | 2024 |
+| **Deployment Guide (12.3.2)** | [bastion_12.0.2_en_deployment_guide.pdf](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf) | 2025 |
 
 ### WALLIX Access Manager
 
@@ -35,7 +35,7 @@ This document provides curated links to official WALLIX documentation, tools, an
 
 | Version | URL |
 |---------|-----|
-| **Bastion 12.1.1** | [bastion-rn-en.html](https://pam.wallix.one/documentation/release-notes/1.5.1/bastion-rn-en.html) |
+| **Bastion 12.3.2** | [bastion-rn-en.html](https://pam.wallix.one/documentation/release-notes/1.5.1/bastion-rn-en.html) |
 | **Access Manager 1.5.1** | [am-rn-en.html](https://pam.wallix.one/documentation/release-notes/1.5.1/am-rn-en.html) |
 
 ---
@@ -183,7 +183,7 @@ This document provides curated links to official WALLIX documentation, tools, an
 
 ### For Administrators
 1. [Administration Guide (PDF)](https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf)
-2. [Deployment Guide](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf)
+2. [Deployment Guide (12.3.2)](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf)
 3. [Release Notes](https://pam.wallix.one/documentation/release-notes/1.5.1/bastion-rn-en.html)
 
 ### For End Users

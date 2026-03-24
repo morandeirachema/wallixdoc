@@ -224,8 +224,8 @@ echo "=== Cluster Status Test ==="
 
 # On either WALLIX Bastion node
 ssh root@wallix-node1.lab.local << 'EOF'
-echo "Pacemaker Status:"
-pcs status | grep -E "(Online|Offline|vip-wallix)"
+echo "Replication Status:"
+bastion-replication --monitoring | grep -E "(Master|Slave|VIP|synchronized)"
 
 echo ""
 echo "VIP Location:"
@@ -273,22 +273,22 @@ PING_PID=$!
 # Trigger failover
 if [ "$vip_node" == "node1" ]; then
     echo "Putting node1 in standby..."
-    ssh root@wallix-node1.lab.local "pcs node standby wallix-node1"
+    ssh root@wallix-node1.lab.local "systemctl stop wallix-keepalived"  # Put node in maintenance
     sleep 10
 
     # Check VIP moved
     new_vip=$(ssh root@wallix-node2.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
 
     # Restore
-    ssh root@wallix-node1.lab.local "pcs node unstandby wallix-node1"
+    ssh root@wallix-node1.lab.local "systemctl start wallix-keepalived"  # Resume node
 else
     echo "Putting node2 in standby..."
-    ssh root@wallix-node2.lab.local "pcs node standby wallix-node2"
+    ssh root@wallix-node2.lab.local "systemctl stop wallix-keepalived"  # Put node in maintenance
     sleep 10
 
     new_vip=$(ssh root@wallix-node1.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
 
-    ssh root@wallix-node2.lab.local "pcs node unstandby wallix-node2"
+    ssh root@wallix-node2.lab.local "systemctl start wallix-keepalived"  # Resume node
 fi
 
 # Wait for ping to complete

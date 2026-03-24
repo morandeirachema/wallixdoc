@@ -149,7 +149,7 @@ The WALLIX Bastion Self-Service Portal empowers end users to manage their own ac
 |  |                        DATA STORES                                    |   |
 |  |                                                                       |   |
 |  |  +------------------+  +------------------+  +------------------+     |   |
-|  |  |   PostgreSQL     |  |   Credential     |  |   Session        |     |   |
+|  |  |   MariaDB        |  |   Credential     |  |   Session        |     |   |
 |  |  |   Database       |  |   Vault          |  |   Recordings     |     |   |
 |  |  +------------------+  +------------------+  +------------------+     |   |
 |  |                                                                       |   |

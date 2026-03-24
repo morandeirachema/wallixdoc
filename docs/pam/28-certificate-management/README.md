@@ -43,7 +43,7 @@ WALLIX Bastion uses multiple certificate types for secure communications:
   | API TLS            | REST API encryption        | /etc/wallix/ssl/      |
   | LDAPS Client       | Secure LDAP connections    | /etc/wallix/ssl/      |
   | Syslog TLS         | Encrypted log forwarding   | /etc/wallix/ssl/      |
-  | PostgreSQL         | Database encryption        | /var/lib/postgresql/  |
+  | MariaDB            | Database encryption        | /var/lib/mysql/       |
   | Inter-node TLS     | Cluster communication      | /etc/wallix/ssl/      |
   +--------------------+----------------------------+-----------------------+
 
@@ -125,12 +125,12 @@ WALLIX Bastion uses multiple certificate types for secure communications:
   +-- proxy_rsa_key         # SSH proxy RSA key
   +-- proxy_ed25519_key     # SSH proxy Ed25519 key
 
-  POSTGRESQL SSL
-  ==============
+  MARIADB SSL
+  ===========
 
-  /var/lib/postgresql/15/main/
-  +-- server.crt            # PostgreSQL server certificate
-  +-- server.key            # PostgreSQL server key
+  /var/lib/mysql/
+  +-- server.crt            # MariaDB server certificate
+  +-- server.key            # MariaDB server key
   +-- root.crt              # CA certificate for client verification
 
 +==============================================================================+
@@ -245,8 +245,8 @@ WALLIX Bastion uses multiple certificate types for secure communications:
   +------------------------------------------------------------------------+
   | Site     | Certificates Required                                       |
   +----------+-------------------------------------------------------------+
-  | Primary  | Web SSL, API TLS, LDAPS, Syslog TLS, PostgreSQL, Cluster   |
-  | Second.  | Web SSL, API TLS, LDAPS, Syslog TLS, PostgreSQL, Cluster   |
+  | Primary  | Web SSL, API TLS, LDAPS, Syslog TLS, MariaDB, Cluster      |
+  | Second.  | Web SSL, API TLS, LDAPS, Syslog TLS, MariaDB, Cluster      |
   | Remote   | Web SSL, API TLS (optional offline CA for air-gapped)      |
   +----------+-------------------------------------------------------------+
 
@@ -1366,7 +1366,7 @@ CERTS=(
     "/etc/wallix/ssl/server.crt:WALLIX Web SSL"
     "/etc/wallix/ssl/ldap-client.crt:LDAP Client"
     "/etc/wallix/ssl/syslog.crt:Syslog TLS"
-    "/var/lib/postgresql/15/main/server.crt:PostgreSQL"
+    "/var/lib/mysql/server.crt:MariaDB"
 )
 
 WARN_DAYS=60
@@ -1437,7 +1437,7 @@ cat > /opt/scripts/cert-metrics.sh << 'EOF'
 CERTS=(
     "/etc/wallix/ssl/server.crt:wallix_web"
     "/etc/wallix/ssl/ldap-client.crt:ldap_client"
-    "/var/lib/postgresql/15/main/server.crt:postgresql"
+    "/var/lib/mysql/server.crt:mariadb"
 )
 
 echo "# HELP cert_expiry_days Days until certificate expiry"
@@ -1490,7 +1490,7 @@ wabadmin certificates --list --expiry
 # | Web SSL              | 2027-01-15       | 365         | OK     |
 # | LDAP Client          | 2026-06-15       | 150         | OK     |
 # | Syslog TLS           | 2026-03-15       | 58          | WARN   |
-# | PostgreSQL           | 2027-01-15       | 365         | OK     |
+# | MariaDB              | 2027-01-15       | 365         | OK     |
 # +----------------------+------------------+-------------+--------+
 ```
 
@@ -1855,7 +1855,7 @@ systemctl restart wallix-bastion
 | CA Chain | `/etc/wallix/ssl/ca-chain.crt` |
 | Client Auth CA | `/etc/wallix/ssl/ca/client-ca.crt` |
 | SSH Host Keys | `/etc/ssh/ssh_host_*` |
-| PostgreSQL SSL | `/var/lib/postgresql/15/main/server.crt` |
+| MariaDB SSL | `/var/lib/mysql/server.crt` |
 
 ---
 
@@ -1876,7 +1876,7 @@ systemctl restart wallix-bastion
 - [14 - Best Practices](../14-best-practices/README.md) - Security hardening practices
 
 **Related Documentation:**
-- [Install Guide: Security Hardening](/install/07-security-hardening.md) - TLS configuration
+- [Best Practices: Security](../14-best-practices/README.md) - TLS and security configuration
 
 **Official Resources:**
 - [WALLIX Documentation](https://pam.wallix.one/documentation)

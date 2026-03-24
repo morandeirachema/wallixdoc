@@ -12,7 +12,7 @@ For authoritative deployment guidance, always refer to the official WALLIX docum
 
 | Document | URL | Description |
 |----------|-----|-------------|
-| **Deployment Guide** | [bastion_12.0.2_en_deployment_guide.pdf](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf) | Official deployment procedures |
+| **Deployment Guide (12.3.2)** | [bastion_12.0.2_en_deployment_guide.pdf](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf) | Official deployment procedures |
 | **Administration Guide** | [bastion_en_administration_guide.pdf](https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf) | Complete administration reference |
 | **Architecture Guide** | [architecture.html](https://pam.wallix.one/documentation/deployment/getting-started/architecture.html) | Deployment architecture patterns |
 | **Documentation Portal** | [pam.wallix.one](https://pam.wallix.one/documentation) | All official documentation |
@@ -114,7 +114,8 @@ For authoritative deployment guidance, always refer to the official WALLIX docum
 |   - 22:        SSH Proxy                                                      |
 |   - 3389:      RDP Proxy                                                      |
 |   - 3306/3307: MariaDB Replication                                            |
-|   - 5404-5406: Corosync Cluster                                               |
+|   - 2242:      SSH replication tunnel (TCP)                                    |
+|   - 3307:      MariaDB replication (TCP)                                      |
 |                                                                               |
 +===============================================================================+
 ```
@@ -145,7 +146,7 @@ For multi-site deployments, refer to:
 |-----------|---------|-------|
 | **Operating System** | Debian 12 (Bookworm) | Required |
 | **Database** | MariaDB 10.5+ | Included |
-| **Clustering** | Pacemaker/Corosync | For HA |
+| **Clustering** | bastion-replication (built-in) | For HA |
 | **Load Balancer** | HAProxy 2.x | Recommended |
 
 For detailed requirements, see [28-system-requirements/README.md](../19-system-requirements/README.md).

@@ -101,30 +101,31 @@
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
-|  ACTIVE/ACTIVE                                                                |
-|  =============                                                                |
+|  ACTIVE/ACTIVE (Master/Master)                                                |
+|  ============================                                                 |
 |                                                                               |
 |                     +-----------------+                                       |
 |                     |  Load Balancer  |                                       |
+|                     |  (HAProxy HA)   |                                       |
 |                     +--------+--------+                                       |
 |                              |                                                |
 |              +---------------+---------------+                                |
-|              |               |               |                                |
-|              v               v               v                                |
-|    +-----------------+ +-----------------+ +-----------------+                |
-|    |   Node 1        | |   Node 2        | |   Node 3        |                |
-|    |   (ACTIVE)      | |   (ACTIVE)      | |   (ACTIVE)      |                |
-|    |  * Serving      | |  * Serving      | |  * Serving      |                |
-|    +-----------------+ +-----------------+ +-----------------+                |
-|              |               |               |                                |
+|              |                               |                                |
+|              v                               v                                |
+|    +-----------------+             +-----------------+                        |
+|    |   Node 1        |             |   Node 2        |                        |
+|    |   (MASTER)      |<--Sync----->|   (MASTER)      |                        |
+|    |  * Serving 50%  |  bastion-   |  * Serving 50%  |                        |
+|    +-----------------+  replication+-----------------+                        |
+|              |                               |                                |
 |              +---------------+---------------+                                |
 |                              |                                                |
 |                    +---------+---------+                                      |
 |                    |  Shared Storage   |                                      |
-|                    |  + Database       |                                      |
+|                    |  (NAS/NFS v4)     |                                      |
 |                    +-------------------+                                      |
 |                                                                               |
-|  Pros: No failover, load distribution, scalability                            |
+|  Pros: No failover, load distribution, both nodes active                     |
 |  Cons: More complex, requires shared storage                                  |
 |                                                                               |
 +===============================================================================+
@@ -144,36 +145,48 @@
 |                          +-----------------+                                  |
 |                          |  Virtual IP     |                                  |
 |                          |  (Floating)     |                                  |
-|                          |  192.168.1.10   |                                  |
+|                          |  VIP: 10.10.X.10|                                  |
 |                          +--------+--------+                                  |
 |                                   |                                           |
-|                  +----------------+----------------+                          |
-|                  |                                 |                          |
-|                  v                                 v                          |
-|  +-------------------------------+ +-------------------------------+          |
-|  |        NODE 1 (PRIMARY)       | |       NODE 2 (STANDBY)        |          |
-|  |                               | |                               |          |
-|  |  IP: 192.168.1.11             | |  IP: 192.168.1.12             |          |
-|  |                               | |                               |          | 
-|  |  +-------------------------+  | |  +-------------------------+  |          |
-|  |  | WALLIX Bastion          |  | |  | WALLIX Bastion          |  |          |
-|  |  | (Running)               |  | |  | (Standby)               |  |          |
-|  |  +-------------------------+  | |  +-------------------------+  |          |
-|  |                               | |                               |          |
-|  |  +-------------------------+  | |  +-------------------------+  |          |
-|  |  | MariaDB                 |  | |  | MariaDB                 |  |          |
-|  |  | (Primary)               |<-+-+->| (Replica)               |  |          | 
-|  |  +-------------------------+  | |  +-------------------------+  |          |
-|  |                               | |     Streaming Replication     |          | 
-|  +-------------------------------+ +-------------------------------+          |
-|                  |                                 |                          |
-|                  +----------------+----------------+                          |
+|                  +----------------+                                           |
+|                  |                                                            |
+|                  v                                                            |
+|  +-------------------------------+                                            |
+|  |        NODE 1 (MASTER)        |                                            |
+|  |                               |          +-------------------------------+ |
+|  |  IP: 10.10.X.11               |          |       NODE 2 (SLAVE)          | |
+|  |  Load: 100% traffic           |          |                               | |
+|  |                               |          |  IP: 10.10.X.12               | |
+|  |  +-------------------------+  |          |  Load: 0% (idle)              | |
+|  |  | WALLIX Bastion          |  |          |                               | |
+|  |  | Services (Running)      |  |          |  +-------------------------+  | |
+|  |  +-------------------------+  |          |  | WALLIX Bastion          |  | |
+|  |                               |          |  | Services (Read-only)    |  | |
+|  |  +-------------------------+  |          |  +-------------------------+  | |
+|  |  | MariaDB (Master)        |  |          |                               | |
+|  |  |                         |  |          |  +-------------------------+  | |
+|  |  | Replication via SSH ----+--+--------->|  | MariaDB (Slave)         |  | |
+|  |  | tunnel (autossh)        |  |          |  | Read-only replica       |  | |
+|  |  | Port 2242 (SSH)         |  |          |  |                         |  | |
+|  |  | Port 3306 (MariaDB)     |  |          |  | Outbound 3307 -> 3306   |  | |
+|  |  +-------------------------+  |          |  | via SSH tunnel on 2242  |  | |
+|  |                               |          |  +-------------------------+  | |
+|  +-------------------------------+          +-------------------------------+ |
+|                  |                                         |                  |
+|                  +----------------+------------------------+                  |
 |                                   |                                           |
 |                          +--------+--------+                                  |
 |                          | Shared Storage  |                                  |
 |                          | (Recordings)    |                                  |
-|                          | NFS/iSCSI       |                                  |
+|                          | /var/wab/recorded|                                 |
+|                          | NFS v4          |                                  |
 |                          +-----------------+                                  |
+|                                                                               |
+|  REPLICATION (Managed by bastion-replication + autossh)                       |
+|  =============================================================               |
+|  Slave initiates SSH tunnel: outbound 3307 -> Master 3306 via SSH 2242       |
+|  All config changes replicated from Master to Slave automatically            |
+|  Managed entirely by bastion-replication tool (no manual MariaDB config)     |
 |                                                                               |
 +===============================================================================+
 ```
@@ -243,43 +256,42 @@
 +===============================================================================+
 ```
 
-### Configuration Example
+### Configuration (bastion-replication Master/Slave)
 
 ```bash
-# /etc/wallix/cluster.conf
+# On Master node (10.10.X.11):
+# Initialize bastion-replication in Master mode
+bastion-replication --init-master
 
-[cluster]
-mode = active_passive
-cluster_name = wallix-prod
+# On Slave node (10.10.X.12):
+# Initialize bastion-replication in Slave mode, pointing to Master
+bastion-replication --init-slave --master-ip 10.10.X.11
 
-[node1]
-hostname = bastion-node1.company.com
-ip_address = 192.168.1.11
-role = primary
+# Verify replication status
+bastion-replication --status
 
-[node2]
-hostname = bastion-node2.company.com
-ip_address = 192.168.1.12
-role = standby
+# Manual failover: promote Slave to Master
+bastion-replication --elevate-master
+```
 
-[vip]
-virtual_ip = 192.168.1.10
-interface = eth0
-netmask = 255.255.255.0
+### Keepalived VIP Configuration
 
-[heartbeat]
-interval_seconds = 2
-timeout_seconds = 10
-failover_threshold = 3
-
-[database]
-replication_mode = streaming
-sync_mode = synchronous
-
-[storage]
-type = nfs
-path = nas.company.com:/wallix/recordings
-mount_point = /var/wab/recorded
+```bash
+# /etc/keepalived/keepalived.conf (on Master)
+vrrp_instance WALLIX_VIP {
+    state MASTER
+    interface eth0
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass WALLIX_HA_REDACTED
+    }
+    virtual_ipaddress {
+        10.10.X.10/24
+    }
+}
 ```
 
 ---
@@ -293,40 +305,44 @@ mount_point = /var/wab/recorded
 |                      ACTIVE/ACTIVE CLUSTER                                    |
 +===============================================================================+
 |                                                                               |
-|                          +---------------------+                              |
-|                          |    Load Balancer    |                              |
-|                          |    (F5 / HAProxy)   |                              |
-|                          |                     |                              |
-|                          |  VIP: 192.168.1.10  |                              |
-|                          +----------+----------+                              |
-|                                     |                                         |
-|             +-----------------------+-----------------------+                 |
-|             |                       |                       |                 |
-|             v                       v                       v                 |
-|  +------------------+   +------------------+   +------------------+           |
-|  |    NODE 1        |   |    NODE 2        |   |    NODE 3        |           |
-|  |                  |   |                  |   |                  |           |
-|  | IP: 192.168.1.11 |   | IP: 192.168.1.12 |   | IP: 192.168.1.13 |           |
-|  |                  |   |                  |   |                  |           |
-|  | +--------------+ |   | +--------------+ |   | +--------------+ |           |
-|  | |   WALLIX     | |   | |   WALLIX     | |   | |   WALLIX     | |           |
-|  | |   Bastion    | |   | |   Bastion    | |   | |   Bastion    | |           |
-|  | |   (Active)   | |   | |   (Active)   | |   | |   (Active)   | |           |
-|  | +--------------+ |   | +--------------+ |   | +--------------+ |           |
-|  +--------+---------+   +--------+---------+   +--------+---------+           |
-|           |                      |                      |                     |
-|           +----------------------+----------------------+                     |
-|                                  |                                            |
-|                    +-------------+-------------+                              |
-|                    |                           |                              |
-|                    v                           v                              |
-|         +------------------+       +----------------------+                   |
-|         |   MariaDB        |       |   Shared Storage     |                   |
-|         |   Cluster        |       |   (NAS/SAN)          |                   |
-|         |                  |       |                      |                   |
-|         |  Primary + 2     |       |  /var/wab/recorded   |                   |
-|         |  Replicas        |       |  /var/wab/shared     |                   |
-|         +------------------+       +----------------------+                   |
+|                        +--------------------------+                           |
+|                        |    HAProxy (HA Pair)     |                           |
+|                        |  Load Balancer           |                           |
+|                        |                          |                           |
+|                        |  VIP: 10.10.X.100        |                           |
+|                        |  Keepalived VRRP         |                           |
+|                        +-----------+--------------+                           |
+|                                    |                                          |
+|                   +----------------+----------------+                         |
+|                   |                                 |                         |
+|                   v                                 v                         |
+| +--------------------------------+ +--------------------------------+         |
+| |  WALLIX BASTION NODE 1         | |  WALLIX BASTION NODE 2         |         |
+| |  (MASTER)                      | |  (MASTER)                      |         |
+| |                                | |                                |         |
+| |  IP: 10.10.X.11                | |  IP: 10.10.X.12                |         |
+| |  Load: 50% traffic             | |  Load: 50% traffic             |         |
+| |                                | |                                |         |
+| |  +---------------------------+ | |  +---------------------------+ |         |
+| |  | bastion-replication       | | |  | bastion-replication       | |         |
+| |  | (MASTER/MASTER)           |<+-+->| (MASTER/MASTER)           | |         |
+| |  |                           | | |  |                           | |         |
+| |  | SSH tunnel via autossh    | | |  | SSH tunnel via autossh    | |         |
+| |  | Port 2242 (SSH tunnel)    | | |  | Port 2242 (SSH tunnel)    | |         |
+| |  | Port 3306 (MariaDB in)    | | |  | Port 3306 (MariaDB in)    | |         |
+| |  | Port 3307 (MariaDB out)   | | |  | Port 3307 (MariaDB out)   | |         |
+| |  +---------------------------+ | |  +---------------------------+ |         |
+| |                                | |                                |         |
+| +--------------------------------+ +--------------------------------+         |
+|                   |                                 |                         |
+|                   +----------------+----------------+                         |
+|                                    |                                          |
+|                        +-----------+--------------+                           |
+|                        |  Shared Storage (NAS)    |                           |
+|                        |  Session Recordings      |                           |
+|                        |  /var/wab/recorded       |                           |
+|                        |  NFS v4                  |                           |
+|                        +--------------------------+                           |
 |                                                                               |
 +===============================================================================+
 ```
@@ -363,25 +379,22 @@ mount_point = /var/wab/recorded
 |      balance roundrobin                                                       |
 |      option httpchk GET /health                                               |
 |      cookie SERVERID insert indirect nocache                                  |
-|      server node1 192.168.1.11:443 ssl check cookie node1                     |
-|      server node2 192.168.1.12:443 ssl check cookie node2                     |
-|      server node3 192.168.1.13:443 ssl check cookie node3                     |
+|      server node1 10.10.X.11:443 ssl check cookie node1                       |
+|      server node2 10.10.X.12:443 ssl check cookie node2                       |
 |                                                                               |
 |  backend wallix_ssh_nodes                                                     |
 |      mode tcp                                                                 |
 |      balance source                                                           |
 |      option tcp-check                                                         |
-|      server node1 192.168.1.11:22 check                                       |
-|      server node2 192.168.1.12:22 check                                       |
-|      server node3 192.168.1.13:22 check                                       |
+|      server node1 10.10.X.11:22 check                                         |
+|      server node2 10.10.X.12:22 check                                         |
 |                                                                               |
 |  backend wallix_rdp_nodes                                                     |
 |      mode tcp                                                                 |
 |      balance source                                                           |
 |      option tcp-check                                                         |
-|      server node1 192.168.1.11:3389 check                                     |
-|      server node2 192.168.1.12:3389 check                                     |
-|      server node3 192.168.1.13:3389 check                                     |
+|      server node1 10.10.X.11:3389 check                                       |
+|      server node2 10.10.X.12:3389 check                                       |
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
@@ -431,36 +444,27 @@ mount_point = /var/wab/recorded
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
-|  MAXSCALE/GALERA CLUSTER MANAGEMENT                                           |
-|  ==================================                                           |
+|  BASTION-REPLICATION MANAGEMENT                                               |
+|  ==============================                                               |
 |                                                                               |
-|  MaxScale/Galera provides:                                                    |
-|  * Automatic leader election                                                  |
-|  * Automatic failover                                                         |
-|  * REST API for management                                                    |
-|  * Integration with etcd/Consul/ZooKeeper                                     |
+|  bastion-replication provides:                                                |
+|  * Master/Master (Active-Active) or Master/Slave (Active-Passive) modes       |
+|  * SSH tunnel (autossh) on port 2242 between nodes                            |
+|  * MariaDB streaming replication (3307 -> 3306 via SSH tunnel)                |
+|  * Automatic reconnection via autossh                                         |
 |                                                                               |
-|  # maxscale.cnf                                                               |
-|  scope: wallix-cluster                                                        |
-|  name: node1                                                                  |
+|  # Initialize Master/Master (Active-Active)                                   |
+|  bastion-replication --init-master-master --peer-ip 10.10.X.12                |
 |                                                                               |
-|  restapi:                                                                     |
-|    listen: 0.0.0.0:8008                                                       |
-|    connect_address: 192.168.1.11:8008                                         |
+|  # Initialize Master/Slave (Active-Passive)                                   |
+|  # On Master: bastion-replication --init-master                               |
+|  # On Slave:  bastion-replication --init-slave --master-ip 10.10.X.11         |
 |                                                                               |
-|  etcd:                                                                        |
-|    hosts:                                                                     |
-|      - 192.168.1.21:2379                                                      |
-|      - 192.168.1.22:2379                                                      |
-|      - 192.168.1.23:2379                                                      |
+|  # Check replication status                                                   |
+|  bastion-replication --status                                                 |
 |                                                                               |
-|  bootstrap:                                                                   |
-|    dcs:                                                                       |
-|      synchronous_mode: true                                                   |
-|      mariadb:                                                                 |
-|        parameters:                                                            |
-|          max_connections: 200                                                 |
-|          synchronous_commit: on                                               |
+|  # Promote Slave to Master (failover)                                         |
+|  bastion-replication --elevate-master                                         |
 |                                                                               |
 +===============================================================================+
 ```
@@ -548,8 +552,8 @@ mount_point = /var/wab/recorded
 |  STEP 3: PROMOTE DR SITE                                                      |
 |  ======================                                                       |
 |                                                                               |
-|  [ ] Promote MariaDB replica to primary                                       |
-|     $ mariadb-admin failover wallix-cluster                                   |
+|  [ ] Promote Slave to Master                                                  |
+|     $ bastion-replication --elevate-master                                    |
 |                                                                               |
 |  [ ] Start WALLIX Bastion services                                            |
 |     $ systemctl start wabengine                                               |
@@ -1133,9 +1137,8 @@ if __name__ == "__main__":
     # Initialize HA client with multiple nodes
     client = WallixHAClient(
         nodes=[
-            'https://bastion-node1.example.com',
-            'https://bastion-node2.example.com',
-            'https://bastion-node3.example.com'
+            'https://bastion-node1.company.com',
+            'https://bastion-node2.company.com'
         ],
         username='api_user',
         password='secure_password',
@@ -1415,7 +1418,7 @@ class HealthAwareClient:
 
 
 # Usage Example
-client = HealthAwareClient('https://bastion-node1.example.com')
+client = HealthAwareClient('https://bastion-node1.company.com')
 
 # Check health before operations
 if client.check_health():
@@ -1542,9 +1545,8 @@ class LoadBalancedClient:
 
 # Usage Example
 lb_client = LoadBalancedClient([
-    'https://bastion-node1.example.com',
-    'https://bastion-node2.example.com',
-    'https://bastion-node3.example.com'
+    'https://bastion-node1.company.com',
+    'https://bastion-node2.company.com'
 ])
 
 # Round-robin selection
@@ -1572,9 +1574,8 @@ if healthy_node:
 
 # Weighted selection (e.g., more powerful nodes get higher weight)
 weights = {
-    'https://bastion-node1.example.com': 3,  # 3x capacity
-    'https://bastion-node2.example.com': 2,  # 2x capacity
-    'https://bastion-node3.example.com': 1   # 1x capacity
+    'https://bastion-node1.company.com': 2,  # 2x capacity
+    'https://bastion-node2.company.com': 1   # 1x capacity
 }
 node = lb_client.weighted_selection(weights)
 print(f"Weighted selection: {node}")
@@ -1628,8 +1629,8 @@ class ProductionHAClient(WallixHAClient):
 if __name__ == "__main__":
     client = ProductionHAClient(
         nodes=[
-            'https://bastion-node1.example.com',
-            'https://bastion-node2.example.com'
+            'https://bastion-node1.company.com',
+            'https://bastion-node2.company.com'
         ],
         username='api_admin',
         password='secure_password',

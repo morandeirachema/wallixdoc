@@ -66,7 +66,7 @@
                     |                           |
                     v                           v
           +------------------+       +--------------------+
-          |   PostgreSQL     |       |  Recording Storage |
+          |   MariaDB        |       |  Recording Storage |
           |   Database       |       |  (NAS/SAN)         |
           |                  |       |                    |
           |  - Auth data     |       |  - Session videos  |
@@ -144,7 +144,7 @@
   +--------------------+---------------------------------------------------+
   | WALLIX Bastion     | 12.3.2                                            |
   | Operating System   | Debian 12 (Bookworm)                              |
-  | PostgreSQL         | 16.x with optimized settings                      |
+  | MariaDB            | 10.11 with optimized settings                     |
   | Kernel             | 6.1.x with performance tuning                     |
   +--------------------+---------------------------------------------------+
 
@@ -706,7 +706,7 @@
 
 ## Database Sizing
 
-### PostgreSQL Requirements by Object Count
+### MariaDB Requirements by Object Count
 
 ```
 +==============================================================================+
@@ -790,8 +790,8 @@
 
   --------------------------------------------------------------------------
 
-  POSTGRESQL PERFORMANCE REQUIREMENTS
-  ===================================
+  MARIADB PERFORMANCE REQUIREMENTS
+  ================================
 
   Connection Pool Sizing:
   +------------------------------------------------------------------------+
@@ -806,13 +806,13 @@
 
   Memory Allocation:
   +------------------------------------------------------------------------+
-  | System RAM | shared_buffers | effective_cache_size | work_mem         |
-  +------------+----------------+----------------------+------------------+
-  | 16 GB      | 4 GB           | 12 GB                | 128 MB           |
-  | 32 GB      | 8 GB           | 24 GB                | 256 MB           |
-  | 64 GB      | 16 GB          | 48 GB                | 512 MB           |
-  | 128 GB     | 32 GB          | 96 GB                | 1 GB             |
-  +------------+----------------+----------------------+------------------+
+  | System RAM | innodb_buffer_pool_size | innodb_log_file_size | sort_buf |
+  +------------+------------------------+----------------------+----------+
+  | 16 GB      | 10 GB                  | 2 GB                 | 128 MB   |
+  | 32 GB      | 22 GB                  | 4 GB                 | 256 MB   |
+  | 64 GB      | 44 GB                  | 4 GB                 | 512 MB   |
+  | 128 GB     | 90 GB                  | 4 GB                 | 1 GB     |
+  +------------+------------------------+----------------------+----------+
 
   Disk IOPS Requirements:
   +------------------------------------------------------------------------+
@@ -925,7 +925,7 @@
   +------------------------------------------------------------------------+
   | Sync Type                | Bandwidth Required | Latency Sensitivity   |
   +--------------------------+--------------------+-----------------------+
-  | PostgreSQL Streaming     | 1-10 Mbps          | < 5ms for sync mode   |
+  | MariaDB Replication      | 1-10 Mbps          | < 5ms for sync mode   |
   | Configuration Sync       | 0.1-1 Mbps         | < 100ms               |
   | Session State (failover) | 5-50 Mbps          | < 10ms for seamless   |
   | Recording Replication    | 10-100 Mbps        | Async acceptable      |
@@ -1082,10 +1082,10 @@
 
   +------------------------------------------------------------------------+
   |                                                                        |
-  |  Required RAM = OS + PostgreSQL + Session Buffers + Cache              |
+  |  Required RAM = OS + MariaDB + Session Buffers + Cache                 |
   |                                                                        |
   |  OS and Base Services:      4 GB                                       |
-  |  PostgreSQL (shared_buffers): 25% of available for DB                  |
+  |  MariaDB (innodb_buffer_pool_size): 25% of available for DB            |
   |  Session Buffers:           Concurrent Sessions x Memory per Session   |
   |    SSH:  40 MB/session                                                 |
   |    RDP:  120 MB/session                                                |
@@ -1094,7 +1094,7 @@
   |                                                                        |
   |  Example (Large, 750 mixed sessions - 60/30/10):                       |
   |    OS:           4 GB                                                  |
-  |    PostgreSQL:   16 GB (for 64 GB system)                              |
+  |    MariaDB:      16 GB (for 64 GB system)                              |
   |    SSH (450):    450 x 40 MB = 18 GB                                   |
   |    RDP (225):    225 x 120 MB = 27 GB                                  |
   |    VNC (75):     75 x 80 MB = 6 GB                                     |
@@ -1123,8 +1123,8 @@
   +------------------------------------------------------------------------+
   | Component            | Base Size    | Per 1000 Users | IOPS/1000 Users|
   +------------------------+------------+----------------+----------------|
-  | PostgreSQL Data      | 10 GB        | 5 GB           | 500            |
-  | PostgreSQL WAL       | 10 GB        | 2 GB           | 1000           |
+  | MariaDB Data         | 10 GB        | 5 GB           | 500            |
+  | MariaDB Binary Logs  | 10 GB        | 2 GB           | 1000           |
   | Config/Policies      | 1 GB         | 0.5 GB         | 50             |
   | Encryption Keys      | 0.5 GB       | 0.1 GB         | 10             |
   +------------------------+------------+----------------+----------------|
@@ -1314,58 +1314,59 @@
 
 ## Performance Tuning
 
-### PostgreSQL, Kernel, and Application Tuning
+### MariaDB, Kernel, and Application Tuning
 
 ```
 +==============================================================================+
 |                    PERFORMANCE TUNING                                         |
 +==============================================================================+
 
-  POSTGRESQL OPTIMIZATION
-  =======================
+  MARIADB OPTIMIZATION
+  ====================
 
-  Memory Configuration (/etc/postgresql/16/main/postgresql.conf):
+  InnoDB Configuration (/etc/mysql/mariadb.conf.d/50-server.cnf):
   +------------------------------------------------------------------------+
-  | # Memory Settings - Adjust based on total system RAM                   |
+  | [mysqld]                                                               |
+  | # InnoDB Buffer Pool - 60-70% of total RAM for dedicated DB server     |
+  | innodb_buffer_pool_size = 44G            # For 64GB system             |
   |                                                                        |
-  | # 25% of total RAM for database operations                             |
-  | shared_buffers = 16GB                    # For 64GB system             |
+  | # Buffer pool instances (1 per GB of buffer pool, max 64)              |
+  | innodb_buffer_pool_instances = 44                                      |
   |                                                                        |
-  | # 75% of total RAM for query planning estimates                        |
-  | effective_cache_size = 48GB              # For 64GB system             |
+  | # InnoDB log file size (larger = fewer checkpoints, slower recovery)   |
+  | innodb_log_file_size = 4G                                              |
+  | innodb_log_buffer_size = 256M                                          |
   |                                                                        |
-  | # Memory per sort/hash operation                                       |
-  | work_mem = 256MB                         # Adjust for complex queries  |
+  | # Sort and join buffers per connection                                 |
+  | sort_buffer_size = 256M                  # Adjust for complex queries  |
+  | join_buffer_size = 256M                                                |
   |                                                                        |
-  | # Memory for maintenance (VACUUM, CREATE INDEX)                        |
-  | maintenance_work_mem = 2GB               # 2-4GB for large DBs         |
-  |                                                                        |
-  | # Maximum memory for parallel query workers                            |
-  | max_parallel_workers_per_gather = 4                                    |
-  | max_parallel_workers = 8                                               |
+  | # Temp table size (per connection)                                     |
+  | tmp_table_size = 512M                                                  |
+  | max_heap_table_size = 512M                                             |
   +------------------------------------------------------------------------+
 
   Connection and Performance Settings:
   +------------------------------------------------------------------------+
   | # Connection Management                                                |
   | max_connections = 500                    # Based on session count      |
-  | superuser_reserved_connections = 5                                     |
+  | thread_cache_size = 100                  # Cache threads for reuse     |
   |                                                                        |
-  | # Write-Ahead Log (WAL) Performance                                    |
-  | wal_buffers = 64MB                       # 1/32 of shared_buffers      |
-  | checkpoint_completion_target = 0.9       # Spread checkpoint I/O       |
-  | checkpoint_timeout = 10min               # Reduce checkpoint frequency |
-  | max_wal_size = 4GB                       # Allow larger WAL before CP  |
-  | min_wal_size = 1GB                                                     |
+  | # Binary Log and Replication                                           |
+  | log_bin = /var/log/mysql/mariadb-bin     # Enable binary logging       |
+  | binlog_format = ROW                      # Row-based for replication   |
+  | expire_logs_days = 7                     # Purge old binary logs       |
+  | sync_binlog = 1                          # Durable binary logging      |
   |                                                                        |
-  | # Durability (adjust for performance vs safety trade-off)              |
-  | synchronous_commit = on                  # Keep 'on' for production    |
-  | wal_compression = on                     # Reduce WAL I/O              |
+  | # InnoDB Durability (adjust for performance vs safety trade-off)       |
+  | innodb_flush_log_at_trx_commit = 1       # Keep '1' for production    |
+  | innodb_flush_method = O_DIRECT           # Avoid double buffering      |
   |                                                                        |
-  | # Query Planner (SSD optimized)                                        |
-  | random_page_cost = 1.1                   # Default 4.0, use 1.1 for SSD|
-  | effective_io_concurrency = 200           # Default 1, use 200 for SSD  |
-  | default_statistics_target = 200          # Better query plans          |
+  | # I/O Tuning (SSD optimized)                                           |
+  | innodb_io_capacity = 2000                # SSD: 2000-5000              |
+  | innodb_io_capacity_max = 4000            # Peak I/O capacity           |
+  | innodb_read_io_threads = 8               # Parallel read threads       |
+  | innodb_write_io_threads = 8              # Parallel write threads      |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -1408,7 +1409,7 @@
   | vm.dirty_expire_centisecs = 3000         # Flush after 30 seconds      |
   | vm.vfs_cache_pressure = 50               # Balance inode/dentry cache  |
   |                                                                        |
-  | # Huge Pages (for PostgreSQL large shared_buffers)                     |
+  | # Huge Pages (for MariaDB InnoDB buffer pool)                          |
   | vm.nr_hugepages = 8192                   # 16GB of huge pages          |
   +------------------------------------------------------------------------+
 
@@ -1422,9 +1423,9 @@
   | wab soft memlock unlimited                                             |
   | wab hard memlock unlimited                                             |
   |                                                                        |
-  | # PostgreSQL User                                                      |
-  | postgres soft nofile 131072                                            |
-  | postgres hard nofile 131072                                            |
+  | # MariaDB/MySQL User                                                   |
+  | mysql soft nofile 131072                                               |
+  | mysql hard nofile 131072                                               |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -1573,35 +1574,38 @@
   | ps aux --sort=-%mem | head -20                                         |
   +------------------------------------------------------------------------+
 
-  PostgreSQL Monitoring:
+  MariaDB Monitoring:
   +------------------------------------------------------------------------+
   | -- Active connection count                                             |
-  | SELECT count(*) FROM pg_stat_activity WHERE state != 'idle';           |
+  | SELECT count(*) FROM information_schema.PROCESSLIST                    |
+  | WHERE COMMAND != 'Sleep';                                              |
   |                                                                        |
   | -- Connection breakdown                                                |
-  | SELECT state, count(*) FROM pg_stat_activity GROUP BY state;           |
+  | SELECT COMMAND, count(*) FROM information_schema.PROCESSLIST           |
+  | GROUP BY COMMAND;                                                      |
   |                                                                        |
   | -- Long-running queries                                                |
-  | SELECT pid, now() - pg_stat_activity.query_start AS duration, query    |
-  | FROM pg_stat_activity                                                  |
-  | WHERE state != 'idle' AND now() - pg_stat_activity.query_start > '30s';|
+  | SELECT ID, TIME AS duration_sec, INFO AS query                         |
+  | FROM information_schema.PROCESSLIST                                    |
+  | WHERE COMMAND != 'Sleep' AND TIME > 30;                                |
   |                                                                        |
-  | -- Cache hit ratio                                                     |
-  | SELECT round(100.0 * sum(heap_blks_hit) /                              |
-  |   nullif(sum(heap_blks_hit) + sum(heap_blks_read), 0), 2)              |
-  |   AS cache_hit_ratio FROM pg_statio_user_tables;                       |
+  | -- InnoDB buffer pool hit ratio                                        |
+  | SELECT round(100 - (                                                   |
+  |   (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS         |
+  |    WHERE VARIABLE_NAME = 'Innodb_buffer_pool_reads') /                 |
+  |   (SELECT VARIABLE_VALUE FROM information_schema.GLOBAL_STATUS         |
+  |    WHERE VARIABLE_NAME = 'Innodb_buffer_pool_read_requests')           |
+  |   * 100), 2) AS buffer_pool_hit_ratio;                                 |
   |                                                                        |
   | -- Replication status                                                  |
-  | SELECT client_addr, state, sent_lsn, replay_lsn,                       |
-  |   pg_wal_lsn_diff(sent_lsn, replay_lsn) AS lag_bytes                   |
-  | FROM pg_stat_replication;                                              |
+  | SHOW SLAVE STATUS\G                                                    |
   |                                                                        |
-  | -- Table bloat estimate                                                |
-  | SELECT schemaname, tablename,                                          |
-  |   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)),  |
-  |   n_dead_tup, n_live_tup,                                              |
-  |   round(100.0 * n_dead_tup / nullif(n_live_tup, 0), 2) AS dead_pct     |
-  | FROM pg_stat_user_tables ORDER BY n_dead_tup DESC LIMIT 10;            |
+  | -- Table sizes                                                         |
+  | SELECT table_schema, table_name,                                       |
+  |   round((data_length + index_length) / 1024 / 1024, 2) AS size_mb,    |
+  |   data_free / 1024 / 1024 AS fragmented_mb                             |
+  | FROM information_schema.TABLES                                         |
+  | ORDER BY (data_length + index_length) DESC LIMIT 10;                   |
   +------------------------------------------------------------------------+
 
   WALLIX Application Monitoring:
@@ -1968,7 +1972,7 @@
   TUNING PRIORITY ORDER
   =====================
 
-  1. PostgreSQL memory (shared_buffers, effective_cache_size)
+  1. MariaDB memory (innodb_buffer_pool_size)
   2. Linux file descriptors and network buffers
   3. Session manager connection pools
   4. Recording storage optimization
@@ -1992,7 +1996,7 @@
 
 - [WALLIX Documentation Portal](https://pam.wallix.one/documentation) - Official documentation
 - [WALLIX Administration Guide](https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf) - Administration procedures
-- [PostgreSQL Performance Tuning](https://wiki.postgresql.org/wiki/Performance_Optimization) - Database optimization
+- [MariaDB Performance Tuning](https://mariadb.com/kb/en/optimization-and-tuning/) - Database optimization
 - [Linux Performance Tuning](https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/monitoring_and_managing_system_status_and_performance/index) - OS-level tuning
 
 ---

@@ -97,8 +97,8 @@ This guide provides team-specific documentation for handoffs to Networking, SIEM
 | wallix-node1/2 | dc-lab | 389 | TCP | LDAP |
 | wallix-node1/2 | dc-lab | 53 | TCP/UDP | DNS |
 | wallix-node1 | wallix-node2 | 3306/3307 | TCP | MariaDB replication |
-| wallix-node1 | wallix-node2 | 2224 | TCP | Pacemaker |
-| wallix-node1 | wallix-node2 | 5405 | UDP | Corosync |
+| wallix-node1 | wallix-node2 | 2242 | TCP | bastion-replication SSH tunnel |
+| wallix-node1 | wallix-node2 | 3307 | TCP | MariaDB replication source |
 | wallix-node1/2 | siem-lab | 514 | TCP | Syslog |
 | wallix-node1/2 | siem-lab | 6514 | TCP | Syslog TLS |
 | monitoring-lab | wallix-node1/2 | 9100 | TCP | Node exporter |
@@ -189,7 +189,7 @@ backend wallix_ssh_nodes
 ### CEF Field Mapping
 
 ```
-CEF:0|WALLIX|WALLIX Bastion|12.1|<signature_id>|<name>|<severity>|<extensions>
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|<signature_id>|<name>|<severity>|<extensions>
 
 Signature IDs:
 100 - User Login Success

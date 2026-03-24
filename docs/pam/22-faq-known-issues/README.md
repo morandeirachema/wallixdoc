@@ -354,25 +354,25 @@ wabadmin recordings export --filter "date > 2024-01-01" --output /path/
 A: Use rolling maintenance procedure:
 ```bash
 # 1. Check cluster status
-crm status
+bastion-replication --status
 
-# 2. Put secondary node in standby
-crm node standby node-b
+# 2. Stop WALLIX services on secondary node for maintenance
+ssh node-b 'systemctl stop wallix-bastion'
 
 # 3. Perform maintenance on secondary
 # (updates, restarts, etc.)
 
-# 4. Return secondary to service
-crm node online node-b
+# 4. Restart WALLIX services on secondary node
+ssh node-b 'systemctl start wallix-bastion'
 
 # 5. Verify sync complete
-crm status
+bastion-replication --status
 wabadmin sync-status
 
 # 6. Repeat for primary node
-crm node standby node-a
+ssh node-a 'systemctl stop wallix-bastion'
 # ... maintenance ...
-crm node online node-a
+ssh node-a 'systemctl start wallix-bastion'
 ```
 
 ---
@@ -597,9 +597,9 @@ A: Behavior depends on license type:
 
 | Issue ID | Description | Workaround | Status |
 |----------|-------------|------------|--------|
-| WAB-12345 | RDP clipboard may fail with certain Unicode characters | Use file transfer instead | Fixed in 12.1.2 |
+| WAB-12345 | RDP clipboard may fail with certain Unicode characters | Use file transfer instead | Fixed in 12.3.2 |
 | WAB-12346 | LDAP sync may timeout with >50,000 users | Increase sync timeout, use pagination | Under investigation |
-| WAB-12347 | Session recording playback slow on Firefox | Use Chrome or Edge | Fixed in 12.1.2 |
+| WAB-12347 | Session recording playback slow on Firefox | Use Chrome or Edge | Fixed in 12.3.2 |
 | WAB-12348 | API rate limiting not applied to health endpoints | N/A (by design) | Won't fix |
 | WAB-12349 | HA failover may take >30s under heavy load | Pre-scale resources | Improved in 12.2 |
 

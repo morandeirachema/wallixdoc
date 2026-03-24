@@ -238,8 +238,8 @@
   | eth0: 10.1.0.10    |               | eth0: 10.1.0.11    |
   |                    |               |                    |
   | Cluster Network    |<=============>| Cluster Network    |
-  | eth1: 192.168.1.10 |   Heartbeat   | eth1: 192.168.1.11 |
-  |                    |   + PG Sync   |                    |
+  | eth1: 192.168.X.11 |  bastion-     | eth1: 192.168.X.12 |
+  |                    |  replication  |                    |
   +--------------------+               +--------------------+
             |                                     |
             +------------------+------------------+
@@ -265,15 +265,14 @@
   CLUSTER COMMUNICATION
   =====================
 
-  Node 1 (192.168.1.10) <---> Node 2 (192.168.1.11)
+  Node 1 (192.168.X.11) <---> Node 2 (192.168.X.12)
 
   +------------------------------------------------------------------------+
   | Port       | Protocol | Direction   | Purpose                          |
   +------------+----------+-------------+----------------------------------+
-  | 5404-5406  | UDP      | Bidirection | Corosync cluster communication   |
-  | 5432       | TCP      | Bidirection | PostgreSQL streaming replication |
-  | 2224       | TCP      | Bidirection | Pacemaker PCSD web/API           |
-  | 3121       | TCP      | Bidirection | Pacemaker remote                 |
+  | 2242       | TCP      | Bidirection | SSH tunnel (autossh) for repl    |
+  | 3306       | TCP      | Inbound     | MariaDB replication destination  |
+  | 3307       | TCP      | Outbound    | MariaDB replication source       |
   +------------+----------+-------------+----------------------------------+
 
 +==============================================================================+
@@ -361,15 +360,11 @@ WALLIX HA CLUSTER (Between Bastion Nodes)
 +-----------------------------------------------------------------------------+
 | Source          | Destination    | Port/Proto   | Purpose        | Req/Opt |
 +-----------------+----------------+--------------+----------------+---------+
-| WALLIX Node 1   | WALLIX Node 2  | 3306/TCP     | MariaDB repl   | Req     |
-| WALLIX Node 1   | WALLIX Node 2  | 5404/UDP     | Corosync mcast | Req*    |
-| WALLIX Node 1   | WALLIX Node 2  | 5405/UDP     | Corosync ucast | Req*    |
-| WALLIX Node 1   | WALLIX Node 2  | 5406/UDP     | Corosync comm  | Req     |
-| WALLIX Node 1   | WALLIX Node 2  | 2224/TCP     | Pacemaker PCSD | Req     |
-| WALLIX Node 1   | WALLIX Node 2  | 3121/TCP     | Pacemaker rem  | Opt     |
-| WALLIX Nodes    | Quorum Device  | 5403/TCP     | Qdevice        | Opt     |
+| WALLIX Node 1   | WALLIX Node 2  | 2242/TCP     | SSH tunnel     | Req     |
+| WALLIX Node 1   | WALLIX Node 2  | 3306/TCP     | MariaDB dest   | Req     |
+| WALLIX Node 1   | WALLIX Node 2  | 3307/TCP     | MariaDB src    | Req     |
 +-----------------+----------------+--------------+----------------+---------+
-* Either multicast (5404) OR unicast (5405) required, not both.
+Managed by bastion-replication + autossh (SSH tunnel on 2242).
 
 INFRASTRUCTURE SERVICES
 ========================
@@ -425,17 +420,13 @@ INFRASTRUCTURE SERVICES
   | 161      | UDP      | Monitoring      | SNMP polling                   |
   +----------+----------+-----------------+--------------------------------+
 
-  Cluster Ports (HA Only):
+  Cluster Ports (HA Only - bastion-replication):
   +------------------------------------------------------------------------+
   | Port     | Protocol | Source          | Description                    |
   +----------+----------+-----------------+--------------------------------+
-  | 5404     | UDP      | Cluster Peer    | Corosync multicast             |
-  | 5405     | UDP      | Cluster Peer    | Corosync unicast               |
-  | 5406     | UDP      | Cluster Peer    | Corosync communication         |
-  | 5432     | TCP      | Cluster Peer    | PostgreSQL replication         |
-  | 2224     | TCP      | Cluster Peer    | Pacemaker PCSD                 |
-  | 3121     | TCP      | Cluster Peer    | Pacemaker remote               |
-  | 5403     | TCP      | Quorum Device   | Corosync Qdevice               |
+  | 2242     | TCP      | Cluster Peer    | SSH tunnel (autossh)           |
+  | 3306     | TCP      | Cluster Peer    | MariaDB replication dest       |
+  | 3307     | TCP      | Cluster Peer    | MariaDB replication source     |
   +----------+----------+-----------------+--------------------------------+
 
   --------------------------------------------------------------------------
@@ -623,10 +614,9 @@ echo "=== Verification Complete ==="
   +------------------------------------------------------------------------+
   | Order | Source          | Dest Port | Protocol | Action | Description  |
   +-------+-----------------+-----------+----------+--------+--------------+
-  | 30    | 192.168.1.11    | 5404-5406 | UDP      | ALLOW  | Corosync     |
-  | 31    | 192.168.1.11    | 5432      | TCP      | ALLOW  | PostgreSQL   |
-  | 32    | 192.168.1.11    | 2224      | TCP      | ALLOW  | Pacemaker    |
-  | 33    | 192.168.1.11    | 3121      | TCP      | ALLOW  | Pacemaker    |
+  | 30    | 192.168.X.12    | 2242      | TCP      | ALLOW  | SSH tunnel   |
+  | 31    | 192.168.X.12    | 3306      | TCP      | ALLOW  | MariaDB repl |
+  | 32    | 192.168.X.12    | 3307      | TCP      | ALLOW  | MariaDB src  |
   +-------+-----------------+-----------+----------+--------+--------------+
 
   Default Policy:
@@ -703,9 +693,9 @@ echo "=== Verification Complete ==="
   +------------------------------------------------------------------------+
   | Order | Destination     | Dest Port | Protocol | Action | Description  |
   +-------+-----------------+-----------+----------+--------+--------------+
-  | 40    | 192.168.1.11    | 5404-5406 | UDP      | ALLOW  | Corosync     |
-  | 41    | 192.168.1.11    | 5432      | TCP      | ALLOW  | PostgreSQL   |
-  | 42    | 192.168.1.11    | 2224      | TCP      | ALLOW  | Pacemaker    |
+  | 40    | 192.168.X.12    | 2242      | TCP      | ALLOW  | SSH tunnel   |
+  | 41    | 192.168.X.12    | 3306      | TCP      | ALLOW  | MariaDB repl |
+  | 42    | 192.168.X.12    | 3307      | TCP      | ALLOW  | MariaDB src  |
   +-------+-----------------+-----------+----------+--------+--------------+
 
 +==============================================================================+
@@ -750,11 +740,10 @@ iptables -A INPUT -s 10.0.100.0/24 -p tcp --dport 22 -j ACCEPT -m comment --comm
 # SNMP Monitoring
 iptables -A INPUT -s 10.0.50.0/24 -p udp --dport 161 -j ACCEPT -m comment --comment "SNMP"
 
-# HA Cluster (from peer node)
-iptables -A INPUT -s 192.168.1.11 -p udp --dport 5404:5406 -j ACCEPT -m comment --comment "Corosync"
-iptables -A INPUT -s 192.168.1.11 -p tcp --dport 5432 -j ACCEPT -m comment --comment "PostgreSQL replication"
-iptables -A INPUT -s 192.168.1.11 -p tcp --dport 2224 -j ACCEPT -m comment --comment "Pacemaker PCSD"
-iptables -A INPUT -s 192.168.1.11 -p tcp --dport 3121 -j ACCEPT -m comment --comment "Pacemaker remote"
+# HA Cluster (from peer node via bastion-replication on HA VLAN)
+iptables -A INPUT -s 192.168.X.12 -p tcp --dport 2242 -j ACCEPT -m comment --comment "SSH tunnel (autossh)"
+iptables -A INPUT -s 192.168.X.12 -p tcp --dport 3306 -j ACCEPT -m comment --comment "MariaDB replication"
+iptables -A INPUT -s 192.168.X.12 -p tcp --dport 3307 -j ACCEPT -m comment --comment "MariaDB replication src"
 
 # ============== OUTBOUND RULES ==============
 
@@ -784,10 +773,10 @@ iptables -A OUTPUT -p udp --dport 123 -j ACCEPT -m comment --comment "NTP"
 iptables -A OUTPUT -d 10.0.1.5 -p tcp --dport 6514 -j ACCEPT -m comment --comment "Syslog TLS"
 iptables -A OUTPUT -d 10.0.1.6 -p tcp --dport 587 -j ACCEPT -m comment --comment "SMTP"
 
-# HA Cluster
-iptables -A OUTPUT -d 192.168.1.11 -p udp --dport 5404:5406 -j ACCEPT -m comment --comment "Corosync"
-iptables -A OUTPUT -d 192.168.1.11 -p tcp --dport 5432 -j ACCEPT -m comment --comment "PostgreSQL"
-iptables -A OUTPUT -d 192.168.1.11 -p tcp --dport 2224 -j ACCEPT -m comment --comment "Pacemaker"
+# HA Cluster (bastion-replication on HA VLAN)
+iptables -A OUTPUT -d 192.168.X.12 -p tcp --dport 2242 -j ACCEPT -m comment --comment "SSH tunnel (autossh)"
+iptables -A OUTPUT -d 192.168.X.12 -p tcp --dport 3306 -j ACCEPT -m comment --comment "MariaDB replication"
+iptables -A OUTPUT -d 192.168.X.12 -p tcp --dport 3307 -j ACCEPT -m comment --comment "MariaDB replication src"
 
 # Log dropped packets (rate limited)
 iptables -A INPUT -m limit --limit 5/min -j LOG --log-prefix "WALLIX-INPUT-DROP: " --log-level 4
@@ -827,9 +816,8 @@ table inet filter {
         # SNMP
         ip saddr 10.0.50.0/24 udp dport 161 accept comment "SNMP monitoring"
 
-        # HA Cluster
-        ip saddr 192.168.1.11 udp dport 5404-5406 accept comment "Corosync"
-        ip saddr 192.168.1.11 tcp dport { 5432, 2224, 3121 } accept comment "Cluster services"
+        # HA Cluster (bastion-replication on HA VLAN)
+        ip saddr 192.168.X.12 tcp dport { 2242, 3306, 3307 } accept comment "bastion-replication"
 
         # Log and drop
         limit rate 5/minute log prefix "WALLIX-INPUT-DROP: " drop
@@ -859,9 +847,8 @@ table inet filter {
         ip daddr 10.0.1.5 tcp dport 6514 accept comment "Syslog TLS"
         ip daddr 10.0.1.6 tcp dport 587 accept comment "SMTP"
 
-        # HA Cluster
-        ip daddr 192.168.1.11 udp dport 5404-5406 accept comment "Corosync"
-        ip daddr 192.168.1.11 tcp dport { 5432, 2224 } accept comment "Cluster"
+        # HA Cluster (bastion-replication on HA VLAN)
+        ip daddr 192.168.X.12 tcp dport { 2242, 3306, 3307 } accept comment "bastion-replication"
 
         # Log and drop
         limit rate 5/minute log prefix "WALLIX-OUTPUT-DROP: " drop
@@ -898,12 +885,11 @@ firewall-cmd --permanent --zone=wallix-admin --add-source=10.0.100.0/24
 firewall-cmd --permanent --zone=wallix-admin --add-port=22/tcp
 firewall-cmd --permanent --zone=wallix-admin --add-port=443/tcp
 
-# Configure wallix-cluster zone
-firewall-cmd --permanent --zone=wallix-cluster --add-source=192.168.1.11
-firewall-cmd --permanent --zone=wallix-cluster --add-port=5404-5406/udp
-firewall-cmd --permanent --zone=wallix-cluster --add-port=5432/tcp
-firewall-cmd --permanent --zone=wallix-cluster --add-port=2224/tcp
-firewall-cmd --permanent --zone=wallix-cluster --add-port=3121/tcp
+# Configure wallix-cluster zone (bastion-replication ports on HA VLAN)
+firewall-cmd --permanent --zone=wallix-cluster --add-source=192.168.X.12
+firewall-cmd --permanent --zone=wallix-cluster --add-port=2242/tcp
+firewall-cmd --permanent --zone=wallix-cluster --add-port=3306/tcp
+firewall-cmd --permanent --zone=wallix-cluster --add-port=3307/tcp
 
 # Create direct rules for outbound (firewalld is primarily inbound)
 # Note: For outbound control, iptables/nftables direct rules recommended
@@ -1702,16 +1688,16 @@ if [ -n "$HA_PEER" ]; then
         ((ERRORS++))
     fi
 
-    echo -n "Corosync port 5405: "
-    if nc -u -z -w3 $HA_PEER 5405 2>/dev/null; then
+    echo -n "SSH tunnel port 2242: "
+    if test_tcp $HA_PEER 2242 3; then
         echo -e "${GREEN}[OK]${NC}"
     else
         echo -e "${YELLOW}[WARN]${NC}"
         ((WARNINGS++))
     fi
 
-    echo -n "PostgreSQL port 5432: "
-    if test_tcp $HA_PEER 5432 3; then
+    echo -n "MariaDB port 3306: "
+    if test_tcp $HA_PEER 3306 3; then
         echo -e "${GREEN}[OK]${NC}"
     else
         echo -e "${RED}[FAIL]${NC}"
@@ -1926,16 +1912,19 @@ echo "=== Test Complete ==="
 
   Resource Definition:
   +------------------------------------------------------------------------+
-  | # Create VIP resource                                                  |
-  | pcs resource create wallix-vip IPaddr2 \                               |
-  |     ip=10.1.0.100 \                                                    |
-  |     cidr_netmask=24 \                                                  |
-  |     nic=eth0 \                                                         |
-  |     op monitor interval=10s \                                          |
-  |     --group wallix-group                                               |
+  | # Keepalived VIP configuration (/etc/keepalived/keepalived.conf)        |
+  | vrrp_instance WALLIX_VIP {                                             |
+  |     state MASTER                                                       |
+  |     interface eth0                                                     |
+  |     virtual_router_id 51                                               |
+  |     priority 100                                                       |
+  |     virtual_ipaddress {                                                |
+  |         10.1.0.100/24                                                  |
+  |     }                                                                  |
+  | }                                                                      |
   |                                                                        |
-  | # Verify                                                               |
-  | pcs resource status                                                    |
+  | # Verify VIP                                                           |
+  | ip addr show eth0 | grep 10.1.0.100                                    |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -1945,77 +1934,39 @@ echo "=== Test Complete ==="
 
   Multicast Configuration (Default):
   +------------------------------------------------------------------------+
-  | # /etc/corosync/corosync.conf                                          |
+  | # bastion-replication configuration                                    |
   |                                                                        |
-  | totem {                                                                |
-  |     version: 2                                                         |
-  |     cluster_name: wallix-cluster                                       |
-  |     transport: udp                                                     |
-  |     interface {                                                        |
-  |         ringnumber: 0                                                  |
-  |         bindnetaddr: 192.168.1.0                                       |
-  |         mcastaddr: 239.255.1.1                                         |
-  |         mcastport: 5405                                                |
-  |     }                                                                  |
-  | }                                                                      |
-  +------------------------------------------------------------------------+
-
-  Unicast Configuration (When multicast not available):
-  +------------------------------------------------------------------------+
-  | # /etc/corosync/corosync.conf                                          |
+  | # Initialize Master/Master (Active-Active):                            |
+  | bastion-replication --init-master-master --peer-ip 192.168.X.12        |
   |                                                                        |
-  | totem {                                                                |
-  |     version: 2                                                         |
-  |     cluster_name: wallix-cluster                                       |
-  |     transport: udpu                                                    |
-  | }                                                                      |
+  | # Initialize Master/Slave (Active-Passive):                            |
+  | # On Master: bastion-replication --init-master                         |
+  | # On Slave:  bastion-replication --init-slave --master-ip 192.168.X.11 |
   |                                                                        |
-  | nodelist {                                                             |
-  |     node {                                                             |
-  |         ring0_addr: 192.168.1.10                                       |
-  |         nodeid: 1                                                      |
-  |     }                                                                  |
-  |     node {                                                             |
-  |         ring0_addr: 192.168.1.11                                       |
-  |         nodeid: 2                                                      |
-  |     }                                                                  |
-  | }                                                                      |
+  | # Check replication status:                                            |
+  | bastion-replication --status                                           |
+  |                                                                        |
+  | # Ports used:                                                          |
+  | # 2242/TCP - SSH tunnel (autossh) between nodes                        |
+  | # 3306/TCP - MariaDB replication destination                           |
+  | # 3307/TCP - MariaDB replication source                                |
   +------------------------------------------------------------------------+
-
-  When to use Unicast:
-  * Cloud environments (AWS, Azure, GCP)
-  * Networks that block multicast
-  * VXLAN/overlay networks
-  * Cross-subnet cluster nodes
-
-  --------------------------------------------------------------------------
 
   NETWORK REDUNDANCY
   ==================
 
-  Dual-Ring Configuration:
+  Network Bonding for HA Cluster:
   +------------------------------------------------------------------------+
-  | # /etc/corosync/corosync.conf (dual ring)                              |
+  | # Bond configuration for cluster network redundancy                    |
   |                                                                        |
-  | totem {                                                                |
-  |     version: 2                                                         |
-  |     rrp_mode: passive                                                  |
-  |                                                                        |
-  |     interface {                                                        |
-  |         ringnumber: 0                                                  |
-  |         bindnetaddr: 192.168.1.0                                       |
-  |         mcastport: 5405                                                |
-  |     }                                                                  |
-  |     interface {                                                        |
-  |         ringnumber: 1                                                  |
-  |         bindnetaddr: 192.168.2.0                                       |
-  |         mcastport: 5407                                                |
-  |     }                                                                  |
-  | }                                                                      |
-  |                                                                        |
-  | # rrp_mode options:                                                    |
-  | # - passive: Uses ring 1 only when ring 0 fails                        |
-  | # - active: Uses both rings simultaneously (load sharing)              |
+  | # /etc/network/interfaces.d/bond0                                      |
+  | auto bond0                                                             |
+  | iface bond0 inet static                                                |
+  |     address 192.168.X.11/24                                             |
+  |     bond-slaves eth1 eth2                                              |
+  |     bond-mode active-backup                                            |
+  |     bond-miimon 100                                                    |
+  |     bond-primary eth1                                                  |
   +------------------------------------------------------------------------+
 
 +==============================================================================+
@@ -2105,7 +2056,7 @@ echo "=== Test Complete ==="
   | Port     | Protocol | Purpose                                          |
   +----------+----------+--------------------------------------------------+
   | 443      | TCP      | API replication, config sync                     |
-  | 5432     | TCP      | PostgreSQL replication (async)                   |
+  | 2242     | TCP      | bastion-replication SSH tunnel (cross-site)      |
   | 22       | TCP      | SSH for rsync (recordings)                       |
   +----------+----------+--------------------------------------------------+
 
@@ -2452,7 +2403,7 @@ while true; do
 
     # Check HA peer
     if [ -n "$HA_PEER" ]; then
-        check_host $HA_PEER 5432 "HA Cluster Peer"
+        check_host $HA_PEER 2242 "HA Cluster Peer"
         check_packet_loss $HA_PEER "HA Cluster"
     fi
 
@@ -2628,9 +2579,7 @@ cat /sys/class/net/eth0/statistics/*errors
 
 - WALLIX Documentation Portal: https://pam.wallix.one/documentation
 - WALLIX Admin Guide: https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf
-- Pacemaker Documentation: https://clusterlabs.org/pacemaker/doc/
-- Corosync Documentation: https://corosync.github.io/corosync/
-- PostgreSQL Replication: https://www.postgresql.org/docs/current/high-availability.html
+- MariaDB Replication: https://mariadb.com/kb/en/standard-replication/
 
 ---
 
@@ -2652,7 +2601,7 @@ cat /sys/class/net/eth0/statistics/*errors
 - [19 - System Requirements](../19-system-requirements/README.md) - Network requirements
 
 **Related Documentation:**
-- [Install Guide: Network Validation](/install/08-validation-testing.md) - Deployment validation
+- [Install Guide: Testing & Validation](/install/10-testing-validation.md) - Deployment validation
 - [Install Guide: Architecture Diagrams](/install/11-architecture-diagrams.md) - Network topology
 
 **Official Resources:**

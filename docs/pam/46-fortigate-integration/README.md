@@ -610,7 +610,7 @@ Resolution:
 - Ensure BOTH WALLIX nodes (10.10.1.11 and 10.10.1.12) are configured
   as RADIUS clients on FortiAuthenticator
 - Use SAME shared secret for both nodes
-- Verify HA cluster is healthy: crm status
+- Verify HA cluster is healthy: bastion-replication --status
 
 ISSUE 4: Kerberos Clock Skew Error
 ===================================
@@ -899,7 +899,7 @@ config firewall policy
         set dstaddr "WALLIX-Nodes"
         set action accept
         set schedule "always"
-        set service "MariaDB" "Corosync"
+        set service "SSH-Tunnel-2242" "MariaDB-3306" "MariaDB-3307"
         set logtraffic all
     next
     edit 22
@@ -949,11 +949,8 @@ end
 
 ```
 config firewall service custom
-    edit "MariaDB"
-        set tcp-portrange 3306
-    next
-    edit "Corosync"
-        set udp-portrange 5404-5406
+    edit "SSH-Tunnel-2242"
+        set tcp-portrange 2242
     next
     edit "WinRM"
         set tcp-portrange 5985-5986
@@ -983,8 +980,11 @@ config firewall service custom
     edit "Syslog-TLS"
         set tcp-portrange 6514
     next
-    edit "Pacemaker"
-        set tcp-portrange 2224
+    edit "MariaDB-3306"
+        set tcp-portrange 3306
+    next
+    edit "MariaDB-3307"
+        set tcp-portrange 3307
     next
 end
 ```
@@ -1140,14 +1140,14 @@ config firewall policy
         set dstaddr "WALLIX-Nodes"
         set action accept
         set schedule "always"
-        set service "MariaDB"                     # TCP 3306
+        set service "MariaDB-3306"                  # TCP 3306
         set logtraffic all
         set comments "WALLIX HA cluster database replication"
     next
 end
 
-RULE 9: WALLIX HA Cluster (Pacemaker/Corosync)
-===============================================
+RULE 9: WALLIX HA Cluster (bastion-replication)
+================================================
 
 config firewall policy
     edit 131
@@ -1158,9 +1158,9 @@ config firewall policy
         set dstaddr "WALLIX-Nodes"
         set action accept
         set schedule "always"
-        set service "Corosync" "Pacemaker"        # UDP 5404-5406, TCP 2224
+        set service "SSH-Tunnel-2242" "MariaDB-3306" "MariaDB-3307"  # TCP 2242, 3306, 3307
         set logtraffic all
-        set comments "WALLIX HA cluster heartbeat and management"
+        set comments "WALLIX HA bastion-replication (SSH tunnel + MariaDB sync)"
     next
 end
 
@@ -1589,7 +1589,8 @@ wabadmin log level radius info
 | 1812 | UDP | WALLIX | FortiAuth | RADIUS Auth |
 | 1813 | UDP | WALLIX | FortiAuth | RADIUS Accounting |
 | 3306 | TCP | WALLIX | WALLIX | MariaDB Replication |
-| 5404-5406 | UDP | WALLIX | WALLIX | Corosync Cluster |
+| 2242 | TCP | WALLIX | WALLIX | SSH tunnel (bastion-replication) |
+| 3307 | TCP | WALLIX | WALLIX | MariaDB src (bastion-replication) |
 
 ### Key IP Addresses
 
@@ -1641,7 +1642,7 @@ wabadmin auth radius test "FortiAuth-Primary"
 - [03 - Architecture](../03-architecture/README.md) - Multi-site architecture overview
 
 **Related Documentation:**
-- [Install Guide - Security Hardening](/install/07-security-hardening.md) - Fortigate security configuration
+- [Best Practices: Security](../14-best-practices/README.md) - Security configuration
 - [Pre-Production Lab - FortiAuthenticator Setup](/pre/04-fortiauthenticator-setup.md) - Lab environment setup
 
 **Official Resources:**

@@ -110,7 +110,7 @@ This comprehensive runbook provides step-by-step procedures for disaster recover
 |  |  +-------+   +-------+   |            |  +-------+   +-------+   |      |
 |  |       |                  |            |       |                  |      |
 |  |  +----+----+             |            |  +----+----+             |      |
-|  |  |PostgreSQL|            |            |  |PostgreSQL|            |      |
+|  |  | MariaDB  |            |            |  | MariaDB  |            |      |
 |  |  |(Primary) |<-----------+------------+->|(Replica) |            |      |
 |  |  +---------+  Async Repl |            |  +---------+             |      |
 |  +---------------------------+            +---------------------------+      |
@@ -122,7 +122,7 @@ This comprehensive runbook provides step-by-step procedures for disaster recover
 |  |                           |   rsync    |                           |      |
 |  |   - Daily configs         |<---------->|   - Replicated backups    |      |
 |  |   - Weekly full           |            |   - Offsite copies        |      |
-|  |   - WAL archives          |            |   - WAL archives          |      |
+|  |   - Binary log archives    |            |   - Binary log archives   |      |
 |  +---------------------------+            +---------------------------+      |
 |                                                                               |
 |  +---------------------------------------------------------------------------+
@@ -173,9 +173,9 @@ This comprehensive runbook provides step-by-step procedures for disaster recover
 |  |   +-- full-202512.tar.gz.gpg                                              |
 |  |   +-- ... (12 months retention)                                           |
 |  |                                                                            |
-|  +-- wal-archive/                                                             |
-|  |   +-- 000000010000000000000001                                            |
-|  |   +-- 000000010000000000000002                                            |
+|  +-- binlog-archive/                                                         |
+|  |   +-- mariadb-bin.000001                                                  |
+|  |   +-- mariadb-bin.000002                                                  |
 |  |   +-- ... (7 days retention)                                              |
 |  |                                                                            |
 |  +-- keys/                                                                    |
@@ -238,9 +238,9 @@ This comprehensive runbook provides step-by-step procedures for disaster recover
 |  +----------------+--------+-------------+----------------------------------+ |
 |  | Failure        | Impact | RTO Target  | Recovery Method                  | |
 |  +----------------+--------+-------------+----------------------------------+ |
-|  | Table corrupt  | High   | 1-2 hours   | PITR or restore from backup      | |
+|  | Table corrupt  | High   | 1-2 hours   | Point-in-time or restore from backup | |
 |  | Index corrupt  | Medium | 30-60 min   | REINDEX or restore               | |
-|  | WAL corrupt    | Critical| 1-4 hours  | Restore from backup              | |
+|  | Binlog corrupt | Critical| 1-4 hours  | Restore from backup              | |
 |  | Config corrupt | Medium | 15-30 min   | Restore config backup            | |
 |  | Key corrupt    | Critical| 1-4 hours  | Key escrow recovery              | |
 |  +----------------+--------+-------------+----------------------------------+ |
@@ -337,7 +337,7 @@ Maintain and regularly update the following documentation:
 |  [ ] Network topology diagram with all IPs                                   |
 |  [ ] Server hardware specifications                                          |
 |  [ ] Cluster configuration parameters                                        |
-|  [ ] PostgreSQL replication configuration                                    |
+|  [ ] MariaDB replication configuration                                      |
 |  [ ] Backup schedule and retention policies                                  |
 |  [ ] Recovery procedure runbooks (this document)                             |
 |  [ ] Contact list for DR team                                                |
@@ -353,7 +353,7 @@ Maintain and regularly update the following documentation:
 |  [ ] Root/admin passwords (sealed envelope or vault)                         |
 |  [ ] HSM recovery credentials                                                |
 |  [ ] SSL certificate private keys (encrypted)                                |
-|  [ ] PostgreSQL replication credentials                                      |
+|  [ ] MariaDB replication credentials                                        |
 |  [ ] Backup encryption keys                                                  |
 |                                                                               |
 |  --------------------------------------------------------------------------- |
@@ -380,13 +380,10 @@ wabadmin backup --verify --latest
 echo "Exit code: $? (0 = success)"
 
 # Check replication status
-sudo -u postgres psql -c "SELECT client_addr, state, sync_state,
-    pg_wal_lsn_diff(sent_lsn, replay_lsn) AS lag_bytes
-FROM pg_stat_replication;"
+mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master"
 
 # Verify cluster health
-crm status
-crm_verify -L
+bastion-replication --status
 
 # Check disk space for backups
 df -h /backup/wallix/
@@ -435,18 +432,18 @@ else
     ((ERRORS++))
 fi
 
-# Check 3: PostgreSQL replication
-echo -n "3. PostgreSQL replication: "
-REP_STATE=$(sudo -u postgres psql -t -c "SELECT state FROM pg_stat_replication LIMIT 1;" 2>/dev/null | tr -d ' ')
-if [ "$REP_STATE" = "streaming" ]; then
-    echo "OK - streaming"
+# Check 3: MariaDB replication
+echo -n "3. MariaDB replication: "
+REP_STATE=$(mysql -N -e "SHOW SLAVE STATUS\G" 2>/dev/null | grep "Slave_IO_Running" | awk '{print $2}')
+if [ "$REP_STATE" = "Yes" ]; then
+    echo "OK - replicating"
 else
-    echo "WARNING - State: $REP_STATE"
+    echo "WARNING - Slave_IO_Running: $REP_STATE"
 fi
 
 # Check 4: Cluster status
 echo -n "4. Cluster health: "
-if crm_verify -L > /dev/null 2>&1; then
+if bastion-replication --status > /dev/null 2>&1; then
     echo "OK"
 else
     echo "FAILED"
@@ -581,7 +578,7 @@ ls -la /mnt/backup/wallix/weekly/
 curl -fsSL https://repo.wallix.com/wallix.gpg | gpg --dearmor -o /usr/share/keyrings/wallix.gpg
 
 cat > /etc/apt/sources.list.d/wallix.list << 'EOF'
-deb [signed-by=/usr/share/keyrings/wallix.gpg] https://repo.wallix.com/bastion/12.1 bookworm main
+deb [signed-by=/usr/share/keyrings/wallix.gpg] https://repo.wallix.com/bastion/12.3.2 bookworm main
 EOF
 
 apt update
@@ -649,7 +646,7 @@ echo "Restored from: $LATEST_BACKUP" >> /var/log/wallix/recovery.log
 
 ### Automatic Failover (Default Behavior)
 
-WALLIX HA clusters with Pacemaker automatically handle failovers:
+WALLIX HA clusters with bastion-replication and Keepalived automatically handle failovers:
 
 ```
 +==============================================================================+
@@ -659,18 +656,18 @@ WALLIX HA clusters with Pacemaker automatically handle failovers:
 |  TIME      EVENT                                                              |
 |  ----      -----                                                              |
 |                                                                               |
-|  T+0s      Primary node failure detected by Pacemaker                        |
-|            - Heartbeat timeout (default: 10s)                                |
+|  T+0s      Primary node failure detected by Keepalived                       |
+|            - VRRP heartbeat timeout (default: ~3s)                           |
 |            - Health check failure (3 consecutive)                            |
 |                                                                               |
 |  T+5s      Failure validation                                                |
-|            - Pacemaker confirms failure                                       |
-|            - STONITH/fencing triggered (if configured)                       |
+|            - bastion-replication confirms peer unavailable                    |
+|            - Keepalived transitions backup to master                         |
 |                                                                               |
-|  T+10s     PostgreSQL promotion                                              |
+|  T+10s     MariaDB promotion                                                |
 |            - Standby promoted to primary                                      |
-|            - pg_promote() executed                                            |
-|            - WAL timeline incremented                                         |
+|            - STOP SLAVE; RESET SLAVE ALL executed                             |
+|            - GTID position recorded                                           |
 |                                                                               |
 |  T+15s     Service migration                                                 |
 |            - WALLIX services started on new primary                          |
@@ -693,21 +690,18 @@ WALLIX HA clusters with Pacemaker automatically handle failovers:
 
 ```bash
 # Watch cluster status during failover
-watch -n 2 'pcs status'
+watch -n 2 'bastion-replication --status'
 
-# Check failover history
-pcs resource failcount show
+# Check replication status
+bastion-replication --status
 
-# View cluster events
-journalctl -u pacemaker --since "10 minutes ago" | grep -i failover
+# View WALLIX Bastion events
+journalctl -u wallix-bastion --since "10 minutes ago" | grep -i failover
 
-# Verify current resource locations
-pcs resource status
+# Verify current replication state
+bastion-replication --status
 
-# Expected output after failover:
-# * wallix-vip    (ocf:heartbeat:IPaddr2):     Started wallix-a2-hb
-# * wallix-service (systemd:wabengine):        Started wallix-a2-hb
-# * pgsql-primary (ocf:heartbeat:pgsql):       Master wallix-a2-hb
+# Expected: Both nodes show as replicating, VIP served by Keepalived
 ```
 
 ### Manual Failover Procedure
@@ -715,32 +709,30 @@ pcs resource status
 **When to use:** Planned maintenance, testing, or when automatic failover fails.
 
 ```bash
-# 1. Verify current cluster state
-pcs status
+# 1. Verify current replication state
+bastion-replication --status
 
-# 2. Check which node is primary
-pcs resource status pgsql-primary
+# 2. Identify which node is primary
+bastion-replication --status
 
-# 3. Initiate controlled failover (moves resources to secondary)
-# Method A: Put primary in standby
-pcs node standby wallix-a1-hb
+# 3. Initiate controlled failover
+# Stop WALLIX services on primary node
+ssh wallix-a1-hb 'systemctl stop wallix-bastion'
 
-# Wait for failover to complete
+# Wait for Keepalived VIP failover to complete
 sleep 30
 
-# Verify resources moved
-pcs status
+# Verify replication and VIP status
+bastion-replication --status
 
-# 4. Alternative Method B: Move specific resources
-pcs resource move wallix-vip wallix-a2-hb
-pcs resource move wallix-service wallix-a2-hb
-
-# 5. Verify services on new primary
+# 4. Verify services on new primary
 ssh wallix-a2-hb 'wabadmin status'
 
-# 6. Clear location constraints after maintenance
-pcs resource clear wallix-vip
-pcs resource clear wallix-service
+# 5. After maintenance, restart WALLIX services on original primary
+ssh wallix-a1-hb 'systemctl start wallix-bastion'
+
+# 6. Verify both nodes are replicating
+bastion-replication --status
 ```
 
 ### Failed Primary Node Recovery
@@ -751,38 +743,45 @@ After failover, recover the failed primary as a new secondary:
 # On the failed/recovered node (wallix-a1)
 
 # 1. Check current state
-pcs status
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
+bastion-replication --status
+mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running"
 
-# 2. If PostgreSQL is running as old primary, stop it
-systemctl stop postgresql
+# 2. If MariaDB is running as old primary, stop it
+systemctl stop mariadb
 
-# 3. Reinitialize as standby
-rm -rf /var/lib/postgresql/15/main/*
+# 3. Reinitialize as standby using mariabackup
+rm -rf /var/lib/mysql/*
 
-sudo -u postgres pg_basebackup \
-    -h wallix-a2-hb \
-    -U replicator \
-    -D /var/lib/postgresql/15/main \
-    -P -R -X stream
+mariabackup --backup --target-dir=/tmp/mariabackup \
+    --host=wallix-a2-hb --user=replicator --password=REPLICATOR_PASSWORD_REDACTED
 
-# 4. Start PostgreSQL as standby
-systemctl start postgresql
+mariabackup --prepare --target-dir=/tmp/mariabackup
+mariabackup --copy-back --target-dir=/tmp/mariabackup
+chown -R mysql:mysql /var/lib/mysql
 
-# 5. Verify replication is working
-sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
+# 4. Start MariaDB as standby
+systemctl start mariadb
+
+# 5. Configure and start replication
+mysql -e "CHANGE MASTER TO MASTER_HOST='wallix-a2-hb',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='REPLICATOR_PASSWORD_REDACTED',
+    MASTER_USE_GTID=slave_pos;"
+mysql -e "START SLAVE;"
+
+# 6. Verify replication is working
+mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master"
 
 # Expected output:
-#  status  | sender_host  | sender_port
-# ---------+--------------+-------------
-#  streaming| wallix-a2-hb | 5432
+#  Slave_IO_Running: Yes
+#  Slave_SQL_Running: Yes
+#  Seconds_Behind_Master: 0
 
-# 6. Bring node back into cluster
-pcs node unstandby wallix-a1-hb
+# 6. Restart WALLIX services on recovered node
+ssh wallix-a1-hb 'systemctl start wallix-bastion'
 
 # 7. Verify cluster is healthy
-pcs status
-crm_verify -L
+bastion-replication --status
 ```
 
 ---
@@ -829,45 +828,42 @@ crm_verify -L
 # On Site B primary node
 
 # Check if replication was connected before failure
-sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
+mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Master_Host"
 
-# Check last received LSN
-sudo -u postgres psql -c "SELECT pg_last_wal_receive_lsn(), pg_last_wal_replay_lsn();"
+# Check last received GTID position
+mysql -e "SELECT @@gtid_slave_pos AS last_received_gtid, @@gtid_current_pos AS current_gtid;"
 
 # Check replication lag at last sync
-sudo -u postgres psql -c "SELECT now() - pg_last_xact_replay_timestamp() AS lag;"
+mysql -e "SHOW SLAVE STATUS\G" | grep "Seconds_Behind_Master"
 
 # Document the potential data loss window
-echo "Last sync: $(sudo -u postgres psql -t -c 'SELECT pg_last_xact_replay_timestamp();')"
+echo "Last GTID position: $(mysql -N -e 'SELECT @@gtid_slave_pos;')"
 ```
 
 **Step 2: Promote Site B Database**
 
 ```bash
-# Promote PostgreSQL on Site B
+# Promote MariaDB on Site B
 # WARNING: This is irreversible. Ensure Site A is truly unavailable.
 
-# Method 1: Using pg_ctl
-sudo -u postgres /usr/lib/postgresql/15/bin/pg_ctl promote \
-    -D /var/lib/postgresql/15/main
-
-# Method 2: Using SQL (PostgreSQL 12+)
-sudo -u postgres psql -c "SELECT pg_promote();"
+# Stop replication and promote to standalone primary
+mysql -e "STOP SLAVE;"
+mysql -e "RESET SLAVE ALL;"
 
 # Verify promotion succeeded
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
-# Should return: f (false = no longer in recovery = now primary)
+mysql -e "SHOW SLAVE STATUS\G"
+# Should return empty (no longer a replica)
 
-# Check timeline advanced
-sudo -u postgres psql -c "SELECT timeline_id FROM pg_control_checkpoint();"
+# Record current GTID position for reference
+mysql -e "SELECT @@gtid_current_pos AS promoted_gtid_position;"
 ```
 
 **Step 3: Start Site B WALLIX Services**
 
 ```bash
-# If using Pacemaker cluster at Site B
-pcs resource cleanup
-pcs status
+# If using bastion-replication cluster at Site B
+wabadmin bastion-replication --status
+wabadmin status
 
 # If standalone or services not started
 systemctl start wallix-bastion
@@ -963,20 +959,28 @@ After Site A is recovered:
 ```bash
 # 1. On Site A, reinitialize as replica of Site B
 systemctl stop wallix-bastion
-systemctl stop postgresql
+systemctl stop mariadb
 
-rm -rf /var/lib/postgresql/15/main/*
+rm -rf /var/lib/mysql/*
 
-sudo -u postgres pg_basebackup \
-    -h site-b-primary \
-    -U replicator \
-    -D /var/lib/postgresql/15/main \
-    -P -R -X stream
+mariabackup --backup --target-dir=/tmp/mariabackup \
+    --host=site-b-primary --user=replicator --password=REPLICATOR_PASSWORD_REDACTED
 
-systemctl start postgresql
+mariabackup --prepare --target-dir=/tmp/mariabackup
+mariabackup --copy-back --target-dir=/tmp/mariabackup
+chown -R mysql:mysql /var/lib/mysql
+
+systemctl start mariadb
+
+# Configure replication from Site B
+mysql -e "CHANGE MASTER TO MASTER_HOST='site-b-primary',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='REPLICATOR_PASSWORD_REDACTED',
+    MASTER_USE_GTID=slave_pos;"
+mysql -e "START SLAVE;"
 
 # Verify replication from Site B
-sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
+mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master"
 
 # 2. Plan maintenance window for failback
 # 3. During window, promote Site A and demote Site B
@@ -988,12 +992,12 @@ sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
 
 ## Database Recovery
 
-### PostgreSQL Point-in-Time Recovery (PITR)
+### MariaDB Point-in-Time Recovery
 
 **When to use:** Data corruption, accidental deletion, need to recover to specific time.
 
 **RTO Target:** 1-2 hours
-**RPO:** Any point with available WAL
+**RPO:** Any point with available binary logs
 
 ```
 +==============================================================================+
@@ -1003,10 +1007,10 @@ sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
 |  REQUIREMENTS                                                                 |
 |  ============                                                                 |
 |                                                                               |
-|  1. Base backup (pg_basebackup)                                              |
-|  2. WAL archive from backup time to recovery target                          |
-|  3. archive_mode = on in PostgreSQL config                                   |
-|  4. Archive storage accessible                                               |
+|  1. Base backup (mariabackup)                                                |
+|  2. Binary logs from backup time to recovery target                          |
+|  3. log_bin = ON in MariaDB config                                           |
+|  4. Binary log storage accessible                                            |
 |                                                                               |
 |  RECOVERY STEPS                                                               |
 |  ==============                                                               |
@@ -1014,8 +1018,8 @@ sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
 |  1. Stop all services                                                        |
 |  2. Backup current (corrupt) state                                           |
 |  3. Restore base backup                                                      |
-|  4. Configure recovery.signal                                                |
-|  5. Start PostgreSQL (recovery mode)                                         |
+|  4. Apply binary logs up to target time                                      |
+|  5. Start MariaDB                                                            |
 |  6. Wait for recovery to complete                                            |
 |  7. Verify data integrity                                                    |
 |  8. Start WALLIX services                                                    |
@@ -1023,54 +1027,46 @@ sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
 +==============================================================================+
 ```
 
-**Step-by-Step PITR**
+**Step-by-Step Point-in-Time Recovery**
 
 ```bash
 # 1. Stop all services
 systemctl stop wallix-bastion
-systemctl stop postgresql
+systemctl stop mariadb
 
 # 2. Backup current (corrupt) state for investigation
-sudo -u postgres pg_dump wallix > /tmp/corrupt-state-$(date +%Y%m%d-%H%M%S).sql 2>&1
+mysqldump --all-databases > /tmp/corrupt-state-$(date +%Y%m%d-%H%M%S).sql 2>&1
 
 # Also backup data directory
-tar -czf /tmp/corrupt-pgdata-$(date +%Y%m%d-%H%M%S).tar.gz \
-    /var/lib/postgresql/15/main/
+tar -czf /tmp/corrupt-mysql-$(date +%Y%m%d-%H%M%S).tar.gz \
+    /var/lib/mysql/
 
 # 3. Restore base backup
 # Clear current data
-rm -rf /var/lib/postgresql/15/main/*
+rm -rf /var/lib/mysql/*
 
-# Restore from base backup
-tar -xzf /backup/wallix/weekly/full-basebackup.tar.gz \
-    -C /var/lib/postgresql/15/main/
+# Restore from mariabackup base backup
+mariabackup --prepare --target-dir=/backup/wallix/weekly/full-basebackup/
+mariabackup --copy-back --target-dir=/backup/wallix/weekly/full-basebackup/
 
-# 4. Configure recovery parameters
-cat > /var/lib/postgresql/15/main/postgresql.auto.conf << 'EOF'
-restore_command = 'cp /backup/wallix/wal-archive/%f %p'
-recovery_target_time = '2026-01-30 14:30:00 UTC'
-recovery_target_action = 'promote'
-EOF
+# 4. Set ownership
+chown -R mysql:mysql /var/lib/mysql
 
-# Create recovery signal file
-touch /var/lib/postgresql/15/main/recovery.signal
+# 5. Start MariaDB temporarily to apply binary logs
+systemctl start mariadb
 
-# 5. Set ownership
-chown -R postgres:postgres /var/lib/postgresql/15/main
-
-# 6. Start PostgreSQL in recovery mode
-systemctl start postgresql
+# 6. Apply binary logs up to the target recovery time
+mysqlbinlog --stop-datetime="2026-01-30 14:30:00" \
+    /backup/wallix/binlog-archive/mariadb-bin.0000* | mysql
 
 # Monitor recovery progress
-tail -f /var/log/postgresql/postgresql-15-main.log &
+tail -f /var/log/mysql/error.log &
 LOG_PID=$!
 
-# Wait for recovery to complete
-# Look for: "database system is ready to accept connections"
+# Wait for binary log replay to complete
 
 # 7. Verify recovery completed
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
-# Should return: f (false)
+mysql -e "SELECT NOW() AS current_time, @@gtid_current_pos AS gtid_position;"
 
 kill $LOG_PID
 
@@ -1078,8 +1074,8 @@ kill $LOG_PID
 wabadmin verify --database
 
 # Check for expected data
-sudo -u postgres psql -d wallix -c "SELECT COUNT(*) FROM users;"
-sudo -u postgres psql -d wallix -c "SELECT COUNT(*) FROM sessions;"
+mysql -e "SELECT COUNT(*) FROM wallix.users;"
+mysql -e "SELECT COUNT(*) FROM wallix.sessions;"
 
 # 9. Start WALLIX services
 systemctl start wallix-bastion
@@ -1097,14 +1093,15 @@ wabadmin health-check
 systemctl stop wallix-bastion
 
 # Check for corruption
-sudo -u postgres pg_dump wallix > /dev/null 2>&1
+mysqldump wallix > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     echo "Database corruption detected"
 fi
 
 # Attempt repair
-sudo -u postgres psql -d wallix -c "REINDEX DATABASE wallix;"
-sudo -u postgres psql -d wallix -c "VACUUM FULL ANALYZE;"
+mysqlcheck --repair --all-databases
+mysqlcheck --optimize --all-databases
+mysql -e "ANALYZE TABLE wallix.*;"
 
 # Restart and verify
 systemctl start wallix-bastion
@@ -1116,24 +1113,23 @@ wabadmin verify --database
 ```bash
 # 1. Stop all services
 systemctl stop wallix-bastion
-systemctl stop postgresql
+systemctl stop mariadb
 
 # 2. Attempt to dump what data we can salvage
-sudo -u postgres pg_dump wallix > /tmp/salvaged-$(date +%Y%m%d).sql 2>&1
+mysqldump wallix > /tmp/salvaged-$(date +%Y%m%d).sql 2>&1
 
 # 3. Drop and recreate database
-sudo -u postgres dropdb wallix
-sudo -u postgres createdb wallix
+mysql -e "DROP DATABASE wallix;"
+mysql -e "CREATE DATABASE wallix;"
 
 # 4. Restore from most recent clean backup
-sudo -u postgres pg_restore -d wallix \
-    /backup/wallix/weekly/database-latest.dump
+mysql wallix < /backup/wallix/weekly/database-latest.sql
 
-# 5. Start PostgreSQL
-systemctl start postgresql
+# 5. Start MariaDB
+systemctl start mariadb
 
 # 6. Verify restore
-sudo -u postgres psql -d wallix -c "SELECT COUNT(*) FROM users;"
+mysql -e "SELECT COUNT(*) FROM wallix.users;"
 
 # 7. Start WALLIX
 systemctl start wallix-bastion
@@ -1440,13 +1436,12 @@ wabadmin recordings --verify <recording_id>
 ### Identifying Split-Brain Condition
 
 ```bash
-# On each node, check cluster perception
-crm status
-corosync-quorumtool -s
+# On each node, check replication perception
+bastion-replication --status
 
 # Check for split-brain indicators:
 # - Both nodes show as primary
-# - No quorum on either node
+# - Replication broken on both sides
 # - VIP responding on both nodes (rare)
 ```
 
@@ -1463,7 +1458,7 @@ corosync-quorumtool -s
 |  ====================================                                         |
 |                                                                               |
 |  Criteria for selecting primary:                                              |
-|  1. Node with most recent data (check PostgreSQL LSN)                        |
+|  1. Node with most recent data (check MariaDB GTID)                         |
 |  2. Node with more active sessions at split time                             |
 |  3. Node designated as primary in DR plan                                    |
 |                                                                               |
@@ -1488,83 +1483,73 @@ corosync-quorumtool -s
 # STEP 1: Identify which node has most recent data
 
 # On Node A:
-sudo -u postgres psql -c "SELECT pg_current_wal_lsn();"
-# Example: 0/12345678
+mysql -e "SELECT @@gtid_current_pos;"
+# Example: 0-1-12345678
 
 # On Node B:
-sudo -u postgres psql -c "SELECT pg_current_wal_lsn();"
-# Example: 0/12345600
+mysql -e "SELECT @@gtid_current_pos;"
+# Example: 0-1-12345600
 
-# Node A has higher LSN = more recent data
+# Node A has higher GTID sequence = more recent data
 
 # STEP 2: Isolate non-authoritative node (Node B)
 
 # On Node B:
-pcs cluster stop
 systemctl stop wallix-bastion
-systemctl stop postgresql
+systemctl stop mariadb
 
 # STEP 3: Verify authoritative node (Node A) is healthy
 
 # On Node A:
 wabadmin status
-pcs status
-
-# Ensure Node A is operating as standalone if needed
-pcs property set no-quorum-policy=ignore
+bastion-replication --status
 
 # STEP 4: Resynchronize Node B
 
 # On Node B:
-rm -rf /var/lib/postgresql/15/main/*
+rm -rf /var/lib/mysql/*
 
-sudo -u postgres pg_basebackup \
-    -h wallix-a1 \
-    -U replicator \
-    -D /var/lib/postgresql/15/main \
-    -P -R -X stream
+mariabackup --backup --target-dir=/tmp/mariabackup \
+    --host=wallix-a1 --user=replicator --password=REPLICATOR_PASSWORD_REDACTED
 
-# Start PostgreSQL as replica
-systemctl start postgresql
+mariabackup --prepare --target-dir=/tmp/mariabackup
+mariabackup --copy-back --target-dir=/tmp/mariabackup
+chown -R mysql:mysql /var/lib/mysql
+
+# Start MariaDB as replica
+systemctl start mariadb
+
+# Configure and start replication
+mysql -e "CHANGE MASTER TO MASTER_HOST='wallix-a1',
+    MASTER_USER='replicator',
+    MASTER_PASSWORD='REPLICATOR_PASSWORD_REDACTED',
+    MASTER_USE_GTID=slave_pos;"
+mysql -e "START SLAVE;"
 
 # Verify replication
-sudo -u postgres psql -c "SELECT * FROM pg_stat_wal_receiver;"
+mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running"
 
 # STEP 5: Rejoin cluster
 
 # On Node B:
-pcs cluster start
+systemctl start wallix-bastion
 
-# On Node A (verify cluster reformed):
-pcs status
-
-# Restore quorum policy
-pcs property set no-quorum-policy=stop
+# On Node A (verify replication reformed):
+bastion-replication --status
 
 # Verify cluster health
-crm_verify -L
+bastion-replication --status
 wabadmin health-check
 ```
 
 ### Preventing Split-Brain
 
 ```bash
-# Configure STONITH/fencing (recommended for production)
-pcs stonith create fence-node-a fence_ipmilan \
-    pcmk_host_list="wallix-a1" \
-    ipaddr="10.100.1.10-ipmi" \
-    login="admin" \
-    passwd="IPMI_PASSWORD" \
-    lanplus=true
-
-pcs stonith create fence-node-b fence_ipmilan \
-    pcmk_host_list="wallix-a2" \
-    ipaddr="10.100.1.11-ipmi" \
-    login="admin" \
-    passwd="IPMI_PASSWORD" \
-    lanplus=true
-
-pcs property set stonith-enabled=true
+# WALLIX Bastion 12.3.2 uses bastion-replication and Keepalived
+# for HA. STONITH/fencing is not applicable.
+# Instead, ensure Keepalived is properly configured for VIP failover:
+systemctl status keepalived
+cat /etc/keepalived/keepalived.conf | grep -A5 "vrrp_instance"
 ```
 
 ---
@@ -1673,8 +1658,9 @@ wabadmin account rotate <account_id> --force
 ```bash
 # If VIP is missing from all nodes
 
-# 1. Check cluster status
-pcs status
+# 1. Check replication and VIP status
+bastion-replication --status
+systemctl status keepalived
 
 # 2. Manually add VIP if needed
 ip addr add 10.100.1.100/24 dev eth0
@@ -1685,9 +1671,9 @@ arping -c 4 -U -I eth0 10.100.1.100
 # 4. Verify connectivity
 ping -c 3 10.100.1.100
 
-# 5. Fix cluster resource
-pcs resource cleanup wallix-vip
-pcs resource refresh wallix-vip
+# 5. Restart Keepalived to recover VIP management
+systemctl restart keepalived
+bastion-replication --status
 ```
 
 ---
@@ -1723,11 +1709,11 @@ run_check() {
 
 # Core Services
 run_check "WALLIX service running" "systemctl is-active wallix-bastion"
-run_check "PostgreSQL running" "systemctl is-active postgresql"
+run_check "MariaDB running" "systemctl is-active mariadb"
 run_check "Health check" "wabadmin health-check"
 
 # Database
-run_check "Database connection" "sudo -u postgres psql -c 'SELECT 1;'"
+run_check "Database connection" "mysql -e 'SELECT 1;'"
 run_check "Database integrity" "wabadmin verify --database"
 
 # Authentication
@@ -1735,10 +1721,10 @@ run_check "LDAP connectivity" "wabadmin auth-test ldap"
 run_check "Local auth working" "wabadmin auth-test local"
 
 # Cluster (if applicable)
-if pcs status > /dev/null 2>&1; then
-    run_check "Cluster health" "crm_verify -L"
-    run_check "Cluster resources" "pcs resource status | grep -q Started"
-    run_check "Replication" "sudo -u postgres psql -c 'SELECT state FROM pg_stat_replication;' | grep -q streaming"
+if bastion-replication --status > /dev/null 2>&1; then
+    run_check "Cluster health" "bastion-replication --status"
+    run_check "Keepalived VIP" "systemctl is-active keepalived"
+    run_check "Replication" "mysql -e 'SHOW SLAVE STATUS\G' | grep -q 'Slave_IO_Running: Yes'"
 fi
 
 # Storage
@@ -1783,16 +1769,15 @@ wabadmin status
 systemctl status wallix-bastion
 
 # 2. Database health
-sudo -u postgres psql -c "SELECT pg_is_in_recovery();"
-sudo -u postgres psql -d wallix -c "SELECT COUNT(*) FROM users;"
-sudo -u postgres psql -d wallix -c "SELECT COUNT(*) FROM sessions WHERE end_time IS NULL;"
+mysql -e "SELECT @@gtid_current_pos AS gtid_position;"
+mysql -e "SELECT COUNT(*) FROM wallix.users;"
+mysql -e "SELECT COUNT(*) FROM wallix.sessions WHERE end_time IS NULL;"
 
 # 3. Cluster status (if HA)
-pcs status
-crm_verify -L
+bastion-replication --status
 
 # 4. Replication status
-sudo -u postgres psql -c "SELECT client_addr, state, sync_state FROM pg_stat_replication;"
+mysql -e "SHOW SLAVE STATUS\G" | grep -E "Slave_IO_Running|Slave_SQL_Running|Seconds_Behind_Master|Master_Host"
 
 # 5. Storage verification
 df -h /var/wab/recorded
@@ -1871,8 +1856,8 @@ echo "========================================"
 
 # 1. Document current state
 echo "Pre-test state:"
-pcs status
-PRIMARY=$(pcs resource status | grep "Master" | awk '{print $NF}')
+bastion-replication --status
+PRIMARY=$(bastion-replication --status | grep "primary" | awk '{print $NF}')
 echo "Current primary: $PRIMARY"
 
 # 2. Count active sessions
@@ -1892,9 +1877,9 @@ fi
 echo "Initiating failover..."
 FAILOVER_START=$(date +%s)
 
-pcs node standby $PRIMARY
+ssh $PRIMARY 'systemctl stop wallix-bastion'
 
-# 4. Wait for failover
+# 4. Wait for Keepalived VIP failover
 sleep 30
 
 # 5. Verify failover completed
@@ -1913,13 +1898,12 @@ wabadmin connectivity-test --sample 3
 
 # 8. Restore original primary
 echo "Restoring original primary..."
-pcs node unstandby $PRIMARY
+ssh $PRIMARY 'systemctl start wallix-bastion'
 
 sleep 30
 
 # 9. Verify cluster healthy
-pcs status
-crm_verify -L
+bastion-replication --status
 
 # 10. Document results
 cat >> /var/log/wallix/dr-tests.log << EOF
@@ -1929,7 +1913,7 @@ HA FAILOVER TEST
 Date: $(date)
 Original Primary: $PRIMARY
 Failover Time: $FAILOVER_TIME seconds
-Result: $(if crm_verify -L > /dev/null 2>&1; then echo "PASSED"; else echo "FAILED"; fi)
+Result: $(if bastion-replication --status > /dev/null 2>&1; then echo "PASSED"; else echo "FAILED"; fi)
 EOF
 
 echo "DR test complete"
@@ -1965,15 +1949,15 @@ fi
 # 1. Document baseline
 echo "Recording baseline..."
 wabadmin status > /tmp/dr-test-baseline.txt
-pcs status >> /tmp/dr-test-baseline.txt
+bastion-replication --status >> /tmp/dr-test-baseline.txt
 
 # 2. Check Site B readiness
 echo "Checking Site B readiness..."
 ssh site-b-primary 'wabadmin status'
-ssh site-b-primary 'sudo -u postgres psql -c "SELECT pg_is_in_recovery();"'
+ssh site-b-primary 'mysql -e "SHOW SLAVE STATUS\G" | grep Slave_IO_Running'
 
 # 3. Check replication lag
-LAG=$(ssh site-b-primary 'sudo -u postgres psql -t -c "SELECT now() - pg_last_xact_replay_timestamp();"')
+LAG=$(ssh site-b-primary 'mysql -N -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master | awk "{print \$2}"')
 echo "Current replication lag: $LAG"
 
 # 4. Simulate Site A failure
@@ -1982,11 +1966,11 @@ FAILOVER_START=$(date +%s)
 
 # Stop Site A services
 systemctl stop wallix-bastion
-systemctl stop postgresql
+systemctl stop mariadb
 
 # 5. Promote Site B
 echo "Promoting Site B..."
-ssh site-b-primary 'sudo -u postgres psql -c "SELECT pg_promote();"'
+ssh site-b-primary 'mysql -e "STOP SLAVE; RESET SLAVE ALL;"'
 ssh site-b-primary 'systemctl start wallix-bastion'
 
 # 6. Update DNS (test DNS or /etc/hosts)
@@ -2017,7 +2001,7 @@ echo "Initiating failback..."
 
 # 11. Final verification
 wabadmin status
-pcs status
+bastion-replication --status
 
 echo "========================================"
 echo "DR TEST RESULTS"
@@ -2084,8 +2068,8 @@ ACTION ITEMS:
 ## References
 
 - WALLIX Documentation Portal: https://pam.wallix.one/documentation
-- PostgreSQL Point-in-Time Recovery: https://www.postgresql.org/docs/15/continuous-archiving.html
-- Pacemaker Documentation: https://clusterlabs.org/pacemaker/doc/
+- MariaDB Point-in-Time Recovery: https://mariadb.com/kb/en/point-in-time-recovery/
+- WALLIX Bastion HA Guide: https://pam.wallix.one/documentation/high-availability
 - NIST SP 800-34: Contingency Planning Guide: https://csrc.nist.gov/publications/detail/sp/800-34/rev-1/final
 
 ---

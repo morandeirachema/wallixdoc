@@ -390,7 +390,7 @@ wabadmin audit --filter "severity IN (high,critical)" \
 
 # Article 21(c) - Business continuity
 wabadmin backup --list --verify > nis2/backup-status.csv
-crm status > nis2/cluster-status.txt
+bastion-replication --status > nis2/cluster-status.txt
 
 # Article 21(j) - Access control
 wabadmin authorizations --export > nis2/access-controls.csv
@@ -873,7 +873,7 @@ echo "Evidence collection complete: ${EVIDENCE_DIR}"
 - [08 - Password Management](../08-password-management/README.md) - Credential governance
 
 **Related Documentation:**
-- [Install Guide: Security Hardening](/install/07-security-hardening.md) - Security configuration
+- [Best Practices: Security](../14-best-practices/README.md) - Security configuration
 
 **Official Resources:**
 - [WALLIX Documentation](https://pam.wallix.one/documentation)

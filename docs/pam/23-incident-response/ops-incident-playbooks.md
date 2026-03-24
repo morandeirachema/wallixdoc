@@ -463,18 +463,18 @@ ssh-keyscan target-server >> /etc/ssh/ssh_known_hosts
 ### Immediate Actions
 
 ```bash
-# 1. Check cluster status
-crm status
+# 1. Check HA replication status
+bastion-replication --status
 
-# 2. Check quorum
-corosync-quorumtool -s
+# 2. Check Keepalived (VIP management)
+systemctl status keepalived
 
 # 3. Check network between nodes
 ping node2
-corosync-cfgtool -s
 
 # 4. Check for split-brain
 # Are both nodes claiming to be primary?
+bastion-replication --status
 ```
 
 ### Decision Tree
@@ -484,35 +484,35 @@ corosync-cfgtool -s
 |                   CLUSTER FAILURE DECISION TREE                              |
 +===============================================================================+
 
-  What does 'crm status' show?
+  What does 'bastion-replication --status' show?
   |
-  +-- "OFFLINE" node
+  +-- Node "OFFLINE" or unreachable
   |   |
   |   +-- Check if node is physically running
   |   +-- Check network between nodes
-  |   +-- Check corosync: systemctl status corosync
-  |   +-- Check pacemaker: systemctl status pacemaker
+  |   +-- Check Keepalived: systemctl status keepalived
+  |   +-- Check WALLIX: systemctl status wallix-bastion
   |
-  +-- Resources "FAILED"
+  +-- Replication "FAILED" or broken
   |   |
-  |   +-- Check which resource failed
-  |   +-- Check resource logs
-  |   +-- Clear failure: crm resource cleanup <resource>
+  |   +-- Check which service failed
+  |   +-- Check service logs
+  |   +-- Verify status: bastion-replication --status
+  |   +-- Restart services if needed
   |   +-- If recurring, investigate root cause
   |
   +-- Split-brain (both nodes primary)
   |   |
   |   +-- CRITICAL: Stop one node immediately
-  |   +-- Stop: crm node standby <node2>
+  |   +-- Stop: systemctl stop wallix-bastion  # on secondary
   |   +-- Investigate network partition cause
   |   +-- Reconcile data before bringing back
   |
-  +-- No quorum
+  +-- Single node remaining
       |
-      +-- Need majority of nodes
-      +-- If truly only one node left:
-      +-- Consider: crm configure property no-quorum-policy=ignore
-      +-- (Temporary for emergency!)
+      +-- Verify remaining node is master
+      +-- bastion-replication --status
+      +-- Plan recovery of failed node
 
 +===============================================================================+
 ```
@@ -521,30 +521,28 @@ corosync-cfgtool -s
 
 **If node won't join cluster:**
 ```bash
-# On failed node, restart cluster services
-systemctl restart corosync
-systemctl restart pacemaker
+# On failed node, restart HA services
+systemctl restart wallix-bastion
+systemctl restart keepalived
 
-# Check node status
-crm node status
-
-# If still offline, check corosync
-corosync-cmapctl | grep members
+# Check replication status
+bastion-replication --status
 ```
 
-**If resource won't start:**
+**If services won't start:**
 ```bash
-# Check resource status
-crm resource status <resource>
+# Check replication status
+bastion-replication --status
 
-# View failure reason
-crm resource failcount <resource> show
+# Check service logs for failure reason
+journalctl -u wallix-bastion --since "10 min ago" | tail -50
 
-# Clear failures and retry
-crm resource cleanup <resource>
+# Restart services and verify
+systemctl restart wallix-bastion
+bastion-replication --status  # verify and restart if needed
 
-# If still fails, check resource configuration
-crm configure show <resource>
+# If still fails, check Keepalived configuration
+cat /etc/keepalived/keepalived.conf
 ```
 
 **If split-brain detected:**
@@ -554,17 +552,21 @@ crm configure show <resource>
 # 1. Identify which node has latest data
 # Check MariaDB binary log position on both nodes
 
-# 2. Stop cluster on one node
-crm node standby node2
+# 2. Stop services on one node
+systemctl stop wallix-bastion  # on node2
+systemctl stop keepalived      # on node2
 
 # 3. Verify remaining node is fully operational
+bastion-replication --status
 
 # 4. Before bringing node2 back:
 #    - Resync database from primary
 #    - Verify data consistency
 
-# 5. Rejoin node
-crm node online node2
+# 5. Restart services on node2
+systemctl start wallix-bastion  # on node2
+systemctl start keepalived      # on node2
+bastion-replication --status
 ```
 
 ---
@@ -924,10 +926,10 @@ wabadmin user unlock <username>
 wabadmin account verify <account>
 wabadmin account rotate <account>
 
-# Cluster management
-crm status
-crm resource cleanup <resource>
-crm node standby <node>
+# HA replication management
+bastion-replication --status
+systemctl restart wallix-bastion
+systemctl restart keepalived
 
 # Logs
 journalctl -u wallix-wallix --since "1 hour ago"

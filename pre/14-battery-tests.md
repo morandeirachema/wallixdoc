@@ -848,8 +848,8 @@ OBJECTIVE: Verify HA cluster is healthy
 COMMANDS:
 # On any node:
 wabadmin status
-crm status
 bastion-replication status
+bastion-replication --monitoring
 
 EXPECTED RESULT:
 - All services running on both nodes
@@ -858,7 +858,7 @@ EXPECTED RESULT:
 
 SUCCESS CRITERIA:
 [ ] wabadmin shows all services running
-[ ] crm shows 2 nodes online
+[ ] bastion-replication --status shows both nodes connected
 [ ] Replication shows 0 seconds lag
 
 CLIENT TALKING POINT:
@@ -908,7 +908,7 @@ OBJECTIVE: Demonstrate planned maintenance failover
 STEPS:
 1. Note which node has VIP (e.g., node1)
 2. Start active session through VIP
-3. Initiate failover: pcs resource move wallix-vip wallix-node2
+3. Initiate failover: stop keepalived on current master to migrate VIP
 4. Observe VIP migration
 5. Verify session continues
 
@@ -941,7 +941,7 @@ OBJECTIVE: Simulate node crash and verify automatic recovery
 STEPS:
 1. Note active node with VIP
 2. Start active session through VIP
-3. SIMULATE FAILURE: systemctl stop pacemaker (on active node)
+3. SIMULATE FAILURE: bastion-replication --stop (on active node)
    Or: Power off active node VM
 4. Observe automatic failover
 5. Verify session reconnects
@@ -1012,18 +1012,18 @@ OBJECTIVE: Verify cluster prevents split-brain
 
 STEPS:
 1. Block network between nodes (simulate partition)
-2. Observe fencing/STONITH activation
+2. Observe bastion-replication --elevate-master activation
 3. Verify only one node remains active
 4. Restore network, observe recovery
 
 EXPECTED RESULT:
-- Fencing isolates one node
+- bastion-replication elevates surviving node to master
 - Only one node has VIP
 - Services remain consistent
 
 SUCCESS CRITERIA:
 [ ] Split-brain prevented
-[ ] Fencing works correctly
+[ ] Master elevation works correctly
 [ ] Recovery is automatic
 
 CLIENT TALKING POINT:
@@ -1122,7 +1122,7 @@ COMMANDS:
 # Monitor during test
 top
 wabadmin status
-crm_mon -1
+bastion-replication --monitoring
 
 CLIENT TALKING POINT:
 "The system is designed for enterprise scale - hundreds of concurrent

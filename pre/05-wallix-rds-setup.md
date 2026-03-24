@@ -187,7 +187,7 @@ New-Item -Path "C:\Temp\WALLIX" -ItemType Directory -Force
 
 # Example:
 # Invoke-WebRequest -Uri "https://support.wallix.com/downloads/..." `
-#     -OutFile "C:\Temp\WALLIX\WALLIX_Session_Manager_12.1.10_x64.exe"
+#     -OutFile "C:\Temp\WALLIX\WALLIX_Session_Manager_12.3.2_x64.exe"
 ```
 
 ---
@@ -200,7 +200,7 @@ New-Item -Path "C:\Temp\WALLIX" -ItemType Directory -Force
 
 ```powershell
 # Run the installer
-Start-Process -FilePath "C:\Temp\WALLIX\WALLIX_Session_Manager_12.1.10_x64.exe" `
+Start-Process -FilePath "C:\Temp\WALLIX\WALLIX_Session_Manager_12.3.2_x64.exe" `
     -Wait -Verb RunAs
 ```
 

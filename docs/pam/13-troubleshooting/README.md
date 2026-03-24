@@ -1153,48 +1153,41 @@
 
   --------------------------------------------------------------------------
 
-  CLUSTER TROUBLESHOOTING
-  =======================
+  HA CLUSTER TROUBLESHOOTING (bastion-replication)
+  =================================================
 
   +------------------------------------------------------------------------+
-  | # Detailed cluster status                                              |
-  | crm status full                                                        |
+  | # Check replication status                                             |
+  | bastion-replication --status                                           |
   |                                                                        |
-  | # Resource history                                                     |
-  | crm resource history <resource_name>                                   |
+  | # Check SSH tunnel (autossh) connectivity                              |
+  | ss -tlnp | grep 2242                                                   |
   |                                                                        |
-  | # Check for failures                                                   |
-  | crm_failcount -r <resource_name> -N <node_name> -G                     |
+  | # Check MariaDB replication                                            |
+  | mysql -e "SHOW SLAVE STATUS\G"                                         |
   |                                                                        |
-  | # View cluster configuration                                           |
-  | crm configure show                                                     |
+  | # View Keepalived VIP status                                           |
+  | ip addr show | grep 10.10                                              |
+  | systemctl status keepalived                                            |
   |                                                                        |
-  | # Cluster verification                                                 |
-  | crm_verify -L -V                                                       |
-  |                                                                        |
-  | # Check corosync membership                                            |
-  | corosync-cmapctl | grep members                                        |
-  |                                                                        |
-  | # Check quorum status                                                  |
-  | corosync-quorumtool -s                                                 |
-  |                                                                        |
-  | # Network connectivity between nodes                                   |
-  | corosync-cfgtool -s                                                    |
+  | # Check Keepalived configuration                                       |
+  | cat /etc/keepalived/keepalived.conf                                    |
   +------------------------------------------------------------------------+
 
-  Resource Recovery:
+  HA Recovery:
   +------------------------------------------------------------------------+
-  | # Clear resource failures                                              |
-  | crm resource cleanup <resource_name>                                   |
+  | # Restart replication services                                         |
+  | systemctl restart wallix-bastion                                       |
   |                                                                        |
-  | # Force resource restart                                               |
-  | crm resource restart <resource_name>                                   |
+  | # Promote slave to master (failover)                                   |
+  | bastion-replication --elevate-master                                   |
   |                                                                        |
-  | # Move resource to specific node                                       |
-  | crm resource move <resource_name> <node_name>                          |
+  | # Force VIP migration (stop Keepalived on current master)              |
+  | systemctl stop keepalived   # on current VIP holder                    |
+  | systemctl start keepalived  # backup takes over VIP                    |
   |                                                                        |
-  | # Clear location constraint after move                                 |
-  | crm resource clear <resource_name>                                     |
+  | # Verify replication after recovery                                    |
+  | bastion-replication --status                                           |
   +------------------------------------------------------------------------+
 
 +===============================================================================+
@@ -1264,7 +1257,7 @@
   |   >> "$DIAG_DIR/db.txt" 2>&1                                           |
   |                                                                        |
   | # Cluster (if applicable)                                              |
-  | crm status > "$DIAG_DIR/cluster.txt" 2>&1 || true                      |
+  | bastion-replication --status > "$DIAG_DIR/cluster.txt" 2>&1 || true     |
   |                                                                        |
   | # Create archive                                                       |
   | tar -czvf "$DIAG_DIR.tar.gz" -C /tmp "$(basename $DIAG_DIR)"           |

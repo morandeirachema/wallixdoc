@@ -744,8 +744,8 @@ Effective HA monitoring is critical for maintaining cluster health, detecting is
 | Metric Name | Threshold Values | Check Frequency | Criticality | Alert Action |
 |-------------|------------------|-----------------|-------------|--------------|
 | **MariaDB Replication Lag** | Warning: >5s, Critical: >30s | Every 60s | Critical | Page on-call, investigate replication |
-| **Corosync Ring Status** | Any ring faulty | Every 30s | Critical | Page on-call, check network |
-| **Pacemaker Resource Status** | Any resource failed/stopped | Every 30s | Critical | Page on-call, attempt recovery |
+| **Bastion Replication Status** | Any replication error | Every 30s | Critical | Page on-call, run `bastion-replication --status` |
+| **MariaDB Replication Lag** (SSH tunnel) | Warning: >5s, Critical: >30s | Every 30s | Critical | Page on-call, check SSH tunnel port 2242 |
 | **VIP Failover Time** | Warning: >5s, Critical: >10s | On failover event | High | Alert ops team, review logs |
 | **Session Sync Status** | Any sync failure | Every 60s | High | Alert ops team, check connectivity |
 | **Cluster Quorum** | Lost quorum | Every 30s | Critical | Page on-call immediately |
@@ -773,7 +773,7 @@ Complete monitoring script for HA clusters that checks all critical metrics and 
 # Example crontab: */5 * * * * /usr/local/bin/wallix-ha-monitor.sh
 #
 # Dependencies:
-#   - crm (pacemaker)
+#   - bastion-replication (WALLIX HA tool)
 #   - mysql client
 #   - mailx or sendmail (for email alerts)
 #   - curl (for webhook alerts)
@@ -903,92 +903,73 @@ check_mariadb_replication() {
     return 0
 }
 
-check_corosync_cluster() {
-    log "INFO" "Checking Corosync cluster status..."
+check_bastion_replication() {
+    log "INFO" "Checking bastion-replication status..."
 
-    if ! check_command corosync-quorumtool; then
-        alert "CRITICAL" "Corosync tools not available"
+    if ! check_command bastion-replication; then
+        alert "CRITICAL" "bastion-replication tool not available"
         return 1
     fi
 
-    # Check quorum
-    local quorum_status
-    quorum_status=$(corosync-quorumtool -s 2>/dev/null || echo "")
+    # Check overall replication status
+    local repl_status
+    repl_status=$(bastion-replication --status 2>/dev/null || echo "")
 
-    if echo "$quorum_status" | grep -q "Quorate: Yes"; then
-        log "INFO" "Cluster has quorum"
-    else
-        alert "CRITICAL" "Cluster has LOST QUORUM - immediate attention required"
+    if [[ -z "$repl_status" ]]; then
+        alert "CRITICAL" "Unable to retrieve bastion-replication status"
         return 1
     fi
 
-    # Check ring status
-    local ring_status
-    ring_status=$(corosync-cfgtool -s 2>/dev/null || echo "")
-
-    if echo "$ring_status" | grep -qi "faulty"; then
-        alert "CRITICAL" "Corosync ring is FAULTY"
+    # Check for errors in replication status
+    if echo "$repl_status" | grep -qi "error\|broken\|stopped"; then
+        alert "CRITICAL" "Bastion replication error detected: $repl_status"
         return 1
     fi
 
-    log "INFO" "Corosync cluster healthy"
-    return 0
-}
-
-check_pacemaker_resources() {
-    log "INFO" "Checking Pacemaker resource status..."
-
-    if ! check_command crm; then
-        alert "CRITICAL" "Pacemaker CRM tools not available"
-        return 1
+    # Check SSH tunnel on port 2242 (used for MariaDB streaming replication)
+    if ! ss -tlnp | grep -q ":2242 "; then
+        alert "WARNING" "SSH tunnel port 2242 is not listening - replication tunnel may be down"
     fi
 
-    # Get resource status
-    local resource_status
-    resource_status=$(crm_mon -1 -r 2>/dev/null || echo "")
-
-    # Check for failed resources
-    if echo "$resource_status" | grep -qi "FAILED"; then
-        local failed_resources
-        failed_resources=$(echo "$resource_status" | grep -i "FAILED" || echo "")
-        alert "CRITICAL" "Pacemaker resources FAILED: $failed_resources"
-        return 1
+    # Check MariaDB replication ports (3306 dest, 3307 src)
+    if ! ss -tlnp | grep -q ":3306 "; then
+        alert "WARNING" "MariaDB destination port 3306 is not listening"
     fi
 
-    # Check for stopped resources
-    if echo "$resource_status" | grep -qi "Stopped"; then
-        local stopped_resources
-        stopped_resources=$(echo "$resource_status" | grep -i "Stopped" || echo "")
-        alert "WARNING" "Pacemaker resources STOPPED: $stopped_resources"
-    fi
-
-    log "INFO" "Pacemaker resources healthy"
+    log "INFO" "Bastion replication healthy"
     return 0
 }
 
 check_vip_status() {
     log "INFO" "Checking VIP status..."
 
-    # Get configured VIPs from Pacemaker
-    local vip_resources
-    vip_resources=$(crm configure show 2>/dev/null | grep "primitive.*IPaddr2" | awk '{print $2}' || echo "")
+    # Get configured VIPs from Keepalived
+    local keepalived_conf="/etc/keepalived/keepalived.conf"
 
-    if [[ -z "$vip_resources" ]]; then
-        log "WARN" "No VIP resources configured"
+    if [[ ! -f "$keepalived_conf" ]]; then
+        log "WARN" "Keepalived configuration not found at $keepalived_conf"
         return 0
     fi
 
-    for vip in $vip_resources; do
-        local vip_status
-        vip_status=$(crm resource status "$vip" 2>/dev/null || echo "")
+    # Extract virtual IPs from Keepalived configuration
+    local configured_vips
+    configured_vips=$(grep -A5 "virtual_ipaddress" "$keepalived_conf" 2>/dev/null | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' || echo "")
 
-        if echo "$vip_status" | grep -qi "running"; then
-            local vip_node
-            vip_node=$(echo "$vip_status" | grep -i "running" | awk '{print $NF}')
-            log "INFO" "VIP $vip is running on $vip_node"
+    if [[ -z "$configured_vips" ]]; then
+        log "WARN" "No VIPs configured in Keepalived"
+        return 0
+    fi
+
+    for vip in $configured_vips; do
+        if ip addr show 2>/dev/null | grep -q "$vip"; then
+            log "INFO" "VIP $vip is active on this node"
         else
-            alert "CRITICAL" "VIP $vip is NOT running"
-            return 1
+            log "INFO" "VIP $vip is not on this node (may be on peer)"
+            # Verify the VIP is reachable somewhere in the cluster
+            if ! ping -c 1 -W 2 "$vip" >/dev/null 2>&1; then
+                alert "CRITICAL" "VIP $vip is NOT reachable on any node"
+                return 1
+            fi
         fi
     done
 
@@ -1090,7 +1071,7 @@ check_split_brain() {
 
     # Check if multiple nodes think they are master
     local cluster_status
-    cluster_status=$(crm_mon -1 2>/dev/null || echo "")
+    cluster_status=$(bastion-replication --status 2>/dev/null || echo "")
 
     # This is a simplified check - production should use more sophisticated detection
     if echo "$cluster_status" | grep -c "Online:" | grep -q "^1$"; then
@@ -1106,9 +1087,9 @@ check_split_brain() {
 check_network_latency() {
     log "INFO" "Checking inter-node network latency..."
 
-    # Get peer node IPs from Corosync
+    # Get peer node IPs from bastion-replication status
     local peer_nodes
-    peer_nodes=$(corosync-cmapctl 2>/dev/null | grep "members.*ip" | awk '{print $3}' | tr -d '(' | tr -d ')' || echo "")
+    peer_nodes=$(bastion-replication --status 2>/dev/null | grep -Eo '([0-9]{1,3}\.){3}[0-9]{1,3}' | sort -u || echo "")
 
     local this_node_ip
     this_node_ip=$(hostname -I | awk '{print $1}')
@@ -1151,8 +1132,7 @@ main() {
     # Run all health checks
     check_wallix_service || overall_status=1
     check_mariadb_replication || overall_status=1
-    check_corosync_cluster || overall_status=1
-    check_pacemaker_resources || overall_status=1
+    check_bastion_replication || overall_status=1
     check_vip_status || overall_status=1
     check_disk_space || overall_status=1
     check_system_resources || overall_status=1
@@ -1233,13 +1213,13 @@ wallix_vip_status{node="bastion01",vip="192.168.1.100"} 1
 # Values: 0 = no quorum, 1 = has quorum
 wallix_cluster_quorum{cluster="wallix-ha"} 1
 
-# wallix_pacemaker_resource_status
-# Values: 0 = stopped, 1 = started, 2 = failed
-wallix_pacemaker_resource_status{resource="wallix-bastion"} 1
+# wallix_bastion_replication_status
+# Values: 0 = stopped, 1 = healthy, 2 = error
+wallix_bastion_replication_status{node="bastion01"} 1
 
-# wallix_corosync_ring_status
-# Values: 0 = faulty, 1 = healthy
-wallix_corosync_ring_status{ring="0"} 1
+# wallix_ssh_tunnel_status
+# Values: 0 = down, 1 = up (port 2242 for MariaDB streaming replication)
+wallix_ssh_tunnel_status{node="bastion01",port="2242"} 1
 
 # wallix_session_sync_lag_seconds
 # Session synchronization lag between nodes
@@ -1263,8 +1243,8 @@ wallix_cluster_quorum == 0
 # Check replication lag across all nodes
 wallix_replication_lag_seconds > 5
 
-# Check for failed Pacemaker resources
-wallix_pacemaker_resource_status == 2
+# Check for bastion replication errors
+wallix_bastion_replication_status == 2
 
 # Check for nodes in degraded state
 wallix_cluster_status == 2
@@ -1343,16 +1323,16 @@ groups:
           description: "Replication from {{ $labels.master }} to {{ $labels.node }} is broken."
           runbook: "https://docs.example.com/runbooks/wallix-replication-broken"
 
-      - alert: WallixPacemakerResourceFailed
-        expr: wallix_pacemaker_resource_status == 2
+      - alert: WallixBastionReplicationFailed
+        expr: wallix_bastion_replication_status == 2
         for: 1m
         labels:
           severity: critical
-          component: pacemaker
+          component: bastion-replication
         annotations:
-          summary: "Pacemaker resource {{ $labels.resource }} has failed"
-          description: "Resource {{ $labels.resource }} on node {{ $labels.node }} is in failed state."
-          runbook: "https://docs.example.com/runbooks/wallix-pacemaker-failure"
+          summary: "Bastion replication has failed on {{ $labels.node }}"
+          description: "bastion-replication --status reports errors on {{ $labels.node }}. Check SSH tunnel (port 2242) and MariaDB ports (3306/3307)."
+          runbook: "https://docs.example.com/runbooks/wallix-replication-failure"
 
       - alert: WallixVIPNotRunning
         expr: sum by (vip) (wallix_vip_status) == 0
@@ -1365,16 +1345,16 @@ groups:
           description: "Virtual IP {{ $labels.vip }} is not active. Service may be unavailable."
           runbook: "https://docs.example.com/runbooks/wallix-vip-down"
 
-      - alert: WallixCorosyncRingFaulty
-        expr: wallix_corosync_ring_status == 0
+      - alert: WallixReplicationTunnelDown
+        expr: wallix_ssh_tunnel_status{port="2242"} == 0
         for: 1m
         labels:
           severity: critical
-          component: corosync
+          component: bastion-replication
         annotations:
-          summary: "Corosync ring {{ $labels.ring }} is faulty"
-          description: "Corosync communication ring {{ $labels.ring }} is in faulty state."
-          runbook: "https://docs.example.com/runbooks/wallix-corosync-ring"
+          summary: "SSH replication tunnel is down on {{ $labels.node }}"
+          description: "SSH tunnel on port 2242 used for MariaDB streaming replication is not available on {{ $labels.node }}."
+          runbook: "https://docs.example.com/runbooks/wallix-replication-tunnel"
 
       # HIGH SEVERITY ALERTS
 
@@ -1548,7 +1528,7 @@ inhibit_rules:
       alertname: 'WallixClusterQuorumLost'
     target_match:
       severity: 'critical'
-      alertname: 'WallixPacemakerResourceFailed'
+      alertname: 'WallixBastionReplicationFailed'
     equal: ['cluster']
 ```
 
@@ -1567,10 +1547,10 @@ inhibit_rules:
    - Replication IO/SQL thread status
    - Last replication error (if any)
 
-3. **Pacemaker Resources:**
-   - Resource status table
-   - Resource migration history
-   - Failover count per day
+3. **Bastion Replication:**
+   - `bastion-replication --status` output
+   - SSH tunnel (port 2242) connectivity
+   - MariaDB replication ports (3306/3307) status
 
 4. **VIP Status:**
    - Current VIP location
@@ -1641,10 +1621,10 @@ inhibit_rules:
 - [30 - Backup & Restore](../30-backup-restore/README.md) - Backup strategies
 
 **Related Documentation:**
-- [Install Guide: HA Active-Active Setup](/install/02-site-a-primary.md) - HA cluster deployment
-- [Install Guide: Multi-Site Sync](/install/05-multi-site-sync.md) - Cross-site replication
-- [Install Guide: MariaDB Replication](/install/10-mariadb-replication.md) - Database HA
-- [Install Guide: Security Hardening](/install/07-security-hardening.md) - Security configuration
+- [Install Guide: HA Architecture](/install/02-ha-architecture.md) - HA architecture overview
+- [Install Guide: HAProxy Setup](/install/05-haproxy-setup.md) - Load balancer configuration
+- [Install Guide: Testing & Validation](/install/10-testing-validation.md) - Deployment validation
+- [Install Guide: Active-Passive HA](/install/07-bastion-active-passive.md) - HA cluster deployment
 - [Pre-Production: HA Testing](/pre/08-ha-active-active.md) - HA cluster validation
 - [Pre-Production: Battery Tests](/pre/14-battery-tests.md) - Comprehensive testing
 

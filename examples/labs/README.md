@@ -91,7 +91,7 @@ Create an isolated virtual network for your lab:
 ```bash
 # After Debian installation, install WALLIX Bastion
 # Follow the official deployment guide:
-# https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf
+# https://marketplace-wallix.s3.amazonaws.com/bastion_12.3.2_en_deployment_guide.pdf
 
 # Set hostname
 hostnamectl set-hostname wallix-lab.lab.local
@@ -678,7 +678,7 @@ After completing these labs:
 
 | Resource | URL |
 |----------|-----|
-| **Deployment Guide** | https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf |
+| **Deployment Guide** | https://marketplace-wallix.s3.amazonaws.com/bastion_12.3.2_en_deployment_guide.pdf |
 | **Administration Guide** | https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf |
 | **REST API Samples** | https://github.com/wallix/wbrest_samples |
 

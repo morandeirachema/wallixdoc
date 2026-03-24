@@ -46,7 +46,7 @@ This guide covers certificate management, renewal procedures, and troubleshootin
 | SSH Host | SSH Proxy | /etc/ssh/ssh_host_*_key | Permanent |
 | LDAPS Client | AD Communication | /etc/ssl/wab/ldap-client.crt | 1-2 years |
 | MariaDB | DB Encryption | /etc/mysql/mariadb.conf.d/server.crt | 1-2 years |
-| Cluster TLS | Node Communication | /etc/corosync/authkey | Generated |
+| Cluster TLS | Node Communication | /etc/opt/wab/replication/authkey | Generated |
 | SIEM Client | Log Encryption | /etc/ssl/wab/syslog-client.crt | 1-2 years |
 
 ### Check All Certificates

@@ -487,10 +487,10 @@ To ensure consistency across all 47 documentation sections, use these standardiz
 |----------|----------|-----------|
 | High Availability (HA) | HA, high availability, HA cluster | Spell out on first use |
 | Active-Active cluster | active-active, AA cluster, dual-active | Industry standard term with capitalization |
-| Pacemaker/Corosync cluster | Pacemaker cluster, cluster manager | Specifies both components |
+| bastion-replication (Master/Master) | Pacemaker cluster, Corosync, cluster manager | Built-in WALLIX Bastion 12.3.2 replication; VIPs managed by Keepalived |
 | Database replication | DB replication, MariaDB sync | Generic term applicable to concept |
 | Failover | fail-over, fail over, switchover | Single word (industry standard) |
-| Split-brain scenario | split brain, cluster split | Standard HA terminology |
+| Replication failure | split brain, cluster split | Standard HA terminology |
 
 ### Compliance & Audit
 

@@ -131,9 +131,8 @@ log_slave_updates = ON
 # Connection settings
 bind-address = 0.0.0.0
 
-# For synchronous replication (Galera-style), uncomment:
-# wsrep_on = ON
-# wsrep_cluster_address = "gcomm://10.10.1.11,10.10.1.12"
+# For synchronous replication, use bastion-replication Master/Master
+# See: bastion-replication --configure-master-master
 EOF
 
 # Create replication user
@@ -270,67 +269,40 @@ systemctl restart wallix-bastion
 
 ---
 
-## Step 4: Configure Pacemaker/Corosync (VIP Management)
+## Step 4: Configure `bastion-replication` (VIP and Cluster Management)
 
-### On Both Nodes
-
-```bash
-# Install cluster packages
-apt install -y pacemaker corosync pcs
-
-# Set cluster password
-echo "hacluster:HaCluster123!" | chpasswd
-
-# Enable services
-systemctl enable pcsd corosync pacemaker
-systemctl start pcsd
-```
-
-### On Node 1 (Cluster Setup)
+### On Node 1 (Master Setup)
 
 ```bash
-# Authenticate nodes
-pcs host auth wallix-node1.lab.local wallix-node2.lab.local -u hacluster -p HaCluster123!
+# Configure bastion-replication Master/Master on Node 1
+bastion-replication --configure-master-master \
+    --local-node wallix-node1.lab.local \
+    --remote-node wallix-node2.lab.local \
+    --vip 10.10.1.100/24 \
+    --vip-interface ens192 \
+    --ssh-port 2242
 
-# Create cluster
-pcs cluster setup wallix-cluster wallix-node1.lab.local wallix-node2.lab.local
-
-# Start cluster
-pcs cluster start --all
-pcs cluster enable --all
-
-# Check status
-pcs status
+# Start replication
+bastion-replication --start
 ```
 
-### Configure VIP Resource
+### On Node 2 (Join Cluster)
 
 ```bash
-# Create VIP resource
-pcs resource create vip-wallix ocf:heartbeat:IPaddr2 \
-    ip=10.10.1.100 \
-    cidr_netmask=24 \
-    nic=ens192 \
-    op monitor interval=10s
+# Join the cluster from Node 2
+bastion-replication --join \
+    --master-node wallix-node1.lab.local \
+    --ssh-port 2242
 
-# For Active-Active, allow VIP to run on either node
-pcs resource clone vip-wallix clone-max=1 clone-node-max=1
-
-# Or use as floating VIP (preferred for web access)
-# No cloning needed - VIP will float to one node
+# Start replication
+bastion-replication --start
 ```
 
-### Configure Resource Constraints
+### Configure VIP Preference
 
 ```bash
 # Prefer Node 1 for VIP (but allow failover)
-pcs constraint location vip-wallix prefers wallix-node1.lab.local=100
-
-# Set no quorum policy (2-node cluster)
-pcs property set no-quorum-policy=ignore
-
-# Set stonith (fencing) - disable for lab, enable for production
-pcs property set stonith-enabled=false
+bastion-replication --set-preferred-master wallix-node1.lab.local
 ```
 
 ---
@@ -339,23 +311,20 @@ pcs property set stonith-enabled=false
 
 ```bash
 # Check cluster status
-pcs status
+bastion-replication --status
 
 # Expected output:
-# Cluster name: wallix-cluster
-# Status of pacemakerd: active
-#
-# Node List:
-#   * Online: [ wallix-node1 wallix-node2 ]
-#
-# Full List of Resources:
-#   * vip-wallix (ocf::heartbeat:IPaddr2): Started wallix-node1
+# bastion-replication status
+# Role: Master
+# Peer: wallix-node2 (connected)
+# VIP: 10.10.1.100 (active on wallix-node1)
+# Replication: synchronized
 
 # Check VIP
 ip addr show ens192 | grep 10.10.1.100
 
 # Check cluster resources
-crm_mon -1
+bastion-replication --monitoring
 ```
 
 ---
@@ -369,13 +338,15 @@ crm_mon -1
 ping 10.10.1.100
 
 # On Node 1 (current VIP holder), simulate failure
-pcs node standby wallix-node1
+# Put node in maintenance (stop services on node)
+systemctl stop wallix-keepalived
 
 # Watch VIP move to Node 2
 # Ping should continue with minimal interruption
 
 # Restore Node 1
-pcs node unstandby wallix-node1
+# Resume node (restart services on node)
+systemctl start wallix-keepalived
 ```
 
 ### Test 2: Service Failover
@@ -409,7 +380,7 @@ sudo mysql wabdb -c "DROP TABLE test_replication;"
 
 ## Step 7: Load Balancer Configuration (Alternative to VIP)
 
-If using a load balancer instead of Pacemaker VIP:
+If using a load balancer instead of `bastion-replication` VIP:
 
 ### HAProxy Example
 
@@ -454,22 +425,16 @@ Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix" -IPv4Address "
 
 ```bash
 # Quick status
-pcs status
+bastion-replication status
 
 # Detailed status
-crm_mon -Afr
-
-# Resource status
-pcs resource show
-
-# Node status
-pcs node status
+bastion-replication --monitoring
 
 # Check replication lag (on replica)
 sudo mysql -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master
 
-# Cluster properties
-pcs property list
+# Promote a node to master (failover)
+bastion-replication --elevate-master
 ```
 
 ---
@@ -478,7 +443,7 @@ pcs property list
 
 | Check | Command | Expected |
 |-------|---------|----------|
-| Both nodes online | `pcs status` | 2 nodes Online |
+| Both nodes online | `bastion-replication status` | 2 nodes Online |
 | VIP assigned | `ip addr show` | VIP on one node |
 | VIP reachable | `ping 10.10.1.100` | Success |
 | Web UI via VIP | `curl -k https://10.10.1.100/` | HTML response |
@@ -493,29 +458,29 @@ pcs property list
 ### Cluster Won't Form
 
 ```bash
-# Check corosync
-systemctl status corosync
-journalctl -u corosync
+# Check bastion-replication service
+bastion-replication status
+bastion-replication --monitoring
 
-# Check pacemaker
-systemctl status pacemaker
-journalctl -u pacemaker
+# Check SSH tunnel connectivity (port 2242)
+ss -tlnp | grep 2242
 
-# Check communication
-corosync-cfgtool -s
+# Check MariaDB replication port (3307)
+ss -tlnp | grep 3307
 ```
 
 ### VIP Not Moving
 
 ```bash
-# Check resource status
-pcs resource debug-start vip-wallix
+# Restart Keepalived to recover VIP
+systemctl restart keepalived
 
-# Check constraints
-pcs constraint list
+# Check cluster and VIP status
+bastion-replication --status
 
-# Force move
-pcs resource move vip-wallix wallix-node2
+# VIP managed by Keepalived - adjust priority or stop keepalived on current master
+# to force VIP migration to wallix-node2
+systemctl stop keepalived  # on current master
 ```
 
 ### Replication Broken

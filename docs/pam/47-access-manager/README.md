@@ -489,7 +489,7 @@ sudo wallix-am bastion test "Primary Bastion"
 # Expected output:
 # ✓ Connection successful
 # ✓ API authentication verified
-# ✓ Version: WALLIX Bastion 12.1.1
+# ✓ Version: WALLIX Bastion 12.3.2
 # ✓ Status: Healthy
 ```
 

@@ -205,8 +205,8 @@ wabadmin status
 # Check license
 wabadmin license-info
 
-# If clustered, check cluster
-crm status
+# If clustered, check replication status
+bastion-replication --monitoring
 ```
 
 **Expected output:**
@@ -408,7 +408,7 @@ wabadmin audit --export --output /tmp/audit-export.json
 | Deploy WALLIX | [Install Guide](../../install/README.md) |
 | Configure devices | [04 - Configuration](../05-configuration/README.md) |
 | Set up authentication | [05 - Authentication](../06-authentication/README.md) |
-| Learn about OT security | [OT Training](../../ot/README.md) |
+| Review best practices | [Best Practices](../14-best-practices/README.md) |
 | Troubleshoot issues | [12 - Troubleshooting](../13-troubleshooting/README.md) |
 | See learning paths | [Learning Paths](./learning-paths.md) |
 
@@ -448,9 +448,9 @@ wabadmin audit --export --output /tmp/audit-export.json
     wabadmin rotation --status
     wabadmin rotation --failed
 
-  Cluster (if applicable):
-    crm status
-    crm_mon -1
+  Replication (if applicable):
+    bastion-replication --monitoring
+    bastion-replication --monitoring --verbose
 
   --------------------------------------------------------------------------
 
@@ -461,7 +461,8 @@ wabadmin audit --export --output /tmp/audit-export.json
   22    - SSH proxy
   3389  - RDP proxy
   3306  - MariaDB (internal)
-  5404-5406 - Cluster sync (UDP)
+  2242  - SSH replication tunnel (TCP)
+  3307  - MariaDB replication (TCP)
 
   --------------------------------------------------------------------------
 

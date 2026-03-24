@@ -321,10 +321,10 @@ Create visualizations for:
 ### CEF Format (Common Event Format)
 
 ```
-CEF:0|WALLIX|WALLIX Bastion|12.1|100|User Login|5|src=10.10.1.50 suser=jadmin outcome=success
-CEF:0|WALLIX|WALLIX Bastion|12.1|101|User Login Failed|7|src=10.10.1.50 suser=baduser outcome=failure reason=invalid_password
-CEF:0|WALLIX|WALLIX Bastion|12.1|200|Session Started|3|src=10.10.1.50 suser=jadmin dhost=linux-test duser=root protocol=SSH
-CEF:0|WALLIX|WALLIX Bastion|12.1|201|Session Ended|3|src=10.10.1.50 suser=jadmin dhost=linux-test duration=300
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|100|User Login|5|src=10.10.1.50 suser=jadmin outcome=success
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|101|User Login Failed|7|src=10.10.1.50 suser=baduser outcome=failure reason=invalid_password
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|200|Session Started|3|src=10.10.1.50 suser=jadmin dhost=linux-test duser=root protocol=SSH
+CEF:0|WALLIX|WALLIX Bastion|12.3.2|201|Session Ended|3|src=10.10.1.50 suser=jadmin dhost=linux-test duration=300
 ```
 
 ### Syslog Format

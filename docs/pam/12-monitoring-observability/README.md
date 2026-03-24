@@ -53,7 +53,7 @@
 | **Infrastructure** | CPU, memory, disk, network | Prometheus node_exporter |
 | **Application** | Service status, sessions, auth | WALLIX Bastion metrics exporter |
 | **Database** | Connections, replication, queries | MariaDB exporter |
-| **Cluster** | Node status, resources, failover | Pacemaker metrics |
+| **Cluster** | Node status, replication, failover | bastion-replication metrics |
 | **Security** | Auth failures, anomalies, threats | SIEM integration |
 
 ---
@@ -95,8 +95,8 @@ wabadmin health-check --component auth
 wabadmin health-check --component sessions
 
 # Cluster health (HA deployments)
-crm status
-pcs status
+bastion-replication --monitoring
+bastion-replication --monitoring --verbose
 ```
 
 ### Health Check Script
@@ -140,9 +140,9 @@ else
 fi
 
 # Cluster status (if HA)
-if command -v crm &> /dev/null; then
+if command -v bastion-replication &> /dev/null; then
     echo "--- Cluster ---"
-    crm status | grep -q "Online:" && echo "Cluster: OK" || echo "Cluster: DEGRADED"
+    bastion-replication --monitoring | grep -q "healthy" && echo "Cluster: OK" || echo "Cluster: DEGRADED"
 fi
 
 echo ""
@@ -409,7 +409,7 @@ if $programname == 'wab-audit' then {
 ```
 # CEF format for SIEM integration
 template(name="CEFFormat" type="string"
-  string="CEF:0|WALLIX|WALLIX Bastion|12.1|%msg:R,ERE,0,DFLT:event_id=([^,]+)--end%|%msg:R,ERE,0,DFLT:event_name=([^,]+)--end%|%msg:R,ERE,0,DFLT:severity=([^,]+)--end%|%msg%\n")
+  string="CEF:0|WALLIX|WALLIX Bastion|12.3.2|%msg:R,ERE,0,DFLT:event_id=([^,]+)--end%|%msg:R,ERE,0,DFLT:event_name=([^,]+)--end%|%msg:R,ERE,0,DFLT:severity=([^,]+)--end%|%msg%\n")
 ```
 
 ### Log Categories

@@ -45,7 +45,7 @@ This document provides detailed backup, restore, and disaster recovery procedure
 | Credential Vault Keys | /var/wab/keys/ | Weekly | 1 year |
 | Audit Logs | /var/log/wab*/ | Daily | 1 year |
 | Custom Scripts | /opt/wab/scripts/ | Weekly | 90 days |
-| Pacemaker Config | /var/lib/pacemaker/ | After changes | 90 days |
+| Keepalived Config | /etc/keepalived/ | After changes | 90 days |
 
 ---
 
@@ -181,8 +181,7 @@ tar -czvf "${BACKUP_FILE}" \
     /etc/wab/ \
     /etc/ssl/wab/ \
     /var/wab/keys/ \
-    /etc/pacemaker/ \
-    /etc/corosync/ \
+    /etc/keepalived/ \
     /etc/mysql/mariadb.conf.d/*.cnf \
     /tmp/wallix-config.json \
     2>/dev/null

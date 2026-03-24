@@ -42,7 +42,7 @@ This guide covers deploying a monitoring stack for WALLIX Bastion infrastructure
   - System: CPU, Memory, Disk, Network
   - WALLIX Bastion: Sessions, Authentications, API calls
   - MariaDB: Connections, Replication lag
-  - Cluster: Pacemaker status, VIP health
+  - Cluster: bastion-replication status, VIP health
 
 +===============================================================================+
 ```
