@@ -508,7 +508,7 @@ vrrp_instance WALLIX_VIP {
 |                          |  Global DNS /   |                                  |
 |                          |  GSLB           |                                  |
 |                          |                 |                                  |
-|                          |  bastion.co.com |                                  |
+|                          | bastion.company.com|                                 |
 |                          +-----------------+                                  |
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
@@ -795,7 +795,7 @@ class WallixHAClient:
 
         Args:
             nodes: List of WALLIX Bastion node URLs
-                   (e.g., ['https://node1.example.com', 'https://node2.example.com'])
+                   (e.g., ['https://node1.company.com', 'https://node2.company.com'])
             username: API username
             password: API password
             verify_ssl: Verify SSL certificates
@@ -1160,7 +1160,7 @@ if __name__ == "__main__":
         # Create a new user
         new_user = {
             'user_name': 'john.doe',
-            'email': 'john.doe@example.com',
+            'email': 'john.doe@company.com',
             'profile': 'user'
         }
         response = client.post('/api/users', data=new_user)

@@ -200,7 +200,7 @@ WALLIX Bastion provides a comprehensive REST API for automation:
 ```bash
 # Example: List devices via API
 curl -k -X GET \
-  "https://bastion.example.com/api/devices" \
+  "https://bastion.company.com/api/devices" \
   -H "Authorization: Basic $(echo -n 'admin:password' | base64)" \
   -H "Content-Type: application/json"
 ```

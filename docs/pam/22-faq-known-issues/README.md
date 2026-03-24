@@ -399,7 +399,7 @@ See: [Disaster Recovery Procedures](../23-incident-response/README.md)
 A: Diagnostic steps:
 ```bash
 # 1. Test LDAP connectivity
-ldapsearch -H ldaps://dc.example.com:636 \
+ldapsearch -H ldaps://dc.company.com:636 \
   -D "CN=wallix-svc,OU=Service,DC=example,DC=com" \
   -W -b "DC=example,DC=com" "(sAMAccountName=testuser)"
 
@@ -447,12 +447,12 @@ A: Troubleshooting steps:
 
 2. **Test syslog connectivity:**
    ```bash
-   logger -n siem.example.com -P 514 "WALLIX test message"
+   logger -n siem.company.com -P 514 "WALLIX test message"
    ```
 
 3. **Check for network issues:**
    ```bash
-   nc -vz siem.example.com 514
+   nc -vz siem.company.com 514
    ```
 
 4. **Verify log format matches SIEM parser**
@@ -479,13 +479,13 @@ A: API authentication methods:
 ```bash
 # Method 1: API Key (recommended)
 curl -H "Authorization: Basic $(echo -n 'user:apikey' | base64)" \
-  https://bastion.example.com/api/v3.12/status
+  https://bastion.company.com/api/v3.12/status
 
 # Method 2: Session token
-TOKEN=$(curl -X POST https://bastion.example.com/api/v3.12/auth \
+TOKEN=$(curl -X POST https://bastion.company.com/api/v3.12/auth \
   -d '{"user":"admin","password":"pass"}' | jq -r '.token')
 curl -H "Authorization: Bearer $TOKEN" \
-  https://bastion.example.com/api/v3.12/devices
+  https://bastion.company.com/api/v3.12/devices
 ```
 
 ---

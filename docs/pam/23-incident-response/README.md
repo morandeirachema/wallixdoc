@@ -302,8 +302,8 @@ wabadmin service pause session-manager
 ```bash
 # From backup management station:
 # Check if WALLIX is accessible
-ping bastion.example.com
-curl -k https://bastion.example.com/api/v3.12/status
+ping bastion.company.com
+curl -k https://bastion.company.com/api/v3.12/status
 
 # If accessible, check system health
 ssh admin@bastion-oob  # Out-of-band management
@@ -781,7 +781,7 @@ systemctl start mariadb
 openssl genrsa -out /etc/wallix/ssl/server.key.new 4096
 openssl req -new -key /etc/wallix/ssl/server.key.new \
   -out /tmp/server.csr \
-  -subj "/CN=bastion.example.com/O=Company/C=US"
+  -subj "/CN=bastion.company.com/O=Company/C=US"
 
 # 3. Submit CSR to CA for emergency issuance
 # Obtain new certificate

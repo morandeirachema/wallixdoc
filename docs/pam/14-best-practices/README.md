@@ -789,7 +789,7 @@ SCRIPT_NAME="wallix-ha-monitor"
 LOG_FILE="/var/log/wallix/${SCRIPT_NAME}.log"
 STATE_FILE="/var/lib/wallix/${SCRIPT_NAME}.state"
 ALERT_WEBHOOK_URL="${ALERT_WEBHOOK_URL:-}"  # Slack/Teams/etc webhook
-ALERT_EMAIL="${ALERT_EMAIL:-ops@example.com}"
+ALERT_EMAIL="${ALERT_EMAIL:-ops@company.com}"
 
 # Thresholds
 REPLICATION_LAG_WARN=5      # seconds
@@ -1178,7 +1178,7 @@ DB_USER=wallixmon
 DB_PASS=SecurePassword123!
 DB_HOST=localhost
 DB_PORT=3306
-ALERT_EMAIL=ops@example.com
+ALERT_EMAIL=ops@company.com
 ALERT_WEBHOOK_URL=https://hooks.slack.com/services/YOUR/WEBHOOK/URL
 EOF
 
@@ -1268,8 +1268,8 @@ scrape_configs:
     scrape_timeout: 10s
     static_configs:
       - targets:
-          - 'bastion01.example.com:9100'
-          - 'bastion02.example.com:9100'
+          - 'bastion01.company.com:9100'
+          - 'bastion02.company.com:9100'
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
@@ -1299,7 +1299,7 @@ groups:
         annotations:
           summary: "WALLIX cluster has lost quorum"
           description: "Cluster {{ $labels.cluster }} has lost quorum. Immediate intervention required."
-          runbook: "https://docs.example.com/runbooks/wallix-quorum-loss"
+          runbook: "https://docs.company.com/runbooks/wallix-quorum-loss"
 
       - alert: WallixNodeOffline
         expr: wallix_cluster_status == 0
@@ -1310,7 +1310,7 @@ groups:
         annotations:
           summary: "WALLIX node {{ $labels.node }} is offline"
           description: "Node {{ $labels.node }} has been offline for 2 minutes."
-          runbook: "https://docs.example.com/runbooks/wallix-node-offline"
+          runbook: "https://docs.company.com/runbooks/wallix-node-offline"
 
       - alert: WallixReplicationBroken
         expr: wallix_replication_lag_seconds == -1
@@ -1321,7 +1321,7 @@ groups:
         annotations:
           summary: "MariaDB replication is broken on {{ $labels.node }}"
           description: "Replication from {{ $labels.master }} to {{ $labels.node }} is broken."
-          runbook: "https://docs.example.com/runbooks/wallix-replication-broken"
+          runbook: "https://docs.company.com/runbooks/wallix-replication-broken"
 
       - alert: WallixBastionReplicationFailed
         expr: wallix_bastion_replication_status == 2
@@ -1332,7 +1332,7 @@ groups:
         annotations:
           summary: "Bastion replication has failed on {{ $labels.node }}"
           description: "bastion-replication --status reports errors on {{ $labels.node }}. Check SSH tunnel (port 2242) and MariaDB ports (3306/3307)."
-          runbook: "https://docs.example.com/runbooks/wallix-replication-failure"
+          runbook: "https://docs.company.com/runbooks/wallix-replication-failure"
 
       - alert: WallixVIPNotRunning
         expr: sum by (vip) (wallix_vip_status) == 0
@@ -1343,7 +1343,7 @@ groups:
         annotations:
           summary: "VIP {{ $labels.vip }} is not running on any node"
           description: "Virtual IP {{ $labels.vip }} is not active. Service may be unavailable."
-          runbook: "https://docs.example.com/runbooks/wallix-vip-down"
+          runbook: "https://docs.company.com/runbooks/wallix-vip-down"
 
       - alert: WallixReplicationTunnelDown
         expr: wallix_ssh_tunnel_status{port="2242"} == 0
@@ -1354,7 +1354,7 @@ groups:
         annotations:
           summary: "SSH replication tunnel is down on {{ $labels.node }}"
           description: "SSH tunnel on port 2242 used for MariaDB streaming replication is not available on {{ $labels.node }}."
-          runbook: "https://docs.example.com/runbooks/wallix-replication-tunnel"
+          runbook: "https://docs.company.com/runbooks/wallix-replication-tunnel"
 
       # HIGH SEVERITY ALERTS
 
@@ -1367,7 +1367,7 @@ groups:
         annotations:
           summary: "High replication lag on {{ $labels.node }}"
           description: "Replication lag is {{ $value }}s on {{ $labels.node }} (threshold: 30s)."
-          runbook: "https://docs.example.com/runbooks/wallix-replication-lag"
+          runbook: "https://docs.company.com/runbooks/wallix-replication-lag"
 
       - alert: WallixClusterDegraded
         expr: wallix_cluster_status == 2
@@ -1378,7 +1378,7 @@ groups:
         annotations:
           summary: "WALLIX cluster is in degraded state"
           description: "Node {{ $labels.node }} is reporting degraded cluster status."
-          runbook: "https://docs.example.com/runbooks/wallix-cluster-degraded"
+          runbook: "https://docs.company.com/runbooks/wallix-cluster-degraded"
 
       - alert: WallixFailoverSlow
         expr: wallix_failover_duration_seconds > 10
@@ -1389,7 +1389,7 @@ groups:
         annotations:
           summary: "Slow VIP failover detected"
           description: "VIP {{ $labels.vip }} took {{ $value }}s to failover (threshold: 10s)."
-          runbook: "https://docs.example.com/runbooks/wallix-slow-failover"
+          runbook: "https://docs.company.com/runbooks/wallix-slow-failover"
 
       - alert: WallixSessionSyncLagHigh
         expr: wallix_session_sync_lag_seconds > 5
@@ -1400,7 +1400,7 @@ groups:
         annotations:
           summary: "High session sync lag between nodes"
           description: "Session sync lag is {{ $value }}s between {{ $labels.node }} and {{ $labels.peer }}."
-          runbook: "https://docs.example.com/runbooks/wallix-session-sync"
+          runbook: "https://docs.company.com/runbooks/wallix-session-sync"
 
       # MEDIUM SEVERITY ALERTS
 
@@ -1413,7 +1413,7 @@ groups:
         annotations:
           summary: "Replication lag warning on {{ $labels.node }}"
           description: "Replication lag is {{ $value }}s on {{ $labels.node }} (warning threshold: 5s)."
-          runbook: "https://docs.example.com/runbooks/wallix-replication-lag"
+          runbook: "https://docs.company.com/runbooks/wallix-replication-lag"
 
       - alert: WallixHighSessionCount
         expr: wallix_active_sessions > 450
@@ -1424,7 +1424,7 @@ groups:
         annotations:
           summary: "High session count on {{ $labels.node }}"
           description: "Node {{ $labels.node }} has {{ $value }} active sessions (capacity: 500)."
-          runbook: "https://docs.example.com/runbooks/wallix-capacity-planning"
+          runbook: "https://docs.company.com/runbooks/wallix-capacity-planning"
 
       # INFORMATIONAL ALERTS
 
@@ -1437,7 +1437,7 @@ groups:
         annotations:
           summary: "VIP {{ $labels.vip }} has migrated"
           description: "VIP {{ $labels.vip }} has moved to a different node."
-          runbook: "https://docs.example.com/runbooks/wallix-vip-migration"
+          runbook: "https://docs.company.com/runbooks/wallix-vip-migration"
 
   - name: wallix_ha_cluster_multi_alert
     interval: 60s
@@ -1451,7 +1451,7 @@ groups:
         annotations:
           summary: "POSSIBLE SPLIT-BRAIN: Multiple nodes report as master"
           description: "{{ $value }} nodes are reporting master role. Manual intervention required immediately."
-          runbook: "https://docs.example.com/runbooks/wallix-split-brain"
+          runbook: "https://docs.company.com/runbooks/wallix-split-brain"
 
       - alert: WallixNoMasterNode
         expr: count(wallix_node_role == 1) == 0
@@ -1462,7 +1462,7 @@ groups:
         annotations:
           summary: "No master node in cluster"
           description: "No node is currently in master role. Service may be unavailable."
-          runbook: "https://docs.example.com/runbooks/wallix-no-master"
+          runbook: "https://docs.company.com/runbooks/wallix-no-master"
 ```
 
 **Alertmanager Configuration Example:**
@@ -1502,15 +1502,15 @@ receivers:
         title: '{{ .GroupLabels.alertname }}'
         text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
     email_configs:
-      - to: 'ops@example.com'
-        from: 'alerts@example.com'
-        smarthost: 'smtp.example.com:587'
+      - to: 'ops@company.com'
+        from: 'alerts@company.com'
+        smarthost: 'smtp.company.com:587'
 
   - name: 'wallix-ops-email'
     email_configs:
-      - to: 'ops@example.com'
-        from: 'alerts@example.com'
-        smarthost: 'smtp.example.com:587'
+      - to: 'ops@company.com'
+        from: 'alerts@company.com'
+        smarthost: 'smtp.company.com:587'
 
 inhibit_rules:
   # Don't alert on replication lag if node is offline

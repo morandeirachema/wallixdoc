@@ -279,7 +279,7 @@ WALLIX Web UI > Audit > Sessions > [Select Session] > Play Recording
 
 **Direct URL Format:**
 ```
-https://bastion.example.com/wabam/recordings/play?session_id=SES-2026-001-A7B3C9D1
+https://bastion.company.com/wabam/recordings/play?session_id=SES-2026-001-A7B3C9D1
 ```
 
 ### Player Interface
@@ -498,7 +498,7 @@ error:"Access Denied"           # Error messages
 "credit card" OR "social security" OR "SSN"
 
 # Via API:
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/search" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/search" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -677,7 +677,7 @@ output:/\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}/
 command:"rm -rf" OR command:"dd if=" OR command:"mkfs" OR command:"> /dev/"
 
 # API request
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/search" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/search" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -773,7 +773,7 @@ authorization:"emergency-break-glass" AND date:[2026-01-01 TO 2026-01-31]
 
 ```bash
 # Search sessions with multiple criteria
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/search" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/search" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -897,7 +897,7 @@ wabadmin recording export --session SES-2026-001-A7B3C9D1 \
 
 ```bash
 # Request export
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/export" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/export" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -919,7 +919,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
 }
 
 # Check export status
-curl "https://bastion.example.com/api/v3.12/exports/EXP-2026-001-XYZ789" \
+curl "https://bastion.company.com/api/v3.12/exports/EXP-2026-001-XYZ789" \
   -H "Authorization: Bearer $TOKEN"
 
 # Response when complete:
@@ -932,7 +932,7 @@ curl "https://bastion.example.com/api/v3.12/exports/EXP-2026-001-XYZ789" \
 }
 
 # Download exported file
-curl -O "https://bastion.example.com/api/v3.12/exports/EXP-2026-001-XYZ789/download" \
+curl -O "https://bastion.company.com/api/v3.12/exports/EXP-2026-001-XYZ789/download" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -1148,7 +1148,7 @@ wabadmin recording share-link --session SES-2026-001-A7B3C9D1 \
 
 ```bash
 # Create share for external party
-curl -X POST "https://bastion.example.com/api/v3.12/recordings/share" \
+curl -X POST "https://bastion.company.com/api/v3.12/recordings/share" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1173,7 +1173,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/recordings/share" \
 # Response:
 {
     "share_id": "SHR-2026-001-XYZ",
-    "access_url": "https://bastion.example.com/shared/SHR-2026-001-XYZ",
+    "access_url": "https://bastion.company.com/shared/SHR-2026-001-XYZ",
     "access_code": "ABC123DEF",
     "expires": "2026-02-15T00:00:00Z",
     "sessions_shared": 2
@@ -1440,7 +1440,7 @@ wabadmin recording verify-file \
 
 ```bash
 # Verify recording integrity via API
-curl "https://bastion.example.com/api/v3.12/recordings/SES-2026-001-A7B3C9D1/verify" \
+curl "https://bastion.company.com/api/v3.12/recordings/SES-2026-001-A7B3C9D1/verify" \
   -H "Authorization: Bearer $TOKEN"
 
 # Response:
@@ -1456,7 +1456,7 @@ curl "https://bastion.example.com/api/v3.12/recordings/SES-2026-001-A7B3C9D1/ver
         },
         "digital_signature": {
             "status": "valid",
-            "signer": "CN=bastion.example.com",
+            "signer": "CN=bastion.company.com",
             "signed_at": "2026-01-15T10:45:23Z",
             "certificate_valid": true
         },
@@ -1530,7 +1530,7 @@ wabadmin storage status
 # Configure external storage
 wabadmin storage configure \
   --type nfs \
-  --server nas.example.com \
+  --server nas.company.com \
   --path /wallix/recordings \
   --mount-point /var/wab/recorded/external
 ```
@@ -1546,7 +1546,7 @@ wabadmin storage configure \
 |  =================                                                            |
 |                                                                               |
 |  /etc/fstab entry:                                                            |
-|  nas.example.com:/wallix/recordings  /var/wab/recorded/external  nfs4  \     |
+|  nas.company.com:/wallix/recordings  /var/wab/recorded/external  nfs4  \     |
 |    rw,sync,hard,intr,rsize=1048576,wsize=1048576  0  0                       |
 |                                                                               |
 |  Mount options explained:                                                     |
@@ -1563,7 +1563,7 @@ wabadmin storage configure \
 |  ===================                                                          |
 |                                                                               |
 |  # Discover targets                                                           |
-|  iscsiadm -m discovery -t sendtargets -p san.example.com                     |
+|  iscsiadm -m discovery -t sendtargets -p san.company.com                     |
 |                                                                               |
 |  # Login to target                                                            |
 |  iscsiadm -m node -T iqn.2026-01.com.example:wallix-recordings -l            |
@@ -1634,7 +1634,7 @@ wabadmin recording cleanup-report \
 wabadmin storage alerts configure \
   --warning-threshold 80 \
   --critical-threshold 95 \
-  --notification-email storage-admin@example.com
+  --notification-email storage-admin@company.com
 
 # Check storage health
 wabadmin storage health-check
@@ -1701,7 +1701,7 @@ wabadmin storage health-check
 |     $ iostat -x 1 5                                                          |
 |                                                                               |
 |  2. Check network to storage:                                                 |
-|     $ ping -c 10 nas.example.com                                             |
+|     $ ping -c 10 nas.company.com                                             |
 |                                                                               |
 |  3. Check playback service resources:                                         |
 |     $ top -p $(pgrep -f wab-playback)                                        |
@@ -1798,7 +1798,7 @@ find /var/wab/recorded -size +1G -ls
 
 # Check NFS mount status
 mount | grep wab
-showmount -e nas.example.com
+showmount -e nas.company.com
 
 # Remount NFS if disconnected
 umount -f /var/wab/recorded/external

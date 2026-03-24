@@ -2417,7 +2417,7 @@ USER_DATA=$(cat << EOF
 {
     "username": "${AUDITOR_NAME}",
     "display_name": "External Auditor",
-    "email": "auditor@example.com",
+    "email": "auditor@company.com",
     "password": "${TEMP_PASSWORD}",
     "groups": ["auditors"],
     "auth_type": "local",

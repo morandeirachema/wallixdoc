@@ -553,7 +553,7 @@ Navigation: Active Sessions > [Select Session] > Request to Join
 **Via API:**
 ```bash
 # Request to join an active session
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/join-request" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/join-request" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -616,7 +616,7 @@ Navigation: [Active Session] > Share > Invite Users
 **Via API:**
 ```bash
 # Invite users to current session
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/invite" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/invite" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -657,7 +657,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
 **Quick Share Link:**
 ```bash
 # Generate a time-limited share link
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/share-link" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/share-link" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -669,7 +669,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
 
 # Response:
 {
-    "share_url": "https://bastion.example.com/join/XYZ789ABC123",
+    "share_url": "https://bastion.company.com/join/XYZ789ABC123",
     "expires": "2026-01-15T10:15:00Z",
     "max_uses": 3,
     "current_uses": 0
@@ -679,7 +679,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
 **Direct Join (for authorized users):**
 ```bash
 # Join session directly (requires appropriate permissions)
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/join" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/join" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -691,7 +691,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
     "participant_id": "PART-2026-001-DEF456",
     "session_id": "SES-2026-001-A7B3C9D1",
     "mode": "view_only",
-    "websocket_url": "wss://bastion.example.com/session/SES-2026-001-A7B3C9D1/stream?token=xyz",
+    "websocket_url": "wss://bastion.company.com/session/SES-2026-001-A7B3C9D1/stream?token=xyz",
     "joined_at": "2026-01-15T09:50:00Z"
 }
 ```
@@ -820,7 +820,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
 
 ```bash
 # Session owner transfers control to participant
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/control/transfer" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/control/transfer" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -831,7 +831,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
   }'
 
 # Participant requests control
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/control/request" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/control/request" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -840,7 +840,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
   }'
 
 # Session owner approves control request
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/control/approve" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/control/approve" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -898,7 +898,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
 **Chat API:**
 ```bash
 # Send chat message
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/chat" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/chat" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -906,7 +906,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
   }'
 
 # Get chat history
-curl "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/chat" \
+curl "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/chat" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -944,7 +944,7 @@ curl "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/chat"
 **Annotation API:**
 ```bash
 # Add screen annotation
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/annotations" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/annotations" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -961,7 +961,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
   }'
 
 # Add timestamp bookmark
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/bookmarks" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/bookmarks" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1055,7 +1055,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
 **Training Session Workflow:**
 ```bash
 # 1. Mentor initiates training session
-curl -X POST "https://bastion.example.com/api/v3.12/sessions" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1074,7 +1074,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions" \
   }'
 
 # 2. Invite trainee
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-TRAIN/invite" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-TRAIN/invite" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1084,7 +1084,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-TRAIN/
   }'
 
 # 3. Grant practice time to trainee
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-TRAIN/control/transfer" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-TRAIN/control/transfer" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1227,7 +1227,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-TRAIN/
 **Incident Response Workflow:**
 ```bash
 # 1. Incident commander initiates emergency session
-curl -X POST "https://bastion.example.com/api/v3.12/sessions" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1242,7 +1242,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions" \
   }'
 
 # 2. Broadcast invitation to response team
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-INC/broadcast-invite" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-INC/broadcast-invite" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1252,7 +1252,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-INC/br
   }'
 
 # 3. Responders join directly (pre-authorized)
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-INC/join" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-INC/join" \
   -H "Authorization: Bearer $RESPONDER_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1463,7 +1463,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-INC/jo
 
 ```bash
 # Remove participant from active session
-curl -X DELETE "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/participants/bjones" \
+curl -X DELETE "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/participants/bjones" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1472,7 +1472,7 @@ curl -X DELETE "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3
   }'
 
 # Block specific user from joining
-curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/block" \
+curl -X POST "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/block" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1481,7 +1481,7 @@ curl -X POST "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9
   }'
 
 # Disable all sharing for session
-curl -X PUT "https://bastion.example.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/sharing" \
+curl -X PUT "https://bastion.company.com/api/v3.12/sessions/SES-2026-001-A7B3C9D1/sharing" \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -1683,7 +1683,7 @@ wabadmin authorization bulk-modify \
 |     $ wabadmin user permissions bjones --check session_sharing                |
 |                                                                               |
 |  4. Check WebSocket connectivity:                                             |
-|     $ curl -I https://bastion.example.com/ws/health                          |
+|     $ curl -I https://bastion.company.com/ws/health                          |
 |                                                                               |
 |  5. Check firewall rules (port 443 WebSocket):                                |
 |     $ netstat -tlnp | grep 443                                               |
@@ -1703,7 +1703,7 @@ wabadmin authorization bulk-modify \
 |  Diagnostic Steps:                                                            |
 |                                                                               |
 |  1. Check network stability:                                                  |
-|     $ ping -c 100 bastion.example.com                                        |
+|     $ ping -c 100 bastion.company.com                                        |
 |                                                                               |
 |  2. Check WebSocket service:                                                  |
 |     $ systemctl status wab-websocket                                         |

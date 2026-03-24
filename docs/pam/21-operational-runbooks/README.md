@@ -660,7 +660,7 @@ wabadmin restore --full --input /var/backup/wallix/weekly/full-YYYYMMDD.tar.gz
 tar -xzvf /var/backup/wallix/weekly/recordings-YYYYMMDD.tar.gz -C /
 
 # 5. Update hostname/IP if changed
-wabadmin config set --hostname new-hostname.example.com
+wabadmin config set --hostname new-hostname.company.com
 
 # 6. Start services
 systemctl start wallix-bastion
@@ -857,7 +857,7 @@ wabadmin health-check
 # 1. Generate CSR
 openssl req -new -key /etc/wallix/ssl/server.key \
   -out /tmp/server.csr \
-  -subj "/CN=bastion.example.com/O=Company/C=US"
+  -subj "/CN=bastion.company.com/O=Company/C=US"
 
 # 2. Submit to CA (internal or external)
 # Obtain signed certificate
