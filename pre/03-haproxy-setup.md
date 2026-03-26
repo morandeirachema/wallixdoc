@@ -1,10 +1,19 @@
-# 03 - HAProxy Load Balancer Setup
+# 03 - Load Balancer Setup
 
 ## High Availability Load Balancing for WALLIX Bastion
 
-This guide covers setting up two HAProxy load balancers in an active/standby configuration using Keepalived for VIP failover.
+This guide covers two load balancing options for WALLIX Bastion:
+
+- **Option A** — HAProxy + Keepalived (Linux-based, active/standby with VIP failover)
+- **Option B** — FortiGate Virtual IP (firewall-based, no extra VMs required)
+
+Choose the option that fits your infrastructure. Both provide HA load balancing across the two Bastion nodes per site.
 
 ---
+
+---
+
+# Option A — HAProxy + Keepalived
 
 ## Architecture
 
@@ -562,6 +571,459 @@ frontend wallix_https
 | 443 | HTTPS Web UI |
 | 3389 | RDP Proxy |
 | 8404 | HAProxy Stats |
+
+---
+
+---
+
+# Option B — FortiGate Virtual IP Load Balancing
+
+## Architecture
+
+```
++===============================================================================+
+|               FORTIGATE VIP LOAD BALANCING ARCHITECTURE                       |
++===============================================================================+
+|                                                                               |
+|                            USERS / OPERATORS                                  |
+|                                   |                                           |
+|                                   v                                           |
+|                          VIP: 10.10.1.100                                     |
+|                     (FortiGate Virtual Server)                                |
+|                                   |                                           |
+|                    +==============+===============+                            |
+|                    |       FortiGate Firewall     |                            |
+|                    |        10.10.1.1             |                            |
+|                    |   Virtual Server + Health    |                            |
+|                    |   Monitor (TCP checks)       |                            |
+|                    +==============+===============+                            |
+|                                   |                                           |
+|                    +--------------+--------------+                             |
+|                    |                             |                             |
+|              +---------------+           +---------------+                    |
+|              | WALLIX Bastion|           | WALLIX Bastion|                    |
+|              | Node 1        |           | Node 2        |                    |
+|              | 10.10.1.11    |           | 10.10.1.12    |                    |
+|              +---------------+           +---------------+                    |
+|                                                                               |
++===============================================================================+
+```
+
+This option uses the FortiGate firewall as a Layer 4 load balancer via Virtual IPs, eliminating the need for separate HAProxy/Keepalived VMs.
+
+---
+
+## Prerequisites
+
+- FortiGate firewall already deployed at site (FortiGate 100F/200F or equivalent)
+- FortiOS 7.2+ recommended
+- VIP address reserved (10.10.1.100) — same VIP as the HAProxy option
+- Admin access to FortiGate CLI or GUI
+
+---
+
+## Step 1: Create Health Check Monitors
+
+Health monitors verify that each Bastion node is responding before sending traffic to it.
+
+### Via CLI
+
+```bash
+# HTTPS health check (Web UI / API)
+config firewall ldb-monitor
+    edit "wallix-https-monitor"
+        set type tcp
+        set interval 5
+        set port 443
+        set retry 3
+        set timeout 2
+    next
+
+    # SSH health check
+    edit "wallix-ssh-monitor"
+        set type tcp
+        set interval 5
+        set port 22
+        set retry 3
+        set timeout 2
+    next
+
+    # RDP health check
+    edit "wallix-rdp-monitor"
+        set type tcp
+        set interval 5
+        set port 3389
+        set retry 3
+        set timeout 2
+    next
+end
+```
+
+### Via GUI
+
+1. Go to **Policy & Objects > Health Check**
+2. Create New:
+   - **Name**: `wallix-https-monitor`
+   - **Type**: TCP
+   - **Port**: 443
+   - **Interval**: 5 seconds
+   - **Timeout**: 2 seconds
+   - **Retry**: 3
+3. Repeat for SSH (port 22) and RDP (port 3389)
+
+---
+
+## Step 2: Create Real Server Pool
+
+Define the two WALLIX Bastion backend nodes.
+
+```bash
+config firewall real-server
+    edit 1
+        set ip 10.10.1.11
+        set port 443
+        set status active
+        set health-check enable
+        set holddown-interval 30
+    next
+    edit 2
+        set ip 10.10.1.12
+        set port 443
+        set status active
+        set health-check enable
+        set holddown-interval 30
+    next
+end
+```
+
+---
+
+## Step 3: Configure Virtual IPs
+
+### HTTPS Virtual IP (Port 443)
+
+```bash
+config firewall vip
+    edit "wallix-vip-https"
+        set type server-load-balance
+        set extip 10.10.1.100
+        set extintf "internal"
+        set server-type tcp
+        set extport 443
+        set ldb-method round-robin
+        set persistence source-ip
+        set monitor "wallix-https-monitor"
+
+        config realservers
+            edit 1
+                set ip 10.10.1.11
+                set port 443
+                set status active
+                set weight 100
+                set max-connections 1000
+                set health-check inherit
+            next
+            edit 2
+                set ip 10.10.1.12
+                set port 443
+                set status active
+                set weight 100
+                set max-connections 1000
+                set health-check inherit
+            next
+        end
+    next
+end
+```
+
+### SSH Virtual IP (Port 22)
+
+```bash
+config firewall vip
+    edit "wallix-vip-ssh"
+        set type server-load-balance
+        set extip 10.10.1.100
+        set extintf "internal"
+        set server-type tcp
+        set extport 22
+        set ldb-method least-session
+        set persistence source-ip
+        set monitor "wallix-ssh-monitor"
+
+        config realservers
+            edit 1
+                set ip 10.10.1.11
+                set port 22
+                set status active
+                set weight 100
+                set health-check inherit
+            next
+            edit 2
+                set ip 10.10.1.12
+                set port 22
+                set status active
+                set weight 100
+                set health-check inherit
+            next
+        end
+    next
+end
+```
+
+### RDP Virtual IP (Port 3389)
+
+```bash
+config firewall vip
+    edit "wallix-vip-rdp"
+        set type server-load-balance
+        set extip 10.10.1.100
+        set extintf "internal"
+        set server-type tcp
+        set extport 3389
+        set ldb-method least-session
+        set persistence source-ip
+        set monitor "wallix-rdp-monitor"
+
+        config realservers
+            edit 1
+                set ip 10.10.1.11
+                set port 3389
+                set status active
+                set weight 100
+                set health-check inherit
+            next
+            edit 2
+                set ip 10.10.1.12
+                set port 3389
+                set status active
+                set weight 100
+                set health-check inherit
+            next
+        end
+    next
+end
+```
+
+### HTTP Redirect (Port 80 → 443)
+
+```bash
+config firewall vip
+    edit "wallix-vip-http-redirect"
+        set type server-load-balance
+        set extip 10.10.1.100
+        set extintf "internal"
+        set server-type tcp
+        set extport 80
+        set ldb-method round-robin
+        set monitor "wallix-https-monitor"
+
+        config realservers
+            edit 1
+                set ip 10.10.1.11
+                set port 443
+                set status active
+            next
+            edit 2
+                set ip 10.10.1.12
+                set port 443
+                set status active
+            next
+        end
+    next
+end
+```
+
+---
+
+## Step 4: Create Firewall Policies
+
+Allow traffic from user networks to the Virtual IPs.
+
+```bash
+config firewall policy
+    edit 0
+        set name "Allow-WALLIX-VIP-HTTPS"
+        set srcintf "internal"
+        set dstintf "internal"
+        set srcaddr "all"
+        set dstaddr "wallix-vip-https"
+        set action accept
+        set schedule "always"
+        set service "HTTPS"
+        set logtraffic all
+        set comments "WALLIX Bastion Web UI via VIP"
+    next
+    edit 0
+        set name "Allow-WALLIX-VIP-SSH"
+        set srcintf "internal"
+        set dstintf "internal"
+        set srcaddr "all"
+        set dstaddr "wallix-vip-ssh"
+        set action accept
+        set schedule "always"
+        set service "SSH"
+        set logtraffic all
+        set comments "WALLIX Bastion SSH Proxy via VIP"
+    next
+    edit 0
+        set name "Allow-WALLIX-VIP-RDP"
+        set srcintf "internal"
+        set dstintf "internal"
+        set srcaddr "all"
+        set dstaddr "wallix-vip-rdp"
+        set action accept
+        set schedule "always"
+        set service "RDP"
+        set logtraffic all
+        set comments "WALLIX Bastion RDP Proxy via VIP"
+    next
+end
+```
+
+> **Note**: Replace `"internal"` with the actual interface names for your site (e.g., `port1`, `lan`, `dmz`). Restrict `srcaddr` to specific admin/operator subnets in production.
+
+---
+
+## Step 5: Session Persistence Settings
+
+FortiGate source-IP persistence ensures a user's session sticks to the same Bastion node (critical for SSH/RDP sessions).
+
+```bash
+# Adjust persistence timeout per VIP
+config firewall vip
+    edit "wallix-vip-ssh"
+        set persistence source-ip
+        set http-cookie-age 60
+        # Source IP persistence timeout (minutes)
+    next
+    edit "wallix-vip-rdp"
+        set persistence source-ip
+    next
+end
+```
+
+---
+
+## Verification
+
+### Check Virtual Server Status
+
+```bash
+# Via CLI
+get firewall vip
+
+# Detailed status of a specific VIP
+diagnose firewall vip list
+
+# Check real server health
+diagnose server-load-balance real-server list
+```
+
+### Via GUI
+
+1. Go to **Policy & Objects > Virtual IPs**
+2. Check each VIP shows both real servers as **Up** (green)
+3. Go to **FortiView > All Sessions** to monitor active connections
+
+### Test Connectivity
+
+```bash
+# From a client machine, test through the VIP
+curl -k https://10.10.1.100/
+ssh -o ConnectTimeout=5 test@10.10.1.100
+```
+
+### Test Failover
+
+```bash
+# 1. Verify both backends are active
+diagnose server-load-balance real-server list
+
+# 2. Shutdown WALLIX Node 1 (or block port 443)
+# On the Bastion node:
+#   systemctl stop wabcore
+
+# 3. Verify FortiGate detects the failure
+diagnose server-load-balance real-server list
+# Node 1 should show as DOWN after health check timeout
+
+# 4. Test services still work through VIP
+curl -k https://10.10.1.100/
+
+# 5. Restart Node 1 and verify it rejoins the pool
+#   systemctl start wabcore
+diagnose server-load-balance real-server list
+```
+
+---
+
+## Monitoring
+
+### FortiGate SNMP Monitoring
+
+```bash
+config system snmp sysinfo
+    set status enable
+end
+
+config system snmp community
+    edit 1
+        set name "wallix-monitoring"
+        set events cpu-high mem-low
+        config hosts
+            edit 1
+                set ip 10.10.0.50 255.255.255.255
+            next
+        end
+    next
+end
+```
+
+### Log Monitoring
+
+```bash
+# Check load balancer related logs
+execute log filter category traffic
+execute log filter field dstaddr 10.10.1.100
+execute log display
+```
+
+---
+
+## Troubleshooting
+
+| Issue | Check | Solution |
+|-------|-------|----------|
+| VIP not responding | `diagnose firewall vip list` | Verify VIP config, check interface binding |
+| Backend always DOWN | `diagnose server-load-balance real-server list` | Check health monitor, verify Bastion ports open |
+| Asymmetric routing | `diagnose sniffer packet any 'host 10.10.1.100' 4` | Ensure return path goes through FortiGate |
+| Session drops on failover | Check persistence config | Enable source-ip persistence on VIP |
+| Uneven distribution | `diagnose server-load-balance service list` | Check weights, verify ldb-method |
+
+---
+
+## Comparison: HAProxy vs FortiGate VIP
+
+| Feature | HAProxy + Keepalived | FortiGate VIP |
+|---------|---------------------|---------------|
+| **Extra VMs** | 2 per site | None |
+| **HA** | VRRP (active-passive) | Built into FortiGate HA |
+| **Layer 7 features** | Full (headers, cookies, ACLs) | Limited (TCP only) |
+| **SSL termination** | Yes | Yes (with inspection license) |
+| **Health checks** | Advanced (HTTP content match) | TCP / ICMP / HTTP basic |
+| **Stats/metrics** | Built-in stats page, Prometheus | FortiView, SNMP, syslog |
+| **Best for** | Complex routing, full visibility | Simple LB, minimal infra |
+
+---
+
+## Quick Reference
+
+| VIP Name | Port | LB Method | Backends |
+|----------|------|-----------|----------|
+| wallix-vip-https | 443 | round-robin | 10.10.1.11, 10.10.1.12 |
+| wallix-vip-ssh | 22 | least-session | 10.10.1.11, 10.10.1.12 |
+| wallix-vip-rdp | 3389 | least-session | 10.10.1.11, 10.10.1.12 |
+| wallix-vip-http-redirect | 80 → 443 | round-robin | 10.10.1.11, 10.10.1.12 |
 
 ---
 
