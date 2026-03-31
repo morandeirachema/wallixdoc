@@ -93,7 +93,7 @@ Complete all items before starting the FortiAuthenticator MFA integration:
 |                                                                             |
 |  1. FortiAuthenticator Base License                                         |
 |     - Included with appliance purchase                                      |
-|     - Enables RADIUS, LDAP, user management                                |
+|     - Enables RADIUS, LDAP, user management                                 |
 |                                                                             |
 |  2. FortiToken Licenses (per user)                                          |
 |     - FortiToken Mobile: software token (iOS/Android)                       |
@@ -222,19 +222,19 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 
 #### Port Matrix
 
-| Source | Destination | Port | Protocol | Description |
-|--------|-------------|------|----------|-------------|
-| WALLIX Bastion Node 1 (10.10.1.20) | FortiAuthenticator (10.10.0.60) | 1812 | UDP | RADIUS Authentication |
-| WALLIX Bastion Node 2 (10.10.1.21) | FortiAuthenticator (10.10.0.60) | 1813 | UDP | RADIUS Accounting |
-| WALLIX Bastion Node 1 (10.10.1.20) | FortiAuthenticator (10.10.0.60) | 1813 | UDP | RADIUS Accounting |
-| WALLIX Bastion Node 2 (10.10.1.21) | FortiAuthenticator (10.10.0.60) | 1812 | UDP | RADIUS Authentication |
-| FortiAuthenticator (10.10.0.60) | AD Domain Controller | 636 | TCP | LDAPS (user sync) |
-| FortiAuthenticator (10.10.0.60) | AD Domain Controller | 389 | TCP | LDAP (fallback only) |
-| FortiAuthenticator (10.10.0.60) | SMTP Server | 587 | TCP | Token enrollment emails |
-| FortiAuthenticator (10.10.0.60) | NTP Server | 123 | UDP | Time sync (critical for OTP) |
-| FortiAuthenticator (10.10.0.60) | FortiGuard Servers | 443 | TCP | License validation, updates |
-| Administrators | FortiAuthenticator (10.10.0.60) | 443 | TCP | Web UI management |
-| Users (mobile devices) | FortiGuard Push Servers | 443 | TCP | Push notifications |
+| Source                             | Destination                     | Port | Protocol | Description                  |
+|------------------------------------|---------------------------------|------|----------|------------------------------|
+| WALLIX Bastion Node 1 (10.10.1.20) | FortiAuthenticator (10.10.0.60) | 1812 | UDP      | RADIUS Authentication        |
+| WALLIX Bastion Node 2 (10.10.1.21) | FortiAuthenticator (10.10.0.60) | 1813 | UDP      | RADIUS Accounting            |
+| WALLIX Bastion Node 1 (10.10.1.20) | FortiAuthenticator (10.10.0.60) | 1813 | UDP      | RADIUS Accounting            |
+| WALLIX Bastion Node 2 (10.10.1.21) | FortiAuthenticator (10.10.0.60) | 1812 | UDP      | RADIUS Authentication        |
+| FortiAuthenticator (10.10.0.60)    | AD Domain Controller            | 636  | TCP      | LDAPS (user sync)            |
+| FortiAuthenticator (10.10.0.60)    | AD Domain Controller            | 389  | TCP      | LDAP (fallback only)         |
+| FortiAuthenticator (10.10.0.60)    | SMTP Server                     | 587  | TCP      | Token enrollment emails      |
+| FortiAuthenticator (10.10.0.60)    | NTP Server                      | 123  | UDP      | Time sync (critical for OTP) |
+| FortiAuthenticator (10.10.0.60)    | FortiGuard Servers              | 443  | TCP      | License validation, updates  |
+| Administrators                     | FortiAuthenticator (10.10.0.60) | 443  | TCP      | Web UI management            |
+| Users (mobile devices)             | FortiGuard Push Servers         | 443  | TCP      | Push notifications           |
 
 #### Network Architecture
 
@@ -432,25 +432,25 @@ end
 |  =====================  =============================  ======               |
 |                                                                             |
 |  FortiAuthenticator     Firmware 6.4+                  [ ]                  |
-|  FortiAuthenticator     Base license active             [ ]                  |
-|  FortiAuthenticator     FortiToken licenses loaded      [ ]                  |
-|  FortiAuthenticator     Static IP + DNS record          [ ]                  |
-|  FortiAuthenticator     SSL certificate installed       [ ]                  |
-|  FortiAuthenticator     SMTP configured and tested      [ ]                  |
-|  FortiAuthenticator     NTP synchronized                [ ]                  |
+|  FortiAuthenticator     Base license active            [ ]                  |
+|  FortiAuthenticator     FortiToken licenses loaded     [ ]                  |
+|  FortiAuthenticator     Static IP + DNS record         [ ]                  |
+|  FortiAuthenticator     SSL certificate installed      [ ]                  |
+|  FortiAuthenticator     SMTP configured and tested     [ ]                  |
+|  FortiAuthenticator     NTP synchronized               [ ]                  |
 |                                                                             |
-|  Active Directory       DC reachable from FortiAuth     [ ]                  |
-|  Active Directory       Service account created         [ ]                  |
-|  Active Directory       LDAPS (636) connectivity OK     [ ]                  |
-|  Active Directory       PAM-MFA-Users group created     [ ]                  |
+|  Active Directory       DC reachable from FortiAuth    [ ]                  |
+|  Active Directory       Service account created        [ ]                  |
+|  Active Directory       LDAPS (636) connectivity OK    [ ]                  |
+|  Active Directory       PAM-MFA-Users group created    [ ]                  |
 |                                                                             |
-|  WALLIX Bastion         Version 12.x operational        [ ]                  |
-|  WALLIX Bastion         RADIUS port to FortiAuth open   [ ]                  |
-|  WALLIX Bastion         NTP synchronized                [ ]                  |
+|  WALLIX Bastion         Version 12.x operational       [ ]                  |
+|  WALLIX Bastion         RADIUS port to FortiAuth open  [ ]                  |
+|  WALLIX Bastion         NTP synchronized               [ ]                  |
 |                                                                             |
-|  Network                Firewall rules configured       [ ]                  |
-|  Network                DNS resolution working          [ ]                  |
-|  Network                All connectivity tests pass     [ ]                  |
+|  Network                Firewall rules configured      [ ]                  |
+|  Network                DNS resolution working         [ ]                  |
+|  Network                All connectivity tests pass    [ ]                  |
 |                                                                             |
 |  All checks must be [ x ] before proceeding to Step 1                       |
 |                                                                             |
@@ -1018,11 +1018,11 @@ wabadmin report schedule \
 
 ### FortiAuthenticator URLs
 
-| Purpose | URL |
-|---------|-----|
-| Admin Console | https://fortiauth.company.com/admin |
+| Purpose             | URL                                        |
+|---------------------|--------------------------------------------|
+| Admin Console       | https://fortiauth.company.com/admin        |
 | Self-Service Portal | https://fortiauth.company.com/self-service |
-| RADIUS Port | 1812/UDP |
+| RADIUS Port         | 1812/UDP                                   |
 
 ### WALLIX MFA Commands
 
