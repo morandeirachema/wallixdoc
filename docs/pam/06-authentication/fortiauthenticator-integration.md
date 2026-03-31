@@ -51,24 +51,411 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 
 ## Prerequisites
 
+### Pre-Implementation Checklist
+
+Complete all items before starting the FortiAuthenticator MFA integration:
+
+- [ ] FortiAuthenticator appliance deployed and accessible (VM or hardware)
+- [ ] FortiAuthenticator firmware version 6.4 or later installed
+- [ ] Valid FortiAuthenticator base license activated
+- [ ] FortiToken licenses purchased for all users requiring MFA
+- [ ] Active Directory operational and reachable from FortiAuthenticator
+- [ ] AD service account created for FortiAuthenticator LDAP sync
+- [ ] DNS resolution working between all components
+- [ ] NTP time synchronization configured on all components
+- [ ] Firewall rules configured for RADIUS and LDAPS traffic
+- [ ] WALLIX Bastion deployed and operational (version 12.x recommended)
+- [ ] SSL certificate installed on FortiAuthenticator web interface
+- [ ] SMTP server configured for token enrollment emails
+
 ### FortiAuthenticator Requirements
+
+#### Hardware / Virtual Appliance
 
 | Item | Requirement |
 |------|-------------|
-| FortiAuthenticator Version | 6.4+ recommended |
-| License | Base + FortiToken licenses for users |
-| Network Access | WALLIX nodes must reach FortiAuth on RADIUS port |
-| Users | Synced from AD or local |
+| **Appliance Model** | FortiAuthenticator VM, 200F, 400F, or higher |
+| **Firmware Version** | 6.4+ recommended (6.6+ for latest features) |
+| **CPU** | 2+ vCPU (VM), dedicated (hardware) |
+| **RAM** | 4 GB minimum, 8 GB recommended |
+| **Disk** | 60 GB minimum for logs and user database |
+| **Network** | Static IP address with DNS record |
+
+#### Licensing
+
+```
++=============================================================================+
+|                  FORTIAUTHENTICATOR LICENSING                               |
++=============================================================================+
+|                                                                             |
+|  Required Licenses:                                                         |
+|  ==================                                                         |
+|                                                                             |
+|  1. FortiAuthenticator Base License                                         |
+|     - Included with appliance purchase                                      |
+|     - Enables RADIUS, LDAP, user management                                |
+|                                                                             |
+|  2. FortiToken Licenses (per user)                                          |
+|     - FortiToken Mobile: software token (iOS/Android)                       |
+|     - FortiToken Hardware: physical OTP key fob                             |
+|     - Purchased in packs (5, 25, 100, 1000 users)                           |
+|                                                                             |
+|  3. FortiCare Support (recommended)                                         |
+|     - Firmware updates and security patches                                 |
+|     - Technical support access                                              |
+|                                                                             |
+|  Licensing Example (100 users):                                             |
+|  =================================                                          |
+|  FortiAuthenticator VM base      x1                                         |
+|  FortiToken Mobile 100-pack      x1                                         |
+|  FortiCare 24x7 1-year           x1                                         |
+|                                                                             |
++=============================================================================+
+```
+
+> **Note:** FortiToken Mobile licenses are perpetual. Hardware tokens have a battery life of approximately 5 years.
+
+#### Firmware Verification
+
+```bash
+# Verify FortiAuthenticator firmware version
+# Via CLI (SSH to FortiAuthenticator):
+get system status
+
+# Expected output should show:
+# Version: FortiAuthenticator-VM v6.6.1
+# Serial-Number: FAC-VMTM22XXXXXX
+# Firmware Signature: OK
+
+# Via Web UI:
+# Dashboard > System Information > Firmware Version
+```
+
+### Active Directory Requirements
+
+FortiAuthenticator must sync users from Active Directory to assign FortiTokens.
+
+#### AD Service Account
+
+```
++=============================================================================+
+|                  AD SERVICE ACCOUNT FOR FORTIAUTHENTICATOR                  |
++=============================================================================+
+|                                                                             |
+|  Account Name:    svc-fortiauth                                             |
+|  Location:        OU=Service Accounts,DC=company,DC=com                     |
+|  Password:        [Strong, 24+ characters, _REDACTED]                       |
+|  Password Expiry: Never (service account)                                   |
+|                                                                             |
+|  Required Permissions:                                                      |
+|  =====================                                                      |
+|  - Read all user properties (userPrincipalName, mail, memberOf)             |
+|  - Read group membership                                                    |
+|  - Enumerate OU structure                                                   |
+|  - No write permissions needed (read-only sync)                             |
+|                                                                             |
+|  Delegation (PowerShell):                                                   |
+|  ========================                                                   |
+|  Base DN:   DC=company,DC=com                                               |
+|  Scope:     This object and all descendant objects                          |
+|  Type:      Read all properties                                             |
+|                                                                             |
++=============================================================================+
+```
+
+**Create the service account:**
+
+```bash
+# PowerShell on Domain Controller
+New-ADUser -Name "svc-fortiauth" `
+  -Path "OU=Service Accounts,DC=company,DC=com" `
+  -UserPrincipalName "svc-fortiauth@company.com" `
+  -AccountPassword (ConvertTo-SecureString "PASSWORD_REDACTED" -AsPlainText -Force) `
+  -Enabled $true `
+  -PasswordNeverExpires $true `
+  -CannotChangePassword $true `
+  -Description "FortiAuthenticator LDAP sync service account"
+```
+
+#### AD Groups for MFA Scope
+
+Create AD groups to control which users require MFA:
+
+```bash
+# PowerShell on Domain Controller
+
+# Group for all MFA-enrolled users
+New-ADGroup -Name "PAM-MFA-Users" `
+  -Path "OU=PAM,OU=Groups,DC=company,DC=com" `
+  -GroupScope Global `
+  -GroupCategory Security `
+  -Description "Users enrolled in FortiToken MFA for WALLIX"
+
+# Group for MFA-exempt users (break-glass, service accounts)
+New-ADGroup -Name "PAM-MFA-Exempt" `
+  -Path "OU=PAM,OU=Groups,DC=company,DC=com" `
+  -GroupScope Global `
+  -GroupCategory Security `
+  -Description "Users exempt from MFA requirement"
+
+# Add users to MFA group
+Add-ADGroupMember -Identity "PAM-MFA-Users" `
+  -Members "jadmin","joperator","jauditor"
+```
+
+#### AD Connectivity Test
+
+```bash
+# From FortiAuthenticator CLI, test LDAP connectivity:
+diagnose debug application radiusd -1
+diagnose debug enable
+
+# From WALLIX Bastion, test AD reachability:
+ldapsearch -x -H ldaps://dc.company.com:636 \
+  -D "CN=svc-fortiauth,OU=Service Accounts,DC=company,DC=com" \
+  -W \
+  -b "DC=company,DC=com" \
+  "(sAMAccountName=jadmin)" dn mail memberOf
+```
 
 ### Network Requirements
 
+#### Port Matrix
+
 | Source | Destination | Port | Protocol | Description |
 |--------|-------------|------|----------|-------------|
-| wallix-node1 | FortiAuthenticator | 1812 | UDP | RADIUS Auth |
-| wallix-node2 | FortiAuthenticator | 1812 | UDP | RADIUS Auth |
-| wallix-node1 | FortiAuthenticator | 1813 | UDP | RADIUS Accounting |
-| wallix-node2 | FortiAuthenticator | 1813 | UDP | RADIUS Accounting |
-| FortiAuthenticator | AD DC | 636 | TCP | LDAPS (user sync) |
+| WALLIX Bastion Node 1 (10.10.1.20) | FortiAuthenticator (10.10.0.60) | 1812 | UDP | RADIUS Authentication |
+| WALLIX Bastion Node 2 (10.10.1.21) | FortiAuthenticator (10.10.0.60) | 1813 | UDP | RADIUS Accounting |
+| WALLIX Bastion Node 1 (10.10.1.20) | FortiAuthenticator (10.10.0.60) | 1813 | UDP | RADIUS Accounting |
+| WALLIX Bastion Node 2 (10.10.1.21) | FortiAuthenticator (10.10.0.60) | 1812 | UDP | RADIUS Authentication |
+| FortiAuthenticator (10.10.0.60) | AD Domain Controller | 636 | TCP | LDAPS (user sync) |
+| FortiAuthenticator (10.10.0.60) | AD Domain Controller | 389 | TCP | LDAP (fallback only) |
+| FortiAuthenticator (10.10.0.60) | SMTP Server | 587 | TCP | Token enrollment emails |
+| FortiAuthenticator (10.10.0.60) | NTP Server | 123 | UDP | Time sync (critical for OTP) |
+| FortiAuthenticator (10.10.0.60) | FortiGuard Servers | 443 | TCP | License validation, updates |
+| Administrators | FortiAuthenticator (10.10.0.60) | 443 | TCP | Web UI management |
+| Users (mobile devices) | FortiGuard Push Servers | 443 | TCP | Push notifications |
+
+#### Network Architecture
+
+```
++=============================================================================+
+|              FORTIAUTHENTICATOR NETWORK PLACEMENT                           |
++=============================================================================+
+|                                                                             |
+|                          +------------------+                               |
+|                          |   AD Domain      |                               |
+|                          |   Controller     |                               |
+|                          |   dc.company.com |                               |
+|                          +--------+---------+                               |
+|                                   |                                         |
+|                              LDAPS (636)                                    |
+|                                   |                                         |
+|                       +-----------v----------+                              |
+|                       |  FortiAuthenticator  |                              |
+|                       |  10.10.0.60          |                              |
+|                       |  fortiauth.company.  |                              |
+|                       |  com                 |                              |
+|                       +-----------+----------+                              |
+|                                   |                                         |
+|                          RADIUS (1812/1813)                                 |
+|                                   |                                         |
+|                     +-------------+-------------+                           |
+|                     |                           |                           |
+|            +--------v--------+         +--------v--------+                  |
+|            | WALLIX Bastion  |         | WALLIX Bastion  |                  |
+|            | Node 1          |         | Node 2          |                  |
+|            | 10.10.1.20      |         | 10.10.1.21      |                  |
+|            +-----------------+         +-----------------+                  |
+|                                                                             |
++=============================================================================+
+```
+
+#### Firewall Rules
+
+```bash
+# FortiGate firewall rules for FortiAuthenticator MFA
+
+# Rule 1: WALLIX Bastion to FortiAuthenticator (RADIUS)
+# Source:      10.10.1.20, 10.10.1.21  (Bastion HA nodes)
+# Destination: 10.10.0.60              (FortiAuthenticator)
+# Port:        1812/UDP, 1813/UDP
+# Action:      ACCEPT
+# Log:         Enable
+
+# Rule 2: FortiAuthenticator to AD (LDAPS)
+# Source:      10.10.0.60              (FortiAuthenticator)
+# Destination: AD Domain Controllers
+# Port:        636/TCP
+# Action:      ACCEPT
+# Log:         Enable
+
+# Rule 3: FortiAuthenticator to SMTP (enrollment emails)
+# Source:      10.10.0.60
+# Destination: SMTP Server
+# Port:        587/TCP
+# Action:      ACCEPT
+
+# Rule 4: FortiAuthenticator to FortiGuard (license + push)
+# Source:      10.10.0.60
+# Destination: Any (FortiGuard cloud IPs)
+# Port:        443/TCP
+# Action:      ACCEPT
+```
+
+#### Network Connectivity Validation
+
+Run these tests **before** starting the integration:
+
+```bash
+# From WALLIX Bastion Node 1 - test RADIUS port
+nc -zvu 10.10.0.60 1812
+# Expected: Connection to 10.10.0.60 1812 port [udp/radius] succeeded!
+
+# From WALLIX Bastion Node 2 - test RADIUS port
+nc -zvu 10.10.0.60 1812
+
+# From FortiAuthenticator - test LDAPS to AD
+openssl s_client -connect dc.company.com:636 -showcerts </dev/null 2>/dev/null | head -5
+# Expected: Shows AD certificate chain
+
+# From FortiAuthenticator - test SMTP
+nc -zv smtp.company.com 587
+# Expected: Connection succeeded
+
+# DNS resolution test (all components)
+nslookup fortiauth.company.com
+nslookup dc.company.com
+nslookup wallix.company.com
+```
+
+### Time Synchronization (Critical)
+
+OTP tokens are time-based (TOTP). Clock drift between FortiAuthenticator and FortiToken devices causes authentication failures.
+
+```bash
+# On FortiAuthenticator (CLI):
+diagnose system ntp status
+# Expected: synchronized, offset < 1 second
+
+# On WALLIX Bastion:
+chronyc tracking
+# Expected: Leap status: Normal, System time offset < 0.001 seconds
+
+# On AD Domain Controller:
+w32tm /query /status
+# Expected: Leap Indicator: 0 (no warning)
+```
+
+**NTP Configuration:**
+
+```bash
+# On WALLIX Bastion - ensure NTP is configured
+cat /etc/chrony/chrony.conf
+# Should include:
+# server ntp.company.com iburst
+# server dc.company.com iburst
+
+# On FortiAuthenticator (CLI):
+config system ntp
+  set ntpsync enable
+  set type custom
+  config ntpserver
+    edit 1
+      set server "ntp.company.com"
+    next
+  end
+end
+```
+
+> **Warning:** A clock difference of more than 30 seconds between FortiAuthenticator and the TOTP token will cause OTP validation to fail. Always configure NTP on all components before enabling MFA.
+
+### SMTP Configuration for Token Enrollment
+
+FortiAuthenticator sends enrollment emails with activation codes and QR links.
+
+```bash
+# On FortiAuthenticator (CLI):
+config system email-server
+  set server "smtp.company.com"
+  set port 587
+  set security starttls
+  set authenticate enable
+  set username "fortiauth-noreply@company.com"
+  set password PASSWORD_REDACTED
+end
+
+# Test email delivery:
+diagnose test email send admin@company.com "MFA Test" "FortiAuth email test"
+```
+
+**Via Web UI:**
+
+```
+1. Navigate to: System > Messaging > SMTP Servers
+2. Configure:
+   Server:     smtp.company.com
+   Port:       587
+   Security:   STARTTLS
+   Username:   fortiauth-noreply@company.com
+   Password:   [SMTP password]
+   From:       "FortiAuthenticator" <fortiauth-noreply@company.com>
+3. Click "Test" to send test email
+```
+
+### SSL Certificate for FortiAuthenticator Web UI
+
+```bash
+# Import corporate CA-signed certificate (recommended over self-signed)
+# On FortiAuthenticator (CLI):
+config system certificate local
+  edit "fortiauth-cert"
+    # Upload via Web UI: System > Administration > Certificates
+  next
+end
+
+# Via Web UI:
+# 1. System > Certificates > Local Certificates
+# 2. Import: certificate.crt + private.key + ca-chain.crt
+# 3. System > Administration > System Access
+# 4. Set HTTPS certificate: fortiauth-cert
+```
+
+### Prerequisites Summary
+
+```
++=============================================================================+
+|                  PREREQUISITES VALIDATION SUMMARY                           |
++=============================================================================+
+|                                                                             |
+|  Component              Check                          Status               |
+|  =====================  =============================  ======               |
+|                                                                             |
+|  FortiAuthenticator     Firmware 6.4+                  [ ]                  |
+|  FortiAuthenticator     Base license active             [ ]                  |
+|  FortiAuthenticator     FortiToken licenses loaded      [ ]                  |
+|  FortiAuthenticator     Static IP + DNS record          [ ]                  |
+|  FortiAuthenticator     SSL certificate installed       [ ]                  |
+|  FortiAuthenticator     SMTP configured and tested      [ ]                  |
+|  FortiAuthenticator     NTP synchronized                [ ]                  |
+|                                                                             |
+|  Active Directory       DC reachable from FortiAuth     [ ]                  |
+|  Active Directory       Service account created         [ ]                  |
+|  Active Directory       LDAPS (636) connectivity OK     [ ]                  |
+|  Active Directory       PAM-MFA-Users group created     [ ]                  |
+|                                                                             |
+|  WALLIX Bastion         Version 12.x operational        [ ]                  |
+|  WALLIX Bastion         RADIUS port to FortiAuth open   [ ]                  |
+|  WALLIX Bastion         NTP synchronized                [ ]                  |
+|                                                                             |
+|  Network                Firewall rules configured       [ ]                  |
+|  Network                DNS resolution working          [ ]                  |
+|  Network                All connectivity tests pass     [ ]                  |
+|                                                                             |
+|  All checks must be [ x ] before proceeding to Step 1                       |
+|                                                                             |
++=============================================================================+
+```
 
 ---
 
