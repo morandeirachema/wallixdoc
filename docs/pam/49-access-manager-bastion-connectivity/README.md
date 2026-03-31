@@ -31,34 +31,34 @@ This section covers the connectivity features, protocols, and configuration patt
 WALLIX Access Manager acts as a **web portal front-end** that communicates with one or more WALLIX Bastion instances to provide browser-based privileged access. The connection between Access Manager and Bastion relies on three main channels:
 
 ```
-+===============================================================================+
-|               ACCESS MANAGER - BASTION CONNECTIVITY MODEL                     |
-+===============================================================================+
-|                                                                               |
-|  +-------------------+                          +-------------------+         |
-|  |   Access Manager  |                          |  WALLIX Bastion   |         |
-|  |                   |                          |                   |         |
-|  |  +-------------+  |   REST API (HTTPS/443)   |  +-------------+  |         |
-|  |  | API Client  |--|------------------------->|  | REST API    |  |         |
-|  |  +-------------+  |                          |  +-------------+  |         |
-|  |                   |                          |                   |         |
-|  |  +-------------+  |   WebSocket (WSS/443)    |  +-------------+  |         |
-|  |  | Session     |--|------------------------->|  | Session     |  |         |
-|  |  | Broker      |  |                          |  | Manager     |  |         |
-|  |  +-------------+  |                          |  +-------------+  |         |
-|  |                   |                          |                   |         |
-|  |  +-------------+  |   RDP/SSH Proxy (443)    |  +-------------+  |         |
-|  |  | HTML5       |--|------------------------->|  | Protocol    |  |         |
-|  |  | Gateway     |  |                          |  | Proxy       |  |         |
-|  |  +-------------+  |                          |  +-------------+  |         |
-|  |                   |                          |                   |         |
-|  +-------------------+                          +-------------------+         |
-|                                                                               |
-|  Channel 1: REST API    - Authentication, authorization, target discovery     |
-|  Channel 2: WebSocket   - Real-time session control, events, notifications    |
-|  Channel 3: Proxy       - RDP/SSH/VNC session data via HTML5 rendering        |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|            ACCESS MANAGER - BASTION CONNECTIVITY MODEL                      |
++=============================================================================+
+|                                                                             |
+|  +------------------+                         +------------------+          |
+|  |  Access Manager  |                         |  WALLIX Bastion  |          |
+|  |                  |                         |                  |          |
+|  | +-------------+  |  REST API (HTTPS/443)   | +-------------+  |          |
+|  | | API Client  |--+------------------------>| | REST API    |  |          |
+|  | +-------------+  |                         | +-------------+  |          |
+|  |                  |                         |                  |          |
+|  | +-------------+  |  WebSocket (WSS/443)    | +-------------+  |          |
+|  | | Session     |--+------------------------>| | Session     |  |          |
+|  | | Broker      |  |                         | | Manager     |  |          |
+|  | +-------------+  |                         | +-------------+  |          |
+|  |                  |                         |                  |          |
+|  | +-------------+  |  RDP/SSH Proxy (443)    | +-------------+  |          |
+|  | | HTML5       |--+------------------------>| | Protocol    |  |          |
+|  | | Gateway     |  |                         | | Proxy       |  |          |
+|  | +-------------+  |                         | +-------------+  |          |
+|  |                  |                         |                  |          |
+|  +------------------+                         +------------------+          |
+|                                                                             |
+|  Channel 1: REST API   - Auth, authorization, target discovery              |
+|  Channel 2: WebSocket  - Real-time session control, notifications           |
+|  Channel 3: Proxy      - RDP/SSH/VNC session data via HTML5 rendering       |
+|                                                                             |
++=============================================================================+
 ```
 
 ### Key Connectivity Features
@@ -80,56 +80,52 @@ WALLIX Access Manager acts as a **web portal front-end** that communicates with 
 ### Protocol Stack
 
 ```
-+===============================================================================+
-|                    COMMUNICATION PROTOCOL STACK                               |
-+===============================================================================+
-|                                                                               |
-|  Layer         Protocol         Purpose                  Port                 |
-|  =========================================================================== |
-|                                                                               |
-|  Application   REST API         Target/user management   443                  |
-|                WebSocket        Session events           443                  |
-|                Guacamole        RDP/SSH rendering        443                  |
-|                                                                               |
-|  Session       HTTPS            All traffic encrypted    443                  |
-|                                                                               |
-|  Security      TLS 1.2/1.3     Transport encryption     -                    |
-|                mTLS (optional)  Mutual authentication    -                    |
-|                API Key          Request authentication   -                    |
-|                                                                               |
-|  Network       TCP              Reliable transport       443                  |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|                   COMMUNICATION PROTOCOL STACK                              |
++=============================================================================+
+|                                                                             |
+|  Layer          Protocol          Purpose                Port               |
+|  =========================================================================  |
+|                                                                             |
+|  Application    REST API          Target/user mgmt       443                |
+|                 WebSocket         Session events          443                |
+|                 Guacamole         RDP/SSH rendering       443                |
+|                                                                             |
+|  Session        HTTPS             All traffic encrypted   443                |
+|                                                                             |
+|  Security       TLS 1.2/1.3      Transport encryption    -                  |
+|                 mTLS (optional)   Mutual authentication   -                  |
+|                 API Key           Request authentication  -                  |
+|                                                                             |
+|  Network        TCP               Reliable transport      443                |
+|                                                                             |
++=============================================================================+
 ```
 
 ### Port Requirements
 
 ```
-+===============================================================================+
-|            ACCESS MANAGER TO BASTION PORT MATRIX                              |
-+===============================================================================+
-
-FROM ACCESS MANAGER TO BASTION
-================================
-
-+-----------------------------------------------------------------------------+
-| Port     | Protocol | Purpose                         | Required            |
-+----------+----------+---------------------------------+---------------------+
-| 443      | TCP/TLS  | REST API + WebSocket + Proxy    | Yes                 |
-| 22       | TCP      | SSH tunneling (fallback)        | Optional            |
-+----------+----------+---------------------------------+---------------------+
-
-FROM BASTION TO ACCESS MANAGER (Callbacks)
-============================================
-
-+-----------------------------------------------------------------------------+
-| Port     | Protocol | Purpose                         | Required            |
-+----------+----------+---------------------------------+---------------------+
-| 443      | TCP/TLS  | Webhook notifications           | Optional            |
-| 8080     | TCP      | Health check endpoint           | Optional            |
-+----------+----------+---------------------------------+---------------------+
-
-+===============================================================================+
++=============================================================================+
+|           ACCESS MANAGER TO BASTION PORT MATRIX                             |
++=============================================================================+
+|                                                                             |
+|  FROM ACCESS MANAGER TO BASTION                                             |
+|  ==============================                                             |
+|                                                                             |
+|  Port      Protocol   Purpose                          Required             |
+|  -------   --------   ------------------------------   --------             |
+|  443       TCP/TLS    REST API + WebSocket + Proxy     Yes                  |
+|  22        TCP        SSH tunneling (fallback)         Optional             |
+|                                                                             |
+|  FROM BASTION TO ACCESS MANAGER (Callbacks)                                 |
+|  ==========================================                                 |
+|                                                                             |
+|  Port      Protocol   Purpose                          Required             |
+|  -------   --------   ------------------------------   --------             |
+|  443       TCP/TLS    Webhook notifications            Optional             |
+|  8080      TCP        Health check endpoint            Optional             |
+|                                                                             |
++=============================================================================+
 ```
 
 > **Note:** All traffic between Access Manager and Bastion is consolidated on port 443 using HTTPS. This simplifies firewall configuration and allows traversal through restrictive network environments.
@@ -236,44 +232,44 @@ sudo wallix-am config set --api-timeout 30          # request timeout in seconds
 Access Manager brokers privileged sessions between the user's browser and the target system through the Bastion proxy.
 
 ```
-+===============================================================================+
-|                    SESSION BROKERING FLOW                                      |
-+===============================================================================+
-|                                                                               |
-|  Browser          Access Manager         Bastion            Target            |
-|     |                   |                   |                  |              |
-|     | 1. Click target   |                   |                  |              |
-|     |------------------>|                   |                  |              |
-|     |                   |                   |                  |              |
-|     |                   | 2. POST /api/     |                  |              |
-|     |                   |    sessions       |                  |              |
-|     |                   |------------------>|                  |              |
-|     |                   |                   |                  |              |
-|     |                   | 3. Session ID +   |                  |              |
-|     |                   |    connection URL  |                  |              |
-|     |                   |<------------------|                  |              |
-|     |                   |                   |                  |              |
-|     | 4. WebSocket       |                   |                  |              |
-|     |    upgrade         |                   |                  |              |
-|     |------------------>|                   |                  |              |
-|     |                   | 5. Proxy WS to    |                  |              |
-|     |                   |    Bastion         |                  |              |
-|     |                   |------------------>|                  |              |
-|     |                   |                   | 6. Connect to    |              |
-|     |                   |                   |    target        |              |
-|     |                   |                   |----------------->|              |
-|     |                   |                   |                  |              |
-|     |<=================>|<=================>|<================>|              |
-|     |        HTML5 rendered session (bidirectional)            |              |
-|     |                   |                   |                  |              |
-|     | 7. Close session  |                   |                  |              |
-|     |------------------>| 8. DELETE /api/   |                  |              |
-|     |                   |    sessions/{id}  |                  |              |
-|     |                   |------------------>|                  |              |
-|     |                   |                   | 9. Disconnect    |              |
-|     |                   |                   |----------------->|              |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|                       SESSION BROKERING FLOW                                |
++=============================================================================+
+|                                                                             |
+|  Browser         Access Manager        Bastion           Target             |
+|    |                  |                  |                 |                 |
+|    | 1. Click target  |                  |                 |                 |
+|    |----------------->|                  |                 |                 |
+|    |                  |                  |                 |                 |
+|    |                  | 2. POST /api/    |                 |                 |
+|    |                  |    sessions      |                 |                 |
+|    |                  |----------------->|                 |                 |
+|    |                  |                  |                 |                 |
+|    |                  | 3. Session ID +  |                 |                 |
+|    |                  |    connection URL|                 |                 |
+|    |                  |<-----------------|                 |                 |
+|    |                  |                  |                 |                 |
+|    | 4. WebSocket     |                  |                 |                 |
+|    |    upgrade       |                  |                 |                 |
+|    |----------------->|                  |                 |                 |
+|    |                  | 5. Proxy WS to   |                 |                 |
+|    |                  |    Bastion       |                 |                 |
+|    |                  |----------------->|                 |                 |
+|    |                  |                  | 6. Connect to   |                 |
+|    |                  |                  |    target       |                 |
+|    |                  |                  |---------------->|                 |
+|    |                  |                  |                 |                 |
+|    |<=================><==============><==============>   |                 |
+|    |       HTML5 rendered session (bidirectional)          |                 |
+|    |                  |                  |                 |                 |
+|    | 7. Close session |                  |                 |                 |
+|    |----------------->| 8. DELETE /api/  |                 |                 |
+|    |                  |    sessions/{id} |                 |                 |
+|    |                  |----------------->|                 |                 |
+|    |                  |                  | 9. Disconnect   |                 |
+|    |                  |                  |---------------->|                 |
+|    |                  |                  |                 |                 |
++=============================================================================+
 ```
 
 ### Supported Session Types
@@ -314,41 +310,41 @@ sudo wallix-am config set --html5-printing-enabled false
 Access Manager retrieves credentials from the Bastion vault and injects them into sessions without exposing them to the end user.
 
 ```
-+===============================================================================+
-|                    CREDENTIAL INJECTION FLOW                                  |
-+===============================================================================+
-|                                                                               |
-|  User               Access Manager           Bastion Vault                   |
-|    |                      |                       |                           |
-|    | 1. Launch session    |                       |                           |
-|    |  (no password needed)|                       |                           |
-|    |--------------------->|                       |                           |
-|    |                      |                       |                           |
-|    |                      | 2. GET /api/          |                           |
-|    |                      |    credentials/       |                           |
-|    |                      |    checkout           |                           |
-|    |                      |---------------------->|                           |
-|    |                      |                       |                           |
-|    |                      | 3. Encrypted          |                           |
-|    |                      |    credential          |                           |
-|    |                      |<----------------------|                           |
-|    |                      |                       |                           |
-|    |                      | 4. Inject into        |                           |
-|    |                      |    session (in-memory) |                           |
-|    |                      |    Credential never    |                           |
-|    |                      |    sent to browser     |                           |
-|    |                      |                       |                           |
-|    | 5. Session opens     |                       |                           |
-|    |    (authenticated)   |                       |                           |
-|    |<---------------------|                       |                           |
-|    |                      |                       |                           |
-|    |                      | 6. POST /api/         |                           |
-|    |                      |    credentials/       |                           |
-|    |                      |    checkin            |                           |
-|    |                      |    (on disconnect)    |                           |
-|    |                      |---------------------->|                           |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|                   CREDENTIAL INJECTION FLOW                                 |
++=============================================================================+
+|                                                                             |
+|  User              Access Manager          Bastion Vault                    |
+|   |                     |                      |                            |
+|   | 1. Launch session   |                      |                            |
+|   | (no password needed)|                      |                            |
+|   |-------------------->|                      |                            |
+|   |                     |                      |                            |
+|   |                     | 2. GET /api/         |                            |
+|   |                     |    credentials/      |                            |
+|   |                     |    checkout          |                            |
+|   |                     |--------------------->|                            |
+|   |                     |                      |                            |
+|   |                     | 3. Encrypted         |                            |
+|   |                     |    credential        |                            |
+|   |                     |<---------------------|                            |
+|   |                     |                      |                            |
+|   |                     | 4. Inject into       |                            |
+|   |                     |    session (memory)  |                            |
+|   |                     |    Never sent to     |                            |
+|   |                     |    browser           |                            |
+|   |                     |                      |                            |
+|   | 5. Session opens    |                      |                            |
+|   |    (authenticated)  |                      |                            |
+|   |<--------------------|                      |                            |
+|   |                     |                      |                            |
+|   |                     | 6. POST /api/        |                            |
+|   |                     |    credentials/      |                            |
+|   |                     |    checkin           |                            |
+|   |                     |    (on disconnect)   |                            |
+|   |                     |--------------------->|                            |
+|   |                     |                      |                            |
++=============================================================================+
 ```
 
 ### Credential Injection Modes
@@ -387,37 +383,37 @@ sudo wallix-am config set --credential-audit-checkin true
 A single Access Manager portal can connect to multiple Bastion instances across different environments or sites.
 
 ```
-+===============================================================================+
-|                  MULTI-BASTION CONNECTIVITY                                   |
-+===============================================================================+
-|                                                                               |
-|                     +---------------------+                                   |
-|                     |   Access Manager    |                                   |
-|                     |   portal.company.com|                                   |
-|                     +----+----+----+------+                                   |
-|                          |    |    |                                           |
-|              +-----------+    |    +-----------+                               |
-|              |                |                |                               |
-|     +--------v--------+ +----v---------+ +----v---------+                     |
-|     | Bastion-Site1   | | Bastion-Site2 | | Bastion-Site3|                     |
-|     | Production      | | Development   | | DR/Staging   |                     |
-|     | 10.10.1.20      | | 10.10.2.20    | | 10.10.3.20   |                     |
-|     | 350 targets     | | 120 targets   | | 200 targets  |                     |
-|     +-----------------+ +---------------+ +--------------+                     |
-|                                                                               |
-|  User sees unified view:                                                      |
-|  +-----------------------------------------------------------------+          |
-|  | My Authorized Targets                                           |          |
-|  +-----------------------------------------------------------------+          |
-|  | Target          | Account   | Protocol | Bastion    | Site      |          |
-|  +-----------------+-----------+----------+------------+-----------+          |
-|  | web-srv-01      | admin     | SSH      | Site1      | Production|          |
-|  | db-prod-01      | dba       | RDP      | Site1      | Production|          |
-|  | dev-api-01      | deploy    | SSH      | Site2      | Development|         |
-|  | dr-web-01       | admin     | SSH      | Site3      | DR/Staging|          |
-|  +-----------------------------------------------------------------+          |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|                   MULTI-BASTION CONNECTIVITY                                |
++=============================================================================+
+|                                                                             |
+|                    +----------------------+                                 |
+|                    |    Access Manager    |                                 |
+|                    |  portal.company.com  |                                 |
+|                    +---+------+------+---+                                  |
+|                        |      |      |                                      |
+|            +-----------+      |      +-----------+                          |
+|            |                  |                   |                          |
+|   +--------v-------+ +-------v-------+ +--------v-------+                  |
+|   | Bastion-Site1  | | Bastion-Site2 | | Bastion-Site3  |                  |
+|   | Production     | | Development   | | DR/Staging     |                  |
+|   | 10.10.1.20     | | 10.10.2.20    | | 10.10.3.20     |                  |
+|   | 350 targets    | | 120 targets   | | 200 targets    |                  |
+|   +----------------+ +---------------+ +----------------+                  |
+|                                                                             |
+|  User sees unified view:                                                    |
+|  +-----------------------------------------------------------------------+  |
+|  | My Authorized Targets                                                 |  |
+|  +---------------+---------+----------+-----------+-----------+          |  |
+|  | Target        | Account | Protocol | Bastion   | Site      |          |  |
+|  +---------------+---------+----------+-----------+-----------+          |  |
+|  | web-srv-01    | admin   | SSH      | Site1     | Production|          |  |
+|  | db-prod-01    | dba     | RDP      | Site1     | Production|          |  |
+|  | dev-api-01    | deploy  | SSH      | Site2     | Developmt |          |  |
+|  | dr-web-01     | admin   | SSH      | Site3     | DR/Staging|          |  |
+|  +---------------+---------+----------+-----------+-----------+          |  |
+|                                                                             |
++=============================================================================+
 ```
 
 ### Configuration
@@ -487,41 +483,41 @@ sudo wallix-am bastion sync-schedule "Bastion-Site3" --interval 600
 Access Manager detects Bastion HA failover events and automatically routes sessions to the active node.
 
 ```
-+===============================================================================+
-|                    HA-AWARE BASTION ROUTING                                    |
-+===============================================================================+
-|                                                                               |
-|                     +---------------------+                                   |
-|                     |   Access Manager    |                                   |
-|                     |  Health Monitor     |                                   |
-|                     +----+--------+-------+                                   |
-|                          |        |                                            |
-|            Health Check  |        |  Health Check                              |
-|            (every 10s)   |        |  (every 10s)                               |
-|                          |        |                                            |
-|                +---------v--+  +--v---------+                                  |
-|                |  Bastion   |  |  Bastion   |                                  |
-|                |  Primary   |  |  Secondary |                                  |
-|                | 10.10.1.20 |  | 10.10.1.21 |                                  |
-|                |  [ACTIVE]  |  | [STANDBY]  |                                  |
-|                +------+-----+  +------+-----+                                  |
-|                       |               |                                        |
-|                       +-------+-------+                                        |
-|                               |                                                |
-|                        +------v------+                                         |
-|                        |  Keepalived |                                         |
-|                        |  VIP:       |                                         |
-|                        | 10.10.1.25  |                                         |
-|                        +-------------+                                         |
-|                                                                               |
-|  Failover Scenario:                                                           |
-|  1. Primary goes down                                                         |
-|  2. Access Manager detects failure (health check timeout)                     |
-|  3. VIP migrates to Secondary via Keepalived                                  |
-|  4. Access Manager routes new sessions to Secondary                           |
-|  5. Existing sessions reconnect automatically                                 |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|                   HA-AWARE BASTION ROUTING                                  |
++=============================================================================+
+|                                                                             |
+|                    +----------------------+                                 |
+|                    |    Access Manager    |                                 |
+|                    |   Health Monitor     |                                 |
+|                    +---+------------+----+                                  |
+|                        |            |                                       |
+|          Health Check  |            |  Health Check                         |
+|          (every 10s)   |            |  (every 10s)                          |
+|                        |            |                                       |
+|              +---------v--+    +----v--------+                              |
+|              |  Bastion   |    |  Bastion    |                              |
+|              |  Primary   |    |  Secondary  |                              |
+|              | 10.10.1.20 |    | 10.10.1.21  |                              |
+|              |  [ACTIVE]  |    |  [STANDBY]  |                              |
+|              +-----+------+    +------+------+                              |
+|                    |                  |                                      |
+|                    +--------+---------+                                      |
+|                             |                                               |
+|                      +------v------+                                        |
+|                      |  Keepalived |                                        |
+|                      |  VIP:       |                                        |
+|                      | 10.10.1.25  |                                        |
+|                      +-------------+                                        |
+|                                                                             |
+|  Failover Scenario:                                                         |
+|  1. Primary goes down                                                       |
+|  2. Access Manager detects failure (health check timeout)                   |
+|  3. VIP migrates to Secondary via Keepalived                                |
+|  4. Access Manager routes new sessions to Secondary                         |
+|  5. Existing sessions reconnect automatically                               |
+|                                                                             |
++=============================================================================+
 ```
 
 ### HA Routing Configuration
@@ -566,36 +562,36 @@ sudo wallix-am bastion ha-status "Bastion-Site1-HA"
 In multi-site deployments, Access Manager can federate access across geographically distributed Bastion instances, routing users to the nearest or most appropriate site.
 
 ```
-+===============================================================================+
-|                    MULTI-SITE FEDERATION                                      |
-+===============================================================================+
-|                                                                               |
-|                      +---------------------+                                  |
-|                      | Access Manager      |                                  |
-|                      | (Central Portal)    |                                  |
-|                      | portal.company.com  |                                  |
-|                      +---+---------+---+---+                                  |
-|                          |         |   |                                       |
-|           +--------------+    +----+   +-------------+                         |
-|           |                   |                      |                         |
-|  +--------v--------+ +-------v--------+ +-----------v-----+                   |
-|  | Site 1 - Madrid | | Site 2 - Paris | | Site 3 - London |                   |
-|  | Bastion HA Pair | | Bastion HA Pair| | Bastion HA Pair |                   |
-|  | 10.10.1.0/24    | | 10.10.2.0/24   | | 10.10.3.0/24    |                   |
-|  +--------+--------+ +-------+--------+ +-----------+-----+                   |
-|           |                   |                      |                         |
-|  +--------v--------+ +-------v--------+ +-----------v-----+                   |
-|  | Targets:        | | Targets:       | | Targets:        |                   |
-|  | - Windows Srv   | | - Linux Srv    | | - Database Srv  |                   |
-|  | - Network Equip | | - Cloud VMs    | | - Web Servers   |                   |
-|  +-----------------+ +----------------+ +-----------------+                   |
-|                                                                               |
-|  Routing Policies:                                                            |
-|  - Geographic proximity (user IP-based)                                       |
-|  - Manual site assignment per user group                                      |
-|  - Failover: redirect to alternate site if primary is down                    |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|                   MULTI-SITE FEDERATION                                     |
++=============================================================================+
+|                                                                             |
+|                     +---------------------+                                 |
+|                     |   Access Manager    |                                 |
+|                     |  (Central Portal)   |                                 |
+|                     | portal.company.com  |                                 |
+|                     +--+--------+-----+--+                                  |
+|                        |        |     |                                      |
+|            +-----------+   +----+     +----------+                          |
+|            |               |                     |                          |
+|   +--------v--------+ +---v-----------+ +-------v--------+                 |
+|   | Site 1 - Madrid | | Site 2 - Paris| | Site 3 - London|                 |
+|   | Bastion HA Pair | | Bastion HA    | | Bastion HA     |                 |
+|   | 10.10.1.0/24    | | 10.10.2.0/24  | | 10.10.3.0/24   |                 |
+|   +--------+--------+ +-------+-------+ +--------+-------+                 |
+|            |                   |                  |                          |
+|   +--------v--------+ +-------v-------+ +--------v-------+                 |
+|   | Targets:        | | Targets:      | | Targets:       |                 |
+|   | - Windows Srv   | | - Linux Srv   | | - Database Srv |                 |
+|   | - Network Equip | | - Cloud VMs   | | - Web Servers  |                 |
+|   +-----------------+ +---------------+ +----------------+                 |
+|                                                                             |
+|  Routing Policies:                                                          |
+|  - Geographic proximity (user IP-based)                                     |
+|  - Manual site assignment per user group                                    |
+|  - Failover: redirect to alternate site if primary is down                  |
+|                                                                             |
++=============================================================================+
 ```
 
 ### Federation Configuration
@@ -635,25 +631,27 @@ sudo wallix-am federation routes list
 ### Certificate Configuration for Bastion Connectivity
 
 ```
-+===============================================================================+
-|                    TLS TRUST CHAIN                                             |
-+===============================================================================+
-|                                                                               |
-|  Access Manager                              Bastion                          |
-|  +---------------------+                     +---------------------+          |
-|  | CA Trust Store      |                     | Server Certificate  |          |
-|  | - Corporate Root CA |  TLS Handshake      | - Signed by Corp CA |          |
-|  | - Intermediate CA   |<------------------->| - CN: bastion.      |          |
-|  +---------------------+                     |   company.com       |          |
-|                                              +---------------------+          |
-|  (Optional) mTLS:                                                             |
-|  +---------------------+                     +---------------------+          |
-|  | Client Certificate  |  Client Auth        | CA Trust Store      |          |
-|  | - Signed by Corp CA |-------------------->| - Validates AM cert |          |
-|  | - CN: am.company.com|                     +---------------------+          |
-|  +---------------------+                                                      |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|                       TLS TRUST CHAIN                                       |
++=============================================================================+
+|                                                                             |
+|  Access Manager                            Bastion                          |
+|  +--------------------+                   +--------------------+            |
+|  | CA Trust Store     |                   | Server Certificate |            |
+|  | - Corporate Root CA|   TLS Handshake   | - Signed by Corp CA|            |
+|  | - Intermediate CA  |<----------------->| - CN: bastion.     |            |
+|  +--------------------+                   |   company.com      |            |
+|                                           +--------------------+            |
+|                                                                             |
+|  (Optional) mTLS:                                                           |
+|  +--------------------+                   +--------------------+            |
+|  | Client Certificate |   Client Auth     | CA Trust Store     |            |
+|  | - Signed by Corp CA|------------------>| - Validates AM cert|            |
+|  | - CN: am.company.  |                   +--------------------+            |
+|  |   com              |                                                     |
+|  +--------------------+                                                     |
+|                                                                             |
++=============================================================================+
 ```
 
 ### Certificate Setup
@@ -696,47 +694,47 @@ sudo wallix-am cert alert \
 ### Recommended Network Placement
 
 ```
-+===============================================================================+
-|                    NETWORK ARCHITECTURE                                        |
-+===============================================================================+
-|                                                                               |
-|  INTERNET / CORPORATE WAN                                                     |
-|       |                                                                       |
-|  +----v---------------------------+                                           |
-|  |  FortiGate Firewall            |                                           |
-|  |  (Perimeter)                   |                                           |
-|  +----+---------------------------+                                           |
-|       |                                                                       |
-|  =====|====== DMZ ZONE ==================================================    |
-|       |                                                                       |
-|  +----v---------------------------+                                           |
-|  |  HAProxy / Load Balancer       |                                           |
-|  |  VIP: 10.100.1.10              |                                           |
-|  +----+---------------------------+                                           |
-|       |                                                                       |
-|  +----v---------------------------+                                           |
-|  |  WALLIX Access Manager         |                                           |
-|  |  10.100.1.11 / 10.100.1.12     |                                           |
-|  |  (HA Pair)                     |                                           |
-|  +----+---------------------------+                                           |
-|       |                                                                       |
-|  =====|====== INTERNAL ZONE =============================================    |
-|       |                                                                       |
-|  +----v---------------------------+                                           |
-|  |  WALLIX Bastion                |                                           |
-|  |  10.10.1.20 / 10.10.1.21      |                                           |
-|  |  (HA Pair)                     |                                           |
-|  +----+---------------------------+                                           |
-|       |                                                                       |
-|  =====|====== SERVER ZONE ===============================================    |
-|       |                                                                       |
-|  +----v---------------------------+                                           |
-|  |  Target Servers                |                                           |
-|  |  Windows, Linux, Network       |                                           |
-|  |  10.10.1.0/24                  |                                           |
-|  +--------------------------------+                                           |
-|                                                                               |
-+===============================================================================+
++=============================================================================+
+|                   NETWORK ARCHITECTURE                                      |
++=============================================================================+
+|                                                                             |
+|  INTERNET / CORPORATE WAN                                                   |
+|       |                                                                     |
+|  +----v--------------------------+                                          |
+|  |  FortiGate Firewall           |                                          |
+|  |  (Perimeter)                  |                                          |
+|  +----+--------------------------+                                          |
+|       |                                                                     |
+|  =====|====== DMZ ZONE ================================================    |
+|       |                                                                     |
+|  +----v--------------------------+                                          |
+|  |  HAProxy / Load Balancer      |                                          |
+|  |  VIP: 10.100.1.10             |                                          |
+|  +----+--------------------------+                                          |
+|       |                                                                     |
+|  +----v--------------------------+                                          |
+|  |  WALLIX Access Manager        |                                          |
+|  |  10.100.1.11 / 10.100.1.12    |                                          |
+|  |  (HA Pair)                    |                                          |
+|  +----+--------------------------+                                          |
+|       |                                                                     |
+|  =====|====== INTERNAL ZONE ===========================================    |
+|       |                                                                     |
+|  +----v--------------------------+                                          |
+|  |  WALLIX Bastion               |                                          |
+|  |  10.10.1.20 / 10.10.1.21     |                                          |
+|  |  (HA Pair)                    |                                          |
+|  +----+--------------------------+                                          |
+|       |                                                                     |
+|  =====|====== SERVER ZONE =============================================    |
+|       |                                                                     |
+|  +----v--------------------------+                                          |
+|  |  Target Servers               |                                          |
+|  |  Windows, Linux, Network      |                                          |
+|  |  10.10.1.0/24                 |                                          |
+|  +-------------------------------+                                          |
+|                                                                             |
++=============================================================================+
 ```
 
 ### Firewall Rules
