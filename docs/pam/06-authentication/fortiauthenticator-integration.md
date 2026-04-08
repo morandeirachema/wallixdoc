@@ -17,9 +17,11 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 7. [Troubleshooting](#troubleshooting)
 8. [MFA Bypass Procedures](#mfa-bypass-procedures)
 9. [High Availability Configuration](#high-availability-configuration)
-10. [Compliance Mapping](#compliance-mapping)
-11. [Security Best Practices](#security-best-practices)
-12. [Quick Reference](#quick-reference)
+10. [User Offboarding — Token Deprovisioning](#user-offboarding--token-deprovisioning)
+11. [FortiAuthenticator Backup and Recovery](#fortiauthenticator-backup-and-recovery)
+12. [Compliance Mapping](#compliance-mapping)
+13. [Security Best Practices](#security-best-practices)
+14. [Quick Reference](#quick-reference)
 
 ---
 
@@ -225,22 +227,33 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 
 #### Port Matrix
 
-> **Note:** FortiAuthenticator is shared across all 5 sites (10.20.0.0/24 Authentication Services subnet). Replace `X` with the site number (1–5) for each site's Bastion node IPs.
+> **Note:** FortiAuthenticator receives RADIUS requests from all 10 Bastion nodes across 5 sites **and** from both Access Manager nodes. All sources must be registered as RADIUS clients or authentication will be rejected.
 
-| Source                              | Destination                      | Port | Protocol | Description                  |
-|-------------------------------------|----------------------------------|------|----------|------------------------------|
-| WALLIX Bastion Node 1 (10.10.X.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication        |
-| WALLIX Bastion Node 1 (10.10.X.11)  | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting            |
-| WALLIX Bastion Node 2 (10.10.X.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication        |
-| WALLIX Bastion Node 2 (10.10.X.12)  | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting            |
-| FortiAuthenticator (10.20.0.60)     | AD DC1 (10.20.0.10)              | 636  | TCP      | LDAPS (user sync, primary)   |
-| FortiAuthenticator (10.20.0.60)     | AD DC2 (10.20.0.11)              | 636  | TCP      | LDAPS (user sync, failover)  |
-| FortiAuthenticator (10.20.0.60)     | AD DC1 (10.20.0.10)              | 389  | TCP      | LDAP (fallback only)         |
-| FortiAuthenticator (10.20.0.60)     | SMTP Server                      | 587  | TCP      | Token enrollment emails      |
-| FortiAuthenticator (10.20.0.60)     | NTP (10.20.0.20 / 10.20.0.21)    | 123  | UDP      | Time sync (critical for OTP) |
-| FortiAuthenticator (10.20.0.60)     | FortiGuard Servers               | 443  | TCP      | License validation, updates  |
-| Administrators                      | FortiAuthenticator (10.20.0.60)  | 443  | TCP      | Web UI management            |
-| Users (mobile devices)              | FortiGuard Push Servers          | 443  | TCP      | Push notifications           |
+| Source                              | Destination                      | Port | Protocol | Description                       |
+|-------------------------------------|----------------------------------|------|----------|-----------------------------------|
+| WALLIX Bastion Site 1 (10.10.1.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 1 (10.10.1.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 2 (10.10.2.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 2 (10.10.2.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 3 (10.10.3.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 3 (10.10.3.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 4 (10.10.4.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 4 (10.10.4.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 5 (10.10.5.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| WALLIX Bastion Site 5 (10.10.5.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
+| All Bastion nodes (10.10.X.11/12)   | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting (all 10 nodes)  |
+| Access Manager 1 (10.100.1.10)      | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication (AM MFA)    |
+| Access Manager 1 (10.100.1.10)      | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting                 |
+| Access Manager 2 (10.100.2.10)      | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication (AM MFA)    |
+| Access Manager 2 (10.100.2.10)      | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting                 |
+| FortiAuthenticator (10.20.0.60)     | AD DC1 (10.20.0.10)              | 636  | TCP      | LDAPS (user sync, primary)        |
+| FortiAuthenticator (10.20.0.60)     | AD DC2 (10.20.0.11)              | 636  | TCP      | LDAPS (user sync, failover)       |
+| FortiAuthenticator (10.20.0.60)     | AD DC1 (10.20.0.10)              | 389  | TCP      | LDAP (fallback only)              |
+| FortiAuthenticator (10.20.0.60)     | SMTP Server                      | 587  | TCP      | Token enrollment emails           |
+| FortiAuthenticator (10.20.0.60)     | NTP (10.20.0.20 / 10.20.0.21)    | 123  | UDP      | Time sync (critical for OTP)      |
+| FortiAuthenticator (10.20.0.60)     | FortiGuard Servers               | 443  | TCP      | License validation, updates       |
+| Administrators                      | FortiAuthenticator (10.20.0.60)  | 443  | TCP      | Web UI management                 |
+| Users (mobile devices)              | FortiGuard Push Servers          | 443  | TCP      | Push notifications                |
 
 #### Network Architecture
 
@@ -282,10 +295,21 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 ```bash
 # FortiGate firewall rules for FortiAuthenticator MFA
 
-# Rule 1: WALLIX Bastion to FortiAuthenticator (RADIUS) - all 5 sites
-# Source:      10.10.1.11, 10.10.1.12  (Site 1 Bastion nodes, repeat per site)
+# Rule 1: WALLIX Bastion nodes to FortiAuthenticator (RADIUS) - all 5 sites
+# Source:      10.10.1.11, 10.10.1.12  (Site 1)
 #              10.10.2.11, 10.10.2.12  (Site 2)
-#              10.10.3.11...10.10.5.12 (Sites 3-5)
+#              10.10.3.11, 10.10.3.12  (Site 3)
+#              10.10.4.11, 10.10.4.12  (Site 4)
+#              10.10.5.11, 10.10.5.12  (Site 5)
+# Destination: 10.20.0.60              (FortiAuthenticator primary)
+#              10.20.0.61              (FortiAuthenticator secondary)
+# Port:        1812/UDP, 1813/UDP
+# Action:      ACCEPT
+# Log:         Enable
+
+# Rule 1b: Access Manager nodes to FortiAuthenticator (RADIUS)
+# Source:      10.100.1.10             (Access Manager 1, DC-A)
+#              10.100.2.10             (Access Manager 2, DC-B)
 # Destination: 10.20.0.60              (FortiAuthenticator primary)
 #              10.20.0.61              (FortiAuthenticator secondary)
 # Port:        1812/UDP, 1813/UDP
@@ -488,24 +512,35 @@ end
 
 3. Click "Create New"
 
-4. Configure RADIUS Client:
-   Name:           WALLIX-Cluster
-   Client IP/Name: 10.10.1.11
-   Secret:         [Strong shared secret - save this!]
-   Description:    WALLIX Primary Node
+4. Create one RADIUS client per node using the table below.
+   Use the SAME shared secret for all clients.
 
-   Authentication:
-   [x] Enable
-   [ ] Authorize only (no auth)
+   +------------------+---------------+-----------------------------------+
+   | Name             | Client IP     | Description                       |
+   +------------------+---------------+-----------------------------------+
+   | WALLIX-Site1-N1  | 10.10.1.11    | Site 1 Bastion Node 1             |
+   | WALLIX-Site1-N2  | 10.10.1.12    | Site 1 Bastion Node 2             |
+   | WALLIX-Site2-N1  | 10.10.2.11    | Site 2 Bastion Node 1             |
+   | WALLIX-Site2-N2  | 10.10.2.12    | Site 2 Bastion Node 2             |
+   | WALLIX-Site3-N1  | 10.10.3.11    | Site 3 Bastion Node 1             |
+   | WALLIX-Site3-N2  | 10.10.3.12    | Site 3 Bastion Node 2             |
+   | WALLIX-Site4-N1  | 10.10.4.11    | Site 4 Bastion Node 1             |
+   | WALLIX-Site4-N2  | 10.10.4.12    | Site 4 Bastion Node 2             |
+   | WALLIX-Site5-N1  | 10.10.5.11    | Site 5 Bastion Node 1             |
+   | WALLIX-Site5-N2  | 10.10.5.12    | Site 5 Bastion Node 2             |
+   | AccessManager-1  | 10.100.1.10   | Access Manager 1 (DC-A)           |
+   | AccessManager-2  | 10.100.2.10   | Access Manager 2 (DC-B)           |
+   +------------------+---------------+-----------------------------------+
 
+   For each entry:
+   Secret:         [Strong shared secret, 32+ characters]
+   Authentication: [x] Enable
    Profile:        Default
 
-5. Click OK
+5. Click OK after each entry.
 
-6. Repeat for second node:
-   Name:           WALLIX-Node2
-   Client IP/Name: 10.10.1.12
-   Secret:         [Same shared secret]
+> **Warning:** Any Bastion node or Access Manager node NOT registered here will
+> receive RADIUS reject responses. MFA will silently fail for users on that site.
 ```
 
 ### 1.2 Configure Authentication Policy
@@ -517,7 +552,12 @@ end
    Name:           WALLIX-MFA-Policy
 
    Matching Rules:
-   - RADIUS Client: WALLIX-Cluster, WALLIX-Node2
+   - RADIUS Client: WALLIX-Site1-N1, WALLIX-Site1-N2,
+                    WALLIX-Site2-N1, WALLIX-Site2-N2,
+                    WALLIX-Site3-N1, WALLIX-Site3-N2,
+                    WALLIX-Site4-N1, WALLIX-Site4-N2,
+                    WALLIX-Site5-N1, WALLIX-Site5-N2,
+                    AccessManager-1, AccessManager-2
 
    Authentication:
    - First Factor:  LDAP (or Local)
@@ -538,7 +578,7 @@ end
 ```
 1. Navigate to: Authentication > User Management > Remote Users
 
-2. Configure LDAP Remote User Sync:
+2. Configure Primary LDAP Remote User Sync:
    Name:           AD-WALLIX-Users
    Server:         10.20.0.10 (dc.company.com)
    Port:           636 (LDAPS)
@@ -546,14 +586,24 @@ end
    Bind DN:        CN=svc-fortiauth,OU=Service Accounts,DC=company,DC=com
    Bind Password:  [Service account password]
 
-   User Filter:    (objectClass=user)
+   User Filter:    (&(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))
    Group Filter:   (objectClass=group)
 
    Sync Schedule:  Every 15 minutes
 
-3. Click "Test" to verify connectivity
+   > The user filter excludes disabled AD accounts, preventing license waste
+   > and ensuring deprovisioned users cannot authenticate.
 
-4. Click "Sync Now" for initial sync
+3. Configure Failover LDAP source (DC2):
+   Name:           AD-WALLIX-Users-Failover
+   Server:         10.20.0.11 (dc2.company.com)
+   Port:           636 (LDAPS)
+   (same Bind DN, Base DN, and Filter as above)
+   Role:           Failover (secondary)
+
+4. Click "Test" on both entries to verify connectivity
+
+5. Click "Sync Now" for initial sync on primary
 ```
 
 ### 1.4 Assign FortiTokens to Users
@@ -743,23 +793,28 @@ wabadmin auth radius profile-map --list
 
 ---
 
-### 2.3 Configure Failover (Optional)
+### 2.3 Configure Failover
 
 ```bash
-# Add secondary FortiAuthenticator for HA
+# Add secondary FortiAuthenticator (use IP, not hostname — DNS must not be a dependency in failover path)
 wabadmin auth radius add \
     --name "FortiAuth-Secondary" \
-    --server "fortiauth-dr.company.com" \
+    --server "10.20.0.61" \
     --port 1812 \
     --secret "[shared-secret]" \
     --priority 2
 
 # Configure failover
+# --failover-timeout: seconds to wait for primary before switching
+# 10s is safe — 5s can cause false failovers under FortiAuth load
 wabadmin auth radius failover \
     --primary "FortiAuth-Primary" \
     --secondary "FortiAuth-Secondary" \
-    --failover-timeout 5
+    --failover-timeout 10 \
+    --failback-delay 300
 ```
+
+> **Note:** Run this on **every** WALLIX Bastion node (10 total). The secondary FortiAuth at `10.20.0.61` must also have all 12 RADIUS clients and the WALLIX-MFA-Policy configured — user/token data syncs automatically between appliances if FortiAuth HA is enabled (see [High Availability Configuration](#high-availability-configuration)).
 
 ---
 
@@ -1026,6 +1081,60 @@ FortiAuth Secondary:  fortiauth-dr.company.com  (10.20.0.61)  VLAN 20
 
 Both appliances are in the shared Authentication Services subnet (`10.20.0.0/24`), reachable from all 5 sites via MPLS.
 
+### FortiAuthenticator Appliance Sync (Primary ↔ Secondary)
+
+The two FortiAuth appliances must replicate user data, token assignments, and configuration. Without this, the secondary has no users and will reject all authentication.
+
+```bash
+# On FortiAuth PRIMARY (10.20.0.60) — configure HA sync:
+config system ha
+  set mode active-passive
+  set password [HA-sync-password]
+  set peer-ip 10.20.0.61
+  set peer-port 8009
+  set sync-enable enable
+  set sync-interval 60
+end
+
+# On FortiAuth SECONDARY (10.20.0.61) — configure HA sync:
+config system ha
+  set mode active-passive
+  set password [HA-sync-password]
+  set peer-ip 10.20.0.60
+  set peer-port 8009
+  set sync-enable enable
+  set sync-interval 60
+end
+```
+
+**Via Web UI (both appliances):**
+
+```
+1. System > Administration > High Availability
+2. Mode:          Active-Passive
+3. HA Password:   [same on both appliances]
+4. Peer IP:       10.20.0.61 (on primary) / 10.20.0.60 (on secondary)
+5. Sync Objects:  [x] Users and tokens
+                  [x] RADIUS clients and policies
+                  [x] LDAP server configuration
+6. Click "Apply"
+```
+
+**Verify sync is working:**
+
+```bash
+# On FortiAuth primary (CLI):
+diagnose ha status
+# Expected: Peer Status: Connected, Last Sync: <timestamp within 5 minutes>
+
+# Check token count matches on both appliances:
+# FortiAuth Primary  > Authentication > FortiToken > Summary
+# FortiAuth Secondary > Authentication > FortiToken > Summary
+# Token counts must match. Mismatch = sync broken.
+```
+
+> **Critical:** If HA sync is not configured, the secondary FortiAuth will have no users or tokens. RADIUS failover will succeed at the network level but fail at the authentication level — users will get "authentication failed" during a FortiAuth outage. Verify sync before go-live.
+
 ### WALLIX RADIUS Failover
 
 ```bash
@@ -1049,6 +1158,113 @@ wabadmin auth radius failover enable \
     --check-interval 30 \
     --failback-delay 300
 ```
+
+---
+
+## User Offboarding — Token Deprovisioning
+
+When a user leaves the organization, complete these steps **in order** to prevent unauthorized access and reclaim the FortiToken license.
+
+### Offboarding Checklist
+
+```
+[ ] 1. Disable the user in Active Directory (blocks LDAP auth)
+[ ] 2. Revoke FortiToken in FortiAuthenticator (blocks MFA factor)
+[ ] 3. Disable or delete the user in WALLIX Bastion
+[ ] 4. Verify the user cannot authenticate (test with wabadmin)
+[ ] 5. Document in the access removal ticket
+```
+
+### Step-by-Step
+
+**Step 1 — Revoke token on FortiAuthenticator:**
+
+```
+1. Login to FortiAuthenticator > Authentication > User Management > Remote Users
+2. Search for the user
+3. Click Edit > Token Assignment > Revoke Token
+4. Confirm — the FortiToken license is released back to the pool
+```
+
+```bash
+# Or via FortiAuth CLI:
+# (Navigate to the user entry and remove token assignment)
+diagnose fortitoken revoke [serial-number]
+```
+
+**Step 2 — Disable user in WALLIX:**
+
+```bash
+# Disable the user account
+wabadmin user disable --login "[username]"
+
+# Verify the user can no longer authenticate
+wabadmin auth test --user "[username]" --provider radius
+# Expected: "Authentication failed - user disabled"
+
+# Audit: confirm last session was closed
+wabadmin audit search --user "[username]" --last 7d
+```
+
+**Step 3 — Verify AD account is disabled (triggers automatic FortiAuth sync within 15 min):**
+
+```bash
+# From any domain-joined host:
+Get-ADUser "[username]" -Properties Enabled | Select Enabled
+# Expected: Enabled: False
+```
+
+> **License impact:** FortiToken Mobile licenses are consumed per token provisioned, not per active user. Always revoke the token (Step 1) — disabling the AD account alone does **not** free the license.
+
+---
+
+## FortiAuthenticator Backup and Recovery
+
+FortiAuthenticator holds all token-to-user mappings and RADIUS policies. Loss of this data requires re-enrolling all users.
+
+### Scheduled Backup
+
+```bash
+# On FortiAuthenticator (CLI) — configure automated backup to SFTP:
+config system backup
+  set status enable
+  set protocol sftp
+  set server "10.20.0.50"
+  set username "backup-user"
+  set directory "/backups/fortiauth"
+  set hour 2
+  set minute 0
+  set max-backup 14
+end
+
+# Trigger immediate backup:
+execute backup config sftp 10.20.0.50 /backups/fortiauth [password]
+```
+
+**Via Web UI:**
+
+```
+1. System > Maintenance > Backup & Restore
+2. Backup Type:   Configuration + User data + Token assignments
+3. Schedule:      Daily at 02:00
+4. Destination:   SFTP (10.20.0.50)
+5. Retention:     14 days
+6. Click "Save"
+```
+
+### Verify Backup
+
+```bash
+# Confirm backup file arrived on SFTP server:
+ls -lh /backups/fortiauth/
+# Expected: FAC_*.bak files updated within last 24 hours
+
+# Test restore to secondary (before go-live only):
+# FortiAuth Secondary > System > Maintenance > Backup & Restore > Restore
+# Select the backup file, confirm restore, verify user count matches primary
+```
+
+> **RPO target:** Daily backup = up to 24 hours of data loss if primary fails catastrophically. If RTO/RPO requirements are stricter, rely on HA sync (near-real-time) and keep backups as cold fallback.
 
 ---
 
