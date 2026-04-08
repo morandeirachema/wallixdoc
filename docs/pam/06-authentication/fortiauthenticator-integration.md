@@ -61,9 +61,23 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 +===============================================================================+
 ```
 
-> **Authentication model:** WALLIX validates credentials directly against Active Directory via LDAP (port 636). There are no local WALLIX users for standard access. FortiAuthenticator handles **only the second factor** (MFA) via RADIUS — it does not validate the AD password.
+### Connection Summary
 
-> **FortiAuthenticator RADIUS policy** must therefore set First Factor to **None** (or **RADIUS passthrough**) since WALLIX has already authenticated the user. Setting First Factor to LDAP on the FortiAuth side would cause double password validation and is incorrect for this deployment.
+FortiAuthenticator maintains two distinct connections for two separate purposes:
+
+| Connection | Direction | Protocol | Port | When | Purpose |
+|-----------|-----------|----------|------|------|---------|
+| WALLIX Bastion → FortiAuth | Bastion initiates | RADIUS | 1812/UDP | Every login | Trigger and verify MFA second factor |
+| FortiAuth → Active Directory | FortiAuth initiates | LDAPS | 636/TCP | Every 15 min | Sync user list for token assignment |
+| WALLIX Bastion → Active Directory | Bastion initiates | LDAPS | 636/TCP | Every login | Validate AD password (Phase 1) |
+
+**Why FortiAuth needs AD connectivity:**
+FortiAuth must know which users exist in order to assign FortiTokens to them. It syncs the user list from AD periodically (every 15 minutes). Without this sync, every user would need to be created manually in FortiAuth — impractical at scale across 5 sites.
+
+**What FortiAuth does NOT do:**
+FortiAuth does **not** validate passwords. WALLIX performs password validation directly against AD in Phase 1 before RADIUS is ever called. FortiAuth only receives the username in the RADIUS request and uses it solely to look up the assigned token and trigger push/OTP.
+
+> **FortiAuthenticator RADIUS policy** must set First Factor to **None**. Setting it to LDAP would cause double password validation (WALLIX already validated it) and will break authentication in this deployment.
 
 ---
 
