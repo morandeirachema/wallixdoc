@@ -6,44 +6,47 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 
 ---
 
+## Table of Contents
+
+1. [Integration Architecture](#integration-architecture)
+2. [Prerequisites](#prerequisites)
+3. [Step 1: Configure FortiAuthenticator](#step-1-configure-fortiauthenticator)
+4. [Step 2: Configure WALLIX](#step-2-configure-wallix)
+5. [Step 3: Test MFA Integration](#step-3-test-mfa-integration)
+6. [Step 4: User Enrollment](#step-4-user-enrollment)
+7. [Troubleshooting](#troubleshooting)
+8. [MFA Bypass Procedures](#mfa-bypass-procedures)
+9. [High Availability Configuration](#high-availability-configuration)
+10. [Compliance Mapping](#compliance-mapping)
+11. [Security Best Practices](#security-best-practices)
+12. [Quick Reference](#quick-reference)
+
+---
+
 ## Integration Architecture
 
 ```
 +===============================================================================+
-|                    FORTIAUTHENTICATOR INTEGRATION                             |
+|                    FORTIAUTHENTICATOR MFA FLOW                                |
 +===============================================================================+
-
-  User Login            WALLIX Bastion            FortiAuthenticator
-  ==========            ==============            ==================
-
-  1. User enters         2. WALLIX sends         3. FortiAuth validates
-     username/password      RADIUS request           and sends push/OTP
-
-  +------------+         +----------------+         +-------------------+
-  |   User     |  --->   |    WALLIX      |  --->   | FortiAuthenticator|
-  | username   |         |                |         |                   |
-  | password   |         | RADIUS Client  |         | RADIUS Server     |
-  +------------+         +----------------+         | Push/SMS/Token    |
-       |                        |                   +-------------------+
-       |                        |                          |
-       |    4. MFA Challenge    |                          |
-       |<-----------------------|                          |
-       |                        |                          |
-       |    5. User responds    |    6. Verify response    |
-       |----------------------->|------------------------->|
-       |                        |                          |
-       |                        |    7. Access granted     |
-       |                        |<-------------------------|
-       |    8. Session starts   |                          |
-       |<-----------------------|                          |
-
-  MFA METHODS SUPPORTED:
-  - FortiToken Mobile (Push notification)
-  - FortiToken Hardware (OTP)
-  - SMS OTP
-  - Email OTP
-  - TOTP (Google Authenticator compatible)
-
+|                                                                               |
+|   User Browser         WALLIX Bastion          FortiAuthenticator             |
+|   ============         ==============          ==================             |
+|        |                     |                          |                     |
+|   1.   |--- Credentials ---->|                          |                     |
+|        |                     |--- RADIUS Access-Req --->|                     |
+|        |                     |                          | 2. Validate user    |
+|        |                     |                          |    Trigger Push/OTP |
+|        |<-- MFA Challenge ---|<-- RADIUS Challenge -----|                     |
+|        |                     |                          |                     |
+|   3.   |--- OTP / Approve -->|                          |                     |
+|        |                     |--- RADIUS Access-Req --->|                     |
+|        |                     |<-- RADIUS Access-Acc ----|                     |
+|        |<-- Session Start ---|                          |                     |
+|        |                     |                          |                     |
+|   MFA methods: FortiToken Mobile (push)  |  Hardware Token (OTP)            |
+|                SMS OTP  |  Email OTP  |  TOTP (any authenticator app)        |
+|                                                                               |
 +===============================================================================+
 ```
 
@@ -222,19 +225,22 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 
 #### Port Matrix
 
-| Source                             | Destination                     | Port | Protocol | Description                  |
-|------------------------------------|---------------------------------|------|----------|------------------------------|
-| WALLIX Bastion Node 1 (10.10.1.20) | FortiAuthenticator (10.10.0.60) | 1812 | UDP      | RADIUS Authentication        |
-| WALLIX Bastion Node 2 (10.10.1.21) | FortiAuthenticator (10.10.0.60) | 1813 | UDP      | RADIUS Accounting            |
-| WALLIX Bastion Node 1 (10.10.1.20) | FortiAuthenticator (10.10.0.60) | 1813 | UDP      | RADIUS Accounting            |
-| WALLIX Bastion Node 2 (10.10.1.21) | FortiAuthenticator (10.10.0.60) | 1812 | UDP      | RADIUS Authentication        |
-| FortiAuthenticator (10.10.0.60)    | AD Domain Controller            | 636  | TCP      | LDAPS (user sync)            |
-| FortiAuthenticator (10.10.0.60)    | AD Domain Controller            | 389  | TCP      | LDAP (fallback only)         |
-| FortiAuthenticator (10.10.0.60)    | SMTP Server                     | 587  | TCP      | Token enrollment emails      |
-| FortiAuthenticator (10.10.0.60)    | NTP Server                      | 123  | UDP      | Time sync (critical for OTP) |
-| FortiAuthenticator (10.10.0.60)    | FortiGuard Servers              | 443  | TCP      | License validation, updates  |
-| Administrators                     | FortiAuthenticator (10.10.0.60) | 443  | TCP      | Web UI management            |
-| Users (mobile devices)             | FortiGuard Push Servers         | 443  | TCP      | Push notifications           |
+> **Note:** FortiAuthenticator is shared across all 5 sites (10.20.0.0/24 Authentication Services subnet). Replace `X` with the site number (1–5) for each site's Bastion node IPs.
+
+| Source                              | Destination                      | Port | Protocol | Description                  |
+|-------------------------------------|----------------------------------|------|----------|------------------------------|
+| WALLIX Bastion Node 1 (10.10.X.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication        |
+| WALLIX Bastion Node 1 (10.10.X.11)  | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting            |
+| WALLIX Bastion Node 2 (10.10.X.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication        |
+| WALLIX Bastion Node 2 (10.10.X.12)  | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting            |
+| FortiAuthenticator (10.20.0.60)     | AD DC1 (10.20.0.10)              | 636  | TCP      | LDAPS (user sync, primary)   |
+| FortiAuthenticator (10.20.0.60)     | AD DC2 (10.20.0.11)              | 636  | TCP      | LDAPS (user sync, failover)  |
+| FortiAuthenticator (10.20.0.60)     | AD DC1 (10.20.0.10)              | 389  | TCP      | LDAP (fallback only)         |
+| FortiAuthenticator (10.20.0.60)     | SMTP Server                      | 587  | TCP      | Token enrollment emails      |
+| FortiAuthenticator (10.20.0.60)     | NTP (10.20.0.20 / 10.20.0.21)    | 123  | UDP      | Time sync (critical for OTP) |
+| FortiAuthenticator (10.20.0.60)     | FortiGuard Servers               | 443  | TCP      | License validation, updates  |
+| Administrators                      | FortiAuthenticator (10.20.0.60)  | 443  | TCP      | Web UI management            |
+| Users (mobile devices)              | FortiGuard Push Servers          | 443  | TCP      | Push notifications           |
 
 #### Network Architecture
 
@@ -246,16 +252,16 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 |                          +------------------+                               |
 |                          |   AD Domain      |                               |
 |                          |   Controller     |                               |
-|                          |   dc.company.com |                               |
+|                          |  10.20.0.10      |                               |
 |                          +--------+---------+                               |
 |                                   |                                         |
 |                              LDAPS (636)                                    |
 |                                   |                                         |
 |                       +-----------v----------+                              |
 |                       |  FortiAuthenticator  |                              |
-|                       |  10.10.0.60          |                              |
-|                       |  fortiauth.company.  |                              |
-|                       |  com                 |                              |
+|                       |  10.20.0.60          |                              |
+|                       |  fortiauth.company   |                              |
+|                       |  .com                |                              |
 |                       +-----------+----------+                              |
 |                                   |                                         |
 |                          RADIUS (1812/1813)                                 |
@@ -265,7 +271,7 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 |            +--------v--------+         +--------v--------+                  |
 |            | WALLIX Bastion  |         | WALLIX Bastion  |                  |
 |            | Node 1          |         | Node 2          |                  |
-|            | 10.10.1.20      |         | 10.10.1.21      |                  |
+|            | 10.10.X.11      |         | 10.10.X.12      |                  |
 |            +-----------------+         +-----------------+                  |
 |                                                                             |
 +=============================================================================+
@@ -276,28 +282,31 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 ```bash
 # FortiGate firewall rules for FortiAuthenticator MFA
 
-# Rule 1: WALLIX Bastion to FortiAuthenticator (RADIUS)
-# Source:      10.10.1.20, 10.10.1.21  (Bastion HA nodes)
-# Destination: 10.10.0.60              (FortiAuthenticator)
+# Rule 1: WALLIX Bastion to FortiAuthenticator (RADIUS) - all 5 sites
+# Source:      10.10.1.11, 10.10.1.12  (Site 1 Bastion nodes, repeat per site)
+#              10.10.2.11, 10.10.2.12  (Site 2)
+#              10.10.3.11...10.10.5.12 (Sites 3-5)
+# Destination: 10.20.0.60              (FortiAuthenticator primary)
+#              10.20.0.61              (FortiAuthenticator secondary)
 # Port:        1812/UDP, 1813/UDP
 # Action:      ACCEPT
 # Log:         Enable
 
 # Rule 2: FortiAuthenticator to AD (LDAPS)
-# Source:      10.10.0.60              (FortiAuthenticator)
-# Destination: AD Domain Controllers
+# Source:      10.20.0.60              (FortiAuthenticator)
+# Destination: 10.20.0.10, 10.20.0.11 (AD DC1 and DC2)
 # Port:        636/TCP
 # Action:      ACCEPT
 # Log:         Enable
 
 # Rule 3: FortiAuthenticator to SMTP (enrollment emails)
-# Source:      10.10.0.60
+# Source:      10.20.0.60
 # Destination: SMTP Server
 # Port:        587/TCP
 # Action:      ACCEPT
 
 # Rule 4: FortiAuthenticator to FortiGuard (license + push)
-# Source:      10.10.0.60
+# Source:      10.20.0.60
 # Destination: Any (FortiGuard cloud IPs)
 # Port:        443/TCP
 # Action:      ACCEPT
@@ -308,15 +317,18 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 Run these tests **before** starting the integration:
 
 ```bash
-# From WALLIX Bastion Node 1 - test RADIUS port
-nc -zvu 10.10.0.60 1812
-# Expected: Connection to 10.10.0.60 1812 port [udp/radius] succeeded!
+# From WALLIX Bastion Node 1 - test RADIUS port to primary FortiAuth
+nc -zvu 10.20.0.60 1812
+# Expected: Connection to 10.20.0.60 1812 port [udp/radius] succeeded!
 
-# From WALLIX Bastion Node 2 - test RADIUS port
-nc -zvu 10.10.0.60 1812
+# From WALLIX Bastion Node 2 - test RADIUS port to primary FortiAuth
+nc -zvu 10.20.0.60 1812
 
-# From FortiAuthenticator - test LDAPS to AD
-openssl s_client -connect dc.company.com:636 -showcerts </dev/null 2>/dev/null | head -5
+# From WALLIX Bastion Node 1 - test RADIUS port to secondary FortiAuth
+nc -zvu 10.20.0.61 1812
+
+# From FortiAuthenticator - test LDAPS to AD DC1
+openssl s_client -connect 10.20.0.10:636 -showcerts </dev/null 2>/dev/null | head -5
 # Expected: Shows AD certificate chain
 
 # From FortiAuthenticator - test SMTP
@@ -353,8 +365,8 @@ w32tm /query /status
 # On WALLIX Bastion - ensure NTP is configured
 cat /etc/chrony/chrony.conf
 # Should include:
-# server ntp.company.com iburst
-# server dc.company.com iburst
+# server 10.20.0.20 iburst   (NTP1)
+# server 10.20.0.21 iburst   (NTP2)
 
 # On FortiAuthenticator (CLI):
 config system ntp
@@ -362,7 +374,10 @@ config system ntp
   set type custom
   config ntpserver
     edit 1
-      set server "ntp.company.com"
+      set server "10.20.0.20"
+    next
+    edit 2
+      set server "10.20.0.21"
     next
   end
 end
@@ -525,10 +540,10 @@ end
 
 2. Configure LDAP Remote User Sync:
    Name:           AD-WALLIX-Users
-   Server:         dc-lab.company.com
+   Server:         10.20.0.10 (dc.company.com)
    Port:           636 (LDAPS)
    Base DN:        OU=Users,OU=WALLIX,DC=company,DC=com
-   Bind DN:        CN=fortiauth-svc,OU=Service Accounts,DC=company,DC=com
+   Bind DN:        CN=svc-fortiauth,OU=Service Accounts,DC=company,DC=com
    Bind Password:  [Service account password]
 
    User Filter:    (objectClass=user)
@@ -665,6 +680,68 @@ wabadmin auth mfa enable \
 # Verify configuration
 wabadmin auth mfa status
 ```
+
+### 2.2b Map AD Groups to WALLIX Profiles (RADIUS Attributes)
+
+FortiAuthenticator returns RADIUS `Class` attributes that WALLIX uses to automatically assign user profiles — eliminating manual profile assignment after AD sync.
+
+**Configure RADIUS Reply Attributes on FortiAuthenticator:**
+
+```
+1. Navigate to: Authentication > RADIUS Service > Policies > WALLIX-MFA-Policy
+
+2. Under "RADIUS Attributes" > "Reply Attributes", add:
+
+   Attribute: Class (25)
+   Value:     PAM-Admin
+   Condition: User is member of CN=PAM-Linux-Admins,OU=PAM,OU=Groups,DC=company,DC=com
+
+   Attribute: Class (25)
+   Value:     PAM-Operator
+   Condition: User is member of CN=PAM-Operators,OU=PAM,OU=Groups,DC=company,DC=com
+
+   Attribute: Class (25)
+   Value:     PAM-Auditor
+   Condition: User is member of CN=PAM-Auditors,OU=PAM,OU=Groups,DC=company,DC=com
+
+3. Click OK
+```
+
+**Configure WALLIX to Map RADIUS Class Attribute to Profiles:**
+
+```bash
+# Map RADIUS Class attribute values to WALLIX user profiles
+wabadmin auth radius profile-map \
+    --attribute Class \
+    --value "PAM-Admin" \
+    --wallix-profile administrator
+
+wabadmin auth radius profile-map \
+    --attribute Class \
+    --value "PAM-Operator" \
+    --wallix-profile operator
+
+wabadmin auth radius profile-map \
+    --attribute Class \
+    --value "PAM-Auditor" \
+    --wallix-profile auditor
+
+# Verify mappings are active
+wabadmin auth radius profile-map --list
+```
+
+> **Note:** If FortiAuthenticator cannot return a `Class` attribute (user not in a mapped group), WALLIX falls back to the default profile configured in the RADIUS server settings. Always set a safe default (e.g., `user` profile with no target access).
+
+**AD Group → WALLIX Profile Mapping Summary:**
+
+| AD Group (CN) | RADIUS Class Value | WALLIX Profile |
+|---------------|-------------------|----------------|
+| PAM-Linux-Admins | PAM-Admin | administrator |
+| PAM-Operators | PAM-Operator | operator |
+| PAM-Auditors | PAM-Auditor | auditor |
+| PAM-MFA-Exempt | _(no MFA required)_ | _(per local config)_ |
+
+---
 
 ### 2.3 Configure Failover (Optional)
 
@@ -927,10 +1004,10 @@ wabadmin audit search --type mfa-bypass --last 24h
 # Schedule maintenance window
 # NEVER do this without approval
 
-# Temporarily disable MFA
+# Temporarily disable MFA (replace dates with actual maintenance window)
 wabadmin auth mfa disable \
-    --scheduled-start "2026-01-30T02:00:00Z" \
-    --scheduled-end "2026-01-30T04:00:00Z" \
+    --scheduled-start "YYYY-MM-DDTHH:MM:SSZ" \
+    --scheduled-end "YYYY-MM-DDTHH:MM:SSZ" \
     --reason "FortiAuthenticator upgrade"
 
 # Notifications sent automatically to security team
@@ -943,24 +1020,26 @@ wabadmin auth mfa disable \
 ### FortiAuthenticator HA
 
 ```
-FortiAuth Primary:    fortiauth.company.com     (10.10.1.70)
-FortiAuth Secondary:  fortiauth-dr.company.com  (10.10.1.71)
+FortiAuth Primary:    fortiauth.company.com     (10.20.0.60)  VLAN 20
+FortiAuth Secondary:  fortiauth-dr.company.com  (10.20.0.61)  VLAN 20
 ```
+
+Both appliances are in the shared Authentication Services subnet (`10.20.0.0/24`), reachable from all 5 sites via MPLS.
 
 ### WALLIX RADIUS Failover
 
 ```bash
-# Configure both FortiAuth servers
+# Configure both FortiAuth servers (run on each WALLIX Bastion node)
 wabadmin auth radius add \
     --name "FortiAuth-Primary" \
-    --server "fortiauth.company.com" \
+    --server "10.20.0.60" \
     --port 1812 \
     --secret "[secret]" \
     --priority 1
 
 wabadmin auth radius add \
     --name "FortiAuth-Secondary" \
-    --server "fortiauth-dr.company.com" \
+    --server "10.20.0.61" \
     --port 1812 \
     --secret "[secret]" \
     --priority 2
@@ -969,6 +1048,49 @@ wabadmin auth radius add \
 wabadmin auth radius failover enable \
     --check-interval 30 \
     --failback-delay 300
+```
+
+---
+
+## Compliance Mapping
+
+FortiToken MFA satisfies multi-factor authentication requirements across all frameworks applicable to this deployment.
+
+| Framework | Control | Requirement | How FortiToken Satisfies It |
+|-----------|---------|-------------|----------------------------|
+| **ISO 27001** | A.9.4.2 | Secure log-on procedures | Dual-factor login enforced for all privileged sessions |
+| **ISO 27001** | A.9.4.3 | Password management system | Token lifecycle managed; hardware tokens replaced every 5 years |
+| **SOC 2 Type II** | CC6.1 | Logical access controls | MFA enforced for Web UI, SSH proxy, RDP proxy, and API |
+| **SOC 2 Type II** | CC6.7 | Restricted access to system components | Possession factor (FortiToken) prevents credential-only attacks |
+| **NIS2 Directive** | Art. 21(2)(j) | Multi-factor authentication | Strong authentication required for remote and privileged access |
+| **PCI-DSS v4** | 8.4.2 | MFA for all non-console admin access | FortiToken Mobile/Hardware satisfies possession factor |
+| **GDPR** | Art. 32 | Appropriate technical security measures | MFA is a recognized technical control for access security |
+
+### Evidence Collection for Audits
+
+```bash
+# Export MFA authentication summary (last 90 days)
+wabadmin report generate \
+    --type mfa-audit \
+    --from "$(date -d '90 days ago' +%Y-%m-%d)" \
+    --to "$(date +%Y-%m-%d)" \
+    --format pdf \
+    --output /var/backup/audit/mfa-audit-$(date +%Y%m%d).pdf
+
+# List all users with MFA enabled
+wabadmin auth mfa user-list --status enabled
+
+# List users without MFA (each requires documented exception)
+wabadmin auth mfa user-list --status disabled
+
+# Export RADIUS accounting log (authentication events with timestamps)
+wabadmin audit export \
+    --type radius-accounting \
+    --last 90d \
+    --output /var/backup/audit/radius-accounting-$(date +%Y%m%d).csv
+
+# Count MFA authentications by method (for SOC 2 evidence)
+wabadmin audit stats --type mfa --group-by method --last 30d
 ```
 
 ---
@@ -998,31 +1120,59 @@ wabadmin auth radius failover enable \
 ### Monitoring
 
 ```bash
-# Alert on MFA failures
+# Alert: MFA failures spike (possible brute force or service issue)
 wabadmin alert create \
-    --name "MFA-Failures" \
+    --name "MFA-Failure-Spike" \
     --condition "mfa_failures > 5 in 5m" \
     --action email \
     --recipient security@company.com
 
-# Daily MFA report
+# Alert: RADIUS server unreachable (MFA unavailable)
+wabadmin alert create \
+    --name "RADIUS-Unreachable" \
+    --condition "radius_server_status == down" \
+    --action email,pagerduty \
+    --recipient oncall@company.com
+
+# Alert: MFA bypass used (always warrants investigation)
+wabadmin alert create \
+    --name "MFA-Bypass-Used" \
+    --condition "mfa_bypass_count > 0 in 1h" \
+    --action email \
+    --recipient security@company.com
+
+# Daily MFA summary report
 wabadmin report schedule \
     --type mfa-summary \
     --frequency daily \
     --recipient security@company.com
 ```
 
+**Key Prometheus Metrics to Monitor** (via `/metrics/12-monitoring-observability/`):
+
+| Metric | Alert Threshold | Meaning |
+|--------|----------------|---------|
+| `wallix_mfa_failures_total` | > 10 in 5 min | Possible attack or FortiAuth outage |
+| `wallix_radius_latency_ms` | > 3000 ms avg | FortiAuth performance degradation |
+| `wallix_radius_server_up` | == 0 | FortiAuth unreachable — MFA unavailable |
+| `wallix_mfa_bypass_total` | > 0 | Any bypass event requires audit review |
+| `wallix_token_expired_count` | > 5% of users | Mass token expiry — proactive re-enrollment |
+
 ---
 
 ## Quick Reference
 
-### FortiAuthenticator URLs
+### FortiAuthenticator Reference
 
-| Purpose             | URL                                        |
-|---------------------|--------------------------------------------|
-| Admin Console       | https://fortiauth.company.com/admin        |
-| Self-Service Portal | https://fortiauth.company.com/self-service |
-| RADIUS Port         | 1812/UDP                                   |
+| Purpose              | Value                                       |
+|----------------------|---------------------------------------------|
+| Admin Console (Pri.) | https://fortiauth.company.com/admin         |
+| Admin Console (Sec.) | https://fortiauth-dr.company.com/admin      |
+| Self-Service Portal  | https://fortiauth.company.com/self-service  |
+| Primary IP           | 10.20.0.60 (VLAN 20)                        |
+| Secondary IP         | 10.20.0.61 (VLAN 20)                        |
+| RADIUS Auth Port     | 1812/UDP                                    |
+| RADIUS Acct Port     | 1813/UDP                                    |
 
 ### WALLIX MFA Commands
 
