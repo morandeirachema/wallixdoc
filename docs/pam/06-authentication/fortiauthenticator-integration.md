@@ -29,16 +29,28 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 
 ```
 +===============================================================================+
-|                    FORTIAUTHENTICATOR MFA FLOW                                |
+|            FORTIAUTHENTICATOR MFA FLOW (LDAP + RADIUS)                        |
 +===============================================================================+
+|                                                                               |
+|  PHASE 1 -- Primary Authentication (WALLIX validates credentials via LDAP)    |
+|  -----------------------------------------------------------------------     |
+|                                                                               |
+|   User Browser         WALLIX Bastion           Active Directory               |
+|   ============         ==============           ================               |
+|        |                     |                          |                     |
+|   1.   |--- Credentials ---->|                          |                     |
+|        |                     |--- LDAP bind (636) ----->|                     |
+|        |                     |                          | Validate password   |
+|        |                     |<-- LDAP success ---------|                     |
+|        |                     |                          |                     |
+|  PHASE 2 -- Second Factor (WALLIX calls FortiAuthenticator via RADIUS)        |
+|  -----------------------------------------------------------------------     |
 |                                                                               |
 |   User Browser         WALLIX Bastion          FortiAuthenticator             |
 |   ============         ==============          ==================             |
 |        |                     |                          |                     |
-|   1.   |--- Credentials ---->|                          |                     |
 |        |                     |--- RADIUS Access-Req --->|                     |
-|        |                     |                          | 2. Validate user    |
-|        |                     |                          |    Trigger Push/OTP |
+|        |                     |                          | 2. Trigger Push/OTP |
 |        |<-- MFA Challenge ---|<-- RADIUS Challenge -----|                     |
 |        |                     |                          |                     |
 |   3.   |--- OTP / Approve -->|                          |                     |
@@ -46,11 +58,12 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 |        |                     |<-- RADIUS Access-Acc ----|                     |
 |        |<-- Session Start ---|                          |                     |
 |        |                     |                          |                     |
-|   MFA methods: FortiToken Mobile (push)  |  Hardware Token (OTP)            |
-|                SMS OTP  |  Email OTP  |  TOTP (any authenticator app)        |
-|                                                                               |
 +===============================================================================+
 ```
+
+> **Authentication model:** WALLIX validates credentials directly against Active Directory via LDAP (port 636). There are no local WALLIX users for standard access. FortiAuthenticator handles **only the second factor** (MFA) via RADIUS — it does not validate the AD password.
+
+> **FortiAuthenticator RADIUS policy** must therefore set First Factor to **None** (or **RADIUS passthrough**) since WALLIX has already authenticated the user. Setting First Factor to LDAP on the FortiAuth side would cause double password validation and is incorrect for this deployment.
 
 ---
 
@@ -560,7 +573,7 @@ end
                     AccessManager-1, AccessManager-2
 
    Authentication:
-   - First Factor:  LDAP (or Local)
+   - First Factor:  None (WALLIX already validated via LDAP — do NOT set LDAP here)
    - Second Factor: FortiToken
 
    Options:
