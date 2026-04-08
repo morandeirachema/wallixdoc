@@ -33,10 +33,10 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 +===============================================================================+
 |                                                                               |
 |  PHASE 1 -- Primary Authentication (WALLIX validates credentials via LDAP)    |
-|  -----------------------------------------------------------------------     |
+|  -----------------------------------------------------------------------      |
 |                                                                               |
-|   User Browser         WALLIX Bastion           Active Directory               |
-|   ============         ==============           ================               |
+|   User Browser         WALLIX Bastion           Active Directory              |
+|   ============         ==============           ================              |
 |        |                     |                          |                     |
 |   1.   |--- Credentials ---->|                          |                     |
 |        |                     |--- LDAP bind (636) ----->|                     |
@@ -44,7 +44,7 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 |        |                     |<-- LDAP success ---------|                     |
 |        |                     |                          |                     |
 |  PHASE 2 -- Second Factor (WALLIX calls FortiAuthenticator via RADIUS)        |
-|  -----------------------------------------------------------------------     |
+|  -----------------------------------------------------------------------      |
 |                                                                               |
 |   User Browser         WALLIX Bastion          FortiAuthenticator             |
 |   ============         ==============          ==================             |
