@@ -286,15 +286,14 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 |                       +-----------v----------+                              |
 |                       |  FortiAuthenticator  |                              |
 |                       |  10.20.0.60          |                              |
-|                       |  fortiauth.company   |                              |
-|                       |  .com                |                              |
+|                       | fortiauth.company.com|                              |
 |                       +-----------+----------+                              |
 |                                   |                                         |
 |                          RADIUS (1812/1813)                                 |
-|                                   |                                         |
+|                                   ^                                         |
 |                     +-------------+-------------+                           |
 |                     |                           |                           |
-|            +--------v--------+         +--------v--------+                  |
+|            +--------+--------+         +--------+--------+                  |
 |            | WALLIX Bastion  |         | WALLIX Bastion  |                  |
 |            | Node 1          |         | Node 2          |                  |
 |            | 10.10.X.11      |         | 10.10.X.12      |                  |
