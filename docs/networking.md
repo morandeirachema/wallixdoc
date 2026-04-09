@@ -2612,7 +2612,7 @@ Tools:
 | Load Balancer Config | [docs/pam/32-load-balancer/README.md](pam/32-load-balancer/README.md) | HAProxy configuration and health checks |
 | High Availability | [docs/pam/11-high-availability/README.md](pam/11-high-availability/README.md) | HA cluster networking and ports |
 | FortiAuth Integration | [docs/pam/06-authentication/fortiauthenticator-integration.md](pam/06-authentication/fortiauthenticator-integration.md) | FortiAuthenticator MFA setup |
-| Fortigate Integration | [docs/pam/46-fortigate-integration/README.md](pam/46-fortigate-integration/README.md) | Fortigate firewall and SSL VPN integration |
+| Access Manager Connectivity | [docs/pam/48-access-manager-bastion-connectivity/README.md](pam/48-access-manager-bastion-connectivity/README.md) | Access Manager to Bastion connectivity |
 | System Requirements | [docs/pam/19-system-requirements/README.md](pam/19-system-requirements/README.md) | System requirements including network ports |
 | Monitoring & Observability | [docs/pam/12-monitoring-observability/README.md](pam/12-monitoring-observability/README.md) | Prometheus/Grafana monitoring ports |
 | Troubleshooting | [docs/pam/13-troubleshooting/README.md](pam/13-troubleshooting/README.md) | Network troubleshooting procedures |

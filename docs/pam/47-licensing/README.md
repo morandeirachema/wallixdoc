@@ -1,4 +1,4 @@
-# 48 - WALLIX Licensing Guide
+# 47 - WALLIX Licensing Guide
 
 ## Table of Contents
 
@@ -880,7 +880,7 @@ wabadmin license-info
 - [00 - Official Resources](../00-official-resources/README.md) - WALLIX support and licensing contacts
 - [11 - High Availability](../11-high-availability/README.md) - HA cluster licensing implications
 - [19 - System Requirements](../19-system-requirements/README.md) - Capacity planning for licensing
-- [47 - Access Manager](../47-access-manager/README.md) - Access Manager licensing
+- [46 - Access Manager](../46-access-manager/README.md) - Access Manager licensing
 
 **Related Documentation:**
 - [Install Guide](/install/README.md) - Initial license activation during installation

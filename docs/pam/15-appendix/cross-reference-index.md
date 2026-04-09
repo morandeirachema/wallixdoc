@@ -37,7 +37,7 @@ This index provides rapid access to topics across all 47 documentation sections.
 | Topic | Section | Link | Description |
 |-------|---------|------|-------------|
 | **MFA / Multi-Factor Authentication** | 06 | [Authentication](../06-authentication/README.md) | FortiToken, RADIUS, SMS, push notifications |
-| **FortiAuthenticator MFA** | 46 | [Fortigate Integration](../46-fortigate-integration/README.md) | FortiAuthenticator RADIUS integration with FortiToken |
+| **FortiAuthenticator MFA** | 06 | [Authentication](../06-authentication/README.md) | FortiAuthenticator RADIUS integration with FortiToken |
 | **LDAP Integration** | 06, 34 | [Authentication](../06-authentication/README.md), [LDAP/AD](../34-ldap-ad-integration/README.md) | Active Directory, LDAP sync, group mapping |
 | **Active Directory** | 34 | [LDAP/AD Integration](../34-ldap-ad-integration/README.md) | AD domain integration, user sync, nested groups |
 | **Kerberos SSO** | 06, 35 | [Authentication](../06-authentication/README.md), [Kerberos](../35-kerberos-authentication/README.md) | Kerberos, SPNEGO, keytab management, cross-realm |
@@ -74,13 +74,11 @@ This index provides rapid access to topics across all 47 documentation sections.
 | Topic | Section | Link | Description |
 |-------|---------|------|-------------|
 | **Port Reference** | 36 | [Network Configuration](../36-network-validation/README.md) | Complete port matrix for all protocols |
-| **Firewall Rules** | 36, 46 | [Network Configuration](../36-network-validation/README.md), [Fortigate](../46-fortigate-integration/README.md) | Required firewall policies and ACLs |
-| **Fortigate Integration** | 46 | [Fortigate Integration](../46-fortigate-integration/README.md) | Fortigate firewall placement, SSL VPN, routing |
+| **Firewall Rules** | 36 | [Network Configuration](../36-network-validation/README.md) | Required firewall policies and ACLs |
 | **HAProxy Configuration** | 32 | [Load Balancer](../32-load-balancer/README.md) | HAProxy setup, health checks, SSL termination |
 | **Load Balancing** | 32 | [Load Balancer](../32-load-balancer/README.md) | HAProxy, Nginx, F5, Keepalived VRRP |
 | **DNS Configuration** | 36 | [Network Configuration](../36-network-validation/README.md) | DNS requirements, forward/reverse lookup |
 | **NTP Time Sync** | 36 | [Network Configuration](../36-network-validation/README.md) | NTP configuration, time synchronization |
-| **VPN Integration** | 46 | [Fortigate Integration](../46-fortigate-integration/README.md) | SSL VPN, IPsec VPN with Fortigate |
 | **Network Validation** | 36 | [Network Configuration](../36-network-validation/README.md) | Connectivity testing, bandwidth validation |
 | **MTU Configuration** | 36 | [Network Configuration](../36-network-validation/README.md) | Jumbo frames, fragmentation handling |
 | **Network Architecture** | 03, 36 | [Architecture](../03-architecture/README.md), [Network Config](../36-network-validation/README.md) | Multi-site topology, network diagrams |
@@ -120,7 +118,6 @@ This index provides rapid access to topics across all 47 documentation sections.
 | **Database Issues** | 13, 11 | [Troubleshooting](../13-troubleshooting/README.md), [High Availability](../11-high-availability/README.md) | MariaDB replication lag, corruption |
 | **Certificate Errors** | 28 | [Certificate Management](../28-certificate-management/README.md) | SSL/TLS certificate troubleshooting |
 | **Cluster Issues** | 11, 13 | [High Availability](../11-high-availability/README.md), [Troubleshooting](../13-troubleshooting/README.md) | Replication failures, node failures |
-| **Fortigate Integration Issues** | 46 | [Fortigate Integration](../46-fortigate-integration/README.md) | VPN, MFA, routing problems |
 
 ---
 

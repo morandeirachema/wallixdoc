@@ -2570,7 +2570,6 @@ awk '$10 > 5 {print $7,$10}' /var/log/nginx/access.log | sort -t' ' -k2 -rn | he
 ## See Also
 
 **Related Sections:**
-- [46 - Fortigate Integration](../46-fortigate-integration/README.md) - Fortigate firewall and load balancing
 - [11 - High Availability](../11-high-availability/README.md) - HA cluster configuration
 - [36 - Network Validation](../36-network-validation/README.md) - Health checks and monitoring
 

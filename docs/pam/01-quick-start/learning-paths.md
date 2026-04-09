@@ -292,7 +292,6 @@ Choose your role to get a customized learning path. Each path includes estimated
   Module 2: FortiAuthenticator Configuration (2 hours)
   +------------------------------------------------------------------------+
   | [_] Read: 06-authentication/fortiauthenticator-integration.md          |
-  | [_] Read: 46-fortigate-integration/README.md                           |
   | [_] Practice: Configure RADIUS client on FortiAuthenticator            |
   | [_] Practice: Sync users from Active Directory                         |
   | [_] Practice: Provision FortiToken Mobile to users                     |
@@ -307,13 +306,12 @@ Choose your role to get a customized learning path. Each path includes estimated
   | [_] Practice: Configure MFA bypass procedures                          |
   +------------------------------------------------------------------------+
 
-  Module 4: Fortigate Firewall Integration (2 hours)
+  Module 4: Firewall and Network Integration (2 hours)
   +------------------------------------------------------------------------+
-  | [_] Read: 46-fortigate-integration/README.md                           |
-  | [_] Practice: Configure SSL VPN with FortiAuth                         |
-  | [_] Practice: Set up firewall policies for WALLIX                      |
-  | [_] Practice: Configure VIP for WALLIX access                          |
-  | [_] Practice: Test end-to-end VPN + MFA + WALLIX flow                  |
+  | [_] Read: 36-network-validation/README.md                              |
+  | [_] Practice: Configure firewall policies for WALLIX                   |
+  | [_] Practice: Validate network connectivity across sites               |
+  | [_] Practice: Test end-to-end MFA + WALLIX flow                        |
   +------------------------------------------------------------------------+
 
   --------------------------------------------------------------------------
@@ -543,7 +541,7 @@ If you only have 2 hours, read these in order:
 |----------|-----|
 | WALLIX Documentation | https://pam.wallix.one/documentation |
 | WALLIX Support | https://support.wallix.com |
-| Fortigate MFA Integration | 46-fortigate-integration/README.md |
+| FortiAuthenticator MFA | 06-authentication/fortiauthenticator-integration.md |
 | API Samples | https://github.com/wallix/wbrest_samples |
 | Terraform Provider | https://registry.terraform.io/providers/wallix/wallix-bastion |
 

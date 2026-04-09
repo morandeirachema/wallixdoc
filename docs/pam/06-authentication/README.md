@@ -830,7 +830,6 @@ For specific authentication scenarios, see these detailed guides:
 ## See Also
 
 **Related Sections:**
-- [46 - Fortigate Integration](../46-fortigate-integration/README.md) - FortiAuthenticator MFA and RADIUS configuration
 - [34 - LDAP/AD Integration](../34-ldap-ad-integration/README.md) - Active Directory authentication and group sync
 - [35 - Kerberos Authentication](../35-kerberos-authentication/README.md) - Kerberos SSO and SPNEGO configuration
 - [07 - Authorization](../07-authorization/README.md) - Access control policies and RBAC

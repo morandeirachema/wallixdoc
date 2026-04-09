@@ -1950,7 +1950,6 @@ Schneider Electric systems use Unity Pro, EcoStruxure, and Modbus protocols.
 
 **Related Sections:**
 - [34 - LDAP/AD Integration](../34-ldap-ad-integration/README.md) - Active Directory integration
-- [46 - Fortigate Integration](../46-fortigate-integration/README.md) - Fortigate firewall and MFA
 
 **Related Documentation:**
 - [Pre-Production Lab](/pre/README.md) - Integration testing procedures

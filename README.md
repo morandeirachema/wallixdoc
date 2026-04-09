@@ -84,7 +84,7 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 | **3** | Configure FortiAuthenticator MFA | [FortiAuth Setup](./pre/04-fortiauthenticator-setup.md) |
 | **4** | Deploy WALLIX Bastion | [Installation](./install/HOWTO.md) |
 | **5** | Integrate with Active Directory | [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) |
-| **6** | Configure Fortigate integration | [Fortigate MFA](./docs/pam/46-fortigate-integration/README.md) |
+| **6** | Configure Access Manager | [Access Manager](./docs/pam/46-access-manager/README.md) |
 
 ---
 
@@ -123,7 +123,7 @@ wallixdoc/
 |------|------------|
 | **Project Manager** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) |
 | **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) |
-| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [Fortigate MFA](./docs/pam/46-fortigate-integration/README.md) |
+| **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [FortiAuth MFA](./docs/pam/06-authentication/fortiauthenticator-integration.md) |
 | **Network Engineer** | [Architecture Diagrams](./install/11-architecture-diagrams.md) → [Load Balancer](./docs/pam/32-load-balancer/README.md) |
 | **Identity/IAM Team** | [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) → [Kerberos](./docs/pam/35-kerberos-authentication/README.md) |
 | **DevOps Engineer** | [API Reference](./docs/pam/17-api-reference/README.md) → [Ansible](./examples/ansible/README.md) |
@@ -215,7 +215,7 @@ Lab Components
 |:-:|---------|-------------|
 | 33-39 | [Security](./docs/pam/34-ldap-ad-integration/README.md) | AD, Kerberos, command filtering |
 | 40-45 | [Features](./docs/pam/40-account-discovery/README.md) | Discovery, SSH keys, self-service |
-| 46 | [Fortigate](./docs/pam/46-fortigate-integration/README.md) | **FortiAuthenticator MFA integration** |
+| 46-48 | [Access Manager](./docs/pam/46-access-manager/README.md) | **Access Manager, licensing, connectivity** |
 
 ---
 

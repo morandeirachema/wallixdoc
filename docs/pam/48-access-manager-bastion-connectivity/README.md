@@ -1,4 +1,4 @@
-# 49 - Access Manager Bastion Connectivity
+# 48 - Access Manager Bastion Connectivity
 
 ## Connecting WALLIX Access Manager to WALLIX Bastion
 
@@ -1057,7 +1057,7 @@ sudo wallix-am cache flush --type api
 ## See Also
 
 **Related Sections:**
-- [47 - Access Manager Setup](../47-access-manager/README.md) - Installation and configuration
+- [46 - Access Manager Setup](../46-access-manager/README.md) - Installation and configuration
 - [11 - High Availability](../11-high-availability/README.md) - HA deployment patterns
 - [28 - Certificate Management](../28-certificate-management/README.md) - TLS and PKI
 - [32 - Load Balancer](../32-load-balancer/README.md) - HAProxy configuration

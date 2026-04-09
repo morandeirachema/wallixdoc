@@ -1,4 +1,4 @@
-# 47 - WALLIX Access Manager Setup and Configuration
+# 46 - WALLIX Access Manager Setup and Configuration
 
 ## Table of Contents
 

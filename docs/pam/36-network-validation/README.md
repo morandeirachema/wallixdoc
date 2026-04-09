@@ -2596,7 +2596,6 @@ cat /sys/class/net/eth0/statistics/*errors
 ## See Also
 
 **Related Sections:**
-- [46 - Fortigate Integration](../46-fortigate-integration/README.md) - Firewall rules and configurations
 - [32 - Load Balancer](../32-load-balancer/README.md) - Health checks and load balancing
 - [19 - System Requirements](../19-system-requirements/README.md) - Network requirements
 

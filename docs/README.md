@@ -117,9 +117,9 @@ docs/
 | 43 | [Session Sharing & Collaboration](./pam/43-session-sharing/README.md) | Multi-user sessions, dual-control, training |
 | 44 | [User Self-Service Portal](./pam/44-user-self-service/README.md) | Password management, MFA enrollment, credential checkout |
 | 45 | [Privileged Task Automation](./pam/45-privileged-task-automation/README.md) | Automated privileged tasks, service accounts, runbooks |
-| 46 | [Fortigate Integration](./pam/46-fortigate-integration/README.md) | Fortigate firewall, FortiAuthenticator MFA, SSL VPN |
-| 47 | [Access Manager Setup](./pam/47-access-manager/README.md) | WALLIX Access Manager installation, configuration, integration |
-| 48 | [Licensing Guide](./pam/48-licensing/README.md) | Licensing models, HA licensing, multi-site scenarios, activation |
+| 46 | [Access Manager Setup](./pam/46-access-manager/README.md) | WALLIX Access Manager installation, configuration, integration |
+| 47 | [Licensing Guide](./pam/47-licensing/README.md) | Licensing models, HA licensing, multi-site scenarios, activation |
+| 48 | [Access Manager Bastion Connectivity](./pam/48-access-manager-bastion-connectivity/README.md) | API integration, session brokering, multi-site federation |
 
 ---
 
