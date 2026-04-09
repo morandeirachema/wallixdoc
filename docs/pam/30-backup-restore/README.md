@@ -2290,6 +2290,7 @@ mariadb -e "SHOW MASTER STATUS\G"
 ## See Also
 
 **Related Sections:**
+- [FortiAuthenticator 300F Backup](./fortiauthenticator-backup.md) - FortiAuthenticator backup and recovery procedures
 - [29 - Disaster Recovery](../29-disaster-recovery/README.md) - DR runbooks and RTO/RPO
 - [11 - High Availability](../11-high-availability/README.md) - HA architecture
 
