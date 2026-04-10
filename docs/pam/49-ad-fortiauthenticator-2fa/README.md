@@ -43,7 +43,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 
 ```
 +===============================================================================+
-|                  2FA INTEGRATION — NETWORK ARCHITECTURE                       |
+|                  2FA INTEGRATION -- NETWORK ARCHITECTURE                      |
 +===============================================================================+
 |                                                                               |
 |  USERS (Web UI / SSH / RDP)                                                   |
@@ -125,7 +125,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 |    |                       | 6. Group list        |                  |         |
 |    |                       |<---------------------|                  |         |
 |    |                       |                      |                  |         |
-|    |                       |  *** PHASE 1 COMPLETE — password valid ***        |
+|    |                       |  *** PHASE 1 COMPLETE -- password valid ***       |
 |    |                       |                      |                  |         |
 |    |                       | 7. RADIUS Access-Req |                  |         |
 |    |                       |   (username only,    |                  |         |
@@ -153,7 +153,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 |    |                       | 14. RADIUS Access-Accept                |         |
 |    |                       |<----------------------------------------|         |
 |    |                       |                      |                  |         |
-|    |  *** PHASE 2 COMPLETE — 2FA verified ***     |                  |         |
+|    |  *** PHASE 2 COMPLETE -- 2FA verified ***     |                  |        |
 |    |                       |                      |                  |         |
 |    | 15. Session started   |                      |                  |         |
 |    |<----------------------|                      |                  |         |
@@ -216,7 +216,7 @@ Complete this worksheet before proceeding:
 |  DC1 IP:               ____________________________                         |
 |  DC2 FQDN:             ____________________________                         |
 |  DC2 IP:               ____________________________                         |
-|  Base DN:              ____________________________  (e.g., DC=company,DC=com)
+|  Base DN:              ____________________________  (e.g., DC=company,DC=com
 |  Users OU:             ____________________________                         |
 |  Service Accounts OU:  ____________________________                         |
 |  PAM Groups OU:        ____________________________                         |
@@ -256,7 +256,7 @@ Complete **every** item before proceeding to Phase 1:
 |  INFRASTRUCTURE                                                             |
 |  ==============                                                             |
 |  [ ] Active Directory operational with LDAPS (port 636) enabled             |
-|  [ ] AD CS deployed — DCs have valid LDAPS certificates                     |
+|  [ ] AD CS deployed -- DCs have valid LDAPS certificates                    |
 |  [ ] FortiAuthenticator 300F rack-mounted, powered, IP assigned             |
 |  [ ] FortiAuth firmware 6.4+ verified (get system status)                   |
 |  [ ] FortiAuth base license activated                                       |
@@ -327,14 +327,14 @@ New-ADUser -Name "svc_wallix" `
   -SamAccountName "svc_wallix" `
   -UserPrincipalName "svc_wallix@company.com" `
   -Path "OU=Service Accounts,OU=PAM,DC=company,DC=com" `
-  -Description "WALLIX Bastion LDAP bind — read-only directory access" `
+  -Description "WALLIX Bastion LDAP bind -- read-only directory access" `
   -AccountPassword (Read-Host -AsSecureString "Enter password for svc_wallix") `
   -Enabled $true `
   -PasswordNeverExpires $true `
   -CannotChangePassword $true `
   -AllowReversiblePasswordEncryption $false
 
-# Security hardening — prevent interactive logon
+# Security hardening -- prevent interactive logon
 Set-ADUser -Identity "svc_wallix" -AccountNotDelegated $true
 
 # Verify creation
@@ -351,7 +351,7 @@ New-ADUser -Name "svc-fortiauth" `
   -SamAccountName "svc-fortiauth" `
   -UserPrincipalName "svc-fortiauth@company.com" `
   -Path "OU=Service Accounts,OU=PAM,DC=company,DC=com" `
-  -Description "FortiAuthenticator LDAP sync — read-only directory access" `
+  -Description "FortiAuthenticator LDAP sync -- read-only directory access" `
   -AccountPassword (Read-Host -AsSecureString "Enter password for svc-fortiauth") `
   -Enabled $true `
   -PasswordNeverExpires $true `
@@ -445,7 +445,7 @@ Create a Group Policy Object to prevent interactive logon for service accounts:
 #   "Deny log on locally":                    svc_wallix, svc-fortiauth
 #   "Deny log on through Remote Desktop":     svc_wallix, svc-fortiauth
 #   "Deny log on as a batch job":             svc_wallix, svc-fortiauth
-#   "Deny access to this computer from network": (do NOT add — they need LDAP)
+#   "Deny access to this computer from network": (do NOT add -- they need LDAP)
 
 # Option 2: Direct (if GPO not practical)
 # Already set AccountNotDelegated in Step 4.2
@@ -454,7 +454,7 @@ Create a Group Policy Object to prevent interactive logon for service accounts:
 ### 4.6 Verify LDAPS Is Enabled
 
 ```powershell
-# On Domain Controller — verify LDAPS certificate exists
+# On Domain Controller -- verify LDAPS certificate exists
 Get-ChildItem Cert:\LocalMachine\My | Where-Object {
   $_.EnhancedKeyUsageList -match "Server Authentication"
 } | Format-List Subject, NotAfter, Thumbprint, HasPrivateKey
@@ -711,7 +711,7 @@ Via Web UI:
    Password:            [svc-fortiauth password]
    Base DN:             DC=company,DC=com
 
-4. Click "Test" — must return "Connection successful"
+4. Click "Test" -- must return "Connection successful"
 
 5. Click "OK"
 ```
@@ -772,7 +772,7 @@ Via Web UI:
    +------------------+---------------+-----------------------------------+
 
    For EACH entry:
-   Secret:         [Same shared secret — 32+ characters, alphanumeric + symbols]
+   Secret:         [Same shared secret -- 32+ characters, alphanumeric + symbols]
    Authentication: [x] Enable
    Accounting:     [x] Enable (for audit trail)
 ```
@@ -811,7 +811,7 @@ Via Web UI:
    Options:
    [x] Allow Push Notification
    [x] Allow OTP (manual code entry)
-   [ ] Allow SMS (optional — requires SMS gateway)
+   [ ] Allow SMS (optional -- requires SMS gateway)
 
    Timeout:        60 seconds (time for user to respond to push/enter OTP)
 
@@ -880,7 +880,7 @@ Via Web UI:
 2. Select multiple users (checkbox)
 3. Actions > "Provision FortiToken Mobile"
 4. Delivery: Email
-5. Click "OK" — all selected users receive enrollment emails
+5. Click "OK" -- all selected users receive enrollment emails
 ```
 
 #### FortiToken Hardware (Alternative)
@@ -1028,7 +1028,7 @@ openssl s_client -connect dc.company.com:636 \
    Certificate Validation:  [x] Verify server certificate
 
 5. Click "Test Connection"
-   Expected: "Connection successful — X users found"
+   Expected: "Connection successful -- X users found"
 
 6. Click "Save"
 ```
@@ -1068,7 +1068,7 @@ wabadmin ldap test "Corporate-AD"
 ```bash
 # Run initial user import (preview first)
 wabadmin ldap import --domain "Corporate-AD" --preview
-# Review the list — verify only expected users appear
+# Review the list -- verify only expected users appear
 
 # Import users
 wabadmin ldap import --domain "Corporate-AD" \
@@ -1135,7 +1135,7 @@ wabadmin ldap group-map list --domain "Corporate-AD"
 
 6. Add Secondary (if HA):
    Name:               FortiAuth-Secondary
-   Server Address:     10.20.0.61  (use IP — DNS must not be a dependency in failover)
+   Server Address:     10.20.0.61  (use IP -- DNS must not be a dependency in failover)
    Authentication Port: 1812
    Accounting Port:    1813
    Shared Secret:      [Same shared secret]
@@ -1273,7 +1273,7 @@ wabadmin user add \
 wabadmin auth mfa bypass \
     --user "breakglass-admin" \
     --permanent \
-    --reason "Break-glass emergency account — exempt by policy"
+    --reason "Break-glass emergency account -- exempt by policy"
 
 # Configure alerting for any use of this account
 wabadmin alert create \
@@ -1342,7 +1342,7 @@ wabadmin auth mfa status
 |  [ ] CA certificate imported on all Bastion nodes                           |
 |  [ ] LDAP domain "Corporate-AD" configured with LDAPS                       |
 |  [ ] LDAP connection test successful from all nodes                         |
-|  [ ] User import/sync completed — user count matches AD                     |
+|  [ ] User import/sync completed -- user count matches AD                    |
 |  [ ] Group-to-profile mappings configured                                   |
 |  [ ] RADIUS server "FortiAuth-Primary" configured and reachable             |
 |  [ ] RADIUS failover to "FortiAuth-Secondary" configured (if HA)            |
@@ -1395,7 +1395,7 @@ wabadmin auth test \
    - Review: "Login to WALLIX Bastion"
    - Tap "Approve"
 
-6. Login completes — dashboard appears
+6. Login completes -- dashboard appears
 
 7. Verify correct profile applied:
    - Check user profile in top-right menu
@@ -1433,7 +1433,7 @@ OTP: 123456
 2. Computer: wallix.company.com
 3. Username: jadmin
 4. Enter AD password
-5. MFA prompt appears — enter OTP or approve push
+5. MFA prompt appears -- enter OTP or approve push
 6. RDP target selection appears
 7. Connect to target
 ```
@@ -1469,8 +1469,8 @@ done
 +=============================================================================+
 |                                                                             |
 |  [ ] CLI RADIUS test passed (wabadmin auth test)                            |
-|  [ ] Web UI login with MFA — push notification approved                     |
-|  [ ] Web UI login with MFA — manual OTP entry                               |
+|  [ ] Web UI login with MFA -- push notification approved                    |
+|  [ ] Web UI login with MFA -- manual OTP entry                              |
 |  [ ] SSH proxy login with MFA passed                                        |
 |  [ ] RDP proxy login with MFA passed                                        |
 |  [ ] Wrong password correctly rejected (no MFA prompt)                      |
@@ -1525,7 +1525,7 @@ On FortiAuthenticator Web UI:
 Send this to all users before enabling MFA enforcement:
 
 ```
-Subject: ACTION REQUIRED — Enable Multi-Factor Authentication for WALLIX
+Subject: ACTION REQUIRED -- Enable Multi-Factor Authentication for WALLIX
 
 Dear [User],
 
@@ -1553,11 +1553,11 @@ ENROLLMENT STEPS (5 minutes):
 WHAT CHANGES:
 - You will see a second prompt after entering your password
 - Approve the push notification (recommended) or type the 6-digit code
-- Nothing else changes — same username, same password, same targets
+- Nothing else changes -- same username, same password, same targets
 
 NEED HELP?
 Contact IT Support: support@company.com | Extension 1234
-Support hours: Mon–Fri 08:00–18:00
+Support hours: Mon-Fri 08:00-18:00
 
 Thank you,
 IT Security Team
@@ -1587,7 +1587,7 @@ On FortiAuthenticator Web UI:
 Monitor: Authentication > FortiToken > Token Status
 - Total provisioned: should match PAM-MFA-Users count
 - Activated: increases as users complete enrollment
-- Pending: users who haven't activated yet — follow up after 7 days
+- Pending: users who haven't activated yet -- follow up after 7 days
 ```
 
 ---
@@ -1707,7 +1707,7 @@ wabadmin auth test --user "jadmin" --provider radius --debug
 ### 10.1 User Onboarding
 
 ```
-ONBOARDING CHECKLIST — New PAM User
+ONBOARDING CHECKLIST -- New PAM User
 ====================================
 
 [ ] 1. Create user account in Active Directory (or verify existing)
@@ -1727,7 +1727,7 @@ ONBOARDING CHECKLIST — New PAM User
 Complete these steps **in order**:
 
 ```
-OFFBOARDING CHECKLIST — Remove PAM User
+OFFBOARDING CHECKLIST -- Remove PAM User
 =========================================
 
 [ ] 1. Disable user account in Active Directory
@@ -1835,7 +1835,7 @@ On FortiAuthenticator Web UI:
 wabadmin auth mfa bypass \
     --user "jadmin" \
     --duration 1h \
-    --reason "FortiAuth maintenance window — ticket INC-12345"
+    --reason "FortiAuth maintenance window -- ticket INC-12345"
 
 # Verify bypass is active
 wabadmin auth mfa bypass --list
@@ -1885,7 +1885,7 @@ wabadmin audit search --type mfa-bypass --last 24h
 
 4. Set token drift tolerance
    FortiAuth > Authentication > FortiToken > Settings
-   Drift Tolerance: 1 interval (±30 seconds)
+   Drift Tolerance: 1 interval (+/-30 seconds)
    Higher values reduce security, lower values cause false rejections
 
 5. Enable push notification details
@@ -1903,7 +1903,7 @@ wabadmin audit search --type mfa-bypass --last 24h
 +=============================================================================+
 |                                                                             |
 |  Account:          breakglass-admin                                         |
-|  Auth Type:        Local (NOT LDAP — must work when AD is down)             |
+|  Auth Type:        Local (NOT LDAP -- must work when AD is down)            |
 |  MFA:              Exempt                                                   |
 |  Profile:          administrator                                            |
 |                                                                             |
@@ -1912,7 +1912,7 @@ wabadmin audit search --type mfa-bypass --last 24h
 |  [ ] Password stored in physical safe or HSM (NOT in password manager)      |
 |  [ ] Password complexity: 20+ characters, generated randomly                |
 |  [ ] Password rotated quarterly                                             |
-|  [ ] Access logged — every login triggers email to security@company.com     |
+|  [ ] Access logged -- every login triggers email to security@company.com    |
 |  [ ] Every use documented in incident ticket                                |
 |  [ ] Dual-control: requires two people (one has username, one has password) |
 |  [ ] Tested quarterly (verify it still works)                               |
@@ -1985,18 +1985,18 @@ diagnose system ntp status              # NTP sync (critical for OTP)
 get system performance status           # CPU, memory, disk
 
 # Web UI dashboards:
-# Dashboard > Authentication Activity  — login success/failure trends
-# Dashboard > Token Status             — provisioned, activated, pending
-# Monitor > Logs > Authentication      — real-time auth events
+# Dashboard > Authentication Activity  -- login success/failure trends
+# Dashboard > Token Status             -- provisioned, activated, pending
+# Monitor > Logs > Authentication      -- real-time auth events
 ```
 
 ### 12.4 Daily Health Check Script
 
 ```bash
 #!/bin/bash
-# daily-2fa-healthcheck.sh — run from any Bastion node
+# daily-2fa-healthcheck.sh -- run from any Bastion node
 
-echo "=== 2FA HEALTH CHECK — $(date) ==="
+echo "=== 2FA HEALTH CHECK -- $(date) ==="
 echo ""
 
 echo "--- LDAP Connectivity ---"
@@ -2039,7 +2039,7 @@ echo "=== END HEALTH CHECK ==="
 
 ```
 +=============================================================================+
-|                    2FA TROUBLESHOOTING — DECISION TREE                      |
+|                    2FA TROUBLESHOOTING -- DECISION TREE                     |
 +=============================================================================+
 |                                                                             |
 |  USER CANNOT LOGIN                                                          |
@@ -2068,7 +2068,7 @@ echo "=== END HEALTH CHECK ==="
 |                 |           Check: OTP, push, token, FortiAuth              |
 |                 |           Jump to: Section 13.4                           |
 |                 |                                                           |
-|                 +-- YES --> USER CAN LOGIN — issue is elsewhere             |
+|                 +-- YES --> USER CAN LOGIN -- issue is elsewhere            |
 |                             Check: profile, targets, authorization          |
 |                                                                             |
 +=============================================================================+
@@ -2132,7 +2132,7 @@ wabadmin auth radius show "FortiAuth-Primary"
 
 # Verify user is not exempt
 wabadmin auth mfa bypass --list | grep "jadmin"
-# If listed: bypass is active — wait for expiry or revoke
+# If listed: bypass is active -- wait for expiry or revoke
 ```
 
 ### 13.4 RADIUS/FortiAuth Issues (Phase 2 Failures)
@@ -2155,7 +2155,7 @@ wabadmin auth radius show "FortiAuth-Primary"
 #### "Invalid OTP"
 
 ```bash
-# Check time synchronization — most common cause of OTP rejection
+# Check time synchronization -- most common cause of OTP rejection
 chronyc tracking                          # On WALLIX Bastion
 # FortiAuth CLI: diagnose system ntp status
 
@@ -2305,19 +2305,19 @@ wabadmin audit stats --type mfa --group-by method --last 30d
 |  [ ] Break-glass account created with alert                                 |
 |                                                                             |
 |  PHASE 4: END-TO-END TESTING                                                |
-|  [ ] Web UI login with push notification — PASSED                           |
-|  [ ] Web UI login with manual OTP — PASSED                                  |
-|  [ ] SSH proxy login with MFA — PASSED                                      |
-|  [ ] RDP proxy login with MFA — PASSED                                      |
-|  [ ] Wrong password rejection (no MFA prompt) — PASSED                      |
-|  [ ] Wrong OTP rejection — PASSED                                           |
-|  [ ] Timeout handling — PASSED                                              |
-|  [ ] Disabled AD account rejection — PASSED                                 |
-|  [ ] Break-glass login (no MFA + alert) — PASSED                            |
-|  [ ] Correct profile assignment from AD groups — PASSED                     |
-|  [ ] Test from ALL 10 Bastion nodes — PASSED                                |
-|  [ ] AD failover test — PASSED                                              |
-|  [ ] FortiAuth failover test — PASSED                                       |
+|  [ ] Web UI login with push notification -- PASSED                          |
+|  [ ] Web UI login with manual OTP -- PASSED                                 |
+|  [ ] SSH proxy login with MFA -- PASSED                                     |
+|  [ ] RDP proxy login with MFA -- PASSED                                     |
+|  [ ] Wrong password rejection (no MFA prompt) -- PASSED                     |
+|  [ ] Wrong OTP rejection -- PASSED                                          |
+|  [ ] Timeout handling -- PASSED                                             |
+|  [ ] Disabled AD account rejection -- PASSED                                |
+|  [ ] Break-glass login (no MFA + alert) -- PASSED                           |
+|  [ ] Correct profile assignment from AD groups -- PASSED                    |
+|  [ ] Test from ALL 10 Bastion nodes -- PASSED                               |
+|  [ ] AD failover test -- PASSED                                             |
+|  [ ] FortiAuth failover test -- PASSED                                      |
 |                                                                             |
 |  PHASE 5: ENROLLMENT                                                        |
 |  [ ] All users enrolled and tokens activated                                |
@@ -2404,13 +2404,13 @@ execute backup config sftp [server] [path] [password]  # Manual backup
 ### Network Connectivity Tests
 
 ```bash
-# From WALLIX Bastion — test LDAPS to AD
+# From WALLIX Bastion -- test LDAPS to AD
 nc -zv dc.company.com 636
 
-# From WALLIX Bastion — test RADIUS to FortiAuth
+# From WALLIX Bastion -- test RADIUS to FortiAuth
 nc -zvu fortiauth.company.com 1812
 
-# From FortiAuth CLI — test LDAPS to AD
+# From FortiAuth CLI -- test LDAPS to AD
 execute ping 10.20.0.10
 
 # Verify LDAPS certificate
