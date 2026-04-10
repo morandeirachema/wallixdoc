@@ -53,64 +53,64 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 |                                                                               |
 |  +--------------------------------------------------------------------+       |
 |  |                     WALLIX BASTION NODES                           |       |
-|  |   Site 1: 10.10.1.11, 10.10.1.12                                  |       |
-|  |   Site 2: 10.10.2.11, 10.10.2.12                                  |       |
-|  |   Site 3: 10.10.3.11, 10.10.3.12                                  |       |
-|  |   Site 4: 10.10.4.11, 10.10.4.12                                  |       |
-|  |   Site 5: 10.10.5.11, 10.10.5.12                                  |       |
-|  +--+-----------------------+----------------------------------------+       |
+|  |   Site 1: 10.10.1.11, 10.10.1.12                                   |       |
+|  |   Site 2: 10.10.2.11, 10.10.2.12                                   |       |
+|  |   Site 3: 10.10.3.11, 10.10.3.12                                   |       |
+|  |   Site 4: 10.10.4.11, 10.10.4.12                                   |       |
+|  |   Site 5: 10.10.5.11, 10.10.5.12                                   |       |
+|  +--+-----------------------+-----------------------------------------+       |
 |     |                       |                                                 |
 |     | LDAPS (636/TCP)       | RADIUS (1812/UDP)                               |
 |     | Phase 1: Password     | Phase 2: OTP/Push                               |
 |     |                       |                                                 |
 |     v                       v                                                 |
-|  +------------------+   +---------------------+                              |
-|  | Active Directory |   | FortiAuthenticator  |                              |
-|  | DC1: 10.20.0.10  |   | 300F Primary        |                              |
-|  | DC2: 10.20.0.11  |   | 10.20.0.60          |                              |
-|  +------------------+   |                     |                              |
-|     ^                    | FortiAuth Secondary |                              |
-|     |                    | 10.20.0.61          |                              |
+|  +------------------+   +----------------------+                              |
+|  | Active Directory |   | FortiAuthenticator   |                              |
+|  | DC1: 10.20.0.10  |   | 300F Primary         |                              |
+|  | DC2: 10.20.0.11  |   | 10.20.0.60           |                              |
+|  +------------------+   |                      |                              |
+|     ^                   | FortiAuth Secondary  |                              |
+|     |                   | 10.20.0.61           |                              |
 |     | LDAPS (636/TCP)    +----------+----------+                              |
 |     | User sync                     |                                         |
 |     +-------------------------------+                                         |
 |                                                                               |
-|  SHARED INFRASTRUCTURE VLAN: 10.20.0.0/24                                    |
+|  SHARED INFRASTRUCTURE VLAN: 10.20.0.0/24                                     |
 +===============================================================================+
 ```
 
 ### 1.3 Port Matrix
 
-| # | Source | Destination | Port | Protocol | Purpose |
-|---|--------|-------------|------|----------|---------|
-| 1 | WALLIX Bastion (all nodes) | AD DC1/DC2 | 636/TCP | LDAPS | Password validation (Phase 1) |
-| 2 | WALLIX Bastion (all nodes) | FortiAuth Primary | 1812/UDP | RADIUS | OTP/push validation (Phase 2) |
-| 3 | WALLIX Bastion (all nodes) | FortiAuth Primary | 1813/UDP | RADIUS | Accounting (audit trail) |
-| 4 | WALLIX Bastion (all nodes) | FortiAuth Secondary | 1812/UDP | RADIUS | Failover MFA |
-| 5 | WALLIX Bastion (all nodes) | FortiAuth Secondary | 1813/UDP | RADIUS | Failover accounting |
-| 6 | Access Manager 1 (10.100.1.10) | FortiAuth Primary/Secondary | 1812/UDP | RADIUS | AM MFA |
-| 7 | Access Manager 2 (10.100.2.10) | FortiAuth Primary/Secondary | 1812/UDP | RADIUS | AM MFA |
-| 8 | FortiAuth Primary | AD DC1/DC2 | 636/TCP | LDAPS | User sync (every 15 min) |
-| 9 | FortiAuth Primary | SMTP Server | 587/TCP | SMTP/TLS | Token enrollment emails |
-| 10 | FortiAuth Primary | NTP (10.20.0.20/21) | 123/UDP | NTP | Time sync (critical for OTP) |
-| 11 | FortiAuth Primary | FortiGuard Servers | 443/TCP | HTTPS | License validation, updates |
-| 12 | FortiAuth Primary | FortiAuth Secondary | 8009/TCP | HA Sync | Configuration + token replication |
-| 13 | Administrators | FortiAuth Primary | 443/TCP | HTTPS | Web UI management |
-| 14 | User mobile devices | FortiGuard Push Servers | 443/TCP | HTTPS | Push notifications |
+| # | Source                         | Destination                 | Port     | Protocol | Purpose |
+|---|--------------------------------|-----------------------------|----------|----------|---------|
+| 1 | WALLIX Bastion (all nodes)     | AD DC1/DC2                  | 636/TCP  | LDAPS    | Password validation (Phase 1) |
+| 2 | WALLIX Bastion (all nodes)     | FortiAuth Primary           | 1812/UDP | RADIUS   | OTP/push validation (Phase 2) |
+| 3 | WALLIX Bastion (all nodes)     | FortiAuth Primary           | 1813/UDP | RADIUS   | Accounting (audit trail) |
+| 4 | WALLIX Bastion (all nodes)     | FortiAuth Secondary         | 1812/UDP | RADIUS   | Failover MFA |
+| 5 | WALLIX Bastion (all nodes)     | FortiAuth Secondary         | 1813/UDP | RADIUS   | Failover accounting |
+| 6 | Access Manager 1 (10.100.1.10) | FortiAuth Primary/Secondary | 1812/UDP | RADIUS   | AM MFA |
+| 7 | Access Manager 2 (10.100.2.10) | FortiAuth Primary/Secondary | 1812/UDP | RADIUS   | AM MFA |
+| 8 | FortiAuth Primary              | AD DC1/DC2                  | 636/TCP  | LDAPS    | User sync (every 15 min) |
+| 9 | FortiAuth Primary              | SMTP Server                 | 587/TCP  | SMTP/TLS | Token enrollment emails |
+| 10 | FortiAuth Primary             | NTP (10.20.0.20/21)         | 123/UDP  | NTP      | Time sync (critical for OTP) |
+| 11 | FortiAuth Primary             | FortiGuard Servers          | 443/TCP  | HTTPS    | License validation, updates |
+| 12 | FortiAuth Primary             | FortiAuth Secondary         | 8009/TCP | HA Sync  | Configuration + token replication |
+| 13 | Administrators                | FortiAuth Primary           | 443/TCP  | HTTPS    | Web UI management |
+| 14 | User mobile devices           | FortiGuard Push Servers     | 443/TCP  | HTTPS    | Push notifications |
 
 ---
 
 ## 2. Authentication Flow — How It Works
 
 ```
-+===============================================================================+
-|                2FA LOGIN FLOW (STEP BY STEP)                                  |
-+===============================================================================+
-|                                                                               |
-|  User                WALLIX Bastion        Active Directory   FortiAuth 300F  |
-|  ====                ==============        ================   ==============  |
++================================================================================+
+|                2FA LOGIN FLOW (STEP BY STEP)                                   |
++================================================================================+
+|                                                                                |
+|  User                WALLIX Bastion        Active Directory   FortiAuth 300F   |
+|  ====                ==============        ================   ==============   |
 |    |                       |                      |                  |         |
-|    | 1. Username + Password |                      |                  |         |
+|    | 1. Username + Password|                      |                  |         |
 |    |---------------------->|                      |                  |         |
 |    |                       |                      |                  |         |
 |    |                       | 2. LDAP Bind (636)   |                  |         |
@@ -158,7 +158,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 |    | 15. Session started   |                      |                  |         |
 |    |<----------------------|                      |                  |         |
 |    |                       |                      |                  |         |
-+===============================================================================+
++================================================================================+
 ```
 
 **Critical design principle:** FortiAuthenticator RADIUS policy must set First Factor to **None**. WALLIX already validated the password via LDAP. If FortiAuth is set to LDAP, it causes double password validation and **will break authentication**.
@@ -169,35 +169,35 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 
 ### 3.1 Hardware and Software Requirements
 
-| Component | Requirement | Details |
-|-----------|-------------|---------|
-| **FortiAuthenticator** | 300F hardware appliance | Rack-mounted, 1U, dual power supply |
-| **FortiAuth Firmware** | 6.4+ (6.6+ recommended) | Check: `get system status` via CLI |
-| **FortiToken Licenses** | Per-user FortiToken Mobile | Purchased in packs (5, 25, 100, 1000) |
-| **FortiCare Support** | Active subscription | Required for firmware updates |
-| **Active Directory** | Windows Server 2016+ DFL | Domain functional level 2016 or higher |
-| **AD CS** | Enterprise CA deployed | Required for LDAPS certificates on DCs |
-| **WALLIX Bastion** | Version 12.x | All nodes at same version |
-| **NTP** | All components synchronized | Maximum drift: 30 seconds (OTP fails beyond this) |
-| **DNS** | Forward and reverse records | All components must resolve each other by FQDN |
+| Component               | Requirement                 | Details |
+|-------------------------|-----------------------------|-------------------------------------------------|
+| **FortiAuthenticator**  | 300F hardware appliance     | Rack-mounted, 1U, dual power supply |
+| **FortiAuth Firmware**  | 6.4+ (6.6+ recommended)     | Check: `get system status` via CLI |
+| **FortiToken Licenses** | Per-user FortiToken Mobile  | Purchased in packs (5, 25, 100, 1000) |
+| **FortiCare Support**   | Active subscription         | Required for firmware updates |
+| **Active Directory**    | Windows Server 2016+ DFL    | Domain functional level 2016 or higher |
+| **AD CS**               | Enterprise CA deployed      | Required for LDAPS certificates on DCs |
+| **WALLIX Bastion**      | Version 12.x                | All nodes at same version |
+| **NTP**                 | All components synchronized | Maximum drift: 30 seconds (OTP fails beyond this) |
+| **DNS**                 | Forward and reverse records | All components must resolve each other by FQDN |
 
 ### 3.2 Accounts to Create
 
-| Account | Where | Purpose | Password Policy |
-|---------|-------|---------|-----------------|
-| `svc_wallix` | Active Directory | WALLIX LDAP bind (read-only) | Never expires, 24+ chars |
-| `svc-fortiauth` | Active Directory | FortiAuth LDAP sync (read-only) | Never expires, 24+ chars |
-| `breakglass-admin` | WALLIX Bastion (local) | Emergency access without MFA | Stored in safe, rotated quarterly |
+| Account            | Where                  | Purpose                         | Password Policy |
+|--------------------|------------------------|---------------------------------|-----------------|
+| `svc_wallix`       | Active Directory       | WALLIX LDAP bind (read-only)    | Never expires, 24+ chars |
+| `svc-fortiauth`    | Active Directory       | FortiAuth LDAP sync (read-only) | Never expires, 24+ chars |
+| `breakglass-admin` | WALLIX Bastion (local) | Emergency access without MFA    | Stored in safe, rotated quarterly |
 
 ### 3.3 AD Groups to Create
 
-| Group Name | Scope | Purpose |
-|------------|-------|---------|
-| `PAM-MFA-Users` | Global Security | Users enrolled in FortiToken MFA |
+| Group Name       | Scope           | Purpose |
+|------------------|-----------------|---------|
+| `PAM-MFA-Users`  | Global Security | Users enrolled in FortiToken MFA |
 | `PAM-MFA-Exempt` | Global Security | Break-glass/service accounts exempt from MFA |
-| `PAM-Admins` | Global Security | WALLIX administrator profile |
-| `PAM-Operators` | Global Security | WALLIX operator profile |
-| `PAM-Auditors` | Global Security | WALLIX auditor profile (read-only) |
+| `PAM-Admins`     | Global Security | WALLIX administrator profile |
+| `PAM-Operators`  | Global Security | WALLIX operator profile |
+| `PAM-Auditors`   | Global Security | WALLIX auditor profile (read-only) |
 
 ### 3.4 Information to Gather Before Starting
 
@@ -211,35 +211,35 @@ Complete this worksheet before proceeding:
 |  ACTIVE DIRECTORY                                                           |
 |  ================                                                           |
 |  Domain FQDN:          ____________________________  (e.g., company.com)    |
-|  NetBIOS Name:         ____________________________  (e.g., COMPANY)       |
-|  DC1 FQDN:             ____________________________                        |
-|  DC1 IP:               ____________________________                        |
-|  DC2 FQDN:             ____________________________                        |
-|  DC2 IP:               ____________________________                        |
+|  NetBIOS Name:         ____________________________  (e.g., COMPANY)        |
+|  DC1 FQDN:             ____________________________                         |
+|  DC1 IP:               ____________________________                         |
+|  DC2 FQDN:             ____________________________                         |
+|  DC2 IP:               ____________________________                         |
 |  Base DN:              ____________________________  (e.g., DC=company,DC=com)
-|  Users OU:             ____________________________                        |
-|  Service Accounts OU:  ____________________________                        |
-|  PAM Groups OU:        ____________________________                        |
-|  CA Certificate:       [ ] Exported  [ ] Copied to Bastion                 |
+|  Users OU:             ____________________________                         |
+|  Service Accounts OU:  ____________________________                         |
+|  PAM Groups OU:        ____________________________                         |
+|  CA Certificate:       [ ] Exported  [ ] Copied to Bastion                  |
 |                                                                             |
 |  FORTIAUTHENTICATOR 300F                                                    |
 |  ========================                                                   |
-|  Primary FQDN:         ____________________________                        |
-|  Primary IP:           ____________________________                        |
-|  Secondary FQDN:       ____________________________  (if HA)               |
-|  Secondary IP:         ____________________________  (if HA)               |
-|  RADIUS Shared Secret: ____________________________  (32+ chars)           |
-|  HA Sync Password:     ____________________________  (if HA)               |
-|  Admin Password:       ____________________________                        |
-|  SMTP Server:          ____________________________                        |
-|  SMTP From Address:    ____________________________                        |
+|  Primary FQDN:         ____________________________                         |
+|  Primary IP:           ____________________________                         |
+|  Secondary FQDN:       ____________________________  (if HA)                |
+|  Secondary IP:         ____________________________  (if HA)                |
+|  RADIUS Shared Secret: ____________________________  (32+ chars)            |
+|  HA Sync Password:     ____________________________  (if HA)                |
+|  Admin Password:       ____________________________                         |
+|  SMTP Server:          ____________________________                         |
+|  SMTP From Address:    ____________________________                         |
 |                                                                             |
 |  WALLIX BASTION                                                             |
 |  ==============                                                             |
-|  Admin URL:            ____________________________                        |
-|  Node IPs:             ____________________________  (all sites)           |
-|  Access Manager IPs:   ____________________________  (if applicable)       |
-|  NTP Servers:          ____________________________                        |
+|  Admin URL:            ____________________________                         |
+|  Node IPs:             ____________________________  (all sites)            |
+|  Access Manager IPs:   ____________________________  (if applicable)        |
+|  NTP Servers:          ____________________________                         |
 |                                                                             |
 +=============================================================================+
 ```
@@ -271,9 +271,9 @@ Complete **every** item before proceeding to Phase 1:
 |  [ ] LDAPS (636/TCP) open: FortiAuth -> AD DCs                              |
 |  [ ] RADIUS (1812/UDP) open: all Bastion nodes -> FortiAuth                 |
 |  [ ] RADIUS (1813/UDP) open: all Bastion nodes -> FortiAuth                 |
-|  [ ] SMTP (587/TCP) open: FortiAuth -> SMTP server                         |
+|  [ ] SMTP (587/TCP) open: FortiAuth -> SMTP server                          |
 |  [ ] NTP (123/UDP) open: all components -> NTP servers                      |
-|  [ ] HA sync (8009/TCP) open: FortiAuth Primary <-> Secondary              |
+|  [ ] HA sync (8009/TCP) open: FortiAuth Primary <-> Secondary               |
 |                                                                             |
 |  TIME SYNCHRONIZATION (CRITICAL FOR OTP)                                    |
 |  =======================================                                    |
@@ -289,7 +289,7 @@ Complete **every** item before proceeding to Phase 1:
 |  [ ] CA certificate imported into FortiAuthenticator trust store            |
 |  [ ] LDAPS connectivity verified with OpenSSL from each Bastion node        |
 |                                                                             |
-|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 1                        |
+|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 1                         |
 |                                                                             |
 +=============================================================================+
 ```
@@ -520,19 +520,19 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 
 ```
 +=============================================================================+
-|  PHASE 1 CHECKPOINT                                                        |
+|  PHASE 1 CHECKPOINT                                                         |
 +=============================================================================+
 |                                                                             |
 |  [ ] Service accounts created: svc_wallix, svc-fortiauth                    |
-|  [ ] Security groups created: PAM-MFA-Users, PAM-Admins, PAM-Operators,    |
-|      PAM-Auditors, PAM-MFA-Exempt                                          |
+|  [ ] Security groups created: PAM-MFA-Users, PAM-Admins, PAM-Operators,     |
+|      PAM-Auditors, PAM-MFA-Exempt                                           |
 |  [ ] Users assigned to appropriate groups                                   |
 |  [ ] LDAPS enabled and certificate valid on all DCs                         |
 |  [ ] CA certificate exported (PEM format)                                   |
 |  [ ] LDAP bind test successful from Bastion nodes                           |
 |  [ ] Service accounts hardened (no interactive logon)                       |
 |                                                                             |
-|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 2                        |
+|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 2                         |
 |                                                                             |
 +=============================================================================+
 ```
@@ -922,23 +922,23 @@ diagnose system ntp status
 
 ```
 +=============================================================================+
-|  PHASE 2 CHECKPOINT                                                        |
+|  PHASE 2 CHECKPOINT                                                         |
 +=============================================================================+
 |                                                                             |
-|  [ ] FortiAuth 300F configured with static IP, hostname, DNS               |
-|  [ ] NTP synchronized (drift < 1 second)                                   |
+|  [ ] FortiAuth 300F configured with static IP, hostname, DNS                |
+|  [ ] NTP synchronized (drift < 1 second)                                    |
 |  [ ] SSL certificate installed for web UI                                   |
 |  [ ] SMTP configured and test email sent successfully                       |
-|  [ ] AD CA certificate imported                                            |
+|  [ ] AD CA certificate imported                                             |
 |  [ ] LDAP user sync configured and initial sync completed                   |
-|  [ ] User count in FortiAuth matches PAM-MFA-Users in AD                   |
+|  [ ] User count in FortiAuth matches PAM-MFA-Users in AD                    |
 |  [ ] All 12 RADIUS clients created (10 Bastions + 2 Access Managers)        |
 |  [ ] RADIUS policy created: First Factor = None, Second Factor = FortiToken |
-|  [ ] RADIUS reply attributes configured for group-to-profile mapping       |
-|  [ ] FortiTokens assigned to at least 2 test users                         |
+|  [ ] RADIUS reply attributes configured for group-to-profile mapping        |
+|  [ ] FortiTokens assigned to at least 2 test users                          |
 |  [ ] Test users have activated FortiToken Mobile on their phones            |
 |                                                                             |
-|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 3                        |
+|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 3                         |
 |                                                                             |
 +=============================================================================+
 ```
@@ -1249,12 +1249,12 @@ wabadmin auth radius profile-map --list
 
 **Group-to-Profile Mapping Summary:**
 
-| AD Group | RADIUS Class | WALLIX Profile | Access Level |
-|----------|-------------|----------------|--------------|
-| PAM-Admins | PAM-Admin | administrator | Full admin |
-| PAM-Operators | PAM-Operator | operator | Manage targets, no admin |
-| PAM-Auditors | PAM-Auditor | auditor | Read-only, session review |
-| PAM-MFA-Exempt | _(no MFA)_ | _(per local config)_ | Break-glass only |
+| AD Group       | RADIUS Class | WALLIX Profile       | Access Level |
+|----------------|--------------|----------------------|--------------|
+| PAM-Admins     | PAM-Admin    | administrator        | Full admin |
+| PAM-Operators  | PAM-Operator | operator             | Manage targets, no admin |
+| PAM-Auditors   | PAM-Auditor  | auditor              | Read-only, session review |
+| PAM-MFA-Exempt | _(no MFA)_   | _(per local config)_ | Break-glass only |
 
 ### 6.8 Configure Break-Glass Account
 
@@ -1336,22 +1336,22 @@ wabadmin auth mfa status
 
 ```
 +=============================================================================+
-|  PHASE 3 CHECKPOINT                                                        |
+|  PHASE 3 CHECKPOINT                                                         |
 +=============================================================================+
 |                                                                             |
 |  [ ] CA certificate imported on all Bastion nodes                           |
-|  [ ] LDAP domain "Corporate-AD" configured with LDAPS                      |
+|  [ ] LDAP domain "Corporate-AD" configured with LDAPS                       |
 |  [ ] LDAP connection test successful from all nodes                         |
-|  [ ] User import/sync completed — user count matches AD                    |
+|  [ ] User import/sync completed — user count matches AD                     |
 |  [ ] Group-to-profile mappings configured                                   |
 |  [ ] RADIUS server "FortiAuth-Primary" configured and reachable             |
-|  [ ] RADIUS failover to "FortiAuth-Secondary" configured (if HA)           |
-|  [ ] MFA policy enabled for Web UI, SSH, RDP, and API                      |
+|  [ ] RADIUS failover to "FortiAuth-Secondary" configured (if HA)            |
+|  [ ] MFA policy enabled for Web UI, SSH, RDP, and API                       |
 |  [ ] RADIUS Class attribute mappings configured                             |
 |  [ ] Break-glass account created and alert configured                       |
 |  [ ] Configuration replicated to ALL Bastion nodes                          |
 |                                                                             |
-|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 4                        |
+|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 4                         |
 |                                                                             |
 +=============================================================================+
 ```
@@ -1440,15 +1440,15 @@ OTP: 123456
 
 ### 7.5 Test Failure Scenarios
 
-| Test Case | Action | Expected Result |
-|-----------|--------|-----------------|
-| Wrong AD password | Enter incorrect password | "Invalid credentials" — no MFA prompt (LDAP fails in Phase 1) |
-| Wrong OTP | Enter invalid 6-digit code | "Authentication failed — invalid OTP" |
-| OTP timeout | Do not respond within 60s | "Authentication timeout — MFA not completed" |
-| Disabled AD account | Disable user in AD, try login | "Authentication failed — account disabled" |
-| No FortiToken assigned | Try user without token | "User not enrolled in MFA" |
-| Break-glass account | Login as breakglass-admin | Login succeeds without MFA prompt; alert email sent |
-| FortiAuth unreachable | Block RADIUS port, try login | Failover to secondary; if both down, MFA bypass or deny per policy |
+| Test Case              | Action                        | Expected Result |
+|------------------------|-------------------------------|-----------------|
+| Wrong AD password      | Enter incorrect password      | "Invalid credentials" — no MFA prompt (LDAP fails in Phase 1) |
+| Wrong OTP              | Enter invalid 6-digit code    | "Authentication failed — invalid OTP" |
+| OTP timeout            | Do not respond within 60s     | "Authentication timeout — MFA not completed" |
+| Disabled AD account    | Disable user in AD, try login | "Authentication failed — account disabled" |
+| No FortiToken assigned | Try user without token        | "User not enrolled in MFA" |
+| Break-glass account    | Login as breakglass-admin     | Login succeeds without MFA prompt; alert email sent |
+| FortiAuth unreachable  | Block RADIUS port, try login  | Failover to secondary; if both down, MFA bypass or deny per policy |
 
 ### 7.6 Test from Every Site
 
@@ -1465,12 +1465,12 @@ done
 
 ```
 +=============================================================================+
-|  PHASE 4 CHECKPOINT                                                        |
+|  PHASE 4 CHECKPOINT                                                         |
 +=============================================================================+
 |                                                                             |
 |  [ ] CLI RADIUS test passed (wabadmin auth test)                            |
-|  [ ] Web UI login with MFA — push notification approved                    |
-|  [ ] Web UI login with MFA — manual OTP entry                              |
+|  [ ] Web UI login with MFA — push notification approved                     |
+|  [ ] Web UI login with MFA — manual OTP entry                               |
 |  [ ] SSH proxy login with MFA passed                                        |
 |  [ ] RDP proxy login with MFA passed                                        |
 |  [ ] Wrong password correctly rejected (no MFA prompt)                      |
@@ -1481,7 +1481,7 @@ done
 |  [ ] Profile correctly assigned based on AD group membership                |
 |  [ ] Test passed from ALL Bastion nodes (all 5 sites)                       |
 |                                                                             |
-|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 5                        |
+|  ALL ITEMS MUST BE [x] BEFORE PROCEEDING TO PHASE 5                         |
 |                                                                             |
 +=============================================================================+
 ```
@@ -1492,11 +1492,11 @@ done
 
 ### 8.1 Enrollment Strategy
 
-| Approach | When to Use | Effort |
-|----------|-------------|--------|
-| **Admin-assisted** | < 50 users, high-touch | Admin provisions token per user |
+| Approach                | When to Use                       | Effort |
+|-------------------------|-----------------------------------|--------|
+| **Admin-assisted**      | < 50 users, high-touch            | Admin provisions token per user |
 | **Self-service portal** | 50–500 users, standard onboarding | Users self-enroll via portal |
-| **Bulk email** | > 500 users, mass rollout | Admin sends enrollment emails in bulk |
+| **Bulk email**          | > 500 users, mass rollout         | Admin sends enrollment emails in bulk |
 
 ### 8.2 Self-Service Portal Configuration
 
@@ -1565,12 +1565,12 @@ IT Security Team
 
 ### 8.4 Phased Rollout Plan
 
-| Phase | Timeline | Users | MFA Setting |
-|-------|----------|-------|-------------|
-| **Pilot** | Week 1–2 | IT admins (5–10 users) | MFA enforced for pilot group |
-| **Early adopters** | Week 3–4 | IT staff + security (20–50 users) | MFA enforced for enrolled users |
-| **General rollout** | Week 5–8 | All PAM users | MFA enforced for all users |
-| **Enforcement** | Week 9+ | All users | MFA required — no exceptions except break-glass |
+| Phase               | Timeline | Users                             | MFA Setting |
+|---------------------|----------|-----------------------------------|-------------|
+| **Pilot**           | Week 1–2 | IT admins (5–10 users)            | MFA enforced for pilot group |
+| **Early adopters**  | Week 3–4 | IT staff + security (20–50 users) | MFA enforced for enrolled users |
+| **General rollout** | Week 5–8 | All PAM users                     | MFA enforced for all users |
+| **Enforcement**     | Week 9+  | All users                         | MFA required — no exceptions except break-glass |
 
 ### 8.5 Bulk Token Provisioning
 
@@ -1853,22 +1853,22 @@ wabadmin audit search --type mfa-bypass --last 24h
 
 ### 11.1 RADIUS Security
 
-| Control | Implementation | Why |
-|---------|---------------|-----|
-| Strong shared secret | 32+ characters, alphanumeric + symbols | Prevents brute-force of RADIUS authentication |
-| Limit RADIUS clients | Only registered Bastion/AM IPs accepted | Prevents rogue RADIUS clients |
-| Enable accounting | RADIUS accounting on port 1813 | Creates audit trail of all MFA events |
-| Separate VLAN | FortiAuth on shared infra VLAN (10.20.0.0/24) | Isolates authentication traffic |
-| No RADIUS over internet | All traffic over MPLS/VPN | RADIUS uses MD5 — not safe over public networks |
+| Control                 | Implementation                                | Why |
+|-------------------------|-----------------------------------------------|-----------------------------------------------|
+| Strong shared secret    | 32+ characters, alphanumeric + symbols        | Prevents brute-force of RADIUS authentication |
+| Limit RADIUS clients    | Only registered Bastion/AM IPs accepted       | Prevents rogue RADIUS clients |
+| Enable accounting       | RADIUS accounting on port 1813                | Creates audit trail of all MFA events |
+| Separate VLAN           | FortiAuth on shared infra VLAN (10.20.0.0/24) | Isolates authentication traffic |
+| No RADIUS over internet | All traffic over MPLS/VPN                     | RADIUS uses MD5 — not safe over public networks |
 
 ### 11.2 LDAPS Security
 
-| Control | Implementation | Why |
-|---------|---------------|-----|
-| TLS 1.2+ only | Disable TLS 1.0/1.1 on DCs and WALLIX | Prevents downgrade attacks |
-| Certificate validation | Enable `verify_hostname` in WALLIX | Prevents MITM attacks |
-| Strong ciphers | AES-256-GCM, CHACHA20-POLY1305 | Prevents weak cipher exploitation |
-| Certificate monitoring | Alert 30 days before DC cert expiry | Prevents surprise LDAPS outages |
+| Control                | Implementation | Why |
+|------------------------|---------------------------------------|---------------------------------|
+| TLS 1.2+ only          | Disable TLS 1.0/1.1 on DCs and WALLIX | Prevents downgrade attacks |
+| Certificate validation | Enable `verify_hostname` in WALLIX    | Prevents MITM attacks |
+| Strong ciphers         | AES-256-GCM, CHACHA20-POLY1305        | Prevents weak cipher exploitation |
+| Certificate monitoring | Alert 30 days before DC cert expiry   | Prevents surprise LDAPS outages |
 
 ### 11.3 FortiToken Security
 
@@ -2227,16 +2227,16 @@ diagnose debug disable
 
 FortiToken MFA with WALLIX Bastion satisfies multi-factor authentication requirements across major frameworks:
 
-| Framework | Control | Requirement | How This Deployment Satisfies It |
-|-----------|---------|-------------|----------------------------------|
-| **ISO 27001:2022** | A.8.5 | Secure authentication | LDAP password + FortiToken OTP/push |
-| **ISO 27001:2022** | A.5.15 | Access control | Group-based profile assignment from AD |
-| **SOC 2 Type II** | CC6.1 | Logical access controls | MFA enforced for all privileged sessions |
-| **SOC 2 Type II** | CC6.7 | Restrict system components | Possession factor prevents credential-only attacks |
-| **NIS2 Directive** | Art. 21(2)(j) | Multi-factor authentication | Strong auth for all remote and privileged access |
-| **PCI-DSS v4** | 8.4.2 | MFA for non-console admin | FortiToken satisfies possession factor requirement |
-| **GDPR** | Art. 32 | Appropriate technical measures | MFA is a recognized technical control |
-| **NIST 800-53** | IA-2(1) | MFA for privileged accounts | Two distinct factors: knowledge + possession |
+| Framework          | Control       | Requirement                    | How This Deployment Satisfies It |
+|--------------------|---------------|--------------------------------|----------------------------------|
+| **ISO 27001:2022** | A.8.5         | Secure authentication          | LDAP password + FortiToken OTP/push |
+| **ISO 27001:2022** | A.5.15        | Access control                 | Group-based profile assignment from AD |
+| **SOC 2 Type II**  | CC6.1         | Logical access controls        | MFA enforced for all privileged sessions |
+| **SOC 2 Type II**  | CC6.7         | Restrict system components     | Possession factor prevents credential-only attacks |
+| **NIS2 Directive** | Art. 21(2)(j) | Multi-factor authentication    | Strong auth for all remote and privileged access |
+| **PCI-DSS v4**     | 8.4.2         | MFA for non-console admin      | FortiToken satisfies possession factor requirement |
+| **GDPR**           | Art. 32       | Appropriate technical measures | MFA is a recognized technical control |
+| **NIST 800-53**    | IA-2(1)       | MFA for privileged accounts    | Two distinct factors: knowledge + possession |
 
 ### Audit Evidence Collection
 
@@ -2271,12 +2271,12 @@ wabadmin audit stats --type mfa --group-by method --last 30d
 
 ```
 +=============================================================================+
-|                    PRODUCTION GO-LIVE CHECKLIST                              |
+|                    PRODUCTION GO-LIVE CHECKLIST                             |
 +=============================================================================+
 |                                                                             |
 |  PHASE 1: ACTIVE DIRECTORY                                                  |
 |  [ ] Service accounts created and tested (svc_wallix, svc-fortiauth)        |
-|  [ ] Service accounts hardened (no interactive logon, no delegation)         |
+|  [ ] Service accounts hardened (no interactive logon, no delegation)        |
 |  [ ] Security groups created (PAM-MFA-Users, PAM-Admins, etc.)              |
 |  [ ] Users assigned to correct groups                                       |
 |  [ ] LDAPS enabled on all Domain Controllers                                |
@@ -2299,29 +2299,29 @@ wabadmin audit stats --type mfa --group-by method --last 30d
 |  [ ] CA certificate imported on ALL nodes                                   |
 |  [ ] LDAP domain configured and tested on ALL nodes                         |
 |  [ ] RADIUS servers configured on ALL nodes                                 |
-|  [ ] MFA policy enabled (Web UI, SSH, RDP, API)                            |
+|  [ ] MFA policy enabled (Web UI, SSH, RDP, API)                             |
 |  [ ] Group-to-profile mappings configured                                   |
 |  [ ] RADIUS Class attribute mappings configured                             |
 |  [ ] Break-glass account created with alert                                 |
 |                                                                             |
 |  PHASE 4: END-TO-END TESTING                                                |
-|  [ ] Web UI login with push notification — PASSED                          |
-|  [ ] Web UI login with manual OTP — PASSED                                 |
-|  [ ] SSH proxy login with MFA — PASSED                                     |
-|  [ ] RDP proxy login with MFA — PASSED                                     |
-|  [ ] Wrong password rejection (no MFA prompt) — PASSED                     |
-|  [ ] Wrong OTP rejection — PASSED                                          |
+|  [ ] Web UI login with push notification — PASSED                           |
+|  [ ] Web UI login with manual OTP — PASSED                                  |
+|  [ ] SSH proxy login with MFA — PASSED                                      |
+|  [ ] RDP proxy login with MFA — PASSED                                      |
+|  [ ] Wrong password rejection (no MFA prompt) — PASSED                      |
+|  [ ] Wrong OTP rejection — PASSED                                           |
 |  [ ] Timeout handling — PASSED                                              |
-|  [ ] Disabled AD account rejection — PASSED                                |
-|  [ ] Break-glass login (no MFA + alert) — PASSED                           |
-|  [ ] Correct profile assignment from AD groups — PASSED                    |
-|  [ ] Test from ALL 10 Bastion nodes — PASSED                               |
-|  [ ] AD failover test — PASSED                                             |
-|  [ ] FortiAuth failover test — PASSED                                      |
+|  [ ] Disabled AD account rejection — PASSED                                 |
+|  [ ] Break-glass login (no MFA + alert) — PASSED                            |
+|  [ ] Correct profile assignment from AD groups — PASSED                     |
+|  [ ] Test from ALL 10 Bastion nodes — PASSED                                |
+|  [ ] AD failover test — PASSED                                              |
+|  [ ] FortiAuth failover test — PASSED                                       |
 |                                                                             |
 |  PHASE 5: ENROLLMENT                                                        |
 |  [ ] All users enrolled and tokens activated                                |
-|  [ ] User communication sent                                               |
+|  [ ] User communication sent                                                |
 |  [ ] Self-service portal configured (if applicable)                         |
 |  [ ] Support team briefed on 2FA troubleshooting                            |
 |                                                                             |

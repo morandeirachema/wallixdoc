@@ -35,40 +35,40 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |  AUTHENTICATION MODE (Pass-through)                                           |
 |  ==================================                                           |
 |                                                                               |
-|  +--------+     +----------+     +----------+     +-------------+            |
-|  |  User  |---->|  WALLIX  |---->|   LDAP   |---->| Credential  |            |
-|  | Login  |     | Bastion  |     |  Server  |     | Validation  |            |
-|  +--------+     +----------+     +----------+     +-------------+            |
+|  +--------+     +----------+     +----------+     +-------------+             |
+|  |  User  |---->|  WALLIX  |---->|   LDAP   |---->| Credential  |             |
+|  | Login  |     | Bastion  |     |  Server  |     | Validation  |             |
+|  +--------+     +----------+     +----------+     +-------------+             |
 |                      |                                  |                     |
 |                      |<---------------------------------+                     |
-|                      |      Success/Failure Response                         |
+|                      |      Success/Failure Response                          |
 |                                                                               |
 |  Benefits:                                                                    |
-|  * Single source of truth for passwords                                      |
-|  * No password synchronization needed                                        |
-|  * Real-time password policy enforcement                                     |
-|  * Immediate effect of password changes                                      |
+|  * Single source of truth for passwords                                       |
+|  * No password synchronization needed                                         |
+|  * Real-time password policy enforcement                                      |
+|  * Immediate effect of password changes                                       |
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
 |  SYNCHRONIZATION MODE (Import/Update)                                         |
 |  =====================================                                        |
 |                                                                               |
-|  +----------+     +----------+     +-------------+                           |
-|  |   LDAP   |---->|  WALLIX  |---->|   Local     |                           |
-|  |  Server  |     |   Sync   |     |  Database   |                           |
-|  +----------+     +----------+     +-------------+                           |
+|  +----------+     +----------+     +-------------+                            |
+|  |   LDAP   |---->|  WALLIX  |---->|   Local     |                            |
+|  |  Server  |     |   Sync   |     |  Database   |                            |
+|  +----------+     +----------+     +-------------+                            |
 |                        |                                                      |
-|                        |  Scheduled or manual sync                           |
+|                        |  Scheduled or manual sync                            |
 |                        |  - User attributes                                   |
 |                        |  - Group membership                                  |
-|                        |  - Profile assignment                               |
+|                        |  - Profile assignment                                |
 |                                                                               |
 |  Benefits:                                                                    |
-|  * Reduced LDAP dependency during sessions                                   |
-|  * Group-to-profile automatic mapping                                        |
-|  * Offline availability of user data                                         |
-|  * Performance optimization for large directories                            |
+|  * Reduced LDAP dependency during sessions                                    |
+|  * Group-to-profile automatic mapping                                         |
+|  * Offline availability of user data                                          |
+|  * Performance optimization for large directories                             |
 |                                                                               |
 +==============================================================================+
 ```
@@ -91,50 +91,50 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 
 ```
 +==============================================================================+
-|                    LDAP/AD INTEGRATION ARCHITECTURE                           |
+|                    LDAP/AD INTEGRATION ARCHITECTURE                          |
 +==============================================================================+
-|                                                                               |
-|                        ENTERPRISE NETWORK                                     |
-|                                                                               |
+|                                                                              |
+|                        ENTERPRISE NETWORK                                    |
+|                                                                              |
 |   +------------------+          +------------------+                         |
 |   |     Domain       |          |     Domain       |                         |
 |   |   Controller 1   |          |   Controller 2   |                         |
 |   |   (Primary)      |          |   (Secondary)    |                         |
 |   |                  |          |                  |                         |
-|   | LDAPS: 636      |          | LDAPS: 636      |                         |
-|   | GC: 3269        |          | GC: 3269        |                         |
+|   | LDAPS: 636       |          | LDAPS: 636       |                         |
+|   | GC: 3269         |          | GC: 3269         |                         |
 |   +--------+---------+          +--------+---------+                         |
-|            |                             |                                    |
-|            |     TLS 1.2/1.3            |                                    |
-|            |     Encrypted              |                                    |
-|            +-------------+---------------+                                    |
-|                          |                                                    |
-|                          v                                                    |
+|            |                             |                                   |
+|            |     TLS 1.2/1.3             |                                   |
+|            |     Encrypted               |                                   |
+|            +-------------+---------------+                                   |
+|                          |                                                   |
+|                          v                                                   |
 |   +-----------------------------------------------------------------+        |
-|   |                    WALLIX BASTION                                |        |
-|   |                                                                  |        |
-|   |  +-------------------+   +-------------------+                   |        |
-|   |  |  LDAP Connector   |   |  Auth Module      |                   |        |
-|   |  |                   |   |                   |                   |        |
-|   |  | * Connection pool |   | * Bind validation |                   |        |
-|   |  | * Failover logic  |   | * Attribute query |                   |        |
-|   |  | * TLS handling    |   | * Group lookup    |                   |        |
-|   |  +--------+----------+   +--------+----------+                   |        |
-|   |           |                       |                              |        |
-|   |           v                       v                              |        |
-|   |  +-------------------+   +-------------------+                   |        |
-|   |  |  Sync Engine      |   |  Session Manager  |                   |        |
-|   |  |                   |   |                   |                   |        |
-|   |  | * Scheduled jobs  |   | * User sessions   |                   |        |
-|   |  | * Delta updates   |   | * Audit logging   |                   |        |
-|   |  | * Conflict res.   |   | * Access control  |                   |        |
-|   |  +-------------------+   +-------------------+                   |        |
-|   |                                                                  |        |
+|   |                    WALLIX BASTION                               |        |
+|   |                                                                 |        |
+|   |  +-------------------+   +-------------------+                  |        |
+|   |  |  LDAP Connector   |   |  Auth Module      |                  |        |
+|   |  |                   |   |                   |                  |        |
+|   |  | * Connection pool |   | * Bind validation |                  |        |
+|   |  | * Failover logic  |   | * Attribute query |                  |        |
+|   |  | * TLS handling    |   | * Group lookup    |                  |        |
+|   |  +--------+----------+   +--------+----------+                  |        |
+|   |           |                       |                             |        |
+|   |           v                       v                             |        |
+|   |  +-------------------+   +-------------------+                  |        |
+|   |  |  Sync Engine      |   |  Session Manager  |                  |        |
+|   |  |                   |   |                   |                  |        |
+|   |  | * Scheduled jobs  |   | * User sessions   |                  |        |
+|   |  | * Delta updates   |   | * Audit logging   |                  |        |
+|   |  | * Conflict res.   |   | * Access control  |                  |        |
+|   |  +-------------------+   +-------------------+                  |        |
+|   |                                                                 |        |
 |   +-----------------------------------------------------------------+        |
-|                                                                               |
-|   NETWORK REQUIREMENTS                                                        |
-|   ====================                                                        |
-|                                                                               |
+|                                                                              |
+|   NETWORK REQUIREMENTS                                                       |
+|   ====================                                                       |
+|                                                                              |
 |   +-------------------------------------------------------------------+      |
 |   | Protocol  | Port  | Direction          | Description              |      |
 |   +-----------+-------+--------------------+--------------------------+      |
@@ -144,7 +144,7 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |   | Kerberos  | 88    | WALLIX -> DC       | Optional SSO             |      |
 |   | DNS       | 53    | WALLIX -> DNS      | SRV record lookup        |      |
 |   +-----------+-------+--------------------+--------------------------+      |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -152,45 +152,45 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 
 ```
 +==============================================================================+
-|                    LDAP HIGH AVAILABILITY                                     |
+|                    LDAP HIGH AVAILABILITY                                    |
 +==============================================================================+
-|                                                                               |
-|   PRIMARY SITE                              SECONDARY SITE                    |
-|   ============                              ==============                    |
-|                                                                               |
-|   +----------------+                        +----------------+                |
-|   |     DC-01      |<--- AD Replication --->|     DC-03      |                |
-|   | ldaps://dc01   |                        | ldaps://dc03   |                |
-|   +----------------+                        +----------------+                |
-|          |                                          |                         |
-|          |                                          |                         |
-|   +----------------+                        +----------------+                |
-|   |     DC-02      |<--- AD Replication --->|     DC-04      |                |
-|   | ldaps://dc02   |                        | ldaps://dc04   |                |
-|   +----------------+                        +----------------+                |
-|          |                                          |                         |
-|          +------------------+-------------------+---+                         |
-|                             |                                                 |
-|                             v                                                 |
+|                                                                              |
+|   PRIMARY SITE                              SECONDARY SITE                   |
+|   ============                              ==============                   |
+|                                                                              |
+|   +----------------+                        +----------------+               |
+|   |     DC-01      |<--- AD Replication --->|     DC-03      |               |
+|   | ldaps://dc01   |                        | ldaps://dc03   |               |
+|   +----------------+                        +----------------+               |
+|          |                                          |                        |
+|          |                                          |                        |
+|   +----------------+                        +----------------+               |
+|   |     DC-02      |<--- AD Replication --->|     DC-04      |               |
+|   | ldaps://dc02   |                        | ldaps://dc04   |               |
+|   +----------------+                        +----------------+               |
+|          |                                          |                        |
+|          +------------------+-------------------+---+                        |
+|                             |                                                |
+|                             v                                                |
 |   +-------------------------------------------------------------+            |
-|   |                    WALLIX BASTION                            |            |
-|   |                                                              |            |
-|   |  LDAP Server Configuration:                                  |            |
-|   |  +----------------------------------------------------------+|            |
-|   |  | Server 1 (Primary):   ldaps://dc01.corp.company.com:636  ||            |
-|   |  | Server 2 (Failover):  ldaps://dc02.corp.company.com:636  ||            |
-|   |  | Server 3 (DR Site):   ldaps://dc03.corp.company.com:636  ||            |
-|   |  | Server 4 (DR Site):   ldaps://dc04.corp.company.com:636  ||            |
-|   |  +----------------------------------------------------------+|            |
-|   |                                                              |            |
-|   |  Failover Behavior:                                          |            |
-|   |  * Try servers in order until successful connection          |            |
-|   |  * Connection timeout: 10 seconds per server                 |            |
-|   |  * Failed server retry interval: 60 seconds                  |            |
-|   |  * Health check interval: 30 seconds                         |            |
-|   |                                                              |            |
+|   |                    WALLIX BASTION                           |            |
+|   |                                                             |            |
+|   |  LDAP Server Configuration:                                 |            |
+|   |  +---------------------------------------------------------+|            |
+|   |  | Server 1 (Primary):   ldaps://dc01.corp.company.com:636 ||            |
+|   |  | Server 2 (Failover):  ldaps://dc02.corp.company.com:636 ||            |
+|   |  | Server 3 (DR Site):   ldaps://dc03.corp.company.com:636 ||            |
+|   |  | Server 4 (DR Site):   ldaps://dc04.corp.company.com:636 ||            |
+|   |  +---------------------------------------------------------+|            |
+|   |                                                             |            |
+|   |  Failover Behavior:                                         |            |
+|   |  * Try servers in order until successful connection         |            |
+|   |  * Connection timeout: 10 seconds per server                |            |
+|   |  * Failed server retry interval: 60 seconds                 |            |
+|   |  * Health check interval: 30 seconds                        |            |
+|   |                                                             |            |
 |   +-------------------------------------------------------------+            |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -257,15 +257,15 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 #### Bind DN Formats
 
 ```
-+==============================================================================+
++===============================================================================+
 |                    BIND DN FORMAT EXAMPLES                                    |
-+==============================================================================+
++===============================================================================+
 |                                                                               |
 |  ACTIVE DIRECTORY                                                             |
 |  ================                                                             |
 |                                                                               |
 |  Distinguished Name (preferred):                                              |
-|  CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com                 |
+|  CN=svc_wallix,OU=Service Accounts,DC=corp,DC=company,DC=com                  |
 |                                                                               |
 |  User Principal Name (UPN):                                                   |
 |  svc_wallix@corp.company.com                                                  |
@@ -282,7 +282,7 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |  cn=admin,dc=company,dc=com                                                   |
 |                                                                               |
 |  uid-based:                                                                   |
-|  uid=wallix-bind,ou=services,dc=company,dc=com                               |
+|  uid=wallix-bind,ou=services,dc=company,dc=com                                |
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
@@ -290,12 +290,12 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |  ========================================                                     |
 |                                                                               |
 |  Distinguished Name:                                                          |
-|  uid=wallix-bind,ou=People,dc=company,dc=com                                 |
+|  uid=wallix-bind,ou=People,dc=company,dc=com                                  |
 |                                                                               |
 |  Directory Manager (for testing only):                                        |
 |  cn=Directory Manager                                                         |
 |                                                                               |
-+==============================================================================+
++===============================================================================+
 ```
 
 ### Base DN and Search Scope
@@ -334,48 +334,48 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 
 ```
 +==============================================================================+
-|                    LDAP USER FILTER EXAMPLES                                  |
+|                    LDAP USER FILTER EXAMPLES                                 |
 +==============================================================================+
-|                                                                               |
-|  ACTIVE DIRECTORY                                                             |
-|  ================                                                             |
-|                                                                               |
-|  Basic user lookup by sAMAccountName:                                         |
+|                                                                              |
+|  ACTIVE DIRECTORY                                                            |
+|  ================                                                            |
+|                                                                              |
+|  Basic user lookup by sAMAccountName:                                        |
 |  (&(objectClass=user)(sAMAccountName={login}))                               |
-|                                                                               |
-|  User lookup by UPN:                                                          |
+|                                                                              |
+|  User lookup by UPN:                                                         |
 |  (&(objectClass=user)(userPrincipalName={login}))                            |
-|                                                                               |
-|  Exclude disabled accounts:                                                   |
+|                                                                              |
+|  Exclude disabled accounts:                                                  |
 |  (&(objectClass=user)(sAMAccountName={login})                                |
 |    (!(userAccountControl:1.2.840.113556.1.4.803:=2)))                        |
-|                                                                               |
-|  Exclude disabled and locked accounts:                                        |
+|                                                                              |
+|  Exclude disabled and locked accounts:                                       |
 |  (&(objectClass=user)(sAMAccountName={login})                                |
 |    (!(userAccountControl:1.2.840.113556.1.4.803:=2))                         |
-|    (!(lockoutTime>=1)))                                                       |
-|                                                                               |
-|  Only users in specific group:                                                |
+|    (!(lockoutTime>=1)))                                                      |
+|                                                                              |
+|  Only users in specific group:                                               |
 |  (&(objectClass=user)(sAMAccountName={login})                                |
 |    (memberOf=CN=PAM-Users,OU=Groups,DC=corp,DC=company,DC=com))              |
-|                                                                               |
-|  Support both sAMAccountName and UPN:                                         |
+|                                                                              |
+|  Support both sAMAccountName and UPN:                                        |
 |  (&(objectClass=user)(|(sAMAccountName={login})(userPrincipalName={login}))) |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  OPENLDAP                                                                     |
-|  ========                                                                     |
-|                                                                               |
-|  Basic user lookup:                                                           |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  OPENLDAP                                                                    |
+|  ========                                                                    |
+|                                                                              |
+|  Basic user lookup:                                                          |
 |  (&(objectClass=inetOrgPerson)(uid={login}))                                 |
-|                                                                               |
-|  With posixAccount:                                                           |
+|                                                                              |
+|  With posixAccount:                                                          |
 |  (&(objectClass=posixAccount)(uid={login}))                                  |
-|                                                                               |
-|  By email:                                                                    |
+|                                                                              |
+|  By email:                                                                   |
 |  (&(objectClass=inetOrgPerson)(mail={login}))                                |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -383,36 +383,36 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 
 ```
 +==============================================================================+
-|                    LDAP GROUP FILTER EXAMPLES                                 |
+|                    LDAP GROUP FILTER EXAMPLES                                |
 +==============================================================================+
-|                                                                               |
-|  ACTIVE DIRECTORY                                                             |
-|  ================                                                             |
-|                                                                               |
-|  All security groups:                                                         |
+|                                                                              |
+|  ACTIVE DIRECTORY                                                            |
+|  ================                                                            |
+|                                                                              |
+|  All security groups:                                                        |
 |  (&(objectClass=group)(groupType:1.2.840.113556.1.4.803:=-2147483646))       |
-|                                                                               |
-|  Groups with specific prefix:                                                 |
+|                                                                              |
+|  Groups with specific prefix:                                                |
 |  (&(objectClass=group)(cn=PAM-*))                                            |
-|                                                                               |
-|  Groups in specific OU:                                                       |
-|  (objectClass=group)                                                          |
+|                                                                              |
+|  Groups in specific OU:                                                      |
+|  (objectClass=group)                                                         |
 |  Base DN: OU=PAM-Groups,DC=corp,DC=company,DC=com                            |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  OPENLDAP                                                                     |
-|  ========                                                                     |
-|                                                                               |
-|  POSIX groups:                                                                |
-|  (objectClass=posixGroup)                                                     |
-|                                                                               |
-|  groupOfNames:                                                                |
-|  (objectClass=groupOfNames)                                                   |
-|                                                                               |
-|  groupOfUniqueNames:                                                          |
-|  (objectClass=groupOfUniqueNames)                                             |
-|                                                                               |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  OPENLDAP                                                                    |
+|  ========                                                                    |
+|                                                                              |
+|  POSIX groups:                                                               |
+|  (objectClass=posixGroup)                                                    |
+|                                                                              |
+|  groupOfNames:                                                               |
+|  (objectClass=groupOfNames)                                                  |
+|                                                                              |
+|  groupOfUniqueNames:                                                         |
+|  (objectClass=groupOfUniqueNames)                                            |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -466,55 +466,55 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 
 ```
 +==============================================================================+
-|                    AD SERVICE ACCOUNT SETUP                                   |
+|                    AD SERVICE ACCOUNT SETUP                                  |
 +==============================================================================+
-|                                                                               |
-|  STEP 1: Create Service Account                                               |
-|  ==============================                                               |
-|                                                                               |
-|  PowerShell:                                                                  |
+|                                                                              |
+|  STEP 1: Create Service Account                                              |
+|  ==============================                                              |
+|                                                                              |
+|  PowerShell:                                                                 |
 |  +------------------------------------------------------------------------+  |
-|  | # Create service account                                                |  |
-|  | New-ADUser -Name "svc_wallix" `                                         |  |
-|  |   -SamAccountName "svc_wallix" `                                        |  |
-|  |   -UserPrincipalName "svc_wallix@corp.company.com" `                    |  |
-|  |   -Path "OU=Service Accounts,DC=corp,DC=company,DC=com" `               |  |
-|  |   -Description "WALLIX Bastion LDAP Bind Account" `                     |  |
-|  |   -AccountPassword (ConvertTo-SecureString "P@ssw0rd!" -AsPlain -Force) |  |
-|  |   -Enabled $true `                                                      |  |
-|  |   -PasswordNeverExpires $true `                                         |  |
-|  |   -CannotChangePassword $true                                           |  |
+|  | # Create service account                                               |  |
+|  | New-ADUser -Name "svc_wallix" `                                        |  |
+|  |   -SamAccountName "svc_wallix" `                                       |  |
+|  |   -UserPrincipalName "svc_wallix@corp.company.com" `                   |  |
+|  |   -Path "OU=Service Accounts,DC=corp,DC=company,DC=com" `              |  |
+|  |   -Description "WALLIX Bastion LDAP Bind Account" `                    |  |
+|  |   -AccountPassword (ConvertTo-SecureString "P@ssw0rd!" -AsPlain -Force)|  |
+|  |   -Enabled $true `                                                     |  |
+|  |   -PasswordNeverExpires $true `                                        |  |
+|  |   -CannotChangePassword $true                                          |  |
 |  +------------------------------------------------------------------------+  |
-|                                                                               |
-|  STEP 2: Assign Read Permissions                                              |
-|  ================================                                             |
-|                                                                               |
-|  Minimum permissions required:                                                |
+|                                                                              |
+|  STEP 2: Assign Read Permissions                                             |
+|  ================================                                            |
+|                                                                              |
+|  Minimum permissions required:                                               |
 |  * Read all user properties                                                  |
 |  * Read group membership                                                     |
 |  * List contents of OUs                                                      |
-|                                                                               |
+|                                                                              |
 |  These are granted by default to "Authenticated Users"                       |
 |  No additional delegation typically needed for read-only access              |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  STEP 3: Security Recommendations                                             |
-|  ==================================                                           |
-|                                                                               |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  STEP 3: Security Recommendations                                            |
+|  ==================================                                          |
+|                                                                              |
 |  +------------------------------------------------------------------------+  |
-|  | # Add to Protected Users group (prevents credential caching)            |  |
-|  | Add-ADGroupMember -Identity "Protected Users" -Members "svc_wallix"     |  |
-|  |                                                                          |  |
-|  | # Deny interactive logon (service account protection)                   |  |
-|  | # Configure via GPO: "Deny log on locally" and "Deny log on through     |  |
-|  | # Remote Desktop Services"                                              |  |
-|  |                                                                          |  |
-|  | # Set delegation restrictions                                           |  |
-|  | Set-ADUser -Identity "svc_wallix" `                                      |  |
-|  |   -AccountNotDelegated $true                                            |  |
+|  | # Add to Protected Users group (prevents credential caching)           |  |
+|  | Add-ADGroupMember -Identity "Protected Users" -Members "svc_wallix"    |  |
+|  |                                                                        |  |
+|  | # Deny interactive logon (service account protection)                  |  |
+|  | # Configure via GPO: "Deny log on locally" and "Deny log on through    |  |
+|  | # Remote Desktop Services"                                             |  |
+|  |                                                                        |  |
+|  | # Set delegation restrictions                                          |  |
+|  | Set-ADUser -Identity "svc_wallix" `                                    |  |
+|  |   -AccountNotDelegated $true                                           |  |
 |  +------------------------------------------------------------------------+  |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -522,55 +522,55 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 
 ```
 +==============================================================================+
-|                    GROUP MEMBERSHIP QUERY STRATEGIES                          |
+|                    GROUP MEMBERSHIP QUERY STRATEGIES                         |
 +==============================================================================+
-|                                                                               |
-|  DIRECT MEMBERSHIP (Simple)                                                   |
-|  ==========================                                                   |
-|                                                                               |
-|  Query: User's memberOf attribute                                             |
-|  Returns: Direct group memberships only                                       |
-|                                                                               |
-|  LDAP Filter:                                                                 |
+|                                                                              |
+|  DIRECT MEMBERSHIP (Simple)                                                  |
+|  ==========================                                                  |
+|                                                                              |
+|  Query: User's memberOf attribute                                            |
+|  Returns: Direct group memberships only                                      |
+|                                                                              |
+|  LDAP Filter:                                                                |
 |  (&(objectClass=user)(sAMAccountName=jsmith))                                |
-|  Attributes: memberOf                                                         |
-|                                                                               |
-|  Result:                                                                      |
+|  Attributes: memberOf                                                        |
+|                                                                              |
+|  Result:                                                                     |
 |  memberOf: CN=PAM-Linux-Admins,OU=Groups,DC=corp,DC=company,DC=com           |
 |  memberOf: CN=IT-Staff,OU=Groups,DC=corp,DC=company,DC=com                   |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  NESTED MEMBERSHIP (Recursive)                                                |
-|  =============================                                                |
-|                                                                               |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  NESTED MEMBERSHIP (Recursive)                                               |
+|  =============================                                               |
+|                                                                              |
 |  AD supports LDAP_MATCHING_RULE_IN_CHAIN (1.2.840.113556.1.4.1941)           |
-|                                                                               |
-|  Query all groups (including nested):                                         |
-|  (&(objectClass=group)                                                        |
+|                                                                              |
+|  Query all groups (including nested):                                        |
+|  (&(objectClass=group)                                                       |
 |    (member:1.2.840.113556.1.4.1941:=CN=jsmith,OU=Users,DC=corp,DC=company,DC=com))
-|                                                                               |
-|  This returns:                                                                |
+|                                                                              |
+|  This returns:                                                               |
 |  * Direct group memberships                                                  |
 |  * Parent groups of those groups                                             |
 |  * All ancestor groups in the hierarchy                                      |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  PRIMARY GROUP (Special handling)                                             |
-|  ================================                                             |
-|                                                                               |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  PRIMARY GROUP (Special handling)                                            |
+|  ================================                                            |
+|                                                                              |
 |  The primary group (typically "Domain Users") is NOT in memberOf             |
 |  Must be queried separately using primaryGroupID                             |
-|                                                                               |
+|                                                                              |
 |  User attribute: primaryGroupID = 513 (Domain Users RID)                     |
-|                                                                               |
-|  To resolve:                                                                  |
+|                                                                              |
+|  To resolve:                                                                 |
 |  1. Get user's objectSid                                                     |
 |  2. Get user's primaryGroupID                                                |
 |  3. Replace last component of objectSid with primaryGroupID                  |
 |  4. Search for group with that objectSid                                     |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -620,11 +620,11 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |      (Internal)            (Perimeter)                                        |
 |                                                                               |
 |  Configuration approach:                                                      |
-|  * Use Global Catalog (port 3269) for cross-domain queries                   |
+|  * Use Global Catalog (port 3269) for cross-domain queries                    |
 |  * Configure one LDAP domain pointing to GC                                   |
-|  * All domains searchable through single connection                          |
+|  * All domains searchable through single connection                           |
 |                                                                               |
-|  +------------------------------------------------------------------------+  |
+|  +-------------------------------------------------------------------------+  |
 |  | Global Catalog Configuration:                                           |  |
 |  |                                                                         |  |
 |  | Server: gc.company.com:3269 (or any DC with GC role)                    |  |
@@ -635,7 +635,7 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |  | (&(objectClass=user)                                                    |  |
 |  |   (|(sAMAccountName={login})                                            |  |
 |  |     (userPrincipalName={login})))                                       |  |
-|  +------------------------------------------------------------------------+  |
+|  +-------------------------------------------------------------------------+  |
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
@@ -649,11 +649,11 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |         |                                      |                              |
 |                                                                               |
 |  Configuration approach:                                                      |
-|  * Configure separate LDAP domain for each forest                            |
-|  * Users authenticate against their home forest                              |
-|  * Use domain prefix for login (e.g., PARTNER\username)                      |
+|  * Configure separate LDAP domain for each forest                             |
+|  * Users authenticate against their home forest                               |
+|  * Use domain prefix for login (e.g., PARTNER\username)                       |
 |                                                                               |
-|  +------------------------------------------------------------------------+  |
+|  +-------------------------------------------------------------------------+  |
 |  | Multiple Domain Configuration:                                          |  |
 |  |                                                                         |  |
 |  | Domain 1:                                                               |  |
@@ -667,7 +667,7 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |  |   Server: ldaps://dc01.partner.com:636                                  |  |
 |  |   Base DN: DC=partner,DC=com                                            |  |
 |  |   User format: PARTNER\{login} or {login}@partner.com                   |  |
-|  +------------------------------------------------------------------------+  |
+|  +-------------------------------------------------------------------------+  |
 |                                                                               |
 |  ---------------------------------------------------------------------------  |
 |                                                                               |
@@ -675,15 +675,15 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |  ======================                                                       |
 |                                                                               |
 |  When user enters login without domain:                                       |
-|  1. Try primary domain (Company-AD) first                                    |
-|  2. If not found, try secondary domains in priority order                    |
-|  3. Return "user not found" if no match in any domain                        |
+|  1. Try primary domain (Company-AD) first                                     |
+|  2. If not found, try secondary domains in priority order                     |
+|  3. Return "user not found" if no match in any domain                         |
 |                                                                               |
 |  When user enters login with domain:                                          |
-|  COMPANY\jsmith -> Query Company-AD only                                      |
+|  COMPANY\jsmith -> Query Company-AD only                                     |
 |  jsmith@partner.com -> Query Partner-AD only                                  |
 |                                                                               |
-+==============================================================================+
++===============================================================================+
 ```
 
 ---
@@ -694,58 +694,58 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 
 ```
 +==============================================================================+
-|                    LDAPS CERTIFICATE REQUIREMENTS                             |
+|                    LDAPS CERTIFICATE REQUIREMENTS                            |
 +==============================================================================+
-|                                                                               |
-|  SERVER CERTIFICATE REQUIREMENTS                                              |
-|  ================================                                             |
-|                                                                               |
+|                                                                              |
+|  SERVER CERTIFICATE REQUIREMENTS                                             |
+|  ================================                                            |
+|                                                                              |
 |  The LDAP server (Domain Controller) must have:                              |
-|                                                                               |
+|                                                                              |
 |  +------------------------------------------------------------------------+  |
 |  | Field                | Requirement                                     |  |
-|  +----------------------+-----------------------------------------------+  |
-|  | Subject/CN           | Server FQDN (dc01.corp.company.com)            |  |
-|  | Subject Alt Name     | DNS: dc01.corp.company.com                     |  |
-|  |                      | DNS: corp.company.com (optional, for LB)       |  |
-|  | Key Usage            | Digital Signature, Key Encipherment            |  |
-|  | Extended Key Usage   | Server Authentication (1.3.6.1.5.5.7.3.1)      |  |
-|  | Validity             | Check expiration date                           |  |
-|  | Chain                | Must chain to trusted CA                        |  |
-|  +----------------------+-----------------------------------------------+  |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  ACTIVE DIRECTORY CERTIFICATE SERVICES                                        |
-|  =====================================                                        |
-|                                                                               |
-|  AD CS automatically issues LDAPS certificates to Domain Controllers          |
+|  +----------------------+------------------------------------------------+   |
+|  | Subject/CN           | Server FQDN (dc01.corp.company.com)            |   |
+|  | Subject Alt Name     | DNS: dc01.corp.company.com                     |   |
+|  |                      | DNS: corp.company.com (optional, for LB)       |   |
+|  | Key Usage            | Digital Signature, Key Encipherment            |   |
+|  | Extended Key Usage   | Server Authentication (1.3.6.1.5.5.7.3.1)      |   |
+|  | Validity             | Check expiration date                          |   |
+|  | Chain                | Must chain to trusted CA                       |   |
+|  +----------------------+------------------------------------------------+   |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  ACTIVE DIRECTORY CERTIFICATE SERVICES                                       |
+|  =====================================                                       |
+|                                                                              |
+|  AD CS automatically issues LDAPS certificates to Domain Controllers         |
 |  Template: "Domain Controller" or "Domain Controller Authentication"         |
-|                                                                               |
-|  Verify certificate on DC:                                                    |
-|  +------------------------------------------------------------------------+  |
-|  | # PowerShell - Check DC certificate                                     |  |
-|  | Get-ChildItem Cert:\LocalMachine\My | Where-Object {                    |  |
-|  |   $_.EnhancedKeyUsageList -match "Server Authentication"                |  |
-|  | } | Format-List Subject, NotAfter, Thumbprint                           |  |
-|  +------------------------------------------------------------------------+  |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  COMMON CERTIFICATE ISSUES                                                    |
-|  =========================                                                    |
-|                                                                               |
-|  | Issue                    | Symptom                | Solution             |
-|  +--------------------------+------------------------+----------------------+
-|  | Certificate expired      | TLS handshake fails   | Renew DC certificate |
-|  | Wrong CN/SAN            | Hostname mismatch      | Reissue with correct |
-|  |                         | error                  | names                |
-|  | Self-signed cert        | Trust validation fails| Add to trust store   |
-|  | Missing CA in chain     | Chain verification    | Export full chain    |
-|  |                         | fails                  |                      |
-|  | Weak signature (SHA1)   | May be rejected       | Reissue with SHA256  |
-|  +--------------------------+------------------------+----------------------+
-|                                                                               |
+|                                                                              |
+|  Verify certificate on DC:                                                   |
+|  +-------------------------------------------------------------------------+ |
+|  | # PowerShell - Check DC certificate                                     | |
+|  | Get-ChildItem Cert:\LocalMachine\My | Where-Object {                    | |
+|  |   $_.EnhancedKeyUsageList -match "Server Authentication"                | |
+|  | } | Format-List Subject, NotAfter, Thumbprint                           | |
+|  +-------------------------------------------------------------------------+ |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  COMMON CERTIFICATE ISSUES                                                   |
+|  =========================                                                   |
+|                                                                              |
+|  | Issue                    | Symptom                | Solution              |
+|  +--------------------------+------------------------+----------------------+|
+|  | Certificate expired      | TLS handshake fails    | Renew DC certificate ||
+|  | Wrong CN/SAN             | Hostname mismatch      | Reissue with correct ||
+|  |                          | error                  | names                ||
+|  | Self-signed cert         | Trust validation fails | Add to trust store   ||
+|  | Missing CA in chain      | Chain verification     | Export full chain    ||
+|  |                          | fails                  |                      ||
+|  | Weak signature (SHA1)    | May be rejected        | Reissue with SHA256  ||
+|  +--------------------------+------------------------+----------------------+|
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -867,56 +867,56 @@ done
 
 ```
 +==============================================================================+
-|                    USER SYNCHRONIZATION PROCESS                               |
+|                    USER SYNCHRONIZATION PROCESS                              |
 +==============================================================================+
-|                                                                               |
-|  MANUAL IMPORT                                                                |
-|  =============                                                                |
-|                                                                               |
-|  Via Web UI:                                                                  |
+|                                                                              |
+|  MANUAL IMPORT                                                               |
+|  =============                                                               |
+|                                                                              |
+|  Via Web UI:                                                                 |
 |  1. Navigate to Configuration > LDAP Domains                                 |
 |  2. Select domain > Actions > Import Users                                   |
 |  3. Set import filter (optional)                                             |
 |  4. Preview users to be imported                                             |
 |  5. Select users and confirm import                                          |
-|                                                                               |
-|  Via API:                                                                     |
+|                                                                              |
+|  Via API:                                                                    |
+|  +-------------------------------------------------------------------------+ |
+|  | POST /api/ldapdomains/{domain_id}/import                                | |
+|  |                                                                         | |
+|  | Request:                                                                | |
+|  | {                                                                       | |
+|  |   "filter": "(memberOf=CN=PAM-Users,OU=Groups,DC=corp,DC=company,DC=com)",|
+|  |   "import_mode": "preview"                                              | |
+|  | }                                                                       | |
+|  |                                                                         | |
+|  | Response:                                                               | |
+|  | {                                                                       | |
+|  |   "users_found": 150,                                                   | |
+|  |   "users_new": 45,                                                      | |
+|  |   "users_existing": 105,                                                | |
+|  |   "preview": [                                                          | |
+|  |     {"login": "jsmith", "display_name": "John Smith", "action": "create"},|
+|  |     {"login": "alee", "display_name": "Alice Lee", "action": "update"}  | |
+|  |   ]                                                                     | |
+|  | }                                                                       | |
 |  +------------------------------------------------------------------------+  |
-|  | POST /api/ldapdomains/{domain_id}/import                                |  |
-|  |                                                                         |  |
-|  | Request:                                                                |  |
-|  | {                                                                       |  |
-|  |   "filter": "(memberOf=CN=PAM-Users,OU=Groups,DC=corp,DC=company,DC=com)",
-|  |   "import_mode": "preview"                                              |  |
-|  | }                                                                       |  |
-|  |                                                                         |  |
-|  | Response:                                                               |  |
-|  | {                                                                       |  |
-|  |   "users_found": 150,                                                   |  |
-|  |   "users_new": 45,                                                      |  |
-|  |   "users_existing": 105,                                                |  |
-|  |   "preview": [                                                          |  |
-|  |     {"login": "jsmith", "display_name": "John Smith", "action": "create"},
-|  |     {"login": "alee", "display_name": "Alice Lee", "action": "update"} |  |
-|  |   ]                                                                     |  |
-|  | }                                                                       |  |
+|                                                                              |
+|  Via CLI:                                                                    |
 |  +------------------------------------------------------------------------+  |
-|                                                                               |
-|  Via CLI:                                                                     |
+|  | # Preview import                                                       |  |
+|  | wabadmin ldap import --domain Corporate-AD --preview                   |  |
+|  |                                                                        |  |
+|  | # Import all users from specific group                                 |  |
+|  | wabadmin ldap import --domain Corporate-AD \                           |  |
+|  |   --filter "(memberOf=CN=PAM-Users,OU=Groups,DC=corp,DC=company,DC=com)"| |
+|  |                                                                        |  |
+|  | # Import with automatic profile assignment                             |  |
+|  | wabadmin ldap import --domain Corporate-AD \                           |  |
+|  |   --default-profile "user" \                                           |  |
+|  |   --group-mapping-file /etc/wallix/ldap-group-mapping.json             |  |
 |  +------------------------------------------------------------------------+  |
-|  | # Preview import                                                        |  |
-|  | wabadmin ldap import --domain Corporate-AD --preview                    |  |
-|  |                                                                         |  |
-|  | # Import all users from specific group                                  |  |
-|  | wabadmin ldap import --domain Corporate-AD \                            |  |
-|  |   --filter "(memberOf=CN=PAM-Users,OU=Groups,DC=corp,DC=company,DC=com)"|  |
-|  |                                                                         |  |
-|  | # Import with automatic profile assignment                              |  |
-|  | wabadmin ldap import --domain Corporate-AD \                            |  |
-|  |   --default-profile "user" \                                            |  |
-|  |   --group-mapping-file /etc/wallix/ldap-group-mapping.json              |  |
-|  +------------------------------------------------------------------------+  |
-|                                                                               |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -970,12 +970,12 @@ done
 
 ```
 +==============================================================================+
-|                    SYNC CONFLICT RESOLUTION                                   |
+|                    SYNC CONFLICT RESOLUTION                                  |
 +==============================================================================+
-|                                                                               |
-|  CONFLICT TYPES AND RESOLUTION                                                |
-|  =============================                                                |
-|                                                                               |
+|                                                                              |
+|  CONFLICT TYPES AND RESOLUTION                                               |
+|  =============================                                               |
+|                                                                              |
 |  +------------------------------------------------------------------------+  |
 |  | Conflict Type         | Default Action    | Configurable Options       |  |
 |  +-----------------------+-------------------+----------------------------+  |
@@ -985,39 +985,39 @@ done
 |  | Email conflict        | Skip email        | Skip, Overwrite, Suffix    |  |
 |  | Group name conflict   | Rename new        | Rename, Merge, Skip        |  |
 |  +-----------------------+-------------------+----------------------------+  |
-|                                                                               |
-|  Configuration:                                                               |
+|                                                                              |
+|  Configuration:                                                              |
 |  +------------------------------------------------------------------------+  |
-|  | {                                                                       |  |
-|  |   "conflict_resolution": {                                              |  |
-|  |     "user_exists": "update",                                            |  |
-|  |     "user_deleted_in_ldap": "disable",                                  |  |
-|  |     "login_conflict": "keep_existing",                                  |  |
-|  |     "preserve_local_changes": true,                                     |  |
-|  |     "protected_attributes": ["profile", "groups"]                       |  |
-|  |   }                                                                     |  |
-|  | }                                                                       |  |
+|  | {                                                                      |  |
+|  |   "conflict_resolution": {                                             |  |
+|  |     "user_exists": "update",                                           |  |
+|  |     "user_deleted_in_ldap": "disable",                                 |  |
+|  |     "login_conflict": "keep_existing",                                 |  |
+|  |     "preserve_local_changes": true,                                    |  |
+|  |     "protected_attributes": ["profile", "groups"]                      |  |
+|  |   }                                                                    |  |
+|  | }                                                                      |  |
 |  +------------------------------------------------------------------------+  |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  EXAMPLE SCENARIO                                                             |
-|  ================                                                             |
-|                                                                               |
-|  User "jsmith" in LDAP:                                                       |
-|    displayName: John Smith                                                    |
-|    department: Engineering                                                    |
-|                                                                               |
-|  User "jsmith" in WALLIX (modified locally):                                  |
-|    display_name: John A. Smith                                                |
-|    department: IT                                                             |
-|    profile: linux-admin (locally assigned)                                    |
-|                                                                               |
-|  With "update" + "preserve_local_changes":                                    |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  EXAMPLE SCENARIO                                                            |
+|  ================                                                            |
+|                                                                              |
+|  User "jsmith" in LDAP:                                                      |
+|    displayName: John Smith                                                   |
+|    department: Engineering                                                   |
+|                                                                              |
+|  User "jsmith" in WALLIX (modified locally):                                 |
+|    display_name: John A. Smith                                               |
+|    department: IT                                                            |
+|    profile: linux-admin (locally assigned)                                   |
+|                                                                              |
+|  With "update" + "preserve_local_changes":                                   |
 |    Result: display_name updated to "John Smith"                              |
-|            department updated to "Engineering"                                |
-|            profile preserved as "linux-admin"                                 |
-|                                                                               |
+|            department updated to "Engineering"                               |
+|            profile preserved as "linux-admin"                                |
+|                                                                              |
 +==============================================================================+
 ```
 
@@ -1064,61 +1064,61 @@ done
 
 ```
 +==============================================================================+
-|                    DYNAMIC GROUP MEMBERSHIP                                   |
+|                    DYNAMIC GROUP MEMBERSHIP                                  |
 +==============================================================================+
-|                                                                               |
-|  WALLIX USER GROUP ASSIGNMENT                                                 |
-|  ============================                                                 |
-|                                                                               |
+|                                                                              |
+|  WALLIX USER GROUP ASSIGNMENT                                                |
+|  ============================                                                |
+|                                                                              |
 |  Option 1: LDAP Group to WALLIX Group Mapping                                |
-|                                                                               |
+|                                                                              |
 |  +------------------------------------------------------------------------+  |
-|  | {                                                                       |  |
-|  |   "group_mappings": [                                                   |  |
-|  |     {                                                                   |  |
-|  |       "ldap_group": "CN=Linux-Admins,OU=Groups,DC=corp,DC=company,DC=com",
-|  |       "wallix_group": "linux-servers-access",                           |  |
-|  |       "auto_membership": true                                           |  |
-|  |     },                                                                  |  |
-|  |     {                                                                   |  |
-|  |       "ldap_group": "CN=DBA-Team,OU=Groups,DC=corp,DC=company,DC=com",  |  |
-|  |       "wallix_group": "database-access",                                |  |
-|  |       "auto_membership": true                                           |  |
-|  |     }                                                                   |  |
-|  |   ]                                                                     |  |
-|  | }                                                                       |  |
+|  | {                                                                      |  |
+|  |   "group_mappings": [                                                  |  |
+|  |     {                                                                  |  |
+|  |       "ldap_group": "CN=Linux-Admins,OU=Groups,DC=corp,DC=company,DC=com",|
+|  |       "wallix_group": "linux-servers-access",                          |  |
+|  |       "auto_membership": true                                          |  |
+|  |     },                                                                 |  |
+|  |     {                                                                  |  |
+|  |       "ldap_group": "CN=DBA-Team,OU=Groups,DC=corp,DC=company,DC=com", |  |
+|  |       "wallix_group": "database-access",                               |  |
+|  |       "auto_membership": true                                          |  |
+|  |     }                                                                  |  |
+|  |   ]                                                                    |  |
+|  | }                                                                      |  |
 |  +------------------------------------------------------------------------+  |
-|                                                                               |
-|  Option 2: Pattern-Based Mapping                                              |
-|                                                                               |
+|                                                                              |
+|  Option 2: Pattern-Based Mapping                                             |
+|                                                                              |
 |  +------------------------------------------------------------------------+  |
-|  | {                                                                       |  |
-|  |   "pattern_mappings": [                                                 |  |
-|  |     {                                                                   |  |
-|  |       "ldap_group_pattern": "CN=PAM-([^,]+),.*",                        |  |
-|  |       "wallix_group_template": "pam-$1",                                |  |
-|  |       "auto_create_groups": true                                        |  |
-|  |     }                                                                   |  |
-|  |   ]                                                                     |  |
-|  | }                                                                       |  |
-|  |                                                                         |  |
-|  | Example:                                                                |  |
+|  | {                                                                      |  |
+|  |   "pattern_mappings": [                                                |  |
+|  |     {                                                                  |  |
+|  |       "ldap_group_pattern": "CN=PAM-([^,]+),.*",                       |  |
+|  |       "wallix_group_template": "pam-$1",                               |  |
+|  |       "auto_create_groups": true                                       |  |
+|  |     }                                                                  |  |
+|  |   ]                                                                    |  |
+|  | }                                                                      |  |
+|  |                                                                        |  |
+|  | Example:                                                               |  |
 |  | LDAP: CN=PAM-Linux-Servers,OU=Groups,...                               |  |
 |  | WALLIX: pam-Linux-Servers (auto-created)                               |  |
 |  +------------------------------------------------------------------------+  |
-|                                                                               |
-|  ---------------------------------------------------------------------------  |
-|                                                                               |
-|  REAL-TIME VS SCHEDULED                                                       |
-|  ======================                                                       |
-|                                                                               |
-|  | Mode        | Group membership updated...                              |
-|  +-------------+------------------------------------------------------------+
-|  | Real-time   | At each user login (query LDAP memberOf)                  |
-|  | Scheduled   | During sync jobs only                                     |
-|  | Hybrid      | Scheduled sync + real-time verification at login          |
-|  +-------------+------------------------------------------------------------+
-|                                                                               |
+|                                                                              |
+|  --------------------------------------------------------------------------- |
+|                                                                              |
+|  REAL-TIME VS SCHEDULED                                                      |
+|  ======================                                                      |
+|                                                                              |
+|  | Mode        | Group membership updated...                                 |
+|  +-------------+-----------------------------------------------------------+ |
+|  | Real-time   | At each user login (query LDAP memberOf)                  | |
+|  | Scheduled   | During sync jobs only                                     | |
+|  | Hybrid      | Scheduled sync + real-time verification at login          | |
+|  +-------------+-----------------------------------------------------------+ |
+|                                                                              |
 +==============================================================================+
 ```
 
