@@ -1,8 +1,11 @@
-# 01 - Discovery & Assessment
+# Discovery & Assessment
 
 ## Client Environment Questionnaire
 
-Use this questionnaire during the first meeting (kickoff or pre-sales) to understand the client's current state and design the right AD + MFA integration. Fill it in with the client, not in isolation -- gaps here become problems in production.
+This questionnaire is completed jointly with the client during the kickoff or
+pre-sales meeting. Its purpose is to understand the current state of the
+environment and design an AD and MFA integration that is accurate, complete,
+and fit for production from day one.
 
 ---
 
@@ -12,8 +15,8 @@ Use this questionnaire during the first meeting (kickoff or pre-sales) to unders
 Company Name:           ____________________________
 Industry:               ____________________________
 Number of employees:    ____________________________
-Number of PAM users:    ____________________________ (who will access WALLIX)
-Geographic sites:       ____________________________ (count + locations)
+Number of PAM users:    ____________________________ (users who will access WALLIX)
+Geographic sites:       ____________________________ (count and locations)
 Compliance frameworks:  [ ] ISO 27001  [ ] SOC 2  [ ] PCI-DSS  [ ] NIS2
                         [ ] GDPR  [ ] NIST 800-53  [ ] HIPAA  [ ] Other: ____
 ```
@@ -25,442 +28,473 @@ Compliance frameworks:  [ ] ISO 27001  [ ] SOC 2  [ ] PCI-DSS  [ ] NIS2
 ### 2.1 Domain Structure
 
 ```
-+==============================================================================+
-|  ACTIVE DIRECTORY -- CURRENT STATE                                           |
-+==============================================================================+
-|                                                                              |
-|  Domain architecture:                                                        |
-|  [ ] Single domain, single forest                                            |
-|  [ ] Multiple domains, single forest                                         |
-|  [ ] Multiple forests with trusts                                            |
-|  [ ] Azure AD / Entra ID hybrid                                              |
-|  [ ] Pure cloud (no on-prem AD)                                              |
-|                                                                              |
-|  Domain FQDN(s):                                                             |
-|    1. ____________________________                                           |
-|    2. ____________________________                                           |
-|    3. ____________________________                                           |
-|                                                                              |
-|  Forest functional level:  ____________________________                      |
-|  Domain functional level:  ____________________________                      |
-|                                                                              |
-|  Domain Controllers:                                                         |
-|    DC count per site:      ____________________________                      |
-|    OS version:             ____________________________                      |
-|    Virtualized?            [ ] Yes  [ ] No  [ ] Mixed                        |
-|                                                                              |
-+==============================================================================+
++===============================================================================+
+|  ACTIVE DIRECTORY -- CURRENT STATE                                            |
++===============================================================================+
+|                                                                               |
+|  Domain architecture:                                                         |
+|  [ ] Single domain, single forest                                             |
+|  [ ] Multiple domains, single forest                                          |
+|  [ ] Multiple forests with trusts                                             |
+|  [ ] Azure AD / Entra ID hybrid                                               |
+|  [ ] Pure cloud (no on-prem AD)                                               |
+|                                                                               |
+|  Domain FQDN(s):                                                              |
+|    1. ____________________________                                            |
+|    2. ____________________________                                            |
+|    3. ____________________________                                            |
+|                                                                               |
+|  Forest functional level:  ____________________________                       |
+|  Domain functional level:  ____________________________                       |
+|                                                                               |
+|  Domain Controllers:                                                          |
+|    DC count per site:      ____________________________                       |
+|    OS version:             ____________________________                       |
+|    Virtualized?            [ ] Yes  [ ] No  [ ] Mixed                         |
+|                                                                               |
++===============================================================================+
 ```
 
-### 2.2 Critical Questions to Ask
+### 2.2 Technical Readiness Questions
 
-| # | Question | Why It Matters | Red Flag Answers |
-|---|----------|----------------|------------------|
-| 1 | Is LDAPS (port 636) enabled on all DCs? | WALLIX and FortiAuth need encrypted LDAP. Without it, credentials travel in cleartext | "We only use LDAP on 389" -- must deploy AD CS first |
-| 2 | Do you have an internal Certificate Authority (AD CS)? | Required for LDAPS certificates on DCs | "No CA" -- adds 1-2 days to project for AD CS deployment |
-| 3 | How many OUs hold users that need PAM access? | Determines Base DN and filter complexity | "Users are everywhere" -- needs careful filter design |
-| 4 | Do you use nested groups? | Affects WALLIX sync performance and group mapping | Deep nesting (5+ levels) requires LDAP_MATCHING_RULE_IN_CHAIN |
-| 5 | What is your password policy? | Impacts service account lifecycle | Short expiry (30-60 days) on all accounts -- service accounts need exemption |
-| 6 | Who manages AD? Same team as PAM? | Determines coordination effort | Different teams in different countries -- plan extra lead time |
-| 7 | Do you have existing service accounts for integrations? | May reuse or need new ones | "We use Domain Admin for everything" -- security risk, must create dedicated accounts |
-| 8 | Is AD replicated across all sites? | Affects LDAP failover and latency | "Only one DC" -- single point of failure, recommend adding DC |
+| # | Question | Why It Matters | Risk Indicator |
+|---|----------|----------------|----------------|
+| 1 | Is LDAPS (port 636) enabled on all DCs? | WALLIX and FortiAuth require encrypted LDAP. Without it, credentials are transmitted in cleartext. | Answer: "We only use port 389" — requires AD CS deployment before integration. |
+| 2 | Do you have an internal Certificate Authority (AD CS)? | Required to issue LDAPS certificates on Domain Controllers. | No CA in place adds 1–2 days for AD CS deployment. |
+| 3 | How many OUs contain users who need PAM access? | Determines Base DN scope and LDAP filter complexity. | "Users are spread across many OUs" — requires careful filter design. |
+| 4 | Do you use nested security groups? | Affects WALLIX sync performance and group mapping accuracy. | Nesting deeper than 5 levels requires `LDAP_MATCHING_RULE_IN_CHAIN`. |
+| 5 | What is your password policy for service accounts? | Determines service account lifecycle requirements. | Short expiry (30–60 days) on all accounts — PAM service accounts require a dedicated policy. |
+| 6 | Which team manages Active Directory? Is it the same team as PAM? | Determines coordination effort and lead times. | Different teams in different locations — plan additional lead time. |
+| 7 | Do existing service accounts handle third-party integrations? | May allow reuse; otherwise new accounts must be created. | "We use Domain Admin for integrations" — must create dedicated, least-privilege accounts. |
+| 8 | Is AD replicated across all sites? | Affects LDAP failover resilience and authentication latency. | Single DC — single point of failure. Recommend adding a secondary DC. |
+| 9 | Does each site have at least one local Domain Controller? | The WALLIX HA pair at each site authenticates against local DCs (Phase 1 has no WAN dependency). Without a local DC, password validation traverses the WAN and becomes a single point of failure. | "All DCs are in the central datacenter" — remote site authentication breaks on WAN failure. |
 
 ### 2.3 AD Readiness Scoring
 
-Score each item 0 (not ready) to 2 (ready). Total < 10 = significant prep needed.
+Score each item 0 (not ready) to 2 (ready). A total below 10 indicates
+significant preparatory work is required before integration can begin.
 
-| Item | 0 (Not Ready) | 1 (Partial) | 2 (Ready) | Score |
+| Item | 0 — Not Ready | 1 — Partial | 2 — Ready | Score |
 |------|---------------|-------------|-----------|-------|
 | LDAPS | Not enabled | Enabled on some DCs | Enabled on all DCs | __ |
 | AD CS / PKI | No CA deployed | Self-signed only | Enterprise CA with auto-enrollment | __ |
-| Service accounts | Using shared/admin accounts | Dedicated but overprivileged | Dedicated, least-privilege, no-expire | __ |
-| OU structure | Flat / disorganized | Some structure | Clean OU hierarchy with PAM-specific OUs | __ |
+| Service accounts | Shared or admin accounts | Dedicated but over-privileged | Dedicated, least-privilege, non-expiring | __ |
+| OU structure | Flat or disorganized | Some structure | Clean OU hierarchy with PAM-specific OUs | __ |
 | Group strategy | No security groups for PAM | Some groups exist | Role-based groups ready (Admin/Operator/Auditor) | __ |
-| DNS | Inconsistent / manual entries | Partial DNS records | Full forward+reverse DNS for all components | __ |
-| NTP | Not configured / unknown | Configured but not verified | All components synced, drift < 5s verified | __ |
-| DC redundancy | Single DC | 2 DCs same site | 2+ DCs across sites | __ |
-| **TOTAL** | | | | **__/16** |
+| DNS | Inconsistent or manual | Partial DNS records | Full forward and reverse DNS for all components | __ |
+| NTP | Not configured | Configured but unverified | All components synchronized, drift verified < 5 s | __ |
+| DC redundancy | Single DC | Two DCs, same site | Two or more DCs across sites | __ |
+| Local DC per site | DCs only at central site | Some sites have local DCs | Every site has at least one local DC | __ |
+| **TOTAL** | | | | **__ / 18** |
 
 **Interpretation:**
-- **14-16:** Ready to proceed. Start Phase 1 immediately.
-- **10-13:** Minor gaps. Can start while remediating in parallel.
-- **6-9:** Significant prep needed. Dedicate 1-2 weeks for AD readiness before integration.
-- **0-5:** Major infrastructure gaps. AD environment needs stabilization first.
+
+| Score | Assessment |
+|-------|------------|
+| 16–18 | Ready to proceed. Phase 1 can begin immediately. |
+| 11–15 | Minor gaps. Integration can start with parallel remediation. |
+| 7–10 | Significant preparation required. Allow 1–2 weeks for AD readiness. |
+| 0–6 | Major infrastructure gaps. AD environment must be stabilized first. |
 
 ---
 
 ## 3. Current Authentication State
 
-### 3.1 How Do Users Access Systems Today?
+### 3.1 How Do Privileged Users Access Systems Today?
 
 ```
-+==============================================================================+
-|  CURRENT AUTHENTICATION -- AS-IS                                             |
-+==============================================================================+
-|                                                                              |
-|  How do privileged users access servers today?                               |
-|  [ ] Direct SSH/RDP with personal accounts                                   |
-|  [ ] Direct SSH/RDP with shared accounts (root, Administrator)               |
-|  [ ] VPN + direct access                                                     |
-|  [ ] Jump server / bastion (non-WALLIX)                                      |
-|  [ ] WALLIX Bastion already deployed (upgrading/adding MFA)                  |
-|  [ ] Other: ____________________________                                     |
-|                                                                              |
-|  Current MFA status:                                                         |
-|  [ ] No MFA anywhere                                                         |
-|  [ ] MFA on VPN only                                                         |
-|  [ ] MFA on some systems (describe): ____________________________            |
-|  [ ] MFA on WALLIX but different provider                                    |
-|  [ ] FortiToken already in use (for FortiGate VPN, etc.)                     |
-|                                                                              |
-|  Existing MFA provider (if any):                                             |
-|  [ ] None                                                                    |
-|  [ ] Microsoft Authenticator / Azure MFA                                     |
-|  [ ] Duo Security                                                            |
-|  [ ] RSA SecurID                                                             |
-|  [ ] FortiToken (already!)                                                   |
-|  [ ] YubiKey / FIDO2                                                         |
-|  [ ] Other: ____________________________                                     |
-|                                                                              |
-+==============================================================================+
++===============================================================================+
+|  CURRENT AUTHENTICATION -- AS-IS                                              |
++===============================================================================+
+|                                                                               |
+|  Access method:                                                               |
+|  [ ] Direct SSH/RDP with personal accounts                                    |
+|  [ ] Direct SSH/RDP with shared accounts (root, Administrator)                |
+|  [ ] VPN and direct access                                                    |
+|  [ ] Jump server / non-WALLIX bastion                                         |
+|  [ ] WALLIX Bastion already deployed (upgrade or MFA addition)                |
+|  [ ] Other: ____________________________                                      |
+|                                                                               |
+|  Current MFA status:                                                          |
+|  [ ] No MFA in use                                                            |
+|  [ ] MFA on VPN only                                                          |
+|  [ ] MFA on selected systems (describe): ____________________________         |
+|  [ ] MFA on WALLIX with a different provider                                  |
+|  [ ] FortiToken already deployed (FortiGate VPN, etc.)                        |
+|                                                                               |
+|  Existing MFA provider (if any):                                              |
+|  [ ] None                                                                     |
+|  [ ] Microsoft Authenticator / Azure MFA                                      |
+|  [ ] Duo Security                                                             |
+|  [ ] RSA SecurID                                                              |
+|  [ ] FortiToken (already in use)                                              |
+|  [ ] YubiKey / FIDO2                                                          |
+|  [ ] Other: ____________________________                                      |
+|                                                                               |
++===============================================================================+
 ```
 
-> **Tip:** If the client already uses FortiToken for VPN (FortiGate), the same FortiAuthenticator appliance and tokens can serve WALLIX. This is a major selling point -- no new app for users, no new licenses for existing tokens.
+**Note:** If the client already uses FortiToken for VPN (FortiGate), the same
+FortiAuthenticator appliance and tokens can serve WALLIX Bastion. This means
+no new application for users, no new licenses for existing tokens, and a
+significantly shorter deployment timeline.
 
-### 3.2 Pain Points (Ask These Directly)
+### 3.2 Project Driver Questions
 
-Use these questions to understand motivation and urgency:
+Understanding the motivation behind the engagement shapes priorities,
+timelines, and the level of urgency to bring to each conversation.
 
-| Question | What You Learn |
-|----------|---------------|
-| "What triggered this project -- audit finding, incident, or initiative?" | Urgency and budget. Audit = hard deadline. Incident = executive attention. Initiative = flexible timeline. |
-| "Have you had a security incident related to privileged access?" | If yes, sets the tone for the entire engagement. They want reassurance. |
-| "What keeps you up at night about your current setup?" | Their real priorities (may differ from the RFP). |
-| "Who will resist this change the most?" | Identifies where to invest change management effort. |
-| "What would success look like 6 months after go-live?" | Aligns expectations early. |
+| Question | What It Reveals |
+|----------|----------------|
+| "What triggered this project — an audit finding, a security incident, or a strategic initiative?" | Urgency and budget. Audit = hard deadline. Incident = executive attention. Initiative = flexible timeline. |
+| "Has the organization experienced a security incident related to privileged access?" | Sets the tone. A prior incident means reassurance and evidence of control are paramount. |
+| "What is your primary concern about the current access model?" | Identifies real priorities, which may differ from the written requirements. |
+| "Which teams are most likely to have concerns about this change?" | Identifies where change management effort is most needed. |
+| "What does success look like six months after go-live?" | Aligns expectations before any technical work begins. |
 
 ---
 
 ## 4. Network and Infrastructure
 
-### 4.1 Network Assessment
+### 4.1 Network Topology
 
 ```
-+==============================================================================+
-|  NETWORK TOPOLOGY -- CONNECTIVITY MAP                                        |
-+==============================================================================+
-|                                                                              |
-|  How are sites connected?                                                    |
-|  [ ] Single site (all components co-located)                                 |
-|  [ ] Multiple sites with MPLS / private WAN                                  |
-|  [ ] Multiple sites with site-to-site VPN                                    |
-|  [ ] Multiple sites with SD-WAN                                              |
-|  [ ] Hybrid (cloud + on-prem)                                                |
-|                                                                              |
-|  Network segmentation:                                                       |
-|  [ ] Flat network (no VLANs)                                                 |
-|  [ ] Basic VLANs (servers / users / management)                              |
-|  [ ] Full segmentation (DMZ, management, server, user zones)                 |
-|  [ ] Microsegmentation / zero trust network                                  |
-|                                                                              |
-|  Firewall vendor:     ____________________________                           |
-|  Change process:      [ ] Self-managed  [ ] Managed service  [ ] Committee   |
-|  Change lead time:    ____________________________  (days/weeks for rules)   |
-|                                                                              |
-|  IMPORTANT: Firewall change lead time is the #1 source of project delays.    |
-|  If the client needs 2 weeks for a firewall change request, plan accordingly.|
-|                                                                              |
-+==============================================================================+
++===============================================================================+
+|  NETWORK TOPOLOGY -- CONNECTIVITY MAP                                         |
++===============================================================================+
+|                                                                               |
+|  Site connectivity:                                                           |
+|  [ ] Single site (all components co-located)                                  |
+|  [x] Multiple sites via MPLS / private WAN  <-- confirmed: 5 sites on MPLS   |
+|  [ ] Multiple sites via site-to-site VPN                                      |
+|  [ ] Multiple sites via SD-WAN                                                |
+|  [ ] Hybrid (cloud + on-premises)                                             |
+|                                                                               |
+|  Network segmentation:                                                        |
+|  [ ] Flat network (no VLANs)                                                  |
+|  [ ] Basic VLANs (servers / users / management)                               |
+|  [ ] Full segmentation (DMZ, management, server, user zones)                  |
+|  [ ] Microsegmentation / zero trust                                           |
+|                                                                               |
+|  Firewall vendor:     ____________________________                            |
+|  Change process:      [ ] Self-managed  [ ] Managed service  [ ] Committee    |
+|  Change lead time:    ____________________________  (days / weeks per rule)   |
+|                                                                               |
+|  Note: Firewall change lead time is the single most common source of          |
+|  project delays. This must be established and planned for in week 1.          |
+|                                                                               |
++===============================================================================+
 ```
 
-### 4.2 Firewall Change Lead Time Matrix
+### 4.2 Firewall Change Lead Time
 
-| Client Answer | Impact | Action |
-|---------------|--------|--------|
-| "I can do it myself in 5 minutes" | None | Standard timeline |
-| "We submit a ticket, takes 1-3 days" | Minor | Submit rules in Phase 0, before any config work |
-| "We have a weekly CAB meeting" | Moderate | Submit rules 2 weeks before planned integration |
-| "Our firewall is managed by an outsourced SOC" | Major | Start firewall requests in the very first week |
-| "We need a formal change request with risk assessment" | Critical | Treat firewall rules as a separate work stream |
+| Client Response | Project Impact | Required Action |
+|----------------|----------------|-----------------|
+| "I can apply rules immediately" | None | Standard timeline |
+| "We submit a ticket, 1–3 days" | Minor | Submit rules in Phase 0, before any configuration work |
+| "We have a weekly CAB meeting" | Moderate | Submit rules at least 2 weeks before planned integration |
+| "Our firewall is managed by an outsourced SOC" | Significant | Initiate firewall requests in the very first week |
+| "We require a formal change request with risk assessment" | Critical | Treat firewall rules as a dedicated workstream from day 1 |
 
 ---
 
 ## 5. FortiAuthenticator Assessment
 
+### 5.0 Access Manager Coordination
+
+The WALLIX Access Managers are not in scope for this engagement — they are
+managed by a separate team. However, both AM nodes connect to every site's
+Bastion HA pair and will send RADIUS authentication requests to
+FortiAuthenticator. Their IPs must be registered as RADIUS clients.
+
+```
+Access Manager dependency checklist:
+
+[ ] Obtain IP addresses of both AM nodes from the AM team
+[ ] Confirm per-site AM-to-Bastion connectivity timeline
+[ ] Register both AM IPs as RADIUS clients on FortiAuth
+[ ] Validate MFA for an AM-brokered session before go-live
+[ ] Document the AM team contact for any future IP changes
+```
+
 ### 5.1 Existing Fortinet Infrastructure
 
 ```
-+==============================================================================+
-|  FORTINET ECOSYSTEM -- CURRENT STATE                                         |
-+==============================================================================+
-|                                                                              |
-|  Existing Fortinet products:                                                 |
-|  [ ] FortiGate (firewall)                                                    |
-|  [ ] FortiAuthenticator (already deployed!)                                  |
-|  [ ] FortiToken Mobile (already in use!)                                     |
-|  [ ] FortiToken Hardware                                                     |
-|  [ ] FortiAnalyzer                                                           |
-|  [ ] FortiManager                                                            |
-|  [ ] FortiSIEM                                                               |
-|  [ ] None -- Fortinet is new                                                 |
-|                                                                              |
-|  If FortiAuthenticator exists:                                               |
-|  Model:               ____________________________                           |
-|  Firmware version:     ____________________________                          |
-|  Current purpose:      ____________________________                          |
-|  Token licenses used:  ____ / ____ (used/total)                              |
-|  HA configured?        [ ] Yes  [ ] No                                       |
-|  Available capacity?   [ ] Yes  [ ] Need more licenses                       |
-|                                                                              |
-+==============================================================================+
++===============================================================================+
+|  FORTINET ECOSYSTEM -- CURRENT STATE                                          |
++===============================================================================+
+|                                                                               |
+|  Deployed Fortinet products:                                                  |
+|  [ ] FortiGate (firewall)                                                     |
+|  [ ] FortiAuthenticator (already deployed)                                    |
+|  [ ] FortiToken Mobile (already in use)                                       |
+|  [ ] FortiToken Hardware                                                      |
+|  [ ] FortiAnalyzer                                                            |
+|  [ ] FortiManager                                                             |
+|  [ ] FortiSIEM                                                                |
+|  [ ] None — Fortinet is new to this environment                               |
+|                                                                               |
+|  If FortiAuthenticator is already deployed:                                   |
+|  Model:               ____________________________                            |
+|  Firmware version:    ____________________________                            |
+|  Current purpose:     ____________________________                            |
+|  Token licenses:      ____ / ____ (used / total)                              |
+|  HA configured?       [ ] Yes  [ ] No                                         |
+|  Available capacity?  [ ] Yes  [ ] No — additional licenses required          |
+|                                                                               |
++===============================================================================+
 ```
 
-> **Key insight:** If the client already has FortiAuthenticator for VPN MFA, you can reuse it for WALLIX. This means:
-> - Same FortiToken app on user phones (no new app to install)
-> - Same tokens (no re-enrollment)
-> - Just add WALLIX Bastion nodes as new RADIUS clients
-> - Create a separate RADIUS policy with First Factor = None
-> - **Saves weeks of deployment time and user training**
+When the client already has FortiAuthenticator deployed for VPN MFA, the scope
+and timeline reduce significantly:
 
-### 5.2 FortiAuthenticator Sizing
+- The same FortiToken Mobile app is used for both VPN and WALLIX
+- Existing tokens require no re-enrollment
+- WALLIX Bastion nodes are added as new RADIUS clients on the existing appliance
+- A dedicated RADIUS policy is created with First Factor set to None
+- **Typical result: 2–3 days of integration work instead of 2–3 weeks**
+
+### 5.2 FortiAuthenticator Sizing Reference
 
 | User Count | Recommended Model | Token Licenses | HA Recommended? |
 |------------|-------------------|----------------|-----------------|
-| 1-100 | FortiAuthenticator VM or 200F | 1x 100-pack | Optional |
-| 100-500 | FortiAuthenticator 300F | Multiple 100-packs | Yes |
-| 500-2000 | FortiAuthenticator 400F | 1000-pack(s) | Yes |
-| 2000+ | FortiAuthenticator 3000F or VM cluster | Bulk | Mandatory |
+| 1–100 | FAC-VM or 200F | 1 × 100-pack | Optional |
+| 100–500 | FAC-300F | Multiple 100-packs | Yes |
+| 500–2,000 | FAC-400F | 1,000-pack | Yes |
+| 2,000+ | FAC-3000F or VM cluster | Bulk packs | Mandatory |
 
-### 5.3 Licensing Conversation
-
-Key points for the client:
+### 5.3 Token Licensing Summary for Client Conversations
 
 ```
-FORTITOKEN LICENSING -- WHAT TO TELL THE CLIENT
-================================================
+FORTITOKEN LICENSING -- KEY POINTS
+====================================
 
-1. FortiToken Mobile licenses are PERPETUAL (one-time cost)
-   - No annual renewal for the tokens themselves
-   - Users keep the same token forever (until deprovisioned)
+1. FortiToken Mobile licenses are PERPETUAL
+   - One-time purchase; no annual renewal per token
+   - Users retain the same token until deprovisioned
 
-2. FortiCare support IS annual
-   - Required for firmware updates
-   - Required for FortiGuard push notification service
-   - Without FortiCare, push stops working -- OTP still works
+2. FortiCare support is annual
+   - Required for firmware updates and push notification service
+   - Without FortiCare, push stops working; OTP continues to function
 
-3. License math:
-   - Buy tokens for active users only, not all AD accounts
-   - Revoked tokens return to the pool (reusable)
-   - Plan 10-15% buffer for growth
+3. License planning
+   - License against active users, not total AD accounts
+   - Revoked tokens return to the pool and are reusable
+   - Plan a 10–15% buffer for growth
 
-4. Cost comparison (use in proposals):
-   - FortiToken Mobile: lower cost per user than RSA, Duo, or Azure MFA
-   - No per-authentication charges (unlike some cloud MFA)
-   - Hardware tokens: higher unit cost + battery replacement every 5 years
+4. Cost positioning
+   - Lower per-user cost than RSA SecurID, Duo, or Azure MFA P2
+   - No per-authentication charges (unlike cloud MFA services)
+   - Hardware tokens carry a higher unit cost and require
+     battery replacement every 5 years
 ```
 
 ---
 
 ## 6. User Impact Assessment
 
-### 6.1 User Population Analysis
+### 6.1 User Population
 
-| User Type | Count | MFA Impact | Training Need |
-|-----------|-------|------------|---------------|
-| IT Administrators | __ | High -- daily use, multiple sessions | Low -- tech savvy |
-| Operators / Engineers | __ | High -- frequent access to targets | Medium |
-| Auditors / Compliance | __ | Medium -- periodic access for reviews | Medium |
-| External contractors | __ | High -- often remote, variable devices | High -- may not have company phone |
-| Service accounts | __ | None -- exempt from MFA | None |
-| Break-glass accounts | __ | Exempt | Must be documented |
+| User Category | Count | MFA Impact | Training Requirement |
+|---------------|-------|------------|----------------------|
+| IT Administrators | __ | High — daily use, multiple concurrent sessions | Low — technically proficient |
+| Operators / Engineers | __ | High — frequent access to target systems | Medium |
+| Auditors / Compliance | __ | Medium — periodic access for reviews | Medium |
+| External contractors | __ | High — often remote, variable devices | High — may not have a company device |
+| Service accounts | __ | None — exempt from MFA | None |
+| Break-glass accounts | __ | Exempt — emergency use only | Must be formally documented |
 
 ### 6.2 User Device Readiness
 
 ```
-+==============================================================================+
-|  USER DEVICE READINESS                                                       |
-+==============================================================================+
-|                                                                              |
-|  FortiToken Mobile requires a smartphone (iOS or Android).                   |
-|                                                                              |
-|  Ask the client:                                                             |
-|                                                                              |
-|  Do all PAM users have company smartphones?                                  |
-|  [ ] Yes -- all users have company-managed phones                            |
-|  [ ] Mostly -- some use personal phones (BYOD)                               |
-|  [ ] Mixed -- some users have no smartphone                                  |
-|  [ ] No -- most users don't have smartphones                                 |
-|                                                                              |
-|  If users lack smartphones:                                                  |
-|  * Hardware tokens (FortiToken 200) as alternative                           |
-|  * Email OTP (less secure, not recommended for privileged access)            |
-|  * Consider: should the company provide phones for PAM users?                |
-|  * Desktop TOTP apps (FortiToken for Windows) as last resort                 |
-|                                                                              |
-|  MDM (Mobile Device Management) in use?                                      |
-|  [ ] Yes: ____________________________                                       |
-|  [ ] No                                                                      |
-|                                                                              |
-|  If MDM: FortiToken Mobile can be pushed via MDM silently.                   |
-|  App Config keys available for managed deployment.                           |
-|                                                                              |
-+==============================================================================+
++===============================================================================+
+|  USER DEVICE READINESS                                                        |
++===============================================================================+
+|                                                                               |
+|  FortiToken Mobile requires a smartphone (iOS or Android).                    |
+|                                                                               |
+|  Do all PAM users have access to a smartphone?                                |
+|  [ ] Yes — all users have company-managed phones                              |
+|  [ ] Mostly — some users use personal devices (BYOD)                          |
+|  [ ] Mixed — a portion of users have no smartphone                            |
+|  [ ] No — most users do not have smartphones                                  |
+|                                                                               |
+|  For users without a smartphone:                                              |
+|  * Hardware tokens (FortiToken 200) are the recommended alternative           |
+|  * Email OTP is available but not recommended for privileged access           |
+|  * Desktop TOTP applications (FortiToken for Windows) as a last resort        |
+|                                                                               |
+|  MDM (Mobile Device Management) in use?                                       |
+|  [ ] Yes: ____________________________                                        |
+|  [ ] No                                                                       |
+|                                                                               |
+|  With MDM: FortiToken Mobile can be silently deployed via App Config.         |
+|                                                                               |
++===============================================================================+
 ```
 
 ### 6.3 Change Management Readiness
 
-| Question | Client Answer | Risk Level |
-|----------|---------------|------------|
-| Have users experienced MFA before? | Yes / No | Low if yes, medium if no |
+| Question | Client Response | Risk Level |
+|----------|----------------|------------|
+| Have users previously used MFA? | Yes / No | Low if yes, medium if no |
 | Is there executive sponsorship for this project? | Yes / No | High risk if no |
-| Is there a communication/training team available? | Yes / No | Medium risk if no |
-| What is the union/works council situation? | N/A / Need approval | High risk if approval needed |
-| Is there a service desk to handle MFA support calls? | Yes / No | High risk if no -- who answers "my token doesn't work"? |
+| Is a communication and training team available? | Yes / No | Medium risk if no |
+| What is the works council or union situation? | N/A / Approval required | High risk if approval is needed before rollout |
+| Is there a service desk team to handle MFA support calls? | Yes / No | High risk if no |
 
 ---
 
 ## 7. Compliance and Audit Drivers
 
-### 7.1 Compliance Requirements Matrix
+### 7.1 Applicable Compliance Frameworks
 
-| Framework | MFA Requirement | Client Applicable? | Impact on Design |
-|-----------|----------------|-------------------|------------------|
+| Framework | MFA Requirement | Applicable? | Design Impact |
+|-----------|----------------|-------------|---------------|
 | ISO 27001 A.8.5 | Secure authentication mechanisms | [ ] Yes [ ] No | MFA satisfies this control |
-| SOC 2 CC6.1 | Logical access with MFA | [ ] Yes [ ] No | Need audit evidence of MFA enforcement |
-| PCI-DSS 8.4.2 | MFA for non-console admin access | [ ] Yes [ ] No | All admin access must go through WALLIX+MFA |
-| NIS2 Art.21 | Multi-factor for critical systems | [ ] Yes [ ] No | MFA on all privileged access |
-| NIST 800-53 IA-2 | MFA for privileged accounts | [ ] Yes [ ] No | Separate factors: knowledge + possession |
-| Internal policy | Company-specific | [ ] Yes [ ] No | Document specific requirements |
+| SOC 2 CC6.1 | Logical access with MFA | [ ] Yes [ ] No | Audit evidence of MFA enforcement required |
+| PCI-DSS 8.4.2 | MFA for all non-console admin access | [ ] Yes [ ] No | All admin access must transit WALLIX + MFA |
+| NIS2 Art. 21 | MFA for critical infrastructure systems | [ ] Yes [ ] No | MFA mandatory on all privileged access paths |
+| NIST 800-53 IA-2 | MFA for privileged accounts | [ ] Yes [ ] No | Separate factors: knowledge and possession |
+| Internal policy | Organization-specific requirements | [ ] Yes [ ] No | Document specific obligations |
 
-### 7.2 Audit Questions to Anticipate
+### 7.2 Audit Evidence Requirements
 
-The auditor will ask these. Prepare the client:
+Clients subject to formal audits will be asked to demonstrate the following.
+Ensure evidence collection is tested and documented before go-live.
 
 ```
-WHAT AUDITORS WILL ASK (AND WHERE TO FIND THE ANSWERS)
-======================================================
+AUDIT EVIDENCE -- WHAT AUDITORS REQUIRE AND WHERE TO FIND IT
+==============================================================
 
-Q: "How do you enforce MFA for privileged access?"
-A: WALLIX Bastion MFA policy -- enforced on Web UI, SSH, RDP, API.
+Q: "How is MFA enforced for privileged access?"
+A: WALLIX Bastion MFA policy — enforced on Web UI, SSH proxy, RDP proxy,
+   and API. No access path exists that bypasses MFA.
    Evidence: wabadmin auth mfa status
 
 Q: "Can a user bypass MFA?"
-A: Only the break-glass account (documented, alerted, logged).
-   All bypasses trigger email to security team.
+A: Only the designated break-glass account, which is monitored and
+   generates an immediate alert to the security team on every use.
    Evidence: wabadmin audit search --type mfa-bypass
 
-Q: "What happens when the MFA provider goes down?"
-A: FortiAuth HA (active-passive). If both fail, break-glass only.
-   Evidence: FortiAuth HA status, failover test documentation
+Q: "What happens if the MFA provider is unavailable?"
+A: FortiAuthenticator is deployed in Active-Passive HA. If both nodes
+   fail, access is limited to the break-glass account only.
+   Evidence: FortiAuth HA configuration, failover test documentation
 
-Q: "How quickly is access revoked when someone leaves?"
-A: Disable in AD = instant LDAP auth block. Revoke token in FortiAuth.
-   Evidence: offboarding procedure + last audit log for departed users
+Q: "How quickly is access revoked when an employee leaves?"
+A: Disabling the account in Active Directory immediately blocks
+   authentication. The FortiToken is revoked in FortiAuthenticator.
+   Evidence: Offboarding procedure documentation, audit log for
+   departed users
 
-Q: "What are the two factors?"
-A: Knowledge (AD password via LDAPS) + Possession (FortiToken on phone).
-   Two separate systems, two separate authentication events.
-   Evidence: WALLIX auth flow documentation
+Q: "What are the two authentication factors?"
+A: Knowledge (AD password validated via LDAPS) and Possession
+   (FortiToken on the user's phone — separate system, separate event).
+   Evidence: WALLIX authentication flow documentation
 
-Q: "Do you have evidence of MFA enforcement over the audit period?"
-A: RADIUS accounting logs + WALLIX session audit logs.
+Q: "Is there evidence of MFA enforcement over the audit period?"
+A: RADIUS accounting logs combined with WALLIX session audit logs.
    Evidence: wabadmin report generate --type mfa-audit --last 90d
 ```
 
 ---
 
-## 8. Risk Assessment
+## 8. Risk Register
 
-### 8.1 Integration Risk Register
+### 8.1 Integration Risks
 
 | Risk | Probability | Impact | Mitigation |
 |------|------------|--------|------------|
-| LDAPS not enabled on DCs | Medium | High -- blocks entire integration | Assess in discovery; deploy AD CS early |
-| Firewall changes delayed | High | High -- no RADIUS/LDAPS connectivity | Submit firewall requests week 1 |
-| Users resist MFA | Medium | Medium -- support overload, complaints | Executive comms, phased rollout, training |
-| NTP not synchronized | Medium | High -- all OTP codes rejected | Verify NTP before any MFA config |
-| FortiAuth undersized | Low | Medium -- performance under load | Size properly; load test before go-live |
-| Service account password expires | Medium | High -- LDAP auth breaks silently | Set to never-expire; monitor; rotate manually |
-| Single DC / single FortiAuth | Varies | High -- SPOF for auth | Recommend HA; size break-glass procedure |
-| Token enrollment incomplete | High | Medium -- users locked out on enforcement day | Track activation %; follow up before deadline |
-| Wrong RADIUS First Factor | Medium | Critical -- breaks all auth | Verify: First Factor = None (WALLIX validates password) |
+| LDAPS not enabled on Domain Controllers | Medium | High — blocks the entire integration | Assess during discovery; deploy AD CS early |
+| Firewall change requests delayed | High | High — no RADIUS or LDAPS connectivity | Submit all firewall requests in week 1 |
+| User resistance to MFA adoption | Medium | Medium — support overload, escalations | Executive sponsorship, phased rollout, pre-training |
+| NTP not synchronized across components | Medium | High — all OTP codes rejected | Verify NTP before any MFA configuration |
+| FortiAuthenticator undersized for load | Low | Medium — performance degradation under peak | Size correctly based on user count; load test before go-live |
+| Service account password expiry | Medium | High — LDAP authentication breaks silently | Configure non-expiring policy; monitor proactively |
+| Single DC or single FortiAuth (no HA) | Varies | High — single point of failure for auth | Recommend HA; document break-glass procedure |
+| Token enrollment not completed before enforcement | High | Medium — users locked out on go-live day | Track activation rate weekly; follow up on stragglers |
+| FortiAuth RADIUS First Factor misconfigured | Medium | Critical — all authentication fails | Verify First Factor = None before any user testing |
 
-### 8.2 Showstopper Checklist
+### 8.2 Mandatory Blockers
 
-If any of these are true, **stop and resolve before proceeding**:
+The following conditions must be resolved before integration work proceeds.
 
 ```
-+==============================================================================+
-|  SHOWSTOPPERS -- MUST RESOLVE BEFORE INTEGRATION                             |
-+==============================================================================+
-|                                                                              |
-|  [ ] No LDAPS on ANY Domain Controller                                       |
-|      --> Deploy AD CS and configure DC certificates first                    |
-|                                                                              |
-|  [ ] No DNS resolution between components                                    |
-|      --> DNS must work before anything else                                  |
-|                                                                              |
-|  [ ] NTP not configured / clocks off by > 30 seconds                         |
-|      --> OTP will fail 100% of the time. Fix NTP first.                      |
-|                                                                              |
-|  [ ] No firewall change process and rules not in place                       |
-|      --> Cannot test anything without network connectivity                   |
-|                                                                              |
-|  [ ] Client has no smartphones AND refuses hardware tokens                   |
-|      --> No MFA factor available. Redesign required.                         |
-|                                                                              |
-|  [ ] No executive sponsor and strong user resistance expected                |
-|      --> Project will stall at enforcement phase. Get sponsorship first.     |
-|                                                                              |
-+==============================================================================+
++===============================================================================+
+|  BLOCKERS -- RESOLVE BEFORE PROCEEDING                                        |
++===============================================================================+
+|                                                                               |
+|  [ ] LDAPS is not enabled on any Domain Controller                            |
+|      Resolution: Deploy AD CS and configure DC certificates                   |
+|                                                                               |
+|  [ ] DNS resolution is not functioning between components                     |
+|      Resolution: DNS must be verified and working before all else             |
+|                                                                               |
+|  [ ] NTP is not configured or clock drift exceeds 30 seconds                  |
+|      Resolution: OTP validation fails at 100%. Fix NTP before                 |
+|      any MFA configuration begins.                                            |
+|                                                                               |
+|  [ ] Firewall rules are not in place and no change process exists             |
+|      Resolution: No connectivity testing is possible without rules            |
+|                                                                               |
+|  [ ] Users have no smartphones and hardware tokens have been declined         |
+|      Resolution: No second factor is available. Architecture must             |
+|      be redesigned.                                                           |
+|                                                                               |
+|  [ ] No executive sponsor and significant user resistance is expected         |
+|      Resolution: Project will stall at enforcement. Secure sponsorship        |
+|      before proceeding.                                                       |
+|                                                                               |
++===============================================================================+
 ```
 
 ---
 
-## 9. Assessment Deliverable Template
+## 9. Assessment Deliverable
 
-After the discovery session, deliver this summary to the client:
+Deliver this summary to the client following the discovery session.
 
 ```
 ENVIRONMENT ASSESSMENT SUMMARY
-==============================
+================================
 
 Client:          [Company Name]
 Date:            [Date]
-Assessor:        [Your Name]
+Consultant:      [Name]
 Version:         1.0
 
 CURRENT STATE
 -------------
 AD Architecture:     [Single domain / Multi-domain / Hybrid]
 LDAPS Status:        [Enabled / Not enabled / Partial]
-Existing MFA:        [None / FortiToken already / Other provider]
-FortiAuthenticator:  [Already deployed / New purchase needed]
-User Count (PAM):    [Number]
+Existing MFA:        [None / FortiToken already deployed / Other provider]
+FortiAuthenticator:  [Already deployed / New procurement required]
+PAM User Count:      [Number]
 Sites:               [Number]
-Compliance Drivers:  [ISO 27001, SOC 2, NIS2, etc.]
+Compliance Drivers:  [ISO 27001 / SOC 2 / NIS2 / etc.]
 
-READINESS SCORE:     [__/16]  (from Section 2.3)
+READINESS SCORE:     [__ / 16]
 
 IDENTIFIED GAPS
 ---------------
-1. [Gap description] -- [Estimated effort to resolve]
-2. [Gap description] -- [Estimated effort to resolve]
-3. [Gap description] -- [Estimated effort to resolve]
+1. [Description] — Estimated resolution effort: [effort]
+2. [Description] — Estimated resolution effort: [effort]
+3. [Description] — Estimated resolution effort: [effort]
 
-RECOMMENDED APPROACH
---------------------
-[ ] Standard deployment (environment ready, < 2 weeks)
-[ ] Guided deployment (minor gaps, 2-4 weeks)
-[ ] Extended engagement (significant prep needed, 4-8 weeks)
+RECOMMENDED ENGAGEMENT APPROACH
+--------------------------------
+[ ] Standard deployment  — environment ready, 1–2 weeks
+[ ] Guided deployment    — minor gaps, 2–4 weeks
+[ ] Extended engagement  — significant preparation required, 4–8 weeks
 
-NEXT STEPS
-----------
-1. [Action] -- Owner: [Name] -- By: [Date]
-2. [Action] -- Owner: [Name] -- By: [Date]
-3. [Action] -- Owner: [Name] -- By: [Date]
+AGREED NEXT STEPS
+-----------------
+1. [Action] — Owner: [Name] — Due: [Date]
+2. [Action] — Owner: [Name] — Due: [Date]
+3. [Action] — Owner: [Name] — Due: [Date]
 ```
 
 ---
 
-*Version 1.0 -- 2026-04-10*
+*Version 2.0 — 2026-04-11*

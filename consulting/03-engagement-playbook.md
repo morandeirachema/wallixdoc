@@ -1,8 +1,11 @@
-# 03 - Engagement Playbook
+# Engagement Playbook
 
-## Meeting Agendas, Client Tips, and Delivery Approach
+## Delivery Methodology for PAM and MFA Integration Projects
 
-This playbook guides the consultant through a complete AD + MFA integration engagement, from the first call to post-go-live support.
+This playbook guides the engagement from first contact through to knowledge
+transfer and project closure. It provides meeting agendas, communication
+frameworks, stakeholder guidance, scoping references, and post-go-live
+procedures.
 
 ---
 
@@ -10,13 +13,13 @@ This playbook guides the consultant through a complete AD + MFA integration enga
 
 1. [Engagement Phases Overview](#1-engagement-phases-overview)
 2. [Meeting Templates](#2-meeting-templates)
-3. [Client Communication Tips](#3-client-communication-tips)
+3. [Client Communication Framework](#3-client-communication-framework)
 4. [Handling Objections](#4-handling-objections)
 5. [Stakeholder Management](#5-stakeholder-management)
 6. [Estimation and Scoping](#6-estimation-and-scoping)
 7. [Delivery Milestones](#7-delivery-milestones)
 8. [Handover and Knowledge Transfer](#8-handover-and-knowledge-transfer)
-9. [Common Mistakes Consultants Make](#9-common-mistakes-consultants-make)
+9. [Quality and Risk Controls](#9-quality-and-risk-controls)
 10. [Post-Go-Live Support](#10-post-go-live-support)
 
 ---
@@ -24,145 +27,151 @@ This playbook guides the consultant through a complete AD + MFA integration enga
 ## 1. Engagement Phases Overview
 
 ```
-+==============================================================================+
-|  ENGAGEMENT TIMELINE -- TYPICAL MFA INTEGRATION PROJECT                      |
-+==============================================================================+
-|                                                                              |
-|  WEEK 0        WEEK 1-2       WEEK 3-4       WEEK 5-6       WEEK 7+          |
-|  ======        ========       ========       ========       ======           |
-|                                                                              |
-|  Discovery     Build          Test           Rollout        Operate          |
-|  & Design      & Configure    & Validate     & Enforce      & Support        |
-|                                                                              |
-|  * Kickoff     * AD prep      * End-to-end   * Pilot group  * Health checks  |
-|  * Assessment  * FortiAuth    * Failure       * General      * Monitoring    |
-|  * Design      * WALLIX       * Multi-site    * Enforcement  * KT sessions   |
-|  * Sign-off    * HA setup     * User enroll   * Comms        * Handover      |
-|                                                                              |
-|  DELIVERABLES:                                                               |
-|  * Assessment  * Config docs  * Test report  * Go-live cert * Runbook        |
-|    report      * Firewall     * Remediation  * User guide   * Support guide  |
-|  * Design doc    rules          list                                         |
-|                                                                              |
-+==============================================================================+
++===============================================================================+
+|  ENGAGEMENT TIMELINE — TYPICAL MFA INTEGRATION PROJECT                        |
++===============================================================================+
+|                                                                               |
+|  WEEK 0         WEEK 1-2        WEEK 3-4        WEEK 5-6        WEEK 7+       |
+|  ======         ========        ========        ========        ======        |
+|                                                                               |
+|  Discovery      Build           Test            Rollout         Operations    |
+|  & Design       & Configure     & Validate      & Enforce       & Support     |
+|                                                                               |
+|  * Kickoff      * AD prep       * End-to-end    * Pilot group   * Health      |
+|  * Assessment   * FortiAuth     * Failure        * General       * checks     |
+|  * Architecture * WALLIX          scenarios       enrollment    * Monitoring  |
+|  * Design       * HA setup      * Multi-site     * MFA          * KT          |
+|    sign-off     * Firewall        validation      enforcement   * Handover    |
+|                   rules          * Enrollment                                 |
+|                                                                               |
+|  DELIVERABLES:                                                                |
+|  Assessment     Config          Test report     Go-live cert    Runbook       |
+|  report         documentation   Remediation     User guide      Support guide |
+|  Design doc     Firewall        list            Comms           Lessons       |
+|                 rules                           plan            learned       |
+|                                                                               |
++===============================================================================+
 ```
 
 ---
 
 ## 2. Meeting Templates
 
-### 2.1 Kickoff Meeting (Day 1)
+### 2.1 Kickoff Meeting
 
 **Duration:** 90 minutes
-**Attendees:** Project sponsor, IT manager, AD admin, network admin, security lead
+**Required attendees:** Project sponsor, IT manager, AD administrator,
+network administrator, security lead
 
 ```
 AGENDA
 ======
 
 1. Introductions and roles (10 min)
-   - Who does what on the client side
-   - Your role as consultant
-   - Escalation paths
+   - Confirm roles and responsibilities on both sides
+   - Establish escalation paths
+   - Agree on communication channels and cadence
 
 2. Project goals and success criteria (15 min)
-   - Why MFA? (compliance, incident, initiative?)
-   - What does "done" look like?
-   - Timeline constraints (audit deadlines, etc.)
+   - Review the driver: compliance deadline, incident, or initiative
+   - Define what "done" looks like from the client's perspective
+   - Surface any hard constraints (audit dates, freeze windows, etc.)
 
 3. Discovery questionnaire walkthrough (30 min)
-   - Use 01-discovery-assessment.md
-   - Fill in together, not in isolation
-   - Identify gaps and blockers immediately
+   - Complete 01-discovery-assessment.md together
+   - Identify gaps and blockers in real time
+   - Record answers — do not leave blanks to fill in later
 
-4. Architecture overview (15 min)
-   - Explain the two-phase model (use diagrams from 02-mfa-strategy-guide)
-   - Explain component roles (AD, FortiAuth, WALLIX)
-   - Get initial reaction -- any concerns?
+4. Architecture overview presentation (15 min)
+   - Introduce the two-phase model (use diagrams from 02-mfa-strategy-guide)
+   - Clarify component roles: AD, FortiAuthenticator, WALLIX
+   - Collect initial questions and concerns
 
 5. Timeline and next steps (15 min)
-   - Agree on phase dates
-   - Assign action items (firewall rules, service accounts, etc.)
-   - Schedule next meeting
+   - Agree on milestone dates
+   - Assign all action items with owners and due dates
+   - Schedule the design review meeting
 
-6. Q&A (5 min)
+6. Questions (5 min)
 ```
 
-**Action items to leave with:**
+**Action items to assign and confirm before leaving the kickoff:**
 
 | Action | Owner | Due |
 |--------|-------|-----|
-| Submit firewall rule requests (Port Matrix) | Network admin | Day 2 |
-| Create AD service accounts | AD admin | Day 3 |
-| Create AD security groups | AD admin | Day 3 |
-| Verify LDAPS is enabled | AD admin | Day 3 |
-| Export CA certificate | AD admin | Day 3 |
-| Confirm FortiAuth appliance is racked and powered | IT / datacenter | Day 3 |
-| Verify NTP is configured on all components | IT admin | Day 5 |
-| Send user list (who needs MFA) | Project sponsor | Day 5 |
+| Submit firewall rule change requests (full port matrix) | Network administrator | Day 2 |
+| Create AD service accounts (svc_wallix, svc-fortiauth) | AD administrator | Day 3 |
+| Create AD security groups (PAM-Admins, PAM-Operators, etc.) | AD administrator | Day 3 |
+| Verify LDAPS is enabled on all Domain Controllers | AD administrator | Day 3 |
+| Export the Enterprise CA certificate | AD administrator | Day 3 |
+| Confirm FortiAuthenticator is racked, powered, and IP-assigned | IT / Datacenter | Day 3 |
+| Verify NTP is configured and synchronized on all components | IT administrator | Day 5 |
+| Provide the list of users who require MFA enrollment | Project sponsor | Day 5 |
+| Provide IP addresses of both Access Manager nodes | AM team | Day 3 |
+| Confirm per-site AM-to-Bastion connectivity schedule | AM team | Week 1 |
 
-### 2.2 Design Review Meeting (Week 1)
+### 2.2 Design Review Meeting
 
 **Duration:** 60 minutes
-**Attendees:** IT manager, AD admin, security lead
+**Attendees:** IT manager, AD administrator, security lead
 
 ```
 AGENDA
 ======
 
-1. Review assessment findings (10 min)
-   - Readiness score
-   - Gaps identified
-   - Showstoppers (if any)
+1. Assessment findings (10 min)
+   - Present the readiness score
+   - Walk through identified gaps
+   - Confirm whether any showstoppers remain open
 
-2. Present proposed architecture (20 min)
-   - Network diagram with IPs
+2. Proposed architecture presentation (20 min)
+   - Network diagram with IP addresses and ports
    - Group-to-profile mapping table
-   - HA strategy
-   - Token strategy (Mobile vs hardware)
-   - Walk through authentication flow step by step
+   - HA strategy and FortiAuth placement decision
+   - Token strategy (FortiToken Mobile vs hardware)
+   - Step-by-step authentication flow walkthrough
 
-3. Review and agree on decisions (20 min)
-   - Group names and structure
-   - Profile assignments
-   - MFA scope (who is enrolled, who is exempt)
-   - Rollout strategy (phased or big-bang)
-   - Break-glass policy
+3. Design decisions for sign-off (20 min)
+   - AD group names and structure
+   - WALLIX profile assignments
+   - MFA scope: who is enrolled, who is exempt
+   - Rollout strategy: phased pilot or full enforcement
+   - Break-glass policy and account ownership
 
-4. Confirm prerequisites status (10 min)
-   - Check each item from prerequisites checklist
-   - Identify remaining blockers
-   - Agree on start date for build phase
+4. Prerequisites status review (10 min)
+   - Confirm status of each action item from kickoff
+   - Identify any remaining blockers
+   - Confirm start date for the build phase
 ```
 
-### 2.3 Weekly Status Meeting (During Build)
+### 2.3 Weekly Status Meeting
 
 **Duration:** 30 minutes
-**Attendees:** IT manager, whoever is needed for blockers
+**Attendees:** IT manager, plus any stakeholder needed to resolve blockers
 
 ```
-AGENDA (keep it tight)
-======================
+AGENDA
+======
 
-1. Progress update (5 min)
-   - What was completed this week
-   - Phase checkpoint status
+1. Progress since last session (5 min)
+   - Completed items
+   - Milestone checkpoint status
 
-2. Blockers and issues (10 min)
-   - Firewall rules pending?
+2. Open blockers (10 min)
+   - Firewall rules: submitted, approved, validated?
    - Service account issues?
    - Connectivity problems?
 
-3. Next week plan (5 min)
-   - What will be done
-   - What is needed from the client
+3. Plan for next week (5 min)
+   - What will be delivered
+   - What is required from the client team
 
 4. Decisions needed (10 min)
-   - Any outstanding decisions?
-   - Escalation needed?
+   - Outstanding design decisions
+   - Escalation items if any
 ```
 
-### 2.4 Go-Live Decision Meeting (Before Enforcement)
+### 2.4 Go-Live Decision Meeting
 
 **Duration:** 60 minutes
 **Attendees:** Project sponsor, IT manager, security lead, service desk lead
@@ -171,174 +180,188 @@ AGENDA (keep it tight)
 AGENDA
 ======
 
-1. Test results review (15 min)
-   - All test scenarios passed?
+1. Test results summary (15 min)
+   - All test scenarios: passed or open?
    - Multi-site validation results
-   - Failure scenario results
+   - Failure scenario and break-glass test results
 
 2. Enrollment status (10 min)
-   - How many users enrolled vs total?
-   - Who hasn't activated? Follow-up plan?
-   - Are there groups that need special attention?
+   - Active users enrolled vs total required
+   - Pending users: follow-up plan and owner
+   - Any user groups requiring special handling
 
 3. Go-live checklist review (15 min)
-   - Walk through full go-live checklist
-   - Every item must be checked
-   - Sign-off from each responsible person
+   - Walk through the full checklist item by item
+   - Obtain sign-off from each responsible stakeholder
 
-4. Rollback plan (10 min)
-   - What happens if MFA causes widespread issues?
-   - How quickly can MFA be disabled?
-   - Who has the authority to trigger rollback?
+4. Rollback plan confirmation (10 min)
+   - Procedure to disable MFA if a critical issue arises
+   - Decision authority: who can authorize rollback
+   - Maximum acceptable incident duration before rollback is triggered
 
-5. Go/No-Go decision (10 min)
-   - Formal decision to proceed
-   - Confirm enforcement date
-   - Confirm communication plan
+5. Go / No-Go decision (10 min)
+   - Formal decision recorded in meeting minutes
+   - Confirm enforcement date and communication schedule
+   - Confirm consultant availability for go-live day
 ```
 
 ---
 
-## 3. Client Communication Tips
+## 3. Client Communication Framework
 
 ### 3.1 Language Guide
 
-| Instead of Saying | Say This | Why |
-|-------------------|----------|-----|
-| "This is simple" | "This is straightforward -- here's the plan" | Nothing feels simple to the client. Saying "simple" makes them feel dumb for asking questions. |
-| "You need to fix your AD" | "We'll work together to prepare AD for the integration" | Collaborative, not accusatory. You're there to help. |
-| "RADIUS shared secret" | "The password that WALLIX and FortiAuth use to trust each other" | Clients may not know RADIUS terminology. |
-| "LDAP bind" | "How WALLIX logs into Active Directory to verify users" | Translate protocols into actions. |
-| "First Factor None" | "FortiAuth only checks the token -- WALLIX handles the password separately" | Explain the logic, not just the setting name. |
-| "SPOF" | "If this goes down, nobody can log in" | Impact > acronym. |
-| "It's a best practice" | "We do this because [specific reason]" | "Best practice" means nothing. Give the reason. |
+The language used in client conversations directly affects how the project
+is perceived. The following substitutions improve clarity and professionalism.
 
-### 3.2 Explaining the Authentication Flow to Executives
+| Avoid | Use Instead | Reason |
+|-------|-------------|--------|
+| "This is simple" | "This is a straightforward process — here is the plan" | Nothing feels simple to the client. Calling it simple dismisses their questions. |
+| "You need to fix your AD" | "We will work together to prepare Active Directory for the integration" | Collaborative framing. The consultant is there to help, not to assign blame. |
+| "RADIUS shared secret" | "The passphrase that WALLIX and FortiAuthenticator use to authenticate each other" | Translate protocol terminology into functional meaning. |
+| "LDAP bind" | "How WALLIX authenticates to Active Directory in order to verify user credentials" | Protocols should be explained as actions. |
+| "First Factor None" | "FortiAuthenticator is only responsible for validating the token. WALLIX handles the password separately." | Explain the logic, not just the setting name. |
+| "SPOF" | "If this component fails, authentication will not function until it is restored" | Impact matters more than acronyms. |
+| "Best practice" | "We configure it this way because [specific reason]" | "Best practice" communicates nothing. Always provide the reason. |
 
-Use this simplified version for C-level and non-technical stakeholders:
+### 3.2 Explaining the Authentication Flow to Non-Technical Stakeholders
+
+Use this simplified version for executive and business audiences:
 
 ```
-HOW LOGIN WORKS AFTER MFA IS ENABLED
-=====================================
+HOW ACCESS WORKS AFTER MFA IS DEPLOYED
+========================================
 
-Today:
-  Username + Password -> Logged in
+Before:
+  Username + Password --> Access granted
 
-After MFA:
-  Username + Password -> Correct? -> Tap "Approve" on phone -> Logged in
+After:
+  Username + Password --> Correct? --> Tap Approve on phone --> Access granted
 
 What changes for users:
-  One extra tap. That's it.
+  One additional tap per login. The rest of the workflow is unchanged.
 
-What changes for security:
-  A stolen password alone can no longer grant access.
-  The attacker would also need the user's phone.
+What changes for the organization's security posture:
+  A stolen or phished password no longer grants access.
+  An attacker would also need physical possession of the user's phone.
+  The second factor is independent of the first — two separate systems,
+  two separate proofs of identity.
 ```
 
 ### 3.3 Email Templates
 
-#### Pre-Project Communication (Send to All PAM Users)
+#### Pre-Project Communication to PAM Users
 
 ```
-Subject: Upcoming security enhancement for privileged access
+Subject: Security Enhancement: Multi-Factor Authentication for Privileged Access
 
-Dear colleagues,
+Dear [Name / Team],
 
-As part of our ongoing security improvements, we are adding multi-factor
-authentication (MFA) to our privileged access management system (WALLIX).
+As part of our ongoing commitment to securing our infrastructure, we are
+implementing multi-factor authentication (MFA) on our privileged access
+management platform (WALLIX Bastion).
 
-WHAT THIS MEANS FOR YOU:
-- Starting [DATE], when you log into WALLIX, you'll enter your password
-  as usual, then approve a notification on your phone
-- You'll need to install a free app called "FortiToken Mobile"
-- We'll send you setup instructions before the launch date
+WHAT THIS MEANS FOR YOU
 
-WHY WE'RE DOING THIS:
-- Passwords alone are no longer sufficient to protect critical systems
-- MFA is required by [compliance framework / company policy / board directive]
-- This protects both the company and you personally
+Starting on [DATE], logging into WALLIX will require a second step after
+entering your password: approving a notification on your phone. This takes
+two to three seconds and requires the FortiToken Mobile application.
 
-TIMELINE:
-- [DATE]: Setup instructions sent to your email
-- [DATE]: Training session (optional, 15 min)
-- [DATE]: MFA goes live -- you'll need the app from this date
+We will send you personalized setup instructions before the launch date.
+A brief optional training session will be available on [DATE].
 
-QUESTIONS?
-Contact [support contact] or reply to this email.
+WHY WE ARE DOING THIS
 
-Thank you for your cooperation,
-[Executive Name]
+Passwords alone are no longer sufficient to protect access to critical
+systems. Multi-factor authentication is required by [compliance framework /
+company security policy] and is the most effective single control against
+credential-based attacks.
+
+TIMELINE
+
+  [DATE]: Setup instructions sent to your email
+  [DATE]: Optional training session (15 minutes)
+  [DATE]: MFA goes live — the application must be activated by this date
+
+SUPPORT
+
+For questions or assistance, contact [support contact] or attend the
+training session on [DATE].
+
+[Executive Sponsor Name]
 [Title]
 ```
 
-#### Post-Enrollment Reminder (Users Who Haven't Activated)
+#### Activation Reminder for Users Who Have Not Enrolled
 
 ```
-Subject: REMINDER -- Please activate your FortiToken before [DATE]
+Subject: Action Required — Activate Your FortiToken Before [DATE]
 
-Hi [Name],
+Dear [Name],
 
-Our records show you haven't yet activated your FortiToken Mobile app.
-MFA enforcement begins [DATE] -- after this date, you won't be able
-to access WALLIX without the app.
+Our records indicate that your FortiToken Mobile activation is not yet
+complete. MFA enforcement begins on [DATE]. After that date, access to
+WALLIX will require the application to be active on your device.
 
-It takes less than 5 minutes:
+Activation takes less than five minutes:
 
-1. Install "FortiToken Mobile" on your phone (App Store / Play Store)
-2. Open the activation email we sent on [DATE]
-3. Tap the activation link or scan the QR code
+  1. Install "FortiToken Mobile" on your smartphone
+     (Available on the App Store and Google Play)
+  2. Open the activation email we sent on [DATE]
+  3. Tap the activation link or scan the QR code
 
-Need help? Contact [support] or stop by [location] during [hours].
+If you have questions or need assistance, please contact [support contact]
+or visit [location / service desk] during [hours].
 
-Thank you,
-IT Security
+IT Security Team
 ```
 
 ---
 
 ## 4. Handling Objections
 
-### 4.1 Common Objections and Responses
+### 4.1 Objection Reference
 
-| Objection | Who Says It | Response |
-|-----------|------------|----------|
-| "This slows us down" | Operators, admins | "The push notification takes 2-3 seconds. Compared to the weeks of downtime from a breach, it's a small investment." |
-| "What if I lose my phone?" | Users | "Your admin can issue a temporary bypass in 2 minutes. We'll also have a break-glass account for emergencies. No one gets locked out permanently." |
-| "We've never been hacked" | Management | "80% of breaches involve stolen credentials. MFA is insurance -- you don't wait for the fire to buy the extinguisher." |
-| "I don't want work apps on my personal phone" | Users (BYOD) | "FortiToken is a standalone app -- it can't read your data, track you, or access anything else on your phone. Alternatively, we can provide a hardware token." |
-| "Can't we just use longer passwords?" | IT staff | "Password length doesn't protect against phishing, keyloggers, or credential reuse. MFA adds a different category of defense." |
-| "It's too expensive" | Finance | "FortiToken licenses are one-time, not annual. No per-authentication fees. Compare: a single breach costs on average $4.88M. FortiToken for 100 users costs a fraction of that." |
-| "Our SOC already monitors for suspicious logins" | Security team | "Detection is important, but prevention is better. MFA prevents the breach; monitoring detects it after the fact. Both are needed." |
-| "We'll do it next quarter" | Management | "If there's an audit in [month] or compliance deadline on [date], waiting means a finding. The integration takes 2-4 weeks -- starting now means you're covered." |
+| Objection | Raised By | Recommended Response |
+|-----------|-----------|----------------------|
+| "This will slow us down." | Operators, administrators | "The push approval takes 2–3 seconds per login. The operational cost is negligible. The risk exposure it eliminates — a credential breach affecting every system the user can access — is not." |
+| "What happens if I lose my phone?" | End users | "An administrator can issue a temporary bypass in under two minutes. No user is permanently locked out. A hardware token is available as a permanent alternative if preferred." |
+| "We have never been breached." | Management | "80% of breaches involve compromised credentials. MFA is a preventive control. Its value is in the breaches that do not happen, not the ones that do." |
+| "I don't want a work application on my personal phone." | BYOD users | "FortiToken Mobile cannot access, read, or transmit any data from your device. It is a standalone authentication app. A hardware token is available for anyone who prefers not to use their phone." |
+| "Longer passwords should be sufficient." | IT staff | "Password complexity does not protect against phishing, keyloggers, or credential reuse across systems. MFA adds a fundamentally different category of defense that password policy cannot address." |
+| "The cost is too high." | Finance, procurement | "FortiToken licenses are a one-time purchase with no per-authentication fees. The average confirmed breach costs $4.8M. The per-user cost of this deployment is a fraction of that." |
+| "Our security team already monitors for suspicious logins." | Security team | "Detection and prevention serve different purposes. Monitoring detects an incident after credentials have been used. MFA prevents that use in the first place. Both controls are needed and they are complementary." |
+| "We will do this next quarter." | Management | "If the compliance deadline is [DATE] or an audit is scheduled for [MONTH], the 2–4 week integration timeline means that starting now is the latest responsible option. Waiting past [DATE] creates a compliance gap." |
 
-### 4.2 The "MFA Fatigue" Concern
+### 4.2 Addressing MFA Fatigue
 
-Some clients have heard about MFA fatigue attacks (bombarding users with push notifications):
+Some clients will raise concerns about MFA fatigue attacks — where an
+attacker repeatedly sends push notifications to wear a user down.
 
 ```
-HOW WE MITIGATE MFA FATIGUE IN THIS DEPLOYMENT
-===============================================
+MFA FATIGUE MITIGATIONS IN THIS DEPLOYMENT
+============================================
 
-1. Push notifications show SOURCE DETAILS
-   - User sees: "Login to WALLIX Bastion from [IP]"
-   - If they didn't initiate it, they deny
+1. Push notifications include session context
+   Users see the source IP and application name in the notification.
+   If they did not initiate a login, they deny and report it.
 
-2. TIMEOUT protects against bombing
-   - 60-second timeout per challenge
-   - After timeout, attacker must retry -- creates audit trail
+2. Timeout enforcement
+   Each push challenge expires after 60 seconds.
+   An attacker must continually retry, generating a visible audit trail.
 
-3. OTP alternative always available
-   - If push feels suspicious, user can switch to manual OTP entry
-   - OTP requires the attacker to see the user's phone screen
+3. OTP fallback is always available
+   If a push notification appears suspicious, the user can choose manual
+   OTP entry instead. OTP requires the attacker to have physical access
+   to the user's phone screen.
 
-4. WALLIX Bastion has session logging
-   - Even if MFA is bypassed, all session activity is recorded
-   - Enables forensics and accountability
+4. Session recording in WALLIX
+   Even if a push is accidentally approved, every action taken within
+   the session is recorded. Forensic evidence is always available.
 
-5. MONITORING and alerts
-   - Alert on > 5 MFA failures in 5 minutes
-   - Alert on any MFA bypass usage
-   - Security team investigates immediately
+5. Alerting on repeated failures
+   An alert fires on more than 5 MFA failures within 5 minutes for
+   a single user. The security team investigates immediately.
 ```
 
 ---
@@ -347,112 +370,121 @@ HOW WE MITIGATE MFA FATIGUE IN THIS DEPLOYMENT
 
 ### 5.1 Stakeholder Map
 
-| Stakeholder | Cares About | How to Engage | Risk if Ignored |
-|-------------|-------------|---------------|-----------------|
-| **CISO / Security Lead** | Compliance, risk reduction, audit readiness | Show compliance mapping table, audit evidence commands | Project gets deprioritized |
-| **IT Manager** | Timeline, resource impact, operational complexity | Realistic timeline, clear action items per person | Resources not allocated |
-| **AD Administrator** | Minimal changes to AD, no breaking existing services | Pre-written PowerShell scripts, read-only service accounts | AD changes delayed |
-| **Network Administrator** | Firewall rules, port requirements, no disruption | Complete port matrix upfront, pre-written rule descriptions | Firewall rules take weeks |
-| **Service Desk Lead** | User support volume, troubleshooting tools | Provide L1 troubleshooting guide, anticipate call volume | Support overwhelmed at go-live |
-| **End Users** | Minimal disruption, easy to use | Clear instructions, training session, responsive support | Resistance, complaints to management |
-| **Project Sponsor** | On-time, on-budget, visible progress | Weekly status, clear milestones, no surprises | Budget cut or project cancelled |
-| **External Auditor** | Evidence of controls, policy documentation | Compliance mapping, evidence collection commands | Audit findings |
+| Stakeholder | Primary Interest | Engagement Approach | Consequence if Not Engaged |
+|-------------|----------------|---------------------|---------------------------|
+| **CISO / Security Lead** | Compliance, risk reduction, audit readiness | Present compliance mapping and audit evidence procedures | Project deprioritized |
+| **IT Manager** | Timeline, resource allocation, operational complexity | Realistic milestones, clear per-person action items | Resources not allocated when needed |
+| **AD Administrator** | Minimal AD changes; no disruption to existing services | Provide pre-written scripts; emphasize read-only service accounts | AD preparation delayed |
+| **Network Administrator** | Complete firewall requirements; no service disruption | Deliver the full port matrix upfront with rule descriptions | Firewall changes delayed by weeks |
+| **Access Manager Team** | AM-to-Bastion connectivity per site; their systems not in scope | Request AM node IPs early; align on per-site connectivity milestones; they must be consulted before FortiAuth RADIUS client registration | AM RADIUS clients missing — MFA breaks silently for AM-brokered sessions |
+| **Service Desk Lead** | User support volume; first-call resolution capability | Provide L1 troubleshooting flowchart; set call volume expectations | Service desk overwhelmed at go-live |
+| **End Users** | Minimal disruption; ease of use | Clear written instructions; training session; accessible support | Resistance and escalations to management |
+| **Project Sponsor** | On-time delivery; budget control; visible progress | Weekly status updates; milestone confirmations; no surprises | Budget re-allocation or project cancellation |
+| **External Auditor** | Evidence of enforced controls; policy documentation | Prepare compliance mapping; test evidence collection commands | Audit findings |
 
-### 5.2 The Critical First 48 Hours
+### 5.2 The First 48 Hours After Enforcement
 
-The first 48 hours after MFA enforcement determine project perception:
+The 48 hours following MFA enforcement determine how the project is
+perceived by the organization. Manage this period proactively.
 
 ```
-FIRST 48 HOURS PLAYBOOK
-========================
+FIRST 48 HOURS — OPERATIONAL READINESS
+========================================
 
-BEFORE enforcement goes live:
-  [ ] Service desk briefed with troubleshooting guide
-  [ ] Consultant on standby (or reachable by phone)
-  [ ] Break-glass account tested one final time
-  [ ] Executive communication sent
-  [ ] Activation rate verified > 95%
+BEFORE ENFORCEMENT:
+  [ ] Service desk briefed with L1 troubleshooting guide
+  [ ] Consultant available on-site or by phone throughout Day 1
+  [ ] Break-glass account tested one final time within 24 hours
+  [ ] Executive communication sent to all affected users
+  [ ] Token activation rate confirmed > 95%
 
-FIRST MORNING (Day 1):
-  [ ] Be available for support calls (on-site if possible)
-  [ ] Monitor MFA failure rate dashboard
-  [ ] Check for RADIUS connectivity issues from all sites
-  [ ] Handle first wave of "how does this work?" calls
+MORNING OF DAY 1:
+  [ ] Available for direct user support (on-site if at all possible)
+  [ ] Monitor MFA authentication failure rate
+  [ ] Verify RADIUS connectivity from every site
+  [ ] Handle first-wave user questions personally or via service desk
   [ ] Escalate any systemic issues immediately
 
 END OF DAY 1:
-  [ ] Status update to project sponsor
-  [ ] MFA failure rate report
-  [ ] List of users who had issues (root cause each)
-  [ ] Any adjustments needed?
+  [ ] Status summary delivered to project sponsor
+  [ ] MFA failure rate reported
+  [ ] Root cause documented for each user who had an issue
+  [ ] Any configuration adjustments identified and planned
 
 DAY 2:
-  [ ] Second day is usually quieter
-  [ ] Follow up on Day 1 issues
-  [ ] Address any remaining unactivated users
-  [ ] Begin transitioning support to internal team
+  [ ] Follow up on all Day 1 open issues
+  [ ] Address any remaining unactivated users directly
+  [ ] Begin transitioning support responsibility to the internal team
 
 AFTER 48 HOURS:
-  [ ] Formal status email to sponsor: "MFA is live and stable"
-  [ ] Transition to BAU support model
-  [ ] Schedule KT session for ongoing operations
+  [ ] Formal status communication to sponsor: "MFA is live and stable"
+  [ ] Transition to standard support model
+  [ ] Schedule knowledge transfer session
 ```
 
 ---
 
 ## 6. Estimation and Scoping
 
-### 6.1 Effort Estimation Guide
+### 6.1 Effort Reference Guide
 
-| Task | Effort (Days) | Dependencies | Who |
-|------|--------------|--------------|-----|
-| Discovery and assessment | 1-2 | Client availability | Consultant + client team |
-| Architecture design | 1 | Assessment complete | Consultant |
-| AD preparation (OU, accounts, groups) | 0.5-1 | AD admin available | Client AD admin |
-| Firewall rule submission and validation | 0.5 + wait | Network team lead time | Client network admin |
-| FortiAuth initial setup | 0.5-1 | Appliance racked, IP assigned | Consultant |
-| FortiAuth LDAP + RADIUS config | 1 | AD prep complete, LDAPS working | Consultant |
-| WALLIX LDAP domain config | 0.5 | CA cert imported, LDAPS working | Consultant |
-| WALLIX RADIUS + MFA config | 0.5 | FortiAuth configured | Consultant |
-| HA configuration | 0.5-1 | Second FortiAuth available | Consultant |
-| End-to-end testing | 1-2 | All config complete | Consultant + client |
-| Multi-site validation | 1 | Firewall rules confirmed | Consultant |
-| Token enrollment (pilot) | 0.5 | Pilot users identified | Consultant + client |
-| Token enrollment (general) | 1-3 | Enrollment emails sent | Client + consultant support |
-| User training / communication | 0.5-1 | Materials prepared | Client comms + consultant |
-| Go-live support | 1-2 | Enforcement date set | Consultant |
-| Knowledge transfer + handover | 1 | Post go-live stability | Consultant |
-| **TOTAL** | **10-18 days** | | |
+| Task | Effort (days) | Key Dependencies | Responsible |
+|------|--------------|-----------------|-------------|
+| Discovery and assessment | 1–2 | Client availability | Consultant + client team |
+| Architecture design and documentation | 1 | Assessment complete | Consultant |
+| AD preparation (OUs, service accounts, groups) | 0.5–1 | AD administrator available | Client AD administrator |
+| Firewall rule submission and validation | 0.5 + wait time | Network team lead time | Client network administrator |
+| FortiAuthenticator initial setup | 0.5–1 | Appliance racked and IP assigned | Consultant |
+| FortiAuthenticator LDAP and RADIUS configuration | 1 | AD preparation complete, LDAPS functional | Consultant |
+| WALLIX LDAP domain configuration | 0.5 | CA certificate imported, LDAPS working | Consultant |
+| WALLIX RADIUS and MFA policy configuration | 0.5 | FortiAuth configured | Consultant |
+| HA configuration | 0.5–1 | Secondary appliance available | Consultant |
+| End-to-end testing | 1–2 | All configuration complete | Consultant + client |
+| Multi-site validation | 1 | Firewall rules confirmed on all sites | Consultant |
+| Pilot group enrollment and support | 0.5 | Pilot users identified | Consultant + client |
+| General enrollment support | 1–3 | Enrollment emails distributed | Client + consultant |
+| User communication and training | 0.5–1 | Materials prepared | Client communications + consultant |
+| Go-live support | 1–2 | Enforcement date confirmed | Consultant |
+| Knowledge transfer and handover | 1 | Post-go-live stability achieved | Consultant |
+| **Total** | **10–18 days** | | |
 
-### 6.2 Scoping Checklist
+### 6.2 Scope Definition
+
+Use this matrix to align on inclusions and exclusions at the start of the
+engagement. Any item in "Not Included" requires a separate scope agreement.
 
 ```
-+==============================================================================+
-|  SCOPE IN vs SCOPE OUT                                                       |
-+==============================================================================+
-|                                                                              |
-|  INCLUDED (standard engagement):                                             |
-|  [ ] AD preparation (service accounts, groups, LDAPS verification)           |
-|  [ ] FortiAuthenticator 300F configuration                                   |
-|  [ ] WALLIX Bastion MFA integration                                          |
-|  [ ] HA configuration (if secondary appliance available)                     |
++===============================================================================+
+|  SCOPE DEFINITION                                                             |
++===============================================================================+
+|                                                                               |
+|  INCLUDED IN STANDARD ENGAGEMENT:                                             |
+|  [ ] Active Directory preparation (service accounts, groups, LDAPS check)    |
+|  [ ] FortiAuthenticator configuration (LDAP sync, RADIUS policy, tokens)     |
+|  [ ] WALLIX Bastion MFA integration (LDAP domain, RADIUS, policy)            |
+|  [ ] HA configuration (if secondary appliance is available)                  |
 |  [ ] End-to-end testing from all sites                                       |
-|  [ ] Pilot group enrollment + support                                        |
+|  [ ] Pilot group enrollment and first-week support                           |
 |  [ ] Go-live support (2 days)                                                |
-|  [ ] Knowledge transfer (1 session)                                          |
-|  [ ] Documentation (config, runbook)                                         |
-|                                                                              |
-|  NOT INCLUDED (discuss if needed):                                           |
-|  [ ] AD CS / PKI deployment (if LDAPS not available)                         |
-|  [ ] FortiAuth appliance procurement and rack mount                          |
+|  [ ] Knowledge transfer session (1 session, up to 3 hours)                   |
+|  [ ] Handover documentation (architecture, configuration, runbook)           |
+|                                                                               |
+|  NOT INCLUDED — DISCUSS IF REQUIRED:                                          |
+|  [ ] AD CS / PKI deployment (if LDAPS is not currently available)            |
+|  [ ] FortiAuthenticator appliance procurement and physical installation       |
 |  [ ] Firewall rule implementation (client responsibility)                    |
-|  [ ] User communication and change management                                |
-|  [ ] Full user enrollment (client-driven with guidance)                      |
-|  [ ] Custom WALLIX authorization policies                                    |
-|  [ ] SIEM integration for MFA logs                                           |
-|  [ ] Ongoing support beyond go-live                                          |
-|                                                                              |
-+==============================================================================+
+|  [ ] WALLIX Access Manager configuration — managed by a separate team        |
+|      The AM team is responsible for AM-to-Bastion connectivity per site.     |
+|      This engagement registers the AM nodes as RADIUS clients on             |
+|      FortiAuth and validates MFA for AM-brokered sessions, but does not      |
+|      configure or administer the Access Managers themselves.                 |
+|  [ ] User communication planning and execution (change management)           |
+|  [ ] Full general enrollment (client-driven, consultant provides guidance)   |
+|  [ ] Custom WALLIX authorization policies beyond standard role model          |
+|  [ ] SIEM integration for MFA and session logs                               |
+|  [ ] Ongoing support beyond the go-live period                               |
+|                                                                               |
++===============================================================================+
 ```
 
 ---
@@ -461,216 +493,224 @@ AFTER 48 HOURS:
 
 ### 7.1 Milestone Tracker
 
-| # | Milestone | Criteria | Target Date | Status |
-|---|-----------|----------|-------------|--------|
-| M1 | Assessment Complete | Questionnaire filled, readiness scored, gaps identified | Week 0 | [ ] |
-| M2 | Design Approved | Architecture, group mapping, HA strategy signed off | Week 1 | [ ] |
-| M3 | Prerequisites Met | LDAPS, firewall rules, NTP, service accounts verified | Week 1-2 | [ ] |
-| M4 | FortiAuth Configured | RADIUS clients, policy, user sync, tokens assigned | Week 2-3 | [ ] |
-| M5 | WALLIX Configured | LDAP domain, RADIUS server, MFA policy on all nodes | Week 3 | [ ] |
-| M6 | Testing Passed | All test cases passed from all sites | Week 3-4 | [ ] |
-| M7 | Pilot Complete | Pilot group using MFA successfully for 3+ days | Week 4-5 | [ ] |
-| M8 | General Enrollment | > 95% of users have activated tokens | Week 5-6 | [ ] |
-| M9 | MFA Enforced | MFA mandatory for all users, break-glass tested | Week 6-7 | [ ] |
-| M10 | Handover Complete | KT done, runbook delivered, support transitioned | Week 7+ | [ ] |
+Use this table in weekly status reports and sponsor updates.
+
+| # | Milestone | Completion Criteria | Target Date | Status |
+|---|-----------|---------------------|-------------|--------|
+| M1 | Assessment Complete | Questionnaire completed, readiness scored, gaps documented | Week 0 | [ ] |
+| M2 | Architecture Approved | Network diagram, group mapping, HA strategy signed off by client | Week 1 | [ ] |
+| M3 | Prerequisites Verified | LDAPS, firewall rules, NTP, and service accounts confirmed | Week 1–2 | [ ] |
+| M4 | FortiAuth Configured | RADIUS clients, policy, LDAP sync, tokens assigned to pilot users | Week 2–3 | [ ] |
+| M5 | WALLIX Configured | LDAP domain, RADIUS server, MFA policy active on all nodes | Week 3 | [ ] |
+| M6 | Testing Passed | All test cases passed from all sites; failure scenarios verified | Week 3–4 | [ ] |
+| M7 | Pilot Complete | Pilot group using MFA successfully for a minimum of 3 days | Week 4–5 | [ ] |
+| M8 | General Enrollment | Token activation rate > 95% of required users | Week 5–6 | [ ] |
+| M9 | MFA Enforced | MFA mandatory for all users; break-glass account tested | Week 6–7 | [ ] |
+| M10 | Handover Complete | KT session delivered; runbook accepted; internal ownership confirmed | Week 7+ | [ ] |
 
 ---
 
 ## 8. Handover and Knowledge Transfer
 
-### 8.1 KT Session Plan
+### 8.1 Knowledge Transfer Session
 
-**Duration:** 2-3 hours
-**Attendees:** Client's PAM admin, AD admin, security team member, service desk lead
+**Duration:** 2–3 hours
+**Required attendees:** PAM administrator, AD administrator, security team
+representative, service desk lead
 
 ```
 KNOWLEDGE TRANSFER AGENDA
-==========================
+===========================
 
 1. Architecture walkthrough (30 min)
-   - Draw the flow on whiteboard together
-   - Explain: what each component does and why
-   - Point to documentation for reference
+   - Draw the authentication flow together on a whiteboard
+   - Explain what each component does and why it is configured as it is
+   - Reference the delivered documentation for each section
 
-2. Day-to-day operations (30 min)
-   - Onboarding a new user (live demo)
-   - Offboarding a user (live demo)
-   - Checking MFA status (live demo)
-   - Running the daily health check script
+2. Day-to-day operations — live demonstrations (30 min)
+   - Onboard a new user: AD group, token provisioning, activation email
+   - Offboard a user: AD disable, token revoke
+   - Check MFA status on a specific user
+   - Run the daily health check procedure
 
-3. Common issues and fixes (30 min)
-   - "Token doesn't work" troubleshooting flow
-   - "RADIUS not responding" troubleshooting flow
+3. Common issues and resolution (30 min)
+   - "Token does not work": troubleshooting flow (L1 guide walkthrough)
+   - "RADIUS not responding": connectivity checklist
    - Token resync procedure
-   - MFA bypass procedure
+   - Temporary MFA bypass issuance and revocation
 
 4. Emergency procedures (20 min)
-   - Break-glass account: where is the password, who can use it
-   - FortiAuth failover: what happens, what to check
-   - MFA disable procedure (emergency only, with approval)
+   - Break-glass account: location, who holds it, how to use it
+   - FortiAuth failover: what triggers it, what to verify
+   - Emergency MFA disable procedure (authorization process)
 
 5. Monitoring and alerting (20 min)
-   - Walk through configured alerts
-   - Show how to check FortiAuth health
-   - Show how to check WALLIX MFA status
+   - Configured alert definitions and thresholds
+   - How to check FortiAuth health status
+   - How to check WALLIX MFA enforcement status
+   - Where to find audit logs
 
-6. Q&A and practice (20 min)
-   - Client performs onboarding of test user
-   - Client performs MFA bypass + revoke
-   - Client runs health check script
+6. Hands-on practice (20 min)
+   - Internal team performs user onboarding on a test account
+   - Internal team performs MFA bypass and revoke
+   - Internal team runs the health check script
 ```
 
-### 8.2 Handover Documents to Deliver
+### 8.2 Handover Document Set
 
-| Document | Contents | Audience |
-|----------|----------|----------|
-| **Architecture Diagram** | Network diagram with IPs, ports, component roles | IT manager, security team |
-| **Configuration Reference** | All settings applied (sanitized, no passwords) | PAM admin, AD admin |
-| **Operations Runbook** | Onboarding, offboarding, bypass, rotation procedures | PAM admin |
-| **L1 Support Guide** | "My token doesn't work" troubleshooting flowchart | Service desk |
+All documents are delivered digitally. No passwords or secrets are included
+in any delivered document.
+
+| Document | Contents | Primary Audience |
+|----------|----------|-----------------|
+| **Architecture Diagram** | Network diagram with IPs, ports, and component roles | IT manager, security team |
+| **Configuration Reference** | All applied settings, sanitized (no credentials) | PAM administrator, AD administrator |
+| **Operations Runbook** | Onboarding, offboarding, bypass, token resync, HA failover | PAM administrator |
+| **L1 Support Guide** | "I cannot log in" troubleshooting flowchart | Service desk |
 | **Monitoring Guide** | Alert definitions, health check script, metric thresholds | Operations team |
-| **Compliance Evidence Guide** | How to generate audit reports, what auditors will ask | Security/compliance team |
+| **Compliance Evidence Guide** | How to generate audit reports; what auditors will ask | Security and compliance team |
 
 ### 8.3 L1 Support Troubleshooting Flowchart
 
-Deliver this to the service desk team:
+Deliver this to the service desk before go-live.
 
 ```
-+==============================================================================+
-|  L1 SUPPORT -- "I CAN'T LOG INTO WALLIX"                                     |
-+==============================================================================+
-|                                                                              |
-|  1. "Are you entering the correct password?"                                 |
-|     |                                                                        |
-|     NO  -> Reset password in AD (standard process)                           |
-|     YES -> Continue                                                          |
-|                                                                              |
-|  2. "Do you see an MFA prompt after the password?"                           |
-|     |                                                                        |
-|     NO  -> Escalate to L2 (MFA may not be triggering)                        |
-|     YES -> Continue                                                          |
-|                                                                              |
-|  3. "Did you receive a push notification on your phone?"                     |
-|     |                                                                        |
-|     NO  -> "Try entering the 6-digit code from FortiToken app manually"      |
-|            |                                                                 |
-|            Works? -> Phone push issue (check internet on phone)              |
-|            Fails? -> Continue to step 4                                      |
-|     YES -> "Tap Approve on the notification"                                 |
-|            |                                                                 |
-|            Works? -> Done                                                    |
-|            Fails? -> Continue to step 4                                      |
-|                                                                              |
-|  4. "Open FortiToken app. Is there a token with a 6-digit code?"             |
-|     |                                                                        |
-|     NO  -> Token not activated. Send new activation email.                   |
-|            FortiAuth > User Management > [user] > Provision Token            |
-|     YES -> "Read me the 6-digit code"                                        |
-|            Try it. If it fails -> Token may need resync (L2)                 |
-|                                                                              |
-|  5. STILL NOT WORKING?                                                       |
-|     -> Escalate to L2/PAM admin                                              |
-|     -> If urgent: PAM admin can issue temporary MFA bypass                   |
-|        wabadmin auth mfa bypass --user "[user]" --duration 1h                |
-|                                                                              |
-+==============================================================================+
++===============================================================================+
+|  L1 SUPPORT — "I CANNOT LOG INTO WALLIX"                                      |
++===============================================================================+
+|                                                                               |
+|  1. "Are you entering the correct Active Directory password?"                 |
+|     |                                                                         |
+|     NO  --> Reset the password in Active Directory (standard process)         |
+|     YES --> Continue                                                          |
+|                                                                               |
+|  2. "After your password, do you see an MFA prompt?"                          |
+|     |                                                                         |
+|     NO  --> Escalate to L2 (MFA may not be triggering correctly)              |
+|     YES --> Continue                                                          |
+|                                                                               |
+|  3. "Did you receive a push notification on your phone?"                      |
+|     |                                                                         |
+|     NO  --> "Try entering the 6-digit code from the FortiToken app manually"  |
+|             |                                                                 |
+|             Code works? --> Push issue. Check internet connectivity on phone  |
+|             Code fails? --> Continue to step 4                                |
+|     YES --> "Tap Approve on the notification"                                 |
+|             |                                                                 |
+|             Works? --> Resolved                                               |
+|             Fails? --> Continue to step 4                                     |
+|                                                                               |
+|  4. "Open the FortiToken app. Is there a 6-digit code displayed?"             |
+|     |                                                                         |
+|     NO  --> Token is not activated. Send a new activation email.             |
+|             FortiAuth > User Management > [user] > Provision Token            |
+|     YES --> "Please read me the code"                                         |
+|             Try it. If it fails --> Token may need resync. Escalate to L2.    |
+|                                                                               |
+|  5. STILL NOT RESOLVED?                                                       |
+|     --> Escalate to L2 / PAM administrator                                    |
+|     --> For time-sensitive access: PAM admin can issue a temporary bypass     |
+|         wabadmin auth mfa bypass --user "[username]" --duration 1h            |
+|                                                                               |
++===============================================================================+
 ```
 
 ---
 
-## 9. Common Mistakes Consultants Make
+## 9. Quality and Risk Controls
 
-### 9.1 Technical Mistakes
+### 9.1 Technical Quality Checks
 
-| Mistake | Consequence | Prevention |
-|---------|------------|------------|
-| Not testing from EVERY site | MFA works at HQ, fails at remote office | Test from each Bastion node before signing off |
-| Forgetting to register Access Manager as RADIUS client | AM users can't use MFA | Count: 10 Bastions + 2 AMs = 12 RADIUS clients |
-| Configuring FortiAuth First Factor as LDAP | Double password prompt, auth breaks | Verify: First Factor = **None** |
-| Not verifying NTP before enabling MFA | All OTP codes fail, users locked out | Check NTP on day 1, before any MFA config |
-| Using the same shared secret as the VPN RADIUS policy | Security risk -- compromise one, compromise both | Separate shared secrets for VPN and PAM |
-| Not creating break-glass account BEFORE enabling MFA | If something breaks, no way in | Break-glass is step 1, not step last |
+| Check | Risk if Skipped | Verification Method |
+|-------|----------------|---------------------|
+| Test MFA from every Bastion node, not only from HQ | MFA works at the primary site; fails silently at remote sites | Run end-to-end test login from each node |
+| Register all Bastion nodes and Access Managers as RADIUS clients | Authentication fails for users who hit an unregistered node | Count: 10 Bastions + 2 AMs = 12 entries required. AM IPs must be obtained from the AM team — do not proceed without them |
+| Verify FortiAuth RADIUS First Factor = None | Double password prompt; authentication broken | Review policy settings before first user test |
+| Verify NTP synchronization before enabling MFA | All OTP codes rejected; users locked out | Check NTP status on AD, FortiAuth, and all WALLIX nodes |
+| Create break-glass account before enabling MFA | If MFA breaks, there is no way to access WALLIX to fix it | Test break-glass login before enabling enforcement |
+| Use unique RADIUS shared secrets per policy | VPN and PAM share a secret — one compromise affects both | Confirm different secrets for VPN RADIUS and PAM RADIUS policies |
 
-### 9.2 Process Mistakes
+### 9.2 Process Quality Checks
 
-| Mistake | Consequence | Prevention |
-|---------|------------|------------|
-| Starting config before firewall rules are in place | Wasted time, can't test anything | Submit firewall request on day 1 |
-| Not tracking token activation rate | 30% of users locked out on enforcement day | Weekly activation report, follow up stragglers |
-| Big-bang enforcement without pilot | Support overwhelmed, executive backlash | Always pilot first (minimum 1 week) |
-| Handover without KT session | Client calls you for every issue for months | Structured KT with hands-on practice |
-| Not documenting decisions | "Who decided that?" arguments later | Write down every design decision and get sign-off |
-| Underestimating user communication | Users surprised, angry, blame IT | Executive email + clear instructions before go-live |
+| Check | Risk if Skipped | Mitigation |
+|-------|----------------|------------|
+| Submit firewall requests on Day 1 | Cannot test connectivity; project stalls | Treat firewall requests as the Day 1 deliverable |
+| Track token activation weekly | 30% of users are locked out on enforcement day | Produce a weekly activation report; follow up personally |
+| Pilot before general enforcement | Support overwhelmed; executive escalation | Minimum 1 week pilot with a representative user group |
+| Structured KT session with hands-on practice | Client calls the consultant for every issue for months | KT is not optional — it is a billable milestone |
+| Document every design decision and obtain sign-off | "Who decided that?" disputes after go-live | Written design decisions, signed off in the design review meeting |
+| Send user communications before go-live | Users are surprised, blame IT, escalate to management | Executive communication at least 2 weeks before enforcement |
 
 ---
 
 ## 10. Post-Go-Live Support
 
-### 10.1 First 30 Days Monitoring
+### 10.1 First 30 Days Monitoring Plan
 
-| Week | Focus | Key Metric |
-|------|-------|------------|
-| Week 1 | Stability, user issues | MFA failure rate (target: < 5%) |
-| Week 2 | Stragglers, edge cases | Token activation rate (target: > 99%) |
-| Week 3 | Operational handover | Internal team handling issues independently |
-| Week 4 | Closure | Formal project sign-off, lessons learned |
+| Week | Focus Area | Target Metric |
+|------|-----------|---------------|
+| Week 1 | Stability, user issues, edge cases | MFA failure rate < 5% |
+| Week 2 | Stragglers, token resync cases | Token activation rate > 99% |
+| Week 3 | Operational handover to internal team | Internal team resolving issues independently |
+| Week 4 | Project closure | Formal sign-off; lessons learned documented |
 
 ### 10.2 Lessons Learned Template
 
-After every engagement, fill this in:
+Complete this within one week of project closure.
 
 ```
 LESSONS LEARNED
-===============
+================
 
-Client:          ____________________________
-Date:            ____________________________
-Engagement days: ____________________________
+Client:             ____________________________
+Engagement dates:   ____________________________
+Total days:         ____________________________
 
 WHAT WENT WELL:
 1. ____________________________
 2. ____________________________
 3. ____________________________
 
-WHAT COULD BE IMPROVED:
+WHAT SHOULD BE IMPROVED:
 1. ____________________________
 2. ____________________________
 3. ____________________________
 
-UNEXPECTED ISSUES ENCOUNTERED:
+UNEXPECTED ISSUES:
 1. ____________________________
 2. ____________________________
 
-TIPS FOR NEXT ENGAGEMENT:
+RECOMMENDATIONS FOR FUTURE ENGAGEMENTS:
 1. ____________________________
 2. ____________________________
 
-TIME SPENT BY PHASE:
-  Discovery:     ____ days (estimated: ____)
-  Build:         ____ days (estimated: ____)
-  Test:          ____ days (estimated: ____)
-  Rollout:       ____ days (estimated: ____)
-  Support:       ____ days (estimated: ____)
-  TOTAL:         ____ days (estimated: ____)
+EFFORT BY PHASE (actual vs estimated):
+  Discovery:   ____ days  (estimated: ____)
+  Build:       ____ days  (estimated: ____)
+  Test:        ____ days  (estimated: ____)
+  Rollout:     ____ days  (estimated: ____)
+  Support:     ____ days  (estimated: ____)
+  TOTAL:       ____ days  (estimated: ____)
 ```
 
-### 10.3 Recurring Client Check-In (Monthly, First Quarter)
+### 10.3 Monthly Check-In (First Quarter After Go-Live)
 
-Offer the client a brief monthly check-in for the first quarter after go-live:
+A brief monthly check-in for the first three months after go-live maintains
+quality and gives the client a structured opportunity to raise issues.
 
 ```
-MONTHLY CHECK-IN AGENDA (15 min)
-=================================
+MONTHLY CHECK-IN AGENDA (15 minutes)
+======================================
 
-1. How is MFA working? Any user complaints?
-2. Token activation and enrollment status
-3. Any new users onboarded? Process working?
-4. Any offboarded users? Tokens revoked?
-5. Health check results -- any alerts fired?
-6. Upcoming changes (AD migration, new site, etc.)?
-7. Questions from internal team?
+1. MFA operational status — any recurring user issues?
+2. Token activation and enrollment: any outstanding gaps?
+3. New user onboarding: is the process working as designed?
+4. Departed users: tokens revoked, AD accounts disabled?
+5. Monitoring and alerting: any alerts fired? Investigated?
+6. Planned infrastructure changes that may affect the integration?
+7. Questions from the internal team?
 ```
 
 ---
 
-*Version 1.0 -- 2026-04-10*
+*Version 2.0 — 2026-04-11*
