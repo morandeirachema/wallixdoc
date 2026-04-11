@@ -124,16 +124,71 @@ Position MFA accurately. Overstating its scope damages credibility.
 The combination of WALLIX Bastion and FortiAuthenticator creates a layered
 architecture where each component has a single, well-defined responsibility.
 
-| Component | Responsibility | Protocol | Placement |
-|-----------|---------------|----------|-----------|
-| **Active Directory** | Identity and password validation | LDAPS (636) | Local to each site — each Bastion HA pair authenticates against the local site DCs |
-| **FortiAuthenticator** | Second factor validation (token) | RADIUS (1812) | Centralized (HA across two datacenters) or distributed per region |
-| **WALLIX Bastion** | Authorization, access control, session recording | SSH, RDP, HTTPS | Local HA pair per site (2 nodes per site) |
+| Component | Responsibility | Protocol | VLAN | Placement |
+|-----------|---------------|----------|------|-----------|
+| **Active Directory** | Identity and password validation | LDAPS (636) | Cyber | Local to each site — each Bastion HA pair authenticates against the local site DCs |
+| **FortiAuthenticator** | Second factor validation (token) | RADIUS (1812) | Cyber | Centralized HA across two datacenters, reachable over MPLS |
+| **WALLIX Bastion** | Authorization, access control, session recording | SSH, RDP, HTTPS | DMZ | Local HA pair per site (2 nodes per site) |
 
 **Key architectural point:** Phase 1 (password) is always resolved locally — WALLIX at each
 site binds to the local Domain Controllers via LDAPS. This means AD authentication is
 resilient to WAN failures. Phase 2 (token) travels to the central FortiAuthenticator over
 the WAN. If the WAN is unavailable, only the break-glass account can authenticate.
+
+### 2.3 Per-Site VLAN Architecture
+
+```
++===============================================================================+
+|  PER-SITE VLAN DESIGN (replicated across all 5 sites)                        |
++===============================================================================+
+|                                                                               |
+|  CYBER VLAN                                                                   |
+|  +----------------------------------+                                         |
+|  |  AD Domain Controllers (local)  |  <-- LDAPS 636 from DMZ Bastions        |
+|  +----------------------------------+                                         |
+|  |  FortiAuthenticator (central,   |  <-- RADIUS 1812 from DMZ Bastions      |
+|  |  reached via MPLS)              |      LDAPS 636 to local AD DCs          |
+|  +----------------------------------+                                         |
+|                                                                               |
+|           ^                ^                                                  |
+|           | LDAPS 636      | RADIUS 1812 (via MPLS)                          |
+|           |                |                                                  |
+|  DMZ VLAN                                                                     |
+|  +----------------------------------+                                         |
+|  |  WALLIX Bastion node 1  (HA)    |                                         |
+|  |  WALLIX Bastion node 2  (HA)    |                                         |
+|  +----------------------------------+                                         |
+|           |                                                                   |
+|           | SSH 22 / RDP 3389 / HTTPS 443 (to targets)                       |
+|           v                                                                   |
+|  SERVER / TARGET VLANs                                                        |
+|                                                                               |
+|  Users connect to Bastions (DMZ) via SSH 22, RDP 3389, HTTPS 443             |
+|  Access Managers (external team) connect to Bastions from their VLAN         |
+|                                                                               |
++===============================================================================+
+```
+
+### 2.4 Required Inter-VLAN Firewall Rules
+
+These rules must be in place before any integration testing can begin.
+Submit the full list to the network team on Day 1.
+
+| Source VLAN | Destination VLAN | Protocol | Port | Purpose |
+|-------------|-----------------|----------|------|---------|
+| DMZ (Bastion) | Cyber (local AD) | TCP | 636 | WALLIX LDAPS bind — password validation (Phase 1) |
+| DMZ (Bastion) | Cyber (FortiAuth, via MPLS) | UDP | 1812 | WALLIX RADIUS — token validation (Phase 2) |
+| Cyber (FortiAuth) | Cyber (local AD, all sites) | TCP | 636 | FortiAuth LDAP sync — user and group import |
+| Users VLAN | DMZ (Bastion) | TCP | 443 | WALLIX Web UI access |
+| Users VLAN | DMZ (Bastion) | TCP | 22 | WALLIX SSH proxy access |
+| Users VLAN | DMZ (Bastion) | TCP | 3389 | WALLIX RDP proxy access |
+| DMZ (Bastion) | Server VLANs | TCP | 22 | Bastion SSH to Linux targets |
+| DMZ (Bastion) | Server VLANs | TCP | 3389 | Bastion RDP to Windows targets |
+| AM VLAN (external) | DMZ (Bastion) | TCP | 443 | Access Manager to Bastion connectivity |
+
+**Note:** The Access Manager team is responsible for the firewall rules on
+their side (AM VLAN → DMZ). Confirm with them which rules they require and
+who submits their change requests.
 
 **Client talking points:**
 

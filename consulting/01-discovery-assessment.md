@@ -173,8 +173,13 @@ timelines, and the level of urgency to bring to each conversation.
 |  Network segmentation:                                                        |
 |  [ ] Flat network (no VLANs)                                                  |
 |  [ ] Basic VLANs (servers / users / management)                               |
-|  [ ] Full segmentation (DMZ, management, server, user zones)                  |
+|  [x] Full segmentation  <-- confirmed: DMZ VLAN + Cyber VLAN per site         |
 |  [ ] Microsegmentation / zero trust                                           |
+|                                                                               |
+|  VLAN assignment (confirmed):                                                 |
+|  DMZ VLAN   -- WALLIX Bastion HA pairs (both nodes per site)                  |
+|  Cyber VLAN -- AD Domain Controllers (local per site)                         |
+|  Cyber VLAN -- FortiAuthenticator (centralized, reachable via MPLS)           |
 |                                                                               |
 |  Firewall vendor:     ____________________________                            |
 |  Change process:      [ ] Self-managed  [ ] Managed service  [ ] Committee    |
@@ -195,6 +200,46 @@ timelines, and the level of urgency to bring to each conversation.
 | "We have a weekly CAB meeting" | Moderate | Submit rules at least 2 weeks before planned integration |
 | "Our firewall is managed by an outsourced SOC" | Significant | Initiate firewall requests in the very first week |
 | "We require a formal change request with risk assessment" | Critical | Treat firewall rules as a dedicated workstream from day 1 |
+
+### 4.3 Required Inter-VLAN Firewall Rules
+
+Submit this complete list to the network team on Day 1 of the engagement.
+All rules are required before any integration testing can begin.
+
+```
++===============================================================================+
+|  INTER-VLAN FIREWALL RULES -- FULL REQUIREMENT LIST                           |
++===============================================================================+
+|                                                                               |
+|  DMZ VLAN (Bastions) --> Cyber VLAN (local AD DCs)                            |
+|  TCP 636   LDAPS   WALLIX password validation against local DCs (Phase 1)     |
+|                                                                               |
+|  DMZ VLAN (Bastions) --> Cyber VLAN (FortiAuth, via MPLS)                     |
+|  UDP 1812  RADIUS  WALLIX token validation against central FortiAuth (Phase 2)|
+|                                                                               |
+|  Cyber VLAN (FortiAuth) --> Cyber VLAN (AD DCs, all sites, via MPLS)          |
+|  TCP 636   LDAPS   FortiAuth user and group sync from all site DCs            |
+|                                                                               |
+|  Users VLAN --> DMZ VLAN (Bastions)                                           |
+|  TCP 443   HTTPS   WALLIX Web UI                                              |
+|  TCP 22    SSH     WALLIX SSH proxy                                           |
+|  TCP 3389  RDP     WALLIX RDP proxy                                           |
+|                                                                               |
+|  DMZ VLAN (Bastions) --> Server / Target VLANs                                |
+|  TCP 22    SSH     Bastion to Linux targets                                   |
+|  TCP 3389  RDP     Bastion to Windows targets                                 |
+|  (add further rules per target VLAN as targets are onboarded)                 |
+|                                                                               |
+|  AM VLAN (external team) --> DMZ VLAN (Bastions)                              |
+|  TCP 443   HTTPS   Access Manager to Bastion connectivity                     |
+|  Note: the AM team submits their own firewall change requests                 |
+|                                                                               |
++===============================================================================+
+```
+
+Verify each rule is in place from the correct source host before proceeding
+to integration configuration. A missing rule produces either a timeout or
+a silent failure — both are hard to diagnose without this checklist.
 
 ---
 
