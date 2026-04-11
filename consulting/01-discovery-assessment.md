@@ -177,9 +177,9 @@ timelines, and the level of urgency to bring to each conversation.
 |  [ ] Microsegmentation / zero trust                                           |
 |                                                                               |
 |  VLAN assignment (confirmed):                                                 |
-|  DMZ VLAN   -- WALLIX Bastion HA pairs (both nodes per site)                  |
-|  Cyber VLAN -- AD Domain Controllers (local per site)                         |
-|  Cyber VLAN -- FortiAuthenticator (centralized, reachable via MPLS)           |
+|  DMZ VLAN   -- WALLIX Bastion HA pairs (2 nodes per site)                     |
+|  Cyber VLAN -- AD Domain Controllers (local HA pair per site)                 |
+|  Cyber VLAN -- FortiAuthenticator HA pairs (2 nodes per site, local)          |
 |                                                                               |
 |  Firewall vendor:     ____________________________                            |
 |  Change process:      [ ] Self-managed  [ ] Managed service  [ ] Committee    |
@@ -214,11 +214,12 @@ All rules are required before any integration testing can begin.
 |  DMZ VLAN (Bastions) --> Cyber VLAN (local AD DCs)                            |
 |  TCP 636   LDAPS   WALLIX password validation against local DCs (Phase 1)     |
 |                                                                               |
-|  DMZ VLAN (Bastions) --> Cyber VLAN (FortiAuth, via MPLS)                     |
-|  UDP 1812  RADIUS  WALLIX token validation against central FortiAuth (Phase 2)|
+|  DMZ VLAN (Bastions) --> Cyber VLAN (local FortiAuth)                         |
+|  UDP 1812  RADIUS  WALLIX TOTP validation against local FortiAuth (Phase 2)  |
+|                             Intra-site only — no WAN dependency               |
 |                                                                               |
-|  Cyber VLAN (FortiAuth) --> Cyber VLAN (AD DCs, all sites, via MPLS)          |
-|  TCP 636   LDAPS   FortiAuth user and group sync from all site DCs            |
+|  Cyber VLAN (FortiAuth) --> Cyber VLAN (local AD DCs)                         |
+|  TCP 636   LDAPS   FortiAuth user and group sync from local site DCs          |
 |                                                                               |
 |  Users VLAN --> DMZ VLAN (Bastions)                                           |
 |  TCP 443   HTTPS   WALLIX Web UI                                              |
@@ -319,8 +320,8 @@ FORTITOKEN LICENSING -- KEY POINTS
    - Users retain the same token until deprovisioned
 
 2. FortiCare support is annual
-   - Required for firmware updates and push notification service
-   - Without FortiCare, push stops working; OTP continues to function
+   - Required for firmware updates
+   - TOTP continues to function without FortiCare (no cloud dependency)
 
 3. License planning
    - License against active users, not total AD accounts

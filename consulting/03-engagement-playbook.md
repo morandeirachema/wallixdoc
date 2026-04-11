@@ -324,7 +324,7 @@ IT Security Team
 
 | Objection | Raised By | Recommended Response |
 |-----------|-----------|----------------------|
-| "This will slow us down." | Operators, administrators | "The push approval takes 2–3 seconds per login. The operational cost is negligible. The risk exposure it eliminates — a credential breach affecting every system the user can access — is not." |
+| "This will slow us down." | Operators, administrators | "Entering the 6-digit code takes under 10 seconds per login. The operational cost is negligible. The risk exposure it eliminates — a credential breach affecting every system the user can access — is not." |
 | "What happens if I lose my phone?" | End users | "An administrator can issue a temporary bypass in under two minutes. No user is permanently locked out. A hardware token is available as a permanent alternative if preferred." |
 | "We have never been breached." | Management | "80% of breaches involve compromised credentials. MFA is a preventive control. Its value is in the breaches that do not happen, not the ones that do." |
 | "I don't want a work application on my personal phone." | BYOD users | "FortiToken Mobile cannot access, read, or transmit any data from your device. It is a standalone authentication app. A hardware token is available for anyone who prefers not to use their phone." |
@@ -335,33 +335,28 @@ IT Security Team
 
 ### 4.2 Addressing MFA Fatigue
 
-Some clients will raise concerns about MFA fatigue attacks — where an
-attacker repeatedly sends push notifications to wear a user down.
+MFA fatigue attacks (bombarding users with push notifications) are not
+applicable to this deployment. Push notifications are not configured —
+TOTP is the only second factor. An attacker with a stolen password cannot
+log in without physically reading the 6-digit code from the user's device.
 
 ```
-MFA FATIGUE MITIGATIONS IN THIS DEPLOYMENT
+MFA SECURITY PROPERTIES IN THIS DEPLOYMENT
 ============================================
 
-1. Push notifications include session context
-   Users see the source IP and application name in the notification.
-   If they did not initiate a login, they deny and report it.
+1. TOTP only — no push notifications
+   No push bombing attack surface exists.
+   The attacker must have physical access to the user's device
+   to read the current 6-digit code.
+   Codes expire every 60 seconds.
 
-2. Timeout enforcement
-   Each push challenge expires after 60 seconds.
-   An attacker must continually retry, generating a visible audit trail.
+2. Session recording in WALLIX
+   All privileged session activity is recorded regardless of how
+   access was obtained. Forensic evidence is always available.
 
-3. OTP fallback is always available
-   If a push notification appears suspicious, the user can choose manual
-   OTP entry instead. OTP requires the attacker to have physical access
-   to the user's phone screen.
-
-4. Session recording in WALLIX
-   Even if a push is accidentally approved, every action taken within
-   the session is recorded. Forensic evidence is always available.
-
-5. Alerting on repeated failures
-   An alert fires on more than 5 MFA failures within 5 minutes for
-   a single user. The security team investigates immediately.
+3. Alerting on repeated failures
+   An alert fires on more than 5 MFA failures within 5 minutes
+   for a single user. The security team investigates immediately.
 ```
 
 ---
@@ -589,16 +584,10 @@ Deliver this to the service desk before go-live.
 |     NO  --> Escalate to L2 (MFA may not be triggering correctly)              |
 |     YES --> Continue                                                          |
 |                                                                               |
-|  3. "Did you receive a push notification on your phone?"                      |
+|  3. "Open FortiToken Mobile on your phone. Enter the 6-digit code shown."     |
 |     |                                                                         |
-|     NO  --> "Try entering the 6-digit code from the FortiToken app manually"  |
-|             |                                                                 |
-|             Code works? --> Push issue. Check internet connectivity on phone  |
-|             Code fails? --> Continue to step 4                                |
-|     YES --> "Tap Approve on the notification"                                 |
-|             |                                                                 |
-|             Works? --> Resolved                                               |
-|             Fails? --> Continue to step 4                                     |
+|     Works? --> Resolved                                                       |
+|     Fails? --> Continue to step 4                                             |
 |                                                                               |
 |  4. "Open the FortiToken app. Is there a 6-digit code displayed?"             |
 |     |                                                                         |

@@ -126,33 +126,36 @@ architecture where each component has a single, well-defined responsibility.
 
 | Component | Responsibility | Protocol | VLAN | Placement |
 |-----------|---------------|----------|------|-----------|
-| **Active Directory** | Identity and password validation | LDAPS (636) | Cyber | Local to each site — each Bastion HA pair authenticates against the local site DCs |
-| **FortiAuthenticator** | Second factor validation (token) | RADIUS (1812) | Cyber | Centralized HA across two datacenters, reachable over MPLS |
-| **WALLIX Bastion** | Authorization, access control, session recording | SSH, RDP, HTTPS | DMZ | Local HA pair per site (2 nodes per site) |
+| **Active Directory** | Identity and password validation | LDAPS (636) | Cyber | Local HA pair of DCs per site |
+| **FortiAuthenticator** | Second factor validation (token) | RADIUS (1812) | Cyber | Local HA pair per site (2 nodes × 5 sites = 10 total) |
+| **WALLIX Bastion** | Authorization, access control, session recording | SSH, RDP, HTTPS | DMZ | Local HA pair per site (2 nodes × 5 sites = 10 total) |
 
-**Key architectural point:** Phase 1 (password) is always resolved locally — WALLIX at each
-site binds to the local Domain Controllers via LDAPS. This means AD authentication is
-resilient to WAN failures. Phase 2 (token) travels to the central FortiAuthenticator over
-the WAN. If the WAN is unavailable, only the break-glass account can authenticate.
+**Key architectural point:** Both authentication phases are fully local to each site.
+Phase 1 (password) — WALLIX binds to the local Cyber VLAN AD DCs via LDAPS.
+Phase 2 (token) — WALLIX sends RADIUS to the local Cyber VLAN FortiAuthenticator.
+Neither phase crosses the MPLS WAN. A WAN outage does not affect authentication
+at any site.
 
 ### 2.3 Per-Site VLAN Architecture
 
 ```
 +===============================================================================+
-|  PER-SITE VLAN DESIGN (replicated across all 5 sites)                        |
+|  PER-SITE VLAN DESIGN (identical at all 5 sites)                             |
 +===============================================================================+
 |                                                                               |
 |  CYBER VLAN                                                                   |
 |  +----------------------------------+                                         |
-|  |  AD Domain Controllers (local)  |  <-- LDAPS 636 from DMZ Bastions        |
+|  |  AD Domain Controller 1  (HA)   |  <-- LDAPS 636 from DMZ Bastions        |
+|  |  AD Domain Controller 2  (HA)   |      (Phase 1 — local, no WAN)          |
 |  +----------------------------------+                                         |
-|  |  FortiAuthenticator (central,   |  <-- RADIUS 1812 from DMZ Bastions      |
-|  |  reached via MPLS)              |      LDAPS 636 to local AD DCs          |
+|  |  FortiAuthenticator node 1 (HA) |  <-- RADIUS 1812 from DMZ Bastions      |
+|  |  FortiAuthenticator node 2 (HA) |      (Phase 2 — local, no WAN)          |
+|  |                                 |  --> LDAPS 636 to local AD DCs (sync)   |
 |  +----------------------------------+                                         |
 |                                                                               |
-|           ^                ^                                                  |
-|           | LDAPS 636      | RADIUS 1812 (via MPLS)                          |
-|           |                |                                                  |
+|      ^  LDAPS 636 (Phase 1)    ^  RADIUS 1812 (Phase 2)                      |
+|      |  local, intra-VLAN      |  local, intra-VLAN                          |
+|                                                                               |
 |  DMZ VLAN                                                                     |
 |  +----------------------------------+                                         |
 |  |  WALLIX Bastion node 1  (HA)    |                                         |
@@ -166,6 +169,9 @@ the WAN. If the WAN is unavailable, only the break-glass account can authenticat
 |  Users connect to Bastions (DMZ) via SSH 22, RDP 3389, HTTPS 443             |
 |  Access Managers (external team) connect to Bastions from their VLAN         |
 |                                                                               |
+|  WAN (MPLS) carries only: AM connections, inter-site management              |
+|  Authentication traffic (LDAPS + RADIUS) never leaves the local site         |
+|                                                                               |
 +===============================================================================+
 ```
 
@@ -174,17 +180,17 @@ the WAN. If the WAN is unavailable, only the break-glass account can authenticat
 These rules must be in place before any integration testing can begin.
 Submit the full list to the network team on Day 1.
 
-| Source VLAN | Destination VLAN | Protocol | Port | Purpose |
-|-------------|-----------------|----------|------|---------|
-| DMZ (Bastion) | Cyber (local AD) | TCP | 636 | WALLIX LDAPS bind — password validation (Phase 1) |
-| DMZ (Bastion) | Cyber (FortiAuth, via MPLS) | UDP | 1812 | WALLIX RADIUS — token validation (Phase 2) |
-| Cyber (FortiAuth) | Cyber (local AD, all sites) | TCP | 636 | FortiAuth LDAP sync — user and group import |
-| Users VLAN | DMZ (Bastion) | TCP | 443 | WALLIX Web UI access |
-| Users VLAN | DMZ (Bastion) | TCP | 22 | WALLIX SSH proxy access |
-| Users VLAN | DMZ (Bastion) | TCP | 3389 | WALLIX RDP proxy access |
-| DMZ (Bastion) | Server VLANs | TCP | 22 | Bastion SSH to Linux targets |
-| DMZ (Bastion) | Server VLANs | TCP | 3389 | Bastion RDP to Windows targets |
-| AM VLAN (external) | DMZ (Bastion) | TCP | 443 | Access Manager to Bastion connectivity |
+| Source VLAN | Destination VLAN | Protocol | Port | Purpose | Scope |
+|-------------|-----------------|----------|------|---------|-------|
+| DMZ (Bastion) | Cyber (local AD) | TCP | 636 | WALLIX LDAPS bind — password validation (Phase 1) | Intra-site |
+| DMZ (Bastion) | Cyber (local FortiAuth) | UDP | 1812 | WALLIX RADIUS — token validation (Phase 2) | Intra-site |
+| Cyber (FortiAuth) | Cyber (local AD) | TCP | 636 | FortiAuth LDAP sync — user and group import | Intra-site |
+| Users VLAN | DMZ (Bastion) | TCP | 443 | WALLIX Web UI access | Intra-site |
+| Users VLAN | DMZ (Bastion) | TCP | 22 | WALLIX SSH proxy access | Intra-site |
+| Users VLAN | DMZ (Bastion) | TCP | 3389 | WALLIX RDP proxy access | Intra-site |
+| DMZ (Bastion) | Server VLANs | TCP | 22 | Bastion SSH to Linux targets | Intra-site |
+| DMZ (Bastion) | Server VLANs | TCP | 3389 | Bastion RDP to Windows targets | Intra-site |
+| AM VLAN (external) | DMZ (Bastion) | TCP | 443 | Access Manager to Bastion connectivity | Cross-site (MPLS) |
 
 **Note:** The Access Manager team is responsible for the firewall rules on
 their side (AM VLAN → DMZ). Confirm with them which rules they require and
@@ -212,18 +218,18 @@ who submits their change requests.
 | **Inherence** | A biological characteristic | Fingerprint, facial recognition | A handwritten signature |
 
 This engagement implements **Knowledge + Possession**: the AD password
-(knowledge) validated directly by WALLIX, and the FortiToken OTP or push
-approval (possession) validated by FortiAuthenticator via RADIUS.
+(knowledge) validated directly by WALLIX, and the FortiToken TOTP code
+(possession) validated by FortiAuthenticator via RADIUS.
 
 ### 3.2 FortiToken Mobile
 
 FortiToken Mobile is a time-based OTP (TOTP) application for iOS and Android.
 It supports two authentication modes:
 
-| Mode | How It Works | Internet Required | Best For |
-|------|-------------|-------------------|----------|
-| **Push notification** | User receives a notification and taps Approve | Yes (phone must have internet) | Daily use — fastest experience |
-| **OTP (manual)** | User reads a 6-digit code that changes every 60 s | No — works fully offline | Backup mode, air-gapped environments |
+| Mode | How It Works | Internet Required | Status in This Deployment |
+|------|-------------|-------------------|--------------------------|
+| **TOTP (manual OTP)** | User reads a 6-digit code that changes every 60 s | No — works fully offline | **Active — used in this deployment** |
+| **Push notification** | User receives a notification and taps Approve | Yes (phone must have internet) | Not used — TOTP only |
 
 ### 3.3 FortiToken Hardware (200 / 300)
 
@@ -237,11 +243,11 @@ smartphone required. Appropriate for:
 | Criterion | FortiToken Mobile | FortiToken Hardware |
 |-----------|-------------------|---------------------|
 | Cost per user | Lower (software license) | Higher (physical device) |
-| User experience | Push — tap to approve | Manual 6-digit entry |
+| User experience | TOTP — 6-digit code from app (push not used) | TOTP — 6-digit code from device |
 | Deployment speed | Fast — email activation link | Slower — physical distribution |
 | Lost / stolen recovery | Revoke and re-provision in minutes | Requires physical replacement |
 | Battery | N/A | ~5 years, then device replacement |
-| Offline use | OTP works offline; push requires internet | Always offline capable |
+| Offline use | TOTP always works offline (push not configured) | Always offline capable |
 
 ### 3.4 How RADIUS Integrates with WALLIX
 
@@ -250,12 +256,13 @@ protocol for forwarding authentication requests to a centralized server.
 
 In plain terms:
 
-> "When a user enters their OTP or approves a push on their phone, WALLIX
-> sends a message to FortiAuthenticator that says: 'This user presented
-> this code — is it valid?' FortiAuthenticator verifies the token and
-> replies with Accept or Reject. WALLIX grants or denies access based on
-> that reply. The two systems communicate over an encrypted channel using
-> a shared secret that is unique to this integration."
+> "When a user enters their 6-digit TOTP code, WALLIX sends a message to
+> FortiAuthenticator: 'This user presented this code — is it valid?'
+> FortiAuthenticator verifies the token and replies with Accept or Reject.
+> WALLIX grants or denies access based on that reply. The two systems
+> communicate over an encrypted channel using a shared secret that is
+> unique to this integration. No internet connection is required — the
+> TOTP code is generated locally on the user's device."
 
 Key configuration parameters:
 
@@ -517,18 +524,19 @@ request to FortiAuthenticator. No token approval means no session.
 |  User enters credentials on WALLIX login page (Site N)                        |
 |                 |                                                             |
 |                 v                                                             |
-|  PHASE 1 — LOCAL                                                              |
-|  WALLIX (Site N) binds to LOCAL site AD Domain Controllers via LDAPS          |
+|  PHASE 1 — LOCAL (intra-site, Cyber VLAN)                                     |
+|  WALLIX (Site N, DMZ) binds to local AD DCs (Site N, Cyber) via LDAPS         |
 |  Active Directory validates: username + password                              |
-|  No WAN dependency — AD DCs are local to each site                           |
+|  No WAN dependency — AD DCs are in the local Cyber VLAN                      |
 |                 |                                                             |
 |        [password OK?]                                                         |
 |                 |                                                             |
 |                 v                                                             |
-|  PHASE 2 — CENTRALIZED                                                        |
-|  WALLIX (Site N) sends RADIUS Access-Request to FortiAuthenticator            |
-|  FortiAuthenticator (central HA) sends push to user's FortiToken app          |
-|  WAN must be available for this step                                          |
+|  PHASE 2 — LOCAL (intra-site, Cyber VLAN)                                     |
+|  WALLIX (Site N, DMZ) sends RADIUS to FortiAuth (Site N, Cyber)               |
+|  User enters 6-digit TOTP code from FortiToken Mobile app                     |
+|  FortiAuth validates the TOTP code (time-based, no internet required)         |
+|  No WAN dependency — FortiAuth HA pair is in the local Cyber VLAN             |
 |                 |                                                             |
 |        [token approved?]                                                      |
 |                 |                                                             |
@@ -547,26 +555,29 @@ authentication requests. Three elements require precise configuration:
 
 **RADIUS Clients**
 
-Every WALLIX Bastion node and WALLIX Access Manager that will send RADIUS
-requests must be registered as a RADIUS client on FortiAuthenticator.
-A missing client entry results in silent MFA failure for that node.
+Every node that sends RADIUS requests to a site's FortiAuthenticator must
+be registered as a RADIUS client on that site's FortiAuth pair. A missing
+entry results in silent MFA failure for sessions routed through that node.
 
-| Component | Count | Managed By | Coordination Required |
-|-----------|-------|------------|----------------------|
-| WALLIX Bastion nodes | 10 (2 per site) | In scope | None |
-| WALLIX Access Managers | 2 | External team — not in scope | AM team must provide node IPs; registration on FortiAuth is in scope |
-| **Total RADIUS client entries** | **12** | | |
+Each site's FortiAuth pair has the following RADIUS clients:
 
-**Important:** The Access Managers are managed by a separate team and are
-not in scope for this engagement. However, because each AM connects to
-every site's Bastion HA pair and initiates RADIUS authentication requests
-to FortiAuthenticator, both AM nodes must be registered as RADIUS clients.
+| Component | Count per site | Managed By | Note |
+|-----------|---------------|------------|------|
+| WALLIX Bastion nodes | 2 (local HA pair) | In scope | Register on the local site FortiAuth |
+| WALLIX Access Managers | 2 (connect to all sites) | External team | AM team must provide IPs; register on every site's FortiAuth |
+| **Total RADIUS clients per site** | **4** | | |
+| **Total across 5 sites** | **20** | | 10 Bastion + 10 AM entries |
 
-Action required from the AM team:
-- Provide the IP addresses of both AM nodes before FortiAuth configuration
-- Confirm when the AM-to-Bastion connectivity is established per site
-- Any changes to AM node IPs must be communicated — a missing or stale
-  RADIUS client entry will silently break MFA for AM-brokered sessions
+**Important:** The Access Managers connect to Bastions at every site. When
+an AM brokers a session through Bastion at Site N, that Bastion sends the
+RADIUS request to Site N's local FortiAuth. Both AM nodes must therefore
+be registered on every site's FortiAuth pair — not just one site.
+
+Action required from the AM team before FortiAuth configuration begins:
+- Provide the IP addresses of both AM nodes
+- Confirm per-site AM-to-Bastion connectivity schedule
+- Any future AM IP changes must be communicated — a stale entry will
+  silently break MFA for all AM-brokered sessions at that site
 
 **RADIUS Policy — Critical Setting**
 
@@ -589,7 +600,7 @@ Action required from the AM team:
 |  * Authentication failures when the password format does not match            |
 |    RADIUS expectations                                                        |
 |                                                                               |
-|  Second Factor:    FortiToken (push + OTP)                                    |
+|  Second Factor:    FortiToken TOTP (6-digit code, no push)                    |
 |                                                                               |
 +===============================================================================+
 ```
@@ -604,18 +615,22 @@ The RADIUS shared secret must be:
 
 ### 7.3 LDAP Synchronization
 
-FortiAuthenticator synchronizes users from Active Directory via LDAPS.
-This enables FortiAuth to know which users are enrolled for MFA and to
-automatically assign tokens when users are added to the PAM-MFA-Users group.
+Each site's FortiAuthenticator pair synchronizes users from the local site
+Active Directory Domain Controllers via LDAPS. Since AD is replicated across
+all sites, the local DCs are always authoritative for the full user directory.
 
 | Configuration Item | Value |
 |-------------------|-------|
-| LDAP server | DC FQDN (not IP — allows DC failover) |
+| LDAP server | Local site DC FQDN (not IP — allows DC failover within site) |
 | Port | 636 (LDAPS) |
 | Bind account | svc-fortiauth (read-only, in PAM OU) |
 | Sync group | PAM-MFA-Users |
 | Sync interval | 30 minutes (or on-demand trigger) |
 | User attribute for token assignment | sAMAccountName |
+
+**Note:** Because each site manages its own FortiAuth pair independently,
+token provisioning and user sync are administered per site. Coordinate a
+consistent configuration across all 5 sites to avoid divergence.
 
 ### 7.4 Token Lifecycle
 
@@ -635,9 +650,9 @@ automatically assign tokens when users are added to the PAM-MFA-Users group.
 |     The token is now generating valid TOTP codes                              |
 |                                                                               |
 |  3. USE                                                                       |
-|     Every login: approve push notification or enter 6-digit OTP               |
-|     OTP changes every 60 seconds (TOTP — RFC 6238)                            |
-|     Push requires internet on the user's phone; OTP does not                  |
+|     Every login: open FortiToken Mobile and enter the 6-digit TOTP code       |
+|     Code changes every 60 seconds (TOTP — RFC 6238)                           |
+|     No internet required — code is generated locally on the device            |
 |                                                                               |
 |  4. RESYNC (when required)                                                    |
 |     If the OTP is consistently rejected, the phone clock may have drifted     |
@@ -659,21 +674,25 @@ automatically assign tokens when users are added to the PAM-MFA-Users group.
 
 ### 7.5 FortiAuthenticator HA Configuration
 
-FortiAuthenticator HA operates in Active-Passive mode. The primary node
-handles all RADIUS requests. The secondary node maintains a synchronized
-copy of all configuration, users, and tokens.
+Each site has its own FortiAuthenticator Active-Passive HA pair, both nodes
+in the local Cyber VLAN. The primary node handles all RADIUS requests. The
+secondary maintains a synchronized copy of all configuration, users, and tokens.
+HA sync stays entirely within the local Cyber VLAN — no WAN traffic involved.
 
-| HA Parameter | Recommended Value |
-|-------------|-------------------|
+| HA Parameter | Value |
+|-------------|-------|
 | HA mode | Active-Passive |
 | Sync protocol | Proprietary (TCP port 8009) |
+| Sync scope | Intra-site only — within the local Cyber VLAN |
 | Sync interval | 60 seconds |
-| WALLIX configuration | Primary as priority 1, secondary as priority 2 |
+| WALLIX configuration | Site primary as priority 1, site secondary as priority 2 |
 | Failover detection | WALLIX timeout + retry triggers automatic failover |
+| Deployment count | 2 nodes × 5 sites = 10 FortiAuthenticator nodes total |
 
-When the primary FortiAuth becomes unreachable, WALLIX automatically retries
-against the secondary. The failover is transparent to the user — the push
-notification or OTP entry proceeds normally.
+When the primary FortiAuth at a site becomes unreachable, WALLIX automatically
+retries against the secondary at the same site. Failover is transparent to the
+user. A failure of both nodes at a site affects only that site — other sites
+continue to function independently with their own local FortiAuth pair.
 
 ---
 
@@ -711,12 +730,13 @@ to the client's technical team.
 |    * Password crosses the WAN unnecessarily                                   |
 |                                                                               |
 |  Two-phase (correct) approach:                                                |
-|    Phase 1: WALLIX -> LOCAL AD (LDAPS) — password, no WAN dependency         |
-|    Phase 2: WALLIX -> FortiAuth (RADIUS, over WAN) — OTP only                 |
+|    Phase 1: WALLIX (DMZ) -> LOCAL AD (Cyber, same site, LDAPS) — password    |
+|    Phase 2: WALLIX (DMZ) -> LOCAL FortiAuth (Cyber, same site, RADIUS) — OTP |
 |    Benefits:                                                                  |
 |    * Each system does exactly one thing                                       |
+|    * Both phases are intra-site — no WAN dependency for authentication        |
 |    * AD lockout policies work correctly (WALLIX binds directly)               |
-|    * Phase 1 resilient to WAN and FortiAuth failures                          |
+|    * A WAN outage does not affect authentication at any site                  |
 |    * Failure isolation: Phase 1 and Phase 2 issues are independent            |
 |    * Break-glass (local WALLIX account) bypasses Phase 2 entirely             |
 |                                                                               |
@@ -738,81 +758,41 @@ to the client's technical team.
 
 ### 9.2 FortiAuthenticator Placement Options
 
-**Note on AD placement:** Active Directory Domain Controllers are always local
-to each site. The WALLIX HA pair at each site binds to its local DCs for
-password validation — this is fixed regardless of which FortiAuth placement
-option is chosen. The decision below applies only to FortiAuthenticator
-(Phase 2 — token validation).
-
-**Network:** All five sites are interconnected via a private MPLS network.
-FortiAuthenticator centralized placement (Option A) is the recommended
-approach given the reliable, low-latency MPLS backbone.
+**Confirmed deployment:** FortiAuthenticator HA pair (Active-Passive) at every
+site, in the local Cyber VLAN alongside the AD Domain Controllers. RADIUS
+traffic never crosses the MPLS WAN — it stays intra-site between DMZ and
+Cyber VLANs. All 5 sites are identical in layout.
 
 ```
 +===============================================================================+
-|  PLACEMENT OPTION A — CENTRALIZED (RECOMMENDED FOR MPLS CLIENTS)             |
+|  CONFIRMED PLACEMENT — LOCAL HA PAIR PER SITE                                 |
 +===============================================================================+
 |                                                                               |
-|  FortiAuth deployed in the shared infrastructure VLAN alongside AD DCs.       |
-|  All WALLIX nodes at all sites reach it via MPLS / private WAN.               |
+|  FortiAuth node 1 (primary)  --- HA Sync (TCP 8009) ---  FortiAuth node 2    |
+|  Cyber VLAN, Site N                                       Cyber VLAN, Site N  |
 |                                                                               |
-|  Advantages: single management point, simple HA, centralized token pool       |
-|  Limitation: depends on WAN availability for remote site authentication       |
-|  Mitigation: break-glass accounts at each site; HA at primary DC              |
+|  Both nodes in the same Cyber VLAN at the same site.                          |
+|  Active-Passive: primary handles all RADIUS; secondary is standby.            |
+|  WALLIX Bastions (DMZ) configured with site primary as priority 1.            |
 |                                                                               |
-|  Best fit: reliable MPLS, centralized IT, < 5 sites                           |
+|  Deployed at: Site 1, Site 2, Site 3, Site 4, Site 5                          |
+|  Total FortiAuth nodes: 10 (2 per site)                                       |
 |                                                                               |
-+===============================================================================+
-
-+===============================================================================+
-|  PLACEMENT OPTION B — PRIMARY + DR SITE                                       |
-+===============================================================================+
+|  Advantages:                                                                  |
+|  * No WAN dependency for Phase 2 — fully intra-site                           |
+|  * A WAN outage does not affect authentication at any site                    |
+|  * Site-level blast radius — a failure affects one site only                  |
+|  * HA sync stays within the local Cyber VLAN (no inter-site sync traffic)     |
 |                                                                               |
-|  Primary FortiAuth at main datacenter. Secondary FortiAuth at DR site.        |
-|  HA sync operates over the WAN link (port 8009 must be permitted).            |
-|                                                                               |
-|  Advantages: lowest latency for primary site; HA across datacenters           |
-|  Limitation: remote sites still depend on WAN for RADIUS                      |
-|  Mitigation: break-glass accounts per site                                    |
-|                                                                               |
-|  Best fit: hub-and-spoke topology, datacenter-centric organizations           |
-|                                                                               |
-+===============================================================================+
-
-+===============================================================================+
-|  PLACEMENT OPTION C — DISTRIBUTED (ONE PER REGION)                            |
-+===============================================================================+
-|                                                                               |
-|  FortiAuth appliances deployed at each major region.                          |
-|  All sync from Active Directory; each handles local RADIUS.                   |
-|                                                                               |
-|  Advantages: survives WAN outages; lowest latency at every site               |
-|  Limitation: more appliances, more licensing, complex sync design             |
-|  Mitigation: detailed HA planning per region                                  |
-|                                                                               |
-|  Best fit: unreliable WAN, strict availability SLAs, geographically           |
-|  distributed organizations                                                    |
+|  Management consideration:                                                    |
+|  * Configuration must be applied consistently across all 5 site pairs         |
+|  * Token pool is per-site — a user's token is enrolled on their home-site     |
+|    FortiAuth; cross-site access requires the token to be recognized           |
+|    by the FortiAuth at the site being accessed                                |
+|  * Recommended: use AD group-driven auto-enrolment so tokens are              |
+|    provisioned on every site's FortiAuth for roaming users                    |
 |                                                                               |
 +===============================================================================+
-```
-
-### 9.3 Decision Flowchart
-
-```
-Is WAN reliable (< 50 ms latency, >= 99.9% uptime)?
-|
-+-- YES --> How many sites?
-|           |
-|           +-- 1-5 sites  --> OPTION A: Centralized FortiAuth
-|           |                  ** This deployment: 5 sites on MPLS
-|           |                     --> OPTION A confirmed **
-|           +-- 5+ sites   --> OPTION B: Primary + DR site FortiAuth
-|
-+-- NO  --> Are sites grouped by region?
-            |
-            +-- YES --> OPTION C: One FortiAuth per region
-            |
-            +-- NO  --> OPTION A + aggressive break-glass planning
 ```
 
 ---
@@ -828,54 +808,25 @@ Is WAN reliable (< 50 ms latency, >= 99.9% uptime)?
 | Is there a DR site? | HA across sites | HA within single site |
 | Does the client have > 100 PAM users? | HA strongly recommended | HA optional |
 
-### 10.2 HA Architecture Diagrams
+### 10.2 HA Architecture
 
 ```
 +===============================================================================+
-|  PATTERN 1 — SINGLE SITE HA (most common deployment)                         |
+|  CONFIRMED PATTERN — LOCAL ACTIVE-PASSIVE HA AT EVERY SITE                   |
 +===============================================================================+
 |                                                                               |
-|  FortiAuth Primary          HA Sync (TCP 8009)        FortiAuth Secondary     |
-|  10.20.0.60        <---------------------------->     10.20.0.61             |
+|  FortiAuth Primary (Site N)   HA Sync TCP 8009   FortiAuth Secondary (Site N) |
+|  Cyber VLAN            <---------------------------->  Cyber VLAN            |
 |                                                                               |
-|  Both in the same VLAN and datacenter.                                        |
-|  Active-Passive: primary handles all requests; secondary is standby.          |
-|  WALLIX configured with primary as priority 1, secondary as priority 2.       |
+|  Both nodes in the local Cyber VLAN. HA sync is intra-site only.              |
+|  Active-Passive: primary handles all requests; secondary is hot standby.      |
+|  WALLIX DMZ Bastions configured: site primary priority 1, secondary priority 2|
 |                                                                               |
 |  RTO: < 30 seconds (WALLIX failover on timeout)                               |
-|  RPO: near-zero (HA sync interval: 60 seconds)                                |
+|  RPO: near-zero (HA sync every 60 seconds, intra-VLAN)                        |
 |                                                                               |
-+===============================================================================+
-
-+===============================================================================+
-|  PATTERN 2 — CROSS-SITE HA (for DR)                                           |
-+===============================================================================+
-|                                                                               |
-|  DC-A: FortiAuth Primary           WAN            DC-B: FortiAuth Secondary   |
-|  10.20.0.60           <-------------------------> 10.20.0.61                 |
-|                                                                               |
-|  Primary at main datacenter; secondary at DR site.                            |
-|  HA sync over WAN — port 8009 must be permitted between sites.                |
-|                                                                               |
-|  RTO: < 30 seconds                                                            |
-|  RPO: 1–5 minutes (WAN-dependent sync lag)                                    |
-|                                                                               |
-+===============================================================================+
-
-+===============================================================================+
-|  PATTERN 3 — NO HA (budget constraint)                                        |
-+===============================================================================+
-|                                                                               |
-|  Single FortiAuth only. No secondary appliance.                               |
-|                                                                               |
-|  Required compensating controls:                                              |
-|  * Automated daily backup to SFTP                                             |
-|  * Break-glass account tested quarterly                                       |
-|  * Documented restore procedure targeting < 1 hour RTO                        |
-|  * Formal client acceptance of MFA unavailability during outage               |
-|                                                                               |
-|  RTO: 30–60 minutes (restore from backup)                                     |
-|  RPO: up to 24 hours (daily backup)                                           |
+|  Failure blast radius: one site only                                          |
+|  Other sites continue authenticating via their own independent HA pair        |
 |                                                                               |
 +===============================================================================+
 ```
@@ -892,7 +843,7 @@ Is WAN reliable (< 50 ms latency, >= 99.9% uptime)?
 | Client already has FortiToken for VPN | Low | FortiAuth and tokens exist — add WALLIX as RADIUS client | 2–3 days of integration work |
 | Multi-domain Active Directory | High | Multiple LDAP domains; user disambiguation required | Use Global Catalog or separate LDAP per forest |
 | Azure AD hybrid | High | Cloud vs on-premises identity; sync timing | On-premises AD must be authoritative for PAM users |
-| OT / air-gapped sites | High | No internet for push; limited WAN | Hardware tokens; local FortiAuth per site |
+| OT / air-gapped sites | High | No internet for push; limited WAN | TOTP already works offline; hardware tokens if no smartphone |
 
 ### 11.1 The Existing FortiToken Scenario
 
@@ -916,7 +867,7 @@ Step 2: Create a new RADIUS policy: "WALLIX-MFA-Policy"
 Step 3: Configure WALLIX to use the existing FortiAuth as RADIUS server
 
 Step 4: Test — users use the same FortiToken app and same token
-        They approve one push for WALLIX, the same way they do for VPN
+        They enter a TOTP code for WALLIX, the same app they use for VPN
 
 WHAT DOES NOT CHANGE FOR USERS:
 * No new application to install
@@ -964,10 +915,10 @@ ESTIMATED TIMELINE: 2–3 days instead of 2–3 weeks
 +===============================================================================+
 |                                                                               |
 |  AUTHENTICATION FLOW                                                          |
-|    Phase 1: WALLIX (site N) --> LOCAL AD DCs (LDAPS 636)  password           |
-|             No WAN dependency — AD is local to every site                    |
-|    Phase 2: WALLIX (site N) --> Central FortiAuth (RADIUS 1812)  token       |
-|             Requires WAN connectivity to central FortiAuth                   |
+|    Phase 1: WALLIX (DMZ) --> LOCAL AD DCs (Cyber, LDAPS 636)  password       |
+|             Intra-site — no WAN dependency                                   |
+|    Phase 2: WALLIX (DMZ) --> LOCAL FortiAuth (Cyber, RADIUS 1812)  TOTP      |
+|             Intra-site — no WAN dependency                                   |
 |                                                                               |
 |  CRITICAL SETTING                                                             |
 |    FortiAuth RADIUS Policy: First Factor = NONE                               |
@@ -987,8 +938,9 @@ ESTIMATED TIMELINE: 2–3 days instead of 2–3 weeks
 |    Revoked tokens return to the pool and are reusable                         |
 |    No annual per-token cost                                                   |
 |                                                                               |
-|  RADIUS CLIENTS                                                               |
-|    Bastion nodes + Access Managers = total client entries required            |
+|  RADIUS CLIENTS (per site FortiAuth pair)                                     |
+|    2 local Bastion nodes + 2 AM nodes = 4 entries per site                   |
+|    5 sites = 20 total RADIUS client entries across the deployment             |
 |    One missing entry = silent MFA failure on that node                        |
 |                                                                               |
 |  DEFAULT AUTHORIZATION                                                        |
