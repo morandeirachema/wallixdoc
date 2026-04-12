@@ -21,6 +21,9 @@ Calc. Save a copy per client engagement; never edit the master template.
 | [07-project-tracker.csv](07-project-tracker.csv) | All phases | Task and milestone tracker — owner, dates, status, blockers |
 | [08-test-results.csv](08-test-results.csv) | Phase 2–3 | Integration and UAT test log — pass/fail with evidence |
 | [09-roi-worksheet.csv](09-roi-worksheet.csv) | Phase 0 | ROI calculation — breach cost, fines, insurance, operational savings |
+| [10-access-review.csv](10-access-review.csv) | Ongoing | Quarterly/annual privileged access review — users, vendors, RBAC, vault accounts |
+| [11-change-request-log.csv](11-change-request-log.csv) | All phases | Change request tracker — scope, effort, cost, timeline impact, approval status |
+| [12-weekly-status-report.csv](12-weekly-status-report.csv) | All phases | Weekly engagement status report — RAG status, progress, blockers, decisions, milestones |
 
 ---
 

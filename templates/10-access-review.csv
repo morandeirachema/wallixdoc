@@ -1,0 +1,41 @@
+Review ID,Review Type (Quarterly / Annual / Ad-Hoc),Review Period Start,Review Period End,Reviewer Name,Reviewer Role,Review Date,Approval Date,Approved By,Status (Open / In Progress / Complete)
+AR-001,Quarterly,,,,,,,,,
+,,,,,,,,,,
+--- SECTION 1: USER ACCOUNT REVIEW ---,,,,,,,,,,
+User ID,Full Name,AD Username,Department,WALLIX Role,Last Login Date,Days Since Login,Account Status in AD,Accounts in Vault,Review Decision (Keep / Modify / Disable / Remove),Modification Required,Actioned By,Action Date,Notes
+U-001,,,,,,,Active,,,Keep,—,,,
+U-002,,,,,,,Active,,,Keep,—,,,
+U-003,,,,,,,Disabled,,,Remove,Disable and remove from Bastion,,,Former employee — immediate action
+U-004,,,,,,,Active,,,Modify,Reduce from Admin to Operator role,,,Job function changed
+U-005,,,,,,91,Active,,,Review,Dormant account — confirm still needed,,,No login in 91 days
+,,,,,,,,,,
+--- SECTION 2: VENDOR / CONTRACTOR ACCOUNT REVIEW ---,,,,,,,,,,
+Vendor ID,Vendor Organisation,AD Username / Local,Contract Start,Contract End,Last Login Date,Account Status,Sessions in Period,Review Decision (Keep / Disable / Remove),Action Required,Actioned By,Action Date,Notes
+V-001,,,,,,Active,,Keep,—,,,Contract active
+V-002,,,,,2025-12-31,,0,Disable,Contract expired — disable immediately,,,No sessions since contract end
+V-003,,,,,,Active,,Keep,—,,,JIT sessions only — appropriate
+V-004,,,,,,,Active,Review,Confirm contract is still active,,,No contract end date on file
+,,,,,,,,,,
+--- SECTION 3: RBAC ROLE REVIEW ---,,,,,,,,,,
+Role Name,Role Description,Members Count,Targets Count,Permissions Summary,Last Modified,Last Reviewed,Review Decision (Keep / Modify),Modification Required,Actioned By,Action Date,Notes
+WALLIX Admin,,,,Full admin including user management,,,,Keep,—,,,
+WALLIX Operator,,,,Connect to assigned targets; no user management,,,,Keep,—,,,
+WALLIX Auditor,,,,Read-only session recordings and reports,,,,Keep,—,,,
+WALLIX OT-Operator,,,,OT targets only; JIT approval required,,,,Keep,—,,,
+WALLIX External,,,,Vendor targets only; JIT mandatory; time-limited,,,,Keep,—,,,
+,,,,,,,,,,
+--- SECTION 4: PRIVILEGED ACCOUNT (VAULT) REVIEW ---,,,,,,,,,,
+Account ID,Account Name,Target Device,Account Type (Individual / Shared / Service),Rotation Enabled (Y/N),Last Rotation Date,Rotation Status (Success / Failed / Never),Owner / Team,Review Decision (Keep / Remove / Add Rotation),Action Required,Actioned By,Action Date,Notes
+VA-001,Administrator,,Windows Local,Y,,,IT Ops,Keep,—,,,
+VA-002,root,,Linux,Y,,,IT Ops,Keep,—,,,
+VA-003,svc-backup,,Linux,Y,,,IT Ops,Keep,—,,,
+VA-004,plcadmin,,PLC,N,,,OT Ops,Review,Evaluate rotation feasibility,,,No rotation — OT device
+VA-005,shared-admin,,Windows Local,Y,,,IT Ops,Modify,Replace with individual accounts in next quarter,,,Shared account — residual
+,,,,,,,,,,
+--- SECTION 5: REVIEW SIGN-OFF ---,,,,,,,,,,
+Section,Items Reviewed,Critical Actions Found,Actions Completed Before Sign-Off,Residual Actions (< 90 days),Reviewer Signature,Date,Approver Signature,Date,Notes
+User Account Review,,,,,,,,,,
+Vendor Account Review,,,,,,,,,,
+RBAC Role Review,,,,,,,,,,
+Privileged Account Review,,,,,,,,,,
+Overall Review Sign-Off,,,,,,,,,,

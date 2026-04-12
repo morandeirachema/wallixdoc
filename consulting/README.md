@@ -13,3 +13,5 @@ Advisory resources for PAM and MFA integration engagements.
 | [Business Case & ROI](05-business-case-roi.md) | Breach cost models, compliance fine exposure, insurance impact, ROI worksheet, board presentation templates |
 | [Scope & Proposal Template](06-scope-proposal-template.md) | Effort estimation, Statement of Work template, deliverables catalogue, assumptions, change request process |
 | [Training & Change Management](07-training-change-mgmt.md) | Operator onboarding, admin certification, vendor guide, go-live checklist, hypercare model, adoption metrics |
+| [Competitive Positioning](08-competitive-positioning.md) | WALLIX vs. CyberArk, BeyondTrust, Delinea, Senhasegura — positioning, objections, RFP strategy, win/loss patterns |
+| [Post-Deployment Health Check](09-health-check.md) | PAM maturity model, annual review methodology, coverage/vault/recording/RBAC/HA assessment, scorecard |
