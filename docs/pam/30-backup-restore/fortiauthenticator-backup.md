@@ -45,20 +45,19 @@ critical for each site's pair.
 |                                                                               |
 |  Appliance:       FortiAuthenticator 6.4+ (hardware)                          |
 |  Firmware:        FortiAuthenticator v6.6.x                                   |
-|  Role:            Centralized MFA provider (RADIUS + FortiToken)              |
-|  Scope:           All 5 sites, 10 Bastion nodes, 2 Access Managers            |
+|  Role:            Per-site MFA provider (RADIUS + FortiToken TOTP)            |
+|  Scope:           Cyber VLAN — isolated per site (X = site number 1-5)        |
 |                                                                               |
 |  +-----------------------------------+  +-----------------------------------+ |
 |  |  PRIMARY                          |  |  SECONDARY (HA)                   | |
-|  |  fortiauth.company.com            |  |  fortiauth-dr.company.com         | |
-|  |  10.20.0.60  (VLAN 20)            |  |  10.20.0.61  (VLAN 20)            | |
+|  |  fortiauth-siteX.company.com      |  |  fortiauth-siteX-ha.company.com   | |
+|  |  10.10.X.50  (Cyber VLAN)         |  |  10.10.X.51  (Cyber VLAN)         | |
 |  |  Active                           |  |  Standby                          | |
 |  +-----------------------------------+  +-----------------------------------+ |
 |                                                                               |
-|  Shared Infrastructure Subnet: 10.20.0.0/24                                   |
-|  SFTP Backup Server:           10.20.0.50                                     |
-|  AD DC1:                       10.20.0.10                                     |
-|  AD DC2:                       10.20.0.11                                     |
+|  Cyber VLAN Subnet (per site):   10.10.X.0/24                                 |
+|  SFTP Backup Server:             10.20.0.50  (centralized — shared)           |
+|  AD DC (Cyber VLAN):             10.10.X.60                                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -115,7 +114,7 @@ critical for each site's pair.
 +===============================================================================+
 |                                                                               |
 |  FortiAuthenticator 6.4+                                                      |
-|  (10.20.0.60)                                                                 |
+|  (10.10.X.50)                                                                 |
 |       |                                                                       |
 |       |--- Daily 02:00 -----> SFTP Server (10.20.0.50)                        |
 |       |                       /backups/fortiauth/                             |
@@ -124,7 +123,7 @@ critical for each site's pair.
 |       |                       +-- ...                                         |
 |       |                       +-- FAC_config_20260327_0200.bak  (14-day)      |
 |       |                                                                       |
-|       |--- HA Sync ---------> FortiAuthenticator Secondary (10.20.0.61)       |
+|       |--- HA Sync ---------> FortiAuthenticator Secondary (10.10.X.51)       |
 |       |                       (near-real-time replication)                    |
 |       |                                                                       |
 |       |--- On-demand -------> Admin Workstation (manual download)             |
@@ -151,7 +150,7 @@ critical for each site's pair.
 
 ```
 1. Log in to FortiAuthenticator Web UI
-   URL:  https://fortiauth.company.com  (10.20.0.60)
+   URL:  https://fortiauth.company.com  (10.10.X.50)
    User: admin
 
 2. Navigate to:
@@ -199,8 +198,8 @@ critical for each site's pair.
 ### Interactive Backup via SSH
 
 ```bash
-# SSH to FortiAuthenticator primary (10.20.0.60)
-ssh admin@10.20.0.60
+# SSH to FortiAuthenticator primary (10.10.X.50)
+ssh admin@10.10.X.50
 
 # Backup to SFTP server with encryption
 execute backup config sftp 10.20.0.50 /backups/fortiauth/ backup-user _REDACTED
@@ -238,8 +237,8 @@ file /backups/fortiauth/FAC_config_20260409_0200.bak
 ### Configure via CLI
 
 ```bash
-# SSH to FortiAuthenticator primary (10.20.0.60)
-ssh admin@10.20.0.60
+# SSH to FortiAuthenticator primary (10.10.X.50)
+ssh admin@10.10.X.50
 
 # Configure scheduled backup
 config system backup
@@ -432,11 +431,11 @@ df -h /backups/fortiauth
 
 ### Restore Test Procedure (Quarterly)
 
-> **Critical:** Test restores quarterly on the secondary appliance (10.20.0.61) to validate backup integrity. Never test-restore on the active primary in production.
+> **Critical:** Test restores quarterly on the secondary appliance (10.10.X.51) to validate backup integrity. Never test-restore on the active primary in production.
 
 ```
 1. Temporarily disable HA sync on SECONDARY:
-   SSH to 10.20.0.61:
+   SSH to 10.10.X.51:
    config system ha
      set mode standalone
    end
@@ -458,7 +457,7 @@ df -h /backups/fortiauth
    config system ha
      set mode active-passive
      set group-id 1
-     set peer-ip 10.20.0.60
+     set peer-ip 10.10.X.50
    end
 
 5. Document test results:
@@ -481,7 +480,7 @@ PREREQUISITE: Have the backup encryption password available.
               Without it, encrypted backups cannot be restored.
 
 1. Access FortiAuthenticator Web UI:
-   URL:  https://fortiauth.company.com  (or https://10.20.0.60)
+   URL:  https://fortiauth.company.com  (or https://10.10.X.50)
 
 2. Navigate to:
    System > Administration > Backup & Restore
@@ -510,7 +509,7 @@ PREREQUISITE: Have the backup encryption password available.
 
 ```bash
 # SSH to FortiAuthenticator
-ssh admin@10.20.0.60
+ssh admin@10.10.X.50
 
 # Restore from SFTP server
 execute restore config sftp 10.20.0.50 /backups/fortiauth/FAC_config_20260409_0200.bak backup-user _REDACTED
@@ -523,7 +522,7 @@ execute restore config sftp 10.20.0.50 /backups/fortiauth/FAC_config_20260409_02
 # System is rebooting...
 
 # After reboot (~3-5 minutes), reconnect and verify:
-ssh admin@10.20.0.60
+ssh admin@10.10.X.50
 get system status
 
 # Expected output:
@@ -554,7 +553,7 @@ get system ha status
 
 # 5. Test RADIUS authentication from a Bastion node
 # On any Bastion (e.g., 10.10.1.11):
-radtest testuser _REDACTED 10.20.0.60 0 _REDACTED
+radtest testuser _REDACTED 10.10.X.50 0 _REDACTED
 # Expected: Access-Accept (if user has valid token and provides OTP)
 
 # 6. Verify AD sync is operational
@@ -587,7 +586,7 @@ get system ntp
 |                                                                               |
 |  WITH HA (recommended):                                                       |
 |  =====================                                                        |
-|  1. Secondary (10.20.0.61) automatically promotes to active                   |
+|  1. Secondary (10.10.X.51) automatically promotes to active                   |
 |  2. All RADIUS clients continue authenticating against secondary              |
 |  3. No action required — failover is automatic                                |
 |  4. Replace failed hardware, configure as new secondary                       |
@@ -616,7 +615,7 @@ Recovery Steps:
 2. Check HA peer — if secondary is healthy, failover and resync
 3. If both appliances corrupted, restore from last known good backup:
 
-   ssh admin@10.20.0.60
+   ssh admin@10.10.X.50
    execute restore config sftp 10.20.0.50 /backups/fortiauth/FAC_config_YYYYMMDD_0200.bak backup-user _REDACTED
 
 4. After restore, verify user count and test authentication
@@ -644,13 +643,15 @@ Rollback if upgrade fails:
 3. After rollback, verify all RADIUS clients and token assignments
 ```
 
-### Scenario 4: Complete Site Loss (Shared Infrastructure)
+### Scenario 4: Complete Site Cyber VLAN Loss
 
 ```
-If 10.20.0.0/24 subnet is lost (both FortiAuth appliances):
+If 10.10.X.0/24 Cyber VLAN is lost at a site (both FortiAuth appliances unavailable):
 
-1. MFA is unavailable across ALL 5 sites
-2. Emergency: Enable MFA bypass on all Bastion nodes:
+1. MFA is unavailable at that site only (other sites are unaffected)
+2. Emergency: Enable MFA bypass on the affected site's Bastion nodes:
+   # Via Web UI: Configuration > Authentication > External Authentication
+   # Temporarily disable RADIUS MFA requirement
 
    # On each Bastion node (10 nodes total):
    # Via Web UI: Configuration > Authentication > External Authentication
@@ -658,7 +659,7 @@ If 10.20.0.0/24 subnet is lost (both FortiAuth appliances):
    # Document bypass activation time for compliance
 
 3. Deploy replacement FortiAuthenticator (VM or hardware)
-4. Assign IP 10.20.0.60, configure DNS, NTP, gateway
+4. Assign IP 10.10.X.50, configure DNS, NTP, gateway
 5. Restore from offsite backup copy
 6. Reconfigure HA with new secondary
 7. Verify and re-enable MFA on all Bastion nodes
@@ -700,8 +701,8 @@ If 10.20.0.0/24 subnet is lost (both FortiAuth appliances):
 ### HA Sync Configuration Reference
 
 ```bash
-# Verify HA sync status on primary (10.20.0.60)
-ssh admin@10.20.0.60
+# Verify HA sync status on primary (10.10.X.50)
+ssh admin@10.10.X.50
 
 get system ha status
 
@@ -709,21 +710,21 @@ get system ha status
 # Mode: active-passive
 # Group ID: 1
 # Role: primary
-# Peer: 10.20.0.61
+# Peer: 10.10.X.51
 # Peer status: up
 # Last sync: 2026-04-09 08:45:12
 # Sync status: synchronized
 # Config checksum: a3b7c9... (should match peer)
 
-# Verify on secondary (10.20.0.61)
-ssh admin@10.20.0.61
+# Verify on secondary (10.10.X.51)
+ssh admin@10.10.X.51
 
 get system ha status
 
 # Expected output:
 # Mode: active-passive
 # Role: secondary
-# Peer: 10.20.0.60
+# Peer: 10.10.X.50
 # Peer status: up
 # Sync status: synchronized
 # Config checksum: a3b7c9... (must match primary)
@@ -929,7 +930,7 @@ Annual storage (all types):
 
 ### Quarterly
 
-- [ ] Perform test restore on secondary appliance (10.20.0.61)
+- [ ] Perform test restore on secondary appliance (10.10.X.51)
 - [ ] Document restore test results
 - [ ] Verify user count and RADIUS client count match primary
 - [ ] Test RADIUS authentication after restore
@@ -977,7 +978,7 @@ ssh backup-user@10.20.0.50 "ls -ld /backups/fortiauth"
 # Web UI: Log > System Events > filter by "backup"
 # Look for error messages indicating transfer failure
 
-# 6. Verify firewall rules allow SSH/SFTP (port 22) from 10.20.0.60 to 10.20.0.50
+# 6. Verify firewall rules allow SSH/SFTP (port 22) from 10.10.X.50 to 10.20.0.50
 ```
 
 ### Restore Fails
@@ -1001,7 +1002,7 @@ ssh backup-user@10.20.0.50 "ls -ld /backups/fortiauth"
 #    c. If stuck, power cycle and attempt restore again
 #    d. If repeated failure, factory reset and restore:
 #       execute factoryreset
-#       # After factory reset, restore backup via Web UI (https://10.20.0.60)
+#       # After factory reset, restore backup via Web UI (https://10.10.X.50)
 
 # 4. Partial restore (users missing)
 #    Verify the backup file includes user data:
@@ -1016,10 +1017,10 @@ ssh backup-user@10.20.0.50 "ls -ld /backups/fortiauth"
 # Symptom: After restoring primary, secondary does not sync
 
 # 1. Check HA status on both appliances
-ssh admin@10.20.0.60
+ssh admin@10.10.X.50
 get system ha status
 
-ssh admin@10.20.0.61
+ssh admin@10.10.X.51
 get system ha status
 
 # 2. If config checksums do not match, force resync
@@ -1027,11 +1028,11 @@ get system ha status
 execute ha sync start
 
 # 3. If sync fails, reconfigure HA on secondary
-# On SECONDARY (10.20.0.61):
+# On SECONDARY (10.10.X.51):
 config system ha
   set mode active-passive
   set group-id 1
-  set peer-ip 10.20.0.60
+  set peer-ip 10.10.X.50
   set priority 100
 end
 

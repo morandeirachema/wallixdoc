@@ -71,21 +71,21 @@ configuration independently for each site.
 |  +--+-----------------------+-----------------------------------------+       |
 |     |                       |                                                 |
 |     | LDAPS (636/TCP)       | RADIUS (1812/UDP)                               |
-|     | Phase 1: Password     | Phase 2: OTP/Push                               |
+|     | Phase 1: Password     | Phase 2: TOTP (FortiToken Mobile)               |
 |     |                       |                                                 |
 |     v                       v                                                 |
 |  +------------------+   +----------------------+                              |
 |  | Active Directory |   | FortiAuthenticator   |                              |
-|  | DC1: 10.20.0.10  |   | FortiAuth Primary    |                              |
-|  | DC2: 10.20.0.11  |   | 10.20.0.60           |                              |
-|  +------------------+   |                      |                              |
-|     ^                   | FortiAuth Secondary  |                              |
-|     |                   | 10.20.0.61           |                              |
-|     | LDAPS (636/TCP)    +----------+----------+                              |
-|     | User sync                     |                                         |
-|     +-------------------------------+                                         |
+|  | DC:  10.10.X.60  |   | Primary: 10.10.X.50  |                              |
+|  | (Cyber VLAN)     |   | Secondary: 10.10.X.51|                              |
+|  +------------------+   | (Cyber VLAN — HA)    |                              |
+|     ^                   +----------+----------+                              |
+|     |                              |                                          |
+|     | LDAPS (636/TCP)              |                                          |
+|     | User sync                    |                                          |
+|     +------------------------------+                                          |
 |                                                                               |
-|  CYBER VLAN (per-site): 10.20.0.0/24 (example — replicate per site)                                     |
+|  CYBER VLAN (per site): 10.10.X.0/24  where X = site number (1-5)            |
 +===============================================================================+
 ```
 
@@ -93,8 +93,8 @@ configuration independently for each site.
 
 | # | Source                         | Destination                 | Port     | Protocol | Purpose |
 |---|--------------------------------|-----------------------------|----------|----------|---------|
-| 1 | WALLIX Bastion (all nodes)     | AD DC1/DC2                  | 636/TCP  | LDAPS    | Password validation (Phase 1) |
-| 2 | WALLIX Bastion (all nodes)     | FortiAuth Primary           | 1812/UDP | RADIUS   | OTP/push validation (Phase 2) |
+| 1 | WALLIX Bastion (all nodes)     | AD DC (per site)            | 636/TCP  | LDAPS    | Password validation (Phase 1) |
+| 2 | WALLIX Bastion (all nodes)     | FortiAuth Primary           | 1812/UDP | RADIUS   | TOTP validation (Phase 2) |
 | 3 | WALLIX Bastion (all nodes)     | FortiAuth Primary           | 1813/UDP | RADIUS   | Accounting (audit trail) |
 | 4 | WALLIX Bastion (all nodes)     | FortiAuth Secondary         | 1812/UDP | RADIUS   | Failover MFA |
 | 5 | WALLIX Bastion (all nodes)     | FortiAuth Secondary         | 1813/UDP | RADIUS   | Failover accounting |
@@ -106,7 +106,7 @@ configuration independently for each site.
 | 11 | FortiAuth Primary             | FortiGuard Servers          | 443/TCP  | HTTPS    | License validation, updates |
 | 12 | FortiAuth Primary             | FortiAuth Secondary         | 8009/TCP | HA Sync  | Configuration + token replication |
 | 13 | Administrators                | FortiAuth Primary           | 443/TCP  | HTTPS    | Web UI management |
-| 14 | User mobile devices           | FortiGuard Push Servers     | 443/TCP  | HTTPS    | TOTP codes |
+| 14 | FortiAuth Primary             | FortiGuard Servers          | 443/TCP  | HTTPS    | FortiToken Mobile activation (initial enrollment only) |
 
 ---
 
@@ -152,7 +152,7 @@ configuration independently for each site.
 |    |     TOTP code |                      |                  |         |
 |    |<----------------------|                      |                  |         |
 |    |                       |                      |                  |         |
-|    | 11. OTP / Push Approve|                      |                  |         |
+|    | 11. Enter TOTP code   |                      |                  |         |
 |    |---------------------->|                      |                  |         |
 |    |                       |                      |                  |         |
 |    |                       | 12. RADIUS Access-Req (OTP)             |         |
@@ -499,7 +499,7 @@ Run these checks from a WALLIX Bastion node:
 ```bash
 # 1. DNS resolution
 nslookup dc.company.com
-# Expected: returns 10.20.0.10
+# Expected: returns 10.10.X.60
 
 # 2. LDAPS connectivity
 nc -zv dc.company.com 636
@@ -573,7 +573,7 @@ end
 # Configure network interface
 config system interface
   edit "port1"
-    set ip 10.20.0.60 255.255.255.0
+    set ip 10.10.X.50 255.255.255.0
     set allowaccess ping https ssh snmp
   next
 end
@@ -588,8 +588,8 @@ end
 
 # Configure DNS
 config system dns
-  set primary 10.20.0.10
-  set secondary 10.20.0.11
+  set primary 10.10.X.60
+  set secondary 10.10.X.60
 end
 
 # Set admin password (change from default)
@@ -604,8 +604,8 @@ end
 
 ```bash
 # From FortiAuthenticator CLI:
-execute ping 10.20.0.10       # AD DC1
-execute ping 10.20.0.11       # AD DC2
+execute ping 10.10.X.60       # AD DC1
+execute ping 10.10.X.60       # AD DC2
 execute ping 10.20.0.1        # Gateway
 execute ping 10.10.1.11       # WALLIX Bastion Site 1, Node 1
 
@@ -641,7 +641,7 @@ diagnose system ntp status
 ### 5.3 Install SSL Certificate
 
 ```
-Via Web UI (https://10.20.0.60):
+Via Web UI (https://10.10.X.50):
 
 1. System > Certificates > Local Certificates
 2. Click "Import"
@@ -712,7 +712,7 @@ Via Web UI:
 
 3. Configure Primary LDAP Server:
    Name:                AD-Primary
-   Primary Server:      10.20.0.10  (dc.company.com)
+   Primary Server:      10.10.X.60  (dc.company.com)
    Port:                636
    Security:            Secure (LDAPS)
    CA Certificate:      Company-Root-CA
@@ -1130,7 +1130,7 @@ wabadmin ldap group-map list --domain "Corporate-AD"
 
 3. Configure Primary:
    Name:               FortiAuth-Primary
-   Server Address:     fortiauth.company.com  (10.20.0.60)
+   Server Address:     fortiauth.company.com  (10.10.X.50)
    Authentication Port: 1812
    Accounting Port:    1813
    Shared Secret:      [Same secret configured in FortiAuth RADIUS clients]
@@ -1145,7 +1145,7 @@ wabadmin ldap group-map list --domain "Corporate-AD"
 
 6. Add Secondary (if HA):
    Name:               FortiAuth-Secondary
-   Server Address:     10.20.0.61  (use IP -- DNS must not be a dependency in failover)
+   Server Address:     10.10.X.51  (use IP -- DNS must not be a dependency in failover)
    Authentication Port: 1812
    Accounting Port:    1813
    Shared Secret:      [Same shared secret]
@@ -1171,7 +1171,7 @@ wabadmin auth radius add \
 # Add secondary (failover)
 wabadmin auth radius add \
     --name "FortiAuth-Secondary" \
-    --server "10.20.0.61" \
+    --server "10.10.X.51" \
     --port 1812 \
     --secret "[shared-secret]" \
     --priority 2
@@ -1607,30 +1607,30 @@ Monitor: Authentication > FortiToken > Token Status
 ### 9.1 FortiAuthenticator HA (Active-Passive)
 
 ```
-Primary:    fortiauth.company.com     10.20.0.60
-Secondary:  fortiauth-dr.company.com  10.20.0.61
+Primary:    fortiauth.company.com     10.10.X.50
+Secondary:  fortiauth-dr.company.com  10.10.X.51
 ```
 
-**On FortiAuth PRIMARY (10.20.0.60):**
+**On FortiAuth PRIMARY (10.10.X.50):**
 
 ```bash
 config system ha
   set mode active-passive
   set password [HA-sync-password]
-  set peer-ip 10.20.0.61
+  set peer-ip 10.10.X.51
   set peer-port 8009
   set sync-enable enable
   set sync-interval 60
 end
 ```
 
-**On FortiAuth SECONDARY (10.20.0.61):**
+**On FortiAuth SECONDARY (10.10.X.51):**
 
 ```bash
 config system ha
   set mode active-passive
   set password [HA-sync-password]
-  set peer-ip 10.20.0.60
+  set peer-ip 10.10.X.50
   set peer-port 8009
   set sync-enable enable
   set sync-interval 60
@@ -1643,7 +1643,7 @@ end
 1. System > Administration > High Availability
 2. Mode:          Active-Passive
 3. HA Password:   [same on both]
-4. Peer IP:       10.20.0.61 (on primary) / 10.20.0.60 (on secondary)
+4. Peer IP:       10.10.X.51 (on primary) / 10.10.X.50 (on secondary)
 5. Sync Objects:  [x] Users and tokens
                   [x] RADIUS clients and policies
                   [x] LDAP server configuration
@@ -1685,8 +1685,8 @@ WALLIX Bastion supports multiple LDAP servers per domain with automatic failover
 
 ```bash
 # Already configured in Phase 3 (Step 6.5):
-# Primary:   FortiAuth-Primary   (fortiauth.company.com / 10.20.0.60)
-# Secondary: FortiAuth-Secondary (10.20.0.61)
+# Primary:   FortiAuth-Primary   (fortiauth.company.com / 10.10.X.50)
+# Secondary: FortiAuth-Secondary (10.10.X.51)
 # Failover timeout: 10 seconds
 # Failback delay: 300 seconds (5 minutes)
 ```
@@ -1700,12 +1700,12 @@ wabadmin auth test --user "jadmin" --provider ldap --debug
 # Expected: Failover to DC2, authentication succeeds (may take up to 10s)
 
 # Test 2: FortiAuth failover
-# Simulate FortiAuth primary outage (e.g., block port 1812 to 10.20.0.60)
+# Simulate FortiAuth primary outage (e.g., block port 1812 to 10.10.X.50)
 wabadmin auth test --user "jadmin" --provider radius --debug
 # Expected: Failover to secondary, MFA succeeds
 
 # Test 3: Break-glass (both FortiAuth down)
-# Block RADIUS to both 10.20.0.60 and 10.20.0.61
+# Block RADIUS to both 10.10.X.50 and 10.10.X.51
 # Login as breakglass-admin with local password
 # Expected: Login succeeds without MFA; alert sent
 ```
@@ -1868,7 +1868,7 @@ wabadmin audit search --type mfa-bypass --last 24h
 | Strong shared secret    | 32+ characters, alphanumeric + symbols        | Prevents brute-force of RADIUS authentication |
 | Limit RADIUS clients    | Only registered Bastion/AM IPs accepted       | Prevents rogue RADIUS clients |
 | Enable accounting       | RADIUS accounting on port 1813                | Creates audit trail of all MFA events |
-| Separate VLAN           | FortiAuth on shared infra VLAN (10.20.0.0/24) | Isolates authentication traffic |
+| Separate VLAN           | FortiAuth in Cyber VLAN (10.10.X.0/24 per site) | Isolates authentication traffic per site |
 | No RADIUS over internet | All traffic over MPLS/VPN                     | RADIUS uses MD5 — not safe over public networks |
 
 ### 11.2 LDAPS Security
@@ -2421,7 +2421,7 @@ nc -zv dc.company.com 636
 nc -zvu fortiauth.company.com 1812
 
 # From FortiAuth CLI -- test LDAPS to AD
-execute ping 10.20.0.10
+execute ping 10.10.X.60
 
 # Verify LDAPS certificate
 echo | openssl s_client -connect dc.company.com:636 2>/dev/null | \

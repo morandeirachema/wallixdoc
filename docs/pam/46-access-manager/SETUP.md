@@ -118,49 +118,6 @@ Database Host:        localhost (default)
 SSL Certificate:      Let's Encrypt (auto) or Custom path
 ```
 
-### Option B: Docker Installation
-
-```bash
-# 1. Create configuration
-mkdir -p ~/wallix-am && cd ~/wallix-am
-
-cat > docker-compose.yml <<'EOF'
-version: '3.8'
-services:
-  access-manager:
-    image: wallix/access-manager:latest
-    ports:
-      - "443:443"
-      - "80:80"
-    environment:
-      - AM_ADMIN_EMAIL=admin@company.com
-      - AM_PORTAL_URL=https://portal.company.com
-    volumes:
-      - am-data:/var/lib/access-manager
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:14
-    environment:
-      - POSTGRES_DB=accessmanager
-      - POSTGRES_USER=am_user
-      - POSTGRES_PASSWORD=change_this_password
-    volumes:
-      - postgres-data:/var/lib/postgresql/data
-    restart: unless-stopped
-
-volumes:
-  am-data:
-  postgres-data:
-EOF
-
-# 2. Start services
-docker-compose up -d
-
-# 3. Check status
-docker-compose ps
-```
-
 ---
 
 ## Initial Configuration (15 minutes)

@@ -348,8 +348,8 @@ Per-site layout — DMZ VLAN and Cyber VLAN separated by Fortigate:
 #              10.10.3.11, 10.10.3.12  (Site 3)
 #              10.10.4.11, 10.10.4.12  (Site 4)
 #              10.10.5.11, 10.10.5.12  (Site 5)
-# Destination: 10.20.0.60              (FortiAuthenticator primary)
-#              10.20.0.61              (FortiAuthenticator secondary)
+# Destination: 10.10.X.50              (FortiAuthenticator primary)
+#              10.10.X.51              (FortiAuthenticator secondary)
 # Port:        1812/UDP, 1813/UDP
 # Action:      ACCEPT
 # Log:         Enable
@@ -357,27 +357,27 @@ Per-site layout — DMZ VLAN and Cyber VLAN separated by Fortigate:
 # Rule 1b: Access Manager nodes to FortiAuthenticator (RADIUS)
 # Source:      10.100.1.10             (Access Manager 1, DC-A)
 #              10.100.2.10             (Access Manager 2, DC-B)
-# Destination: 10.20.0.60              (FortiAuthenticator primary)
-#              10.20.0.61              (FortiAuthenticator secondary)
+# Destination: 10.10.X.50              (FortiAuthenticator primary)
+#              10.10.X.51              (FortiAuthenticator secondary)
 # Port:        1812/UDP, 1813/UDP
 # Action:      ACCEPT
 # Log:         Enable
 
 # Rule 2: FortiAuthenticator to AD (LDAPS)
-# Source:      10.20.0.60              (FortiAuthenticator)
-# Destination: 10.20.0.10, 10.20.0.11 (AD DC1 and DC2)
+# Source:      10.10.X.50              (FortiAuthenticator)
+# Destination: 10.10.X.60, 10.10.X.60 (AD DC1 and DC2)
 # Port:        636/TCP
 # Action:      ACCEPT
 # Log:         Enable
 
 # Rule 3: FortiAuthenticator to SMTP (enrollment emails)
-# Source:      10.20.0.60
+# Source:      10.10.X.50
 # Destination: SMTP Server
 # Port:        587/TCP
 # Action:      ACCEPT
 
 # Rule 4: FortiAuthenticator to FortiGuard (license + push)
-# Source:      10.20.0.60
+# Source:      10.10.X.50
 # Destination: Any (FortiGuard cloud IPs)
 # Port:        443/TCP
 # Action:      ACCEPT
@@ -389,17 +389,17 @@ Run these tests **before** starting the integration:
 
 ```bash
 # From WALLIX Bastion Node 1 - test RADIUS port to primary FortiAuth
-nc -zvu 10.20.0.60 1812
-# Expected: Connection to 10.20.0.60 1812 port [udp/radius] succeeded!
+nc -zvu 10.10.X.50 1812
+# Expected: Connection to 10.10.X.50 1812 port [udp/radius] succeeded!
 
 # From WALLIX Bastion Node 2 - test RADIUS port to primary FortiAuth
-nc -zvu 10.20.0.60 1812
+nc -zvu 10.10.X.50 1812
 
 # From WALLIX Bastion Node 1 - test RADIUS port to secondary FortiAuth
-nc -zvu 10.20.0.61 1812
+nc -zvu 10.10.X.51 1812
 
 # From FortiAuthenticator - test LDAPS to AD DC1
-openssl s_client -connect 10.20.0.10:636 -showcerts </dev/null 2>/dev/null | head -5
+openssl s_client -connect 10.10.X.60:636 -showcerts </dev/null 2>/dev/null | head -5
 # Expected: Shows AD certificate chain
 
 # From FortiAuthenticator - test SMTP
@@ -627,7 +627,7 @@ end
 
 2. Configure Primary LDAP Remote User Sync:
    Name:           AD-WALLIX-Users
-   Server:         10.20.0.10 (dc.company.com)
+   Server:         10.10.X.60 (dc.company.com)
    Port:           636 (LDAPS)
    Base DN:        OU=Users,OU=WALLIX,DC=company,DC=com
    Bind DN:        CN=svc-fortiauth,OU=Service Accounts,DC=company,DC=com
@@ -643,7 +643,7 @@ end
 
 3. Configure Failover LDAP source (DC2):
    Name:           AD-WALLIX-Users-Failover
-   Server:         10.20.0.11 (dc2.company.com)
+   Server:         10.10.X.60 (dc2.company.com)
    Port:           636 (LDAPS)
    (same Bind DN, Base DN, and Filter as above)
    Role:           Failover (secondary)
@@ -846,7 +846,7 @@ wabadmin auth radius profile-map --list
 # Add secondary FortiAuthenticator (use IP, not hostname — DNS must not be a dependency in failover path)
 wabadmin auth radius add \
     --name "FortiAuth-Secondary" \
-    --server "10.20.0.61" \
+    --server "10.10.X.51" \
     --port 1812 \
     --secret "[shared-secret]" \
     --priority 2
@@ -861,7 +861,7 @@ wabadmin auth radius failover \
     --failback-delay 300
 ```
 
-> **Note:** Run this on **every** WALLIX Bastion node (10 total). The secondary FortiAuth at `10.20.0.61` must also have all 12 RADIUS clients and the WALLIX-MFA-Policy configured — user/token data syncs automatically between appliances if FortiAuth HA is enabled (see [High Availability Configuration](#high-availability-configuration)).
+> **Note:** Run this on **every** WALLIX Bastion node (10 total). The secondary FortiAuth at `10.10.X.51` must also have all 12 RADIUS clients and the WALLIX-MFA-Policy configured — user/token data syncs automatically between appliances if FortiAuth HA is enabled (see [High Availability Configuration](#high-availability-configuration)).
 
 ---
 
@@ -1122,32 +1122,32 @@ wabadmin auth mfa disable \
 ### FortiAuthenticator HA
 
 ```
-FortiAuth Primary:    fortiauth.company.com     (10.20.0.60)  VLAN 20
-FortiAuth Secondary:  fortiauth-dr.company.com  (10.20.0.61)  VLAN 20
+FortiAuth Primary:    fortiauth-siteX.company.com     (10.10.X.50)  Cyber VLAN
+FortiAuth Secondary:  fortiauth-siteX-ha.company.com  (10.10.X.51)  Cyber VLAN
 ```
 
-Both appliances are in the shared Authentication Services subnet (`10.20.0.0/24`), reachable from all 5 sites via MPLS.
+Each FortiAuthenticator HA pair is deployed **per site** in the Cyber VLAN (`10.10.X.0/24` where X = site number 1-5). The pair serves only the Bastion nodes at that site. There is no centralized FortiAuthenticator shared across sites.
 
 ### FortiAuthenticator Appliance Sync (Primary ↔ Secondary)
 
 The two FortiAuth appliances must replicate user data, token assignments, and configuration. Without this, the secondary has no users and will reject all authentication.
 
 ```bash
-# On FortiAuth PRIMARY (10.20.0.60) — configure HA sync:
+# On FortiAuth PRIMARY (10.10.X.50) — configure HA sync:
 config system ha
   set mode active-passive
   set password [HA-sync-password]
-  set peer-ip 10.20.0.61
+  set peer-ip 10.10.X.51
   set peer-port 8009
   set sync-enable enable
   set sync-interval 60
 end
 
-# On FortiAuth SECONDARY (10.20.0.61) — configure HA sync:
+# On FortiAuth SECONDARY (10.10.X.51) — configure HA sync:
 config system ha
   set mode active-passive
   set password [HA-sync-password]
-  set peer-ip 10.20.0.60
+  set peer-ip 10.10.X.50
   set peer-port 8009
   set sync-enable enable
   set sync-interval 60
@@ -1160,7 +1160,7 @@ end
 1. System > Administration > High Availability
 2. Mode:          Active-Passive
 3. HA Password:   [same on both appliances]
-4. Peer IP:       10.20.0.61 (on primary) / 10.20.0.60 (on secondary)
+4. Peer IP:       10.10.X.51 (on primary) / 10.10.X.50 (on secondary)
 5. Sync Objects:  [x] Users and tokens
                   [x] RADIUS clients and policies
                   [x] LDAP server configuration
@@ -1188,14 +1188,14 @@ diagnose ha status
 # Configure both FortiAuth servers (run on each WALLIX Bastion node)
 wabadmin auth radius add \
     --name "FortiAuth-Primary" \
-    --server "10.20.0.60" \
+    --server "10.10.X.50" \
     --port 1812 \
     --secret "[secret]" \
     --priority 1
 
 wabadmin auth radius add \
     --name "FortiAuth-Secondary" \
-    --server "10.20.0.61" \
+    --server "10.10.X.51" \
     --port 1812 \
     --secret "[secret]" \
     --priority 2
@@ -1432,8 +1432,8 @@ wabadmin report schedule \
 | Admin Console (Pri.) | https://fortiauth.company.com/admin         |
 | Admin Console (Sec.) | https://fortiauth-dr.company.com/admin      |
 | Self-Service Portal  | https://fortiauth.company.com/self-service  |
-| Primary IP           | 10.20.0.60 (VLAN 20)                        |
-| Secondary IP         | 10.20.0.61 (VLAN 20)                        |
+| Primary IP           | 10.10.X.50 (Cyber VLAN, per site)           |
+| Secondary IP         | 10.10.X.51 (Cyber VLAN, per site)           |
 | RADIUS Auth Port     | 1812/UDP                                    |
 | RADIUS Acct Port     | 1813/UDP                                    |
 
