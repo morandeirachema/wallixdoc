@@ -98,23 +98,23 @@ Position MFA accurately. Overstating its scope damages credibility.
 +===============================================================================+
 |                                                                               |
 |  RISK REDUCTION                                                               |
-|  * 80% of breaches involve compromised credentials (Verizon DBIR 2024)       |
+|  * 80% of breaches involve compromised credentials (Verizon DBIR 2024)        |
 |  * Privileged accounts are the primary target in all major attack classes     |
-|  * MFA blocks over 99% of automated credential-based attacks                 |
+|  * MFA blocks over 99% of automated credential-based attacks                  |
 |  * Session recording provides forensic evidence when incidents occur          |
 |                                                                               |
 |  COMPLIANCE                                                                   |
-|  * ISO 27001 A.8.5 — secure authentication for privileged access             |
-|  * SOC 2 CC6.1 — MFA as a required logical access control                    |
-|  * PCI-DSS 8.4.2 — MFA mandatory for all non-console admin access            |
-|  * NIS2 Article 21 — MFA required for critical infrastructure access         |
-|  * NIST 800-53 IA-2 — MFA for privileged and non-privileged accounts         |
+|  * ISO 27001 A.8.5 — secure authentication for privileged access              |
+|  * SOC 2 CC6.1 — MFA as a required logical access control                     |
+|  * PCI-DSS 8.4.2 — MFA mandatory for all non-console admin access             |
+|  * NIS2 Article 21 — MFA required for critical infrastructure access          |
+|  * NIST 800-53 IA-2 — MFA for privileged and non-privileged accounts          |
 |                                                                               |
 |  OPERATIONAL BENEFIT                                                          |
-|  * Centralized access gateway — one place to manage who accesses what        |
+|  * Centralized access gateway — one place to manage who accesses what         |
 |  * Full session recording — complete audit trail for every privileged action  |
 |  * Automated credential rotation — no shared passwords for target systems     |
-|  * Single offboarding action — disable in AD, access removed everywhere      |
+|  * Single offboarding action — disable in AD, access removed everywhere       |
 |                                                                               |
 +===============================================================================+
 ```
@@ -140,37 +140,37 @@ at any site.
 
 ```
 +===============================================================================+
-|  PER-SITE VLAN DESIGN (identical at all 5 sites)                             |
+|  PER-SITE VLAN DESIGN (identical at all 5 sites)                              |
 +===============================================================================+
 |                                                                               |
 |  CYBER VLAN                                                                   |
 |  +----------------------------------+                                         |
-|  |  AD Domain Controller 1  (HA)   |  <-- LDAPS 636 from DMZ Bastions        |
-|  |  AD Domain Controller 2  (HA)   |      (Phase 1 — local, no WAN)          |
+|  |  AD Domain Controller 1  (HA)   |  <-- LDAPS 636 from DMZ Bastions         |
+|  |  AD Domain Controller 2  (HA)   |      (Phase 1 — local, no WAN)           |
 |  +----------------------------------+                                         |
-|  |  FortiAuthenticator node 1 (HA) |  <-- RADIUS 1812 from DMZ Bastions      |
-|  |  FortiAuthenticator node 2 (HA) |      (Phase 2 — local, no WAN)          |
-|  |                                 |  --> LDAPS 636 to local AD DCs (sync)   |
+|  |  FortiAuthenticator node 1 (HA) |  <-- RADIUS 1812 from DMZ Bastions       |
+|  |  FortiAuthenticator node 2 (HA) |      (Phase 2 — local, no WAN)           |
+|  |                                 |  --> LDAPS 636 to local AD DCs (sync)    |
 |  +----------------------------------+                                         |
 |                                                                               |
-|      ^  LDAPS 636 (Phase 1)    ^  RADIUS 1812 (Phase 2)                      |
-|      |  local, intra-VLAN      |  local, intra-VLAN                          |
+|      ^  LDAPS 636 (Phase 1)    ^  RADIUS 1812 (Phase 2)                       |
+|      |  local, intra-VLAN      |  local, intra-VLAN                           |
 |                                                                               |
 |  DMZ VLAN                                                                     |
 |  +----------------------------------+                                         |
-|  |  WALLIX Bastion node 1  (HA)    |                                         |
-|  |  WALLIX Bastion node 2  (HA)    |                                         |
+|  |  WALLIX Bastion node 1  (HA)    |                                          |
+|  |  WALLIX Bastion node 2  (HA)    |                                          |
 |  +----------------------------------+                                         |
 |           |                                                                   |
-|           | SSH 22 / RDP 3389 / HTTPS 443 (to targets)                       |
+|           | SSH 22 / RDP 3389 / HTTPS 443 (to targets)                        |
 |           v                                                                   |
 |  SERVER / TARGET VLANs                                                        |
 |                                                                               |
-|  Users connect to Bastions (DMZ) via SSH 22, RDP 3389, HTTPS 443             |
-|  Access Managers (external team) connect to Bastions from their VLAN         |
+|  Users connect to Bastions (DMZ) via SSH 22, RDP 3389, HTTPS 443              |
+|  Access Managers (external team) connect to Bastions from their VLAN          |
 |                                                                               |
-|  WAN (MPLS) carries only: AM connections, inter-site management              |
-|  Authentication traffic (LDAPS + RADIUS) never leaves the local site         |
+|  WAN (MPLS) carries only: AM connections, inter-site management               |
+|  Authentication traffic (LDAPS + RADIUS) never leaves the local site          |
 |                                                                               |
 +===============================================================================+
 ```
