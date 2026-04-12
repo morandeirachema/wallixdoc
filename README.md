@@ -2,12 +2,12 @@
 
 <p align="center">
   <strong>Enterprise Privileged Access Management</strong><br/>
-  <em>5-Site Multi-Datacenter Architecture with Fortinet MFA Integration</em><br/><br/>
+  <em>5-Site Multi-Datacenter Architecture with Per-Site Fortinet MFA</em><br/><br/>
   <strong>WALLIX BASTION</strong> + <strong>FORTINET</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/WALLIX_Bastion-12.3.2-0066cc?style=for-the-badge" alt="WALLIX"/>
+  <img src="https://img.shields.io/badge/WALLIX_Bastion-12.1.x-0066cc?style=for-the-badge" alt="WALLIX"/>
   <img src="https://img.shields.io/badge/FortiAuthenticator-6.4+-ee3124?style=for-the-badge" alt="FortiAuth"/>
   <img src="https://img.shields.io/badge/ISO_27001-Compliant-228b22?style=for-the-badge" alt="ISO"/>
 </p>
@@ -16,16 +16,17 @@
 
 ## Project Overview
 
-This repository contains comprehensive documentation for deploying **WALLIX Bastion PAM** with **FortiAuthenticator MFA** in a 5-site multi-datacenter enterprise architecture.
+This repository contains comprehensive documentation for deploying **WALLIX Bastion PAM** with **FortiAuthenticator MFA** in a 5-site multi-datacenter enterprise architecture. Each site is fully autonomous, with its own HA FortiAuthenticator pair and Active Directory, connected to a client-managed Access Manager via MPLS.
 
 | Aspect | Details |
 |--------|---------|
 | **Solution** | Privileged Access Management (PAM) |
-| **Authentication** | FortiAuthenticator with FortiToken Mobile/Push |
-| **Architecture** | 5 sites with 2 Access Managers (HA) via MPLS |
+| **Authentication** | Per-site FortiAuthenticator HA pair with FortiToken Mobile (TOTP) |
+| **Architecture** | 5 independent sites via MPLS, 2 client-managed Access Managers (HA) |
+| **VLAN Design** | DMZ VLAN (Bastion, HAProxy, RDS) + Cyber VLAN (FortiAuth, AD) per site |
 | **High Availability** | Active-Active or Active-Passive per site |
 | **Target Systems** | Windows Server 2022, RHEL 10, RHEL 9, OT (via RDS) |
-| **Documentation** | 48 comprehensive sections |
+| **Scale** | ~100-200 targets per site, ~25 privileged users per site |
 
 ---
 
@@ -33,45 +34,46 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 
 ```
 +===============================================================================+
-|           5-SITE ARCHITECTURE WITH ACCESS MANAGER INTEGRATION                 |
+|  5-SITE ARCHITECTURE — DUAL VLAN PER SITE, CLIENT-MANAGED ACCESS MANAGER     |
 +===============================================================================+
 |                                                                               |
 |  +----------------------+      +----------------------+                       |
 |  | Access Manager 1     |      | Access Manager 2     |                       |
-|  | (DC-A) - HA          | HA   | (DC-B) - HA          |                       |
-|  | SSO, MFA, Brokering  |<---->| SSO, MFA, Brokering  |                       |
+|  | (DC-A) — CLIENT HA   | HA   | (DC-B) — CLIENT HA   |                       |
+|  | Session Brokering    |<---->| Session Brokering    |                       |
 |  +----------+-----------+      +-----------+----------+                       |
 |             |                              |                                  |
-|             +------------MPLS--------------+                                  |
+|             +-----------MPLS--------------+                                  |
 |                              |                                                |
-|      +-----------+-----------+-----------+-----------+                        |
-|      |           |           |           |           |                        |
-|  +---v---+   +---v---+   +---v---+   +---v---+   +---v---+                    |
-|  | Site1 |   | Site2 |   | Site3 |   | Site4 |   | Site5 |                    |
-|  | DC-1  |   | DC-2  |   | DC-3  |   | DC-4  |   | DC-5  |                    |
-|  +-------+   +-------+   +-------+   +-------+   +-------+                    |
+|      +----------+------------+------------+----------+                        |
+|      |          |            |            |          |                        |
+|  +---v---+  +---v---+    +---v---+    +---v---+  +---v---+                    |
+|  | Site1 |  | Site2 |    | Site3 |    | Site4 |  | Site5 |                    |
+|  +---+---+  +---+---+    +---+---+    +---+---+  +---+---+                    |
+|      |                                                                        |
+|  Per-site detail (identical at all 5 sites):                                  |
+|  +--DMZ VLAN (10.10.X.0/25)---------------------------------------------+   |
+|  |  HAProxy x2 (HA) --> WALLIX Bastion x2 (HA) --> RDS --> OT targets    |   |
+|  +-----------------------------------------------------------------------+   |
+|  +--Cyber VLAN (10.10.X.128/25)------------------------------------------+   |
+|  |  FortiAuthenticator x2 (HA pair) + Active Directory DC               |   |
+|  +-----------------------------------------------------------------------+   |
 |                                                                               |
-|  Each Site (Geographically Distributed):                                      |         |
-|  +------------------------------------------------------------------------+   |
-|  |  HAProxy (2x HA) --> Bastion (2x HA) --> RDS --> OT Targets            |   |
-|  |                            |                                           |   |
-|  |                     Native: Windows/Linux                              |   |
-|  +------------------------------------------------------------------------+   |
-|                                                                               |
+|  NO direct Bastion-to-Bastion communication between sites                     |
 +===============================================================================+
 ```
 
 ### Component Stack
 
-| Layer | Component | Type | Total Quantity |
-|-------|-----------|------|----------------|
-| **Broker** | WALLIX Access Manager | HA Cluster | 2 (HA, not managed) |
-| **MFA** | FortiAuthenticator | HW Appliance | 2 (HA, shared) |
-| **Load Balancer** | HAProxy + Keepalived | VM | 10 (2 per site) |
-| **PAM** | WALLIX Bastion | HW Appliance | 10 (2 per site) |
-| **Jump Host** | WALLIX RDS | Windows Server | 5 (1 per site) |
-| **Sites** | Site Datacenters | Physical | 5 |
-| **Network** | MPLS | Connectivity | AM ↔ Sites only |
+| Layer | Component | Placement | Total |
+|-------|-----------|-----------|-------|
+| **Broker** | WALLIX Access Manager | Client DC-A / DC-B (HA) | 2 — client-managed |
+| **MFA** | FortiAuthenticator HA pair | Cyber VLAN, per site | 10 (2 per site) |
+| **Directory** | Active Directory DC | Cyber VLAN, per site | 5 (1 per site) |
+| **Load Balancer** | HAProxy + Keepalived | DMZ VLAN, per site | 10 (2 per site) |
+| **PAM** | WALLIX Bastion HW Appliance | DMZ VLAN, per site | 10 (2 per site) |
+| **Jump Host** | WALLIX RDS | DMZ VLAN, per site | 5 (1 per site) |
+| **Network** | MPLS | AM ↔ Sites | No direct site-to-site |
 
 ---
 
@@ -81,10 +83,10 @@ This repository contains comprehensive documentation for deploying **WALLIX Bast
 |:----:|-------------|------|
 | **1** | Review architecture and requirements | [Architecture](./docs/pam/03-architecture/README.md) |
 | **2** | Set up pre-production lab | [Lab Guide](./pre/README.md) |
-| **3** | Configure FortiAuthenticator MFA | [FortiAuth Setup](./pre/04-fortiauthenticator-setup.md) |
-| **4** | Deploy WALLIX Bastion | [Installation](./install/HOWTO.md) |
-| **5** | Integrate with Active Directory | [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) |
-| **6** | Configure Access Manager | [Access Manager](./docs/pam/46-access-manager/README.md) |
+| **3** | Deploy FortiAuthenticator HA per site | [FortiAuth HA](./install/03-fortiauthenticator-ha.md) |
+| **4** | Integrate Active Directory per site | [AD per Site](./install/04-ad-per-site.md) |
+| **5** | Deploy WALLIX Bastion | [Installation](./install/HOWTO.md) |
+| **6** | Verify Access Manager connectivity (client team) | [AM Integration](./install/15-access-manager-integration.md) |
 
 ---
 
@@ -100,9 +102,24 @@ wallixdoc/
 │   ├── 26-39   Infrastructure & Security
 │   └── 40-48   Advanced Features, Access Manager & Licensing
 │
-├── install/                     # Multi-Site Deployment Guides
-│   ├── HOWTO.md                 # Complete installation walkthrough
-│   └── 00-13 *.md               # Step-by-step procedures
+├── install/                     # 5-Site Deployment Guides (18 files)
+│   ├── HOWTO.md                 # Master 10-week installation walkthrough
+│   ├── 00-prerequisites.md      # Hardware, network, VLAN, scale
+│   ├── 01-network-design.md     # MPLS, DMZ/Cyber VLAN, port matrix
+│   ├── 02-ha-architecture.md    # Active-Active vs Active-Passive
+│   ├── 03-fortiauthenticator-ha.md  # Per-site FortiAuth HA pair setup
+│   ├── 04-ad-per-site.md        # Per-site Active Directory integration
+│   ├── 05-site-deployment.md    # Per-site deployment template
+│   ├── 06-haproxy-setup.md      # HAProxy + Keepalived VRRP
+│   ├── 07-bastion-active-active.md  # Master/Master cluster
+│   ├── 08-bastion-active-passive.md # Master/Slave cluster
+│   ├── 09-rds-jump-host.md      # WALLIX RDS for OT RemoteApp
+│   ├── 10-licensing.md          # Bastion licensing (AM = client)
+│   ├── 11-testing-validation.md # End-to-end test procedures
+│   ├── 12-architecture-diagrams.md  # Network diagrams, port reference
+│   ├── 13-contingency-plan.md   # DR, failover, business continuity
+│   ├── 14-break-glass-procedures.md # Emergency access
+│   └── 15-access-manager-integration.md # Bastion-side AM config only
 │
 ├── pre/                         # Pre-Production Lab (14 guides)
 │   ├── 01-infrastructure        # VMware vSphere/ESXi setup
@@ -124,8 +141,8 @@ wallixdoc/
 | **Project Manager** | [Introduction](./docs/pam/02-introduction/README.md) → [Architecture](./docs/pam/03-architecture/README.md) |
 | **System Administrator** | [Installation](./install/README.md) → [Configuration](./docs/pam/05-configuration/README.md) |
 | **Security Engineer** | [Authentication](./docs/pam/06-authentication/README.md) → [FortiAuth MFA](./docs/pam/06-authentication/fortiauthenticator-integration.md) |
-| **Network Engineer** | [Architecture Diagrams](./install/11-architecture-diagrams.md) → [Load Balancer](./docs/pam/32-load-balancer/README.md) |
-| **Identity/IAM Team** | [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) → [Kerberos](./docs/pam/35-kerberos-authentication/README.md) |
+| **Network Engineer** | [Architecture Diagrams](./install/12-architecture-diagrams.md) → [Load Balancer](./docs/pam/32-load-balancer/README.md) |
+| **Identity/IAM Team** | [AD per Site](./install/04-ad-per-site.md) → [AD Integration](./docs/pam/34-ldap-ad-integration/README.md) |
 | **DevOps Engineer** | [API Reference](./docs/pam/17-api-reference/README.md) → [Ansible](./examples/ansible/README.md) |
 | **Compliance Officer** | [Compliance Audit](./docs/pam/24-compliance-audit/README.md) → [Evidence](./docs/pam/37-compliance-evidence/README.md) |
 | **Operations Team** | [Runbooks](./docs/pam/21-operational-runbooks/README.md) → [CLI Reference](./docs/pam/31-wabadmin-reference/README.md) |
@@ -136,7 +153,7 @@ wallixdoc/
 
 | Category | Features |
 |----------|----------|
-| **Authentication** | FortiToken Mobile/Push, LDAP/AD, Kerberos SSO, RADIUS |
+| **Authentication** | FortiToken Mobile (TOTP), LDAP/AD per site, Kerberos SSO, RADIUS |
 | **Session Control** | Video recording, OCR search, keystroke logging, real-time monitoring |
 | **Password Vault** | AES-256 encryption, automatic rotation, credential checkout |
 | **Access Control** | RBAC, approval workflows, JIT access, time-based restrictions |
@@ -149,23 +166,24 @@ wallixdoc/
 
 | Component | Specification |
 |-----------|---------------|
-| **WALLIX Bastion** | Version 12.3.2 (HW Appliance) |
-| **FortiAuthenticator** | Version 6.4+ (HW Appliance) |
-| **Operating System** | Debian 12 (Bookworm) |
+| **WALLIX Bastion** | Version 12.1.x (HW Appliance) |
+| **FortiAuthenticator** | Version 6.4+ (per-site HA pair) |
+| **Active Directory** | Windows Server 2022 (per-site DC) |
+| **Operating System** | Debian 12 (Bookworm) — Bastion/HAProxy |
 | **Database** | MariaDB 10.11+ with streaming replication |
-| **Clustering** | bastion-replication + Keepalived |
-| **Load Balancer** | HAProxy 2.x with Keepalived VRRP |
+| **Clustering** | bastion-replication + Keepalived VRRP |
+| **Load Balancer** | HAProxy 2.x (Active-Passive per site) |
 | **Encryption** | AES-256-GCM, TLS 1.3, LUKS |
 | **Protocols** | SSH, RDP, WinRM, HTTPS |
 
-### Network Ports
+### Key Network Ports
 
 | Port | Service | Port | Service |
 |:----:|---------|:----:|---------|
-| 443 | HTTPS/Web UI | 22 | SSH Proxy |
+| 443 | HTTPS / Web UI | 22 | SSH Proxy |
 | 3389 | RDP Proxy | 5985/5986 | WinRM |
-| 636 | LDAPS | 88 | Kerberos |
-| 1812/1813 | RADIUS | 3306 | MariaDB |
+| 636 | LDAPS (Bastion → AD) | 389 | LDAP (FortiAuth → AD) |
+| 1812/1813 | RADIUS (Bastion → FortiAuth) | 3306 | MariaDB replication |
 
 ---
 
@@ -177,8 +195,8 @@ Build a complete test environment before production deployment:
 Lab Components
 ├── VMware vSphere/ESXi 8.0+
 ├── Active Directory Domain Controller
-├── FortiAuthenticator (MFA)
-├── HAProxy Load Balancers (2x HA)
+├── FortiAuthenticator HA pair (MFA — TOTP)
+├── HAProxy Load Balancers (2x Active-Passive)
 ├── WALLIX Bastion (2x Active-Active)
 ├── WALLIX RDS Session Manager
 ├── Windows Server 2022 (test target)
@@ -209,13 +227,13 @@ Lab Components
 | 23-25 | [Compliance](./docs/pam/24-compliance-audit/README.md) | Audit, incident response, JIT access |
 | 26-32 | [Infrastructure](./docs/pam/29-disaster-recovery/README.md) | DR, backup, certificates, load balancer |
 
-### Advanced (33-46)
+### Advanced (33-48)
 
 | # | Section | Description |
 |:-:|---------|-------------|
 | 33-39 | [Security](./docs/pam/34-ldap-ad-integration/README.md) | AD, Kerberos, command filtering |
 | 40-45 | [Features](./docs/pam/40-account-discovery/README.md) | Discovery, SSH keys, self-service |
-| 46-48 | [Access Manager](./docs/pam/46-access-manager/README.md) | **Access Manager, licensing, connectivity** |
+| 46-48 | [Access Manager & Licensing](./docs/pam/47-access-manager/README.md) | Access Manager, licensing, connectivity |
 
 ---
 
@@ -256,9 +274,9 @@ wabadmin license-info
 <p align="center">
   <strong>48 Documentation Sections</strong> ·
   <strong>5-Site Architecture</strong> ·
-  <strong>FortiAuthenticator MFA</strong>
+  <strong>Per-Site FortiAuthenticator MFA</strong>
 </p>
 
 <p align="center">
-  <sub>WALLIX Bastion 12.3.2 · FortiAuthenticator 6.4+ · March 2026</sub>
+  <sub>WALLIX Bastion 12.1.x · FortiAuthenticator 6.4+ · April 2026</sub>
 </p>
