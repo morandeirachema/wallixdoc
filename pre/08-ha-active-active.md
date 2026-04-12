@@ -1,6 +1,8 @@
-# 04 - HA Active-Active Configuration
+# 08 - HA Active-Active Configuration
 
 ## Configuring Two-Node Active-Active Cluster
+
+> **REFERENCE ONLY — Lab runs a single Bastion node**: This guide is for production reference only. The pre-production lab runs a **single WALLIX Bastion node** (no Active-Active cluster, no bastion-replication, no MariaDB HA). Use this guide when preparing for production Active-Active cluster deployment on a real two-node site.
 
 This guide covers setting up WALLIX Bastion in Active-Active high availability mode where both nodes handle traffic simultaneously.
 
@@ -520,9 +522,11 @@ START SLAVE;
 SQL
 ```
 
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | REFERENCE ONLY — lab uses single Bastion node*
+
 ---
 
 <p align="center">
-  <a href="./07-wallix-installation.md">← Previous: WALLIX Bastion Installation</a> •
+  <a href="./06-ad-integration.md">← Previous: AD Integration</a> •
   <a href="./09-test-targets.md">Next: Test Targets Setup →</a>
 </p>

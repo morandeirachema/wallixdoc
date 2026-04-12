@@ -1,8 +1,10 @@
-# 09 - Validation Testing
+# 12 - Validation Testing
 
 ## Comprehensive Test Suite for Pre-Production Lab
 
 This guide covers all validation tests to verify the WALLIX Bastion lab environment is working correctly.
+
+> **Lab scope**: Single Bastion node (no HA cluster tests). HAProxy VIP failover IS tested (2-node HAProxy). FortiAuth is TOTP only (no Push tests). AD is in Cyber VLAN (10.10.1.60) — inter-VLAN connectivity from DMZ to Cyber via Fortigate must be validated.
 
 ---
 
@@ -20,12 +22,12 @@ This guide covers all validation tests to verify the WALLIX Bastion lab environm
   - Network segmentation             - Password checkout
   - Storage verification             - Recording playback
 
-  3. HA CLUSTER TESTS                4. INTEGRATION TESTS
-  ===================                ====================
-  - Failover scenarios               - AD group mapping
-  - VIP movement                     - SIEM log forwarding
-  - Replication health               - Metrics collection
-  - Split-brain prevention           - Alert triggering
+  3. HAPROXY VIP TESTS               4. INTEGRATION TESTS
+  ====================               ====================
+  - HAProxy VIP failover             - AD group mapping
+  - Keepalived VRRP                  - SIEM log forwarding
+  - Backend health check             - Metrics collection
+  - Cyber VLAN connectivity          - Alert triggering
 
   5. SECURITY TESTS                  6. PERFORMANCE TESTS
   =================                  ====================
@@ -49,17 +51,24 @@ This guide covers all validation tests to verify the WALLIX Bastion lab environm
 
 echo "=== Infrastructure Connectivity Tests ==="
 
-# Define hosts
+# Define hosts (all 12 lab VMs)
 declare -A HOSTS=(
-    ["dc-lab.lab.local"]="10.10.1.10"
-    ["wallix-node1.lab.local"]="10.10.1.11"
-    ["wallix-node2.lab.local"]="10.10.1.12"
-    ["siem-lab.lab.local"]="10.10.1.50"
-    ["monitoring-lab.lab.local"]="10.10.1.60"
-    ["linux-test.lab.local"]="10.10.2.10"
-    ["windows-test.lab.local"]="10.10.2.20"
-    ["network-test.lab.local"]="10.10.2.30"
-    ["plc-sim.lab.local"]="10.10.3.10"
+    # Management VLAN 100
+    ["siem-lab.lab.local"]="10.10.0.10"
+    ["monitor-lab.lab.local"]="10.10.0.20"
+    # DMZ VLAN 110
+    ["haproxy-1.lab.local"]="10.10.1.5"
+    ["haproxy-2.lab.local"]="10.10.1.6"
+    ["wallix-bastion.lab.local"]="10.10.1.11"
+    ["wallix-rds.lab.local"]="10.10.1.30"
+    # Cyber VLAN 120
+    ["fortiauth.lab.local"]="10.10.1.50"
+    ["dc-lab.lab.local"]="10.10.1.60"
+    # Targets VLAN 130
+    ["win-srv-01.lab.local"]="10.10.2.10"
+    ["win-srv-02.lab.local"]="10.10.2.11"
+    ["rhel10-srv.lab.local"]="10.10.2.20"
+    ["rhel9-srv.lab.local"]="10.10.2.21"
 )
 
 for host in "${!HOSTS[@]}"; do
@@ -77,7 +86,7 @@ done
 ```bash
 echo "=== DNS Resolution Tests ==="
 
-for host in dc-lab wallix-node1 wallix-node2 wallix siem-lab monitoring-lab; do
+for host in siem-lab monitor-lab haproxy-1 haproxy-2 wallix-bastion wallix-rds fortiauth dc-lab; do
     result=$(nslookup "${host}.lab.local" 2>/dev/null | grep "Address" | tail -1)
     if [ -n "$result" ]; then
         echo "[PASS] ${host}.lab.local resolves"
@@ -96,16 +105,20 @@ echo "=== Service Port Tests ==="
 nc -zv wallix.lab.local 443 2>&1 | grep -q "succeeded" && echo "[PASS] WALLIX Bastion HTTPS" || echo "[FAIL] WALLIX Bastion HTTPS"
 nc -zv wallix.lab.local 22 2>&1 | grep -q "succeeded" && echo "[PASS] WALLIX Bastion SSH" || echo "[FAIL] WALLIX Bastion SSH"
 
-# AD services
-nc -zv dc-lab.lab.local 636 2>&1 | grep -q "succeeded" && echo "[PASS] LDAPS" || echo "[FAIL] LDAPS"
-nc -zv dc-lab.lab.local 88 2>&1 | grep -q "succeeded" && echo "[PASS] Kerberos" || echo "[FAIL] Kerberos"
+# AD services (Cyber VLAN 120 — inter-VLAN from DMZ via Fortigate)
+nc -zv 10.10.1.60 636 2>&1 | grep -q "succeeded" && echo "[PASS] LDAPS (dc-lab)" || echo "[FAIL] LDAPS (dc-lab)"
+nc -zv 10.10.1.60 389 2>&1 | grep -q "succeeded" && echo "[PASS] LDAP (dc-lab)" || echo "[FAIL] LDAP (dc-lab)"
+nc -zv 10.10.1.60 88  2>&1 | grep -q "succeeded" && echo "[PASS] Kerberos (dc-lab)" || echo "[FAIL] Kerberos (dc-lab)"
 
-# SIEM
-nc -zv siem-lab.lab.local 514 2>&1 | grep -q "succeeded" && echo "[PASS] Syslog" || echo "[FAIL] Syslog"
+# FortiAuth RADIUS (Cyber VLAN 120 — inter-VLAN from DMZ via Fortigate)
+nc -zu 10.10.1.50 1812 2>&1 | grep -q "succeeded" && echo "[PASS] RADIUS (fortiauth)" || echo "[FAIL] RADIUS (fortiauth)"
 
-# Monitoring
-nc -zv monitoring-lab.lab.local 9090 2>&1 | grep -q "succeeded" && echo "[PASS] Prometheus" || echo "[FAIL] Prometheus"
-nc -zv monitoring-lab.lab.local 3000 2>&1 | grep -q "succeeded" && echo "[PASS] Grafana" || echo "[FAIL] Grafana"
+# SIEM (Management VLAN 100)
+nc -zv 10.10.0.10 514 2>&1 | grep -q "succeeded" && echo "[PASS] Syslog (siem-lab)" || echo "[FAIL] Syslog (siem-lab)"
+
+# Monitoring (Management VLAN 100)
+nc -zv 10.10.0.20 9090 2>&1 | grep -q "succeeded" && echo "[PASS] Prometheus (monitor-lab)" || echo "[FAIL] Prometheus (monitor-lab)"
+nc -zv 10.10.0.20 3000 2>&1 | grep -q "succeeded" && echo "[PASS] Grafana (monitor-lab)" || echo "[FAIL] Grafana (monitor-lab)"
 ```
 
 ---
@@ -215,103 +228,92 @@ fi
 
 ---
 
-## Test 3: HA Cluster Tests
+## Test 3: HAProxy VIP Failover and Cyber VLAN Connectivity
 
-### 3.1 Cluster Status
+### 3.1 HAProxy VIP Status
 
 ```bash
-echo "=== Cluster Status Test ==="
+echo "=== HAProxy VIP Status Test ==="
 
-# On either WALLIX Bastion node
-ssh root@wallix-node1.lab.local << 'EOF'
-echo "Replication Status:"
-bastion-replication --monitoring | grep -E "(Master|Slave|VIP|synchronized)"
+# Check which HAProxy node holds the VIP
+echo "Checking VIP on haproxy-1 (10.10.1.5):"
+ssh root@haproxy-1.lab.local "ip addr show | grep 10.10.1.100 && echo '[PASS] haproxy-1 holds VIP' || echo '[INFO] haproxy-1 does not hold VIP'"
 
-echo ""
-echo "VIP Location:"
-ip addr show | grep "10.10.1.100"
-EOF
+echo "Checking VIP on haproxy-2 (10.10.1.6):"
+ssh root@haproxy-2.lab.local "ip addr show | grep 10.10.1.100 && echo '[PASS] haproxy-2 holds VIP' || echo '[INFO] haproxy-2 does not hold VIP'"
+
+# Check HAProxy stats
+curl -s http://10.10.1.5:8404/stats | grep -q "wallix-bastion" && echo "[PASS] HAProxy stats page accessible" || echo "[FAIL] HAProxy stats not accessible"
 ```
 
-### 3.2 Database Replication Status
+### 3.2 HAProxy VIP Failover Test
 
 ```bash
-echo "=== Replication Status Test ==="
+echo "=== HAProxy VIP Failover Test (haproxy-1 -> haproxy-2) ==="
 
-# On Node 1 (Primary)
-ssh root@wallix-node1.lab.local << 'EOF'
-echo "Replication Status (from primary):"
-sudo mysql -e "SHOW MASTER STATUS\G"
-sudo mysql -e "SHOW SLAVE HOSTS;"
+# Baseline: confirm VIP is on haproxy-1
+ssh root@haproxy-1.lab.local "ip addr show | grep -q '10.10.1.100'" && echo "VIP on haproxy-1 (MASTER)" || echo "VIP not on haproxy-1"
 
-echo ""
-echo "Replication Lag (if slave):"
-sudo mysql -e "SHOW SLAVE STATUS\G" | grep Seconds_Behind_Master
-EOF
-
-# On Node 2 (Replica)
-ssh root@wallix-node2.lab.local << 'EOF'
-echo "Recovery Status (from replica):"
-sudo mysql -e "SHOW SLAVE STATUS\G"
-EOF
-```
-
-### 3.3 VIP Failover Test
-
-```bash
-echo "=== VIP Failover Test ==="
-
-# Find which node has VIP
-vip_node=$(ssh root@wallix-node1.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'node1' || echo 'node2'")
-
-echo "VIP currently on: $vip_node"
-
-# Start continuous ping in background
+# Start continuous connectivity test in background
 ping -c 30 10.10.1.100 > /tmp/failover_ping.log 2>&1 &
 PING_PID=$!
 
-# Trigger failover
-if [ "$vip_node" == "node1" ]; then
-    echo "Putting node1 in standby..."
-    ssh root@wallix-node1.lab.local "systemctl stop wallix-keepalived"  # Put node in maintenance
-    sleep 10
+# Stop HAProxy on haproxy-1 to trigger failover
+echo "Stopping HAProxy on haproxy-1 to trigger VIP failover..."
+ssh root@haproxy-1.lab.local "systemctl stop haproxy"
+sleep 8
 
-    # Check VIP moved
-    new_vip=$(ssh root@wallix-node2.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
+# Check VIP moved to haproxy-2
+new_vip=$(ssh root@haproxy-2.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
 
-    # Restore
-    ssh root@wallix-node1.lab.local "systemctl start wallix-keepalived"  # Resume node
-else
-    echo "Putting node2 in standby..."
-    ssh root@wallix-node2.lab.local "systemctl stop wallix-keepalived"  # Put node in maintenance
-    sleep 10
-
-    new_vip=$(ssh root@wallix-node1.lab.local "ip addr show | grep -q '10.10.1.100' && echo 'moved' || echo 'not_moved'")
-
-    ssh root@wallix-node2.lab.local "systemctl start wallix-keepalived"  # Resume node
-fi
+# Restore haproxy-1
+ssh root@haproxy-1.lab.local "systemctl start haproxy"
 
 # Wait for ping to complete
 wait $PING_PID
-
-# Analyze results
 lost=$(grep -c "unreachable\|timeout" /tmp/failover_ping.log 2>/dev/null || echo "0")
 
 if [ "$new_vip" == "moved" ] && [ "$lost" -lt 5 ]; then
-    echo "[PASS] VIP failover successful with minimal packet loss ($lost packets)"
+    echo "[PASS] HAProxy VIP failover successful (packet loss: $lost)"
 else
-    echo "[FAIL] VIP failover issues (VIP: $new_vip, Lost packets: $lost)"
+    echo "[FAIL] HAProxy VIP failover issue (VIP status: $new_vip, packet loss: $lost)"
 fi
 ```
 
-### 3.4 Service Continuity Test
+### 3.3 Cyber VLAN Connectivity Test (from Bastion DMZ)
+
+```bash
+echo "=== Cyber VLAN Connectivity Test (from wallix-bastion) ==="
+# These tests verify Fortigate inter-VLAN routing: DMZ (VLAN 110) -> Cyber (VLAN 120)
+
+ssh root@wallix-bastion.lab.local << 'BASTION_EOF'
+echo "--- LDAPS to dc-lab (10.10.1.60:636) ---"
+nc -zv 10.10.1.60 636 2>&1 | grep -q "succeeded" && echo "[PASS] LDAPS reachable" || echo "[FAIL] LDAPS not reachable"
+
+echo "--- LDAP to dc-lab (10.10.1.60:389) ---"
+nc -zv 10.10.1.60 389 2>&1 | grep -q "succeeded" && echo "[PASS] LDAP reachable" || echo "[FAIL] LDAP not reachable"
+
+echo "--- Kerberos to dc-lab (10.10.1.60:88) ---"
+nc -zv 10.10.1.60 88 2>&1 | grep -q "succeeded" && echo "[PASS] Kerberos reachable" || echo "[FAIL] Kerberos not reachable"
+
+echo "--- RADIUS to fortiauth (10.10.1.50:1812 UDP) ---"
+# UDP test using radtest (freeradius-utils)
+if command -v radtest &>/dev/null; then
+    radtest test test 10.10.1.50 0 WallixRadius2026! 2>&1 | grep -q "Access-" && echo "[PASS] RADIUS reachable" || echo "[FAIL] RADIUS not reachable"
+else
+    nc -zu 10.10.1.50 1812 && echo "[INFO] UDP 1812 open (install freeradius-utils for full test)" || echo "[FAIL] UDP 1812 closed"
+fi
+BASTION_EOF
+```
+
+### 3.4 Service Continuity Through VIP
 
 ```bash
 echo "=== Service Continuity Test ==="
 
-# During failover, test web access
-for i in {1..20}; do
-    http_code=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 2 "https://10.10.1.100/")
+# Test HAProxy VIP is routing to the single Bastion node
+for i in {1..5}; do
+    http_code=$(curl -sk -o /dev/null -w "%{http_code}" --max-time 3 "https://10.10.1.100/")
     echo "Attempt $i: HTTP $http_code"
     sleep 1
 done
@@ -362,11 +364,14 @@ sleep 5
 
 # Check SIEM for event (Splunk example)
 # Note: Adjust query based on your SIEM
-ssh root@siem-lab.lab.local << 'EOF'
-# For Splunk
+ssh root@10.10.0.10 << 'EOF'
+# For Wazuh
+grep -i "wallix\|authentication" /var/ossec/logs/alerts/alerts.log 2>/dev/null | tail -5 || echo "[INFO] Check Wazuh dashboard at http://10.10.0.10:443"
+
+# For Splunk (if used instead)
 /opt/splunk/bin/splunk search 'index=wallix "authentication" earliest=-5m' -auth admin:SplunkAdmin123! 2>/dev/null | head -5
 
-# For ELK
+# For ELK (if used instead)
 curl -s "http://localhost:9200/wallix-*/_search?q=authentication&size=5" | jq '.hits.hits[]._source.message' 2>/dev/null | head -5
 EOF
 
@@ -573,12 +578,12 @@ EOF
   [ ] Web UI Access              [PASS/FAIL]
   [ ] Password Checkout          [PASS/FAIL]
 
-  HA CLUSTER TESTS
-  ----------------
-  [ ] Cluster Status             [PASS/FAIL]
-  [ ] Replication Health         [PASS/FAIL]
-  [ ] VIP Failover               [PASS/FAIL]
-  [ ] Service Continuity         [PASS/FAIL]
+  HAPROXY VIP + CYBER VLAN TESTS
+  -------------------------------
+  [ ] HAProxy VIP status         [PASS/FAIL]
+  [ ] HAProxy VIP failover       [PASS/FAIL]
+  [ ] Bastion -> AD LDAPS        [PASS/FAIL]
+  [ ] Bastion -> FortiAuth RADIUS[PASS/FAIL]
 
   INTEGRATION TESTS
   -----------------
@@ -640,9 +645,9 @@ run_port_tests 2>&1 | tee -a "$LOG_FILE"
 run_auth_tests 2>&1 | tee -a "$LOG_FILE"
 run_session_tests 2>&1 | tee -a "$LOG_FILE"
 
-# HA
-run_cluster_tests 2>&1 | tee -a "$LOG_FILE"
-run_replication_tests 2>&1 | tee -a "$LOG_FILE"
+# HAProxy VIP and Cyber VLAN
+run_haproxy_tests 2>&1 | tee -a "$LOG_FILE"
+run_cyber_vlan_tests 2>&1 | tee -a "$LOG_FILE"
 
 # Integration
 run_integration_tests 2>&1 | tee -a "$LOG_FILE"
@@ -671,9 +676,10 @@ echo "Tests completed. Log saved to: $LOG_FILE" | tee -a "$LOG_FILE"
 | WALLIX Bastion | SSH session works | [ ] | |
 | WALLIX Bastion | RDP session works | [ ] | |
 | WALLIX Bastion | Password checkout | [ ] | |
-| HA | Cluster healthy | [ ] | |
-| HA | VIP failover < 30s | [ ] | |
-| HA | Replication lag < 1MB | [ ] | |
+| HAProxy | VIP failover < 30s | [ ] | |
+| HAProxy | Bastion backend healthy | [ ] | |
+| Cyber VLAN | Bastion -> AD LDAPS | [ ] | inter-VLAN via Fortigate |
+| Cyber VLAN | Bastion -> FortiAuth RADIUS | [ ] | inter-VLAN via Fortigate |
 | Integration | AD groups mapped | [ ] | |
 | Integration | Logs in SIEM | [ ] | |
 | Integration | Metrics in Prometheus | [ ] | |
@@ -682,6 +688,8 @@ echo "Tests completed. Log saved to: $LOG_FILE" | tee -a "$LOG_FILE"
 | Security | TLS 1.2+ only | [ ] | |
 | Security | Audit logs working | [ ] | |
 | Performance | Auth < 500ms | [ ] | |
+
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | Single Bastion node | HAProxy VIP tested | TOTP MFA only*
 
 ---
 

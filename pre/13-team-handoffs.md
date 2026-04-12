@@ -1,8 +1,10 @@
-# 10 - Team Handoffs
+# 13 - Team Handoffs
 
 ## Documentation and Knowledge Transfer for Cross-Team Collaboration
 
-This guide provides team-specific documentation for handoffs to Networking, SIEM, Observability, Identity, and OT teams.
+This guide provides team-specific documentation for handoffs to Networking, SIEM, Observability, Identity, and Security teams.
+
+> **Lab architecture summary**: Single WALLIX Bastion node (10.10.1.11, DMZ VLAN 110). HAProxy 2-node Active-Passive (VIP 10.10.1.100). FortiAuthenticator single node (10.10.1.50, Cyber VLAN 120). AD DC (10.10.1.60, Cyber VLAN 120). SIEM at 10.10.0.10 (Management). Monitoring at 10.10.0.20 (Management). Fortigate routes between DMZ, Cyber, and Targets VLANs.
 
 ---
 
@@ -55,33 +57,38 @@ This guide provides team-specific documentation for handoffs to Networking, SIEM
 +===============================================================================+
 |                     NETWORK DIAGRAM FOR NETWORKING TEAM                       |
 +===============================================================================+
-
-  MANAGEMENT VLAN (10.10.1.0/24)              IT-TEST VLAN (10.10.2.0/24)
-  ==============================              ============================
-
-  +------------------+                        +------------------+
-  |  dc-lab          |                        |  linux-test      |
-  |  10.10.1.10      |                        |  10.10.2.10      |
-  +------------------+                        +------------------+
-
-  +------------------+  +------------------+  +------------------+
-  |  wallix-node1    |  |  wallix-node2    |  |  windows-test    |
-  |  10.10.1.11      |  |  10.10.1.12      |  |  10.10.2.20      |
-  +------------------+  +------------------+  +------------------+
-          \                     /             +------------------+
-           \                   /              |  network-test    |
-            \  VIP: 10.10.1.100               |  10.10.2.30      |
-             +---------------+                +------------------+
-
-  +------------------+  +------------------+
-  |  siem-lab        |  |  monitoring-lab  |  OT-TEST VLAN (10.10.3.0/24)
-  |  10.10.1.50      |  |  10.10.1.60      |  ============================
-  +------------------+  +------------------+
-                                              +------------------+
-                                              |  plc-sim         |
-                                              |  10.10.3.10      |
-                                              +------------------+
-
+|                                                                               |
+|  MANAGEMENT VLAN 100 (10.10.0.0/24)                                          |
+|  +------------------+   +------------------+                                  |
+|  | siem-lab         |   | monitor-lab      |                                  |
+|  | 10.10.0.10       |   | 10.10.0.20       |                                  |
+|  +------------------+   +------------------+                                  |
+|                                                                               |
+|  =================== FORTIGATE INTER-VLAN ROUTING ========================== |
+|                                                                               |
+|  DMZ VLAN 110 (10.10.1.x)                                                    |
+|  +----------+  +----------+                                                   |
+|  |haproxy-1 |  |haproxy-2 |  VIP: 10.10.1.100                               |
+|  |10.10.1.5 |<>|10.10.1.6 |  Active-Passive (Keepalived)                     |
+|  +----+-----+  +----+-----+                                                   |
+|       +---------+                                                             |
+|  +------------------+   +------------------+                                  |
+|  | wallix-bastion   |   | wallix-rds       |                                  |
+|  | 10.10.1.11       |   | 10.10.1.30       |                                  |
+|  +------------------+   +------------------+                                  |
+|                                                                               |
+|  CYBER VLAN 120 (10.10.1.x)                                                  |
+|  +------------------+   +------------------+                                  |
+|  | fortiauth        |   | dc-lab (AD DC)   |                                  |
+|  | 10.10.1.50       |   | 10.10.1.60       |                                  |
+|  +------------------+   +------------------+                                  |
+|                                                                               |
+|  TARGETS VLAN 130 (10.10.2.0/24)                                             |
+|  +-----------+  +-----------+  +-----------+  +-----------+                   |
+|  |win-srv-01 |  |win-srv-02 |  |rhel10-srv |  |rhel9-srv  |                   |
+|  |10.10.2.10 |  |10.10.2.11 |  |10.10.2.20 |  |10.10.2.21 |                   |
+|  +-----------+  +-----------+  +-----------+  +-----------+                   |
+|                                                                               |
 +===============================================================================+
 ```
 
@@ -92,69 +99,63 @@ This guide provides team-specific documentation for handoffs to Networking, SIEM
 | Users | VIP 10.10.1.100 | 443 | TCP | Web UI access |
 | Users | VIP 10.10.1.100 | 22 | TCP | SSH proxy |
 | Users | VIP 10.10.1.100 | 3389 | TCP | RDP proxy |
-| wallix-node1/2 | dc-lab | 636 | TCP | LDAPS |
-| wallix-node1/2 | dc-lab | 88 | TCP/UDP | Kerberos |
-| wallix-node1/2 | dc-lab | 389 | TCP | LDAP |
-| wallix-node1/2 | dc-lab | 53 | TCP/UDP | DNS |
-| wallix-node1 | wallix-node2 | 3306/3307 | TCP | MariaDB replication |
-| wallix-node1 | wallix-node2 | 2242 | TCP | bastion-replication SSH tunnel |
-| wallix-node1 | wallix-node2 | 3307 | TCP | MariaDB replication source |
-| wallix-node1/2 | siem-lab | 514 | TCP | Syslog |
-| wallix-node1/2 | siem-lab | 6514 | TCP | Syslog TLS |
-| monitoring-lab | wallix-node1/2 | 9100 | TCP | Node exporter |
-| monitoring-lab | wallix-node1/2 | 9104 | TCP | MariaDB exporter |
-| wallix-node1/2 | 10.10.2.0/24 | 22 | TCP | SSH to targets |
-| wallix-node1/2 | 10.10.2.0/24 | 3389 | TCP | RDP to targets |
-| wallix-node1/2 | 10.10.3.0/24 | 22 | TCP | SSH to OT targets |
-| wallix-node1/2 | 10.10.3.0/24 | 502 | TCP | Modbus to OT |
+| haproxy-1/2 | wallix-bastion (10.10.1.11) | 443/22/3389 | TCP | Backend load balancing |
+| haproxy-1 <-> haproxy-2 | VRRP | — | VRRP | Keepalived heartbeat |
+| wallix-bastion (DMZ) | dc-lab (Cyber) | 636 | TCP | LDAPS — inter-VLAN |
+| wallix-bastion (DMZ) | dc-lab (Cyber) | 389 | TCP | LDAP — inter-VLAN |
+| wallix-bastion (DMZ) | dc-lab (Cyber) | 88 | TCP/UDP | Kerberos — inter-VLAN |
+| wallix-bastion (DMZ) | fortiauth (Cyber) | 1812/1813 | UDP | RADIUS MFA — inter-VLAN |
+| fortiauth (Cyber) | dc-lab (Cyber) | 389 | TCP | LDAP user sync — intra-VLAN |
+| wallix-bastion | siem-lab (10.10.0.10) | 514/6514 | TCP | Syslog |
+| monitor-lab (10.10.0.20) | wallix-bastion | 9100 | TCP | Node exporter |
+| monitor-lab (10.10.0.20) | fortiauth | 9100 | TCP | Node exporter |
+| monitor-lab (10.10.0.20) | dc-lab | 9182 | TCP | Windows exporter |
+| wallix-bastion | 10.10.2.0/24 | 22 | TCP | SSH to targets — inter-VLAN |
+| wallix-bastion | 10.10.2.0/24 | 3389 | TCP | RDP to targets — inter-VLAN |
+| wallix-bastion | 10.10.2.0/24 | 5985/5986 | TCP | WinRM — inter-VLAN |
 
 ### DNS Records Required
 
 ```
-; Forward zone: lab.local
-dc-lab          A       10.10.1.10
-wallix-node1    A       10.10.1.11
-wallix-node2    A       10.10.1.12
-wallix          A       10.10.1.100     ; VIP
-siem-lab        A       10.10.1.50
-monitoring-lab  A       10.10.1.60
-linux-test      A       10.10.2.10
-windows-test    A       10.10.2.20
-network-test    A       10.10.2.30
-plc-sim         A       10.10.3.10
-
-; Reverse zones
-10.1.10.10.in-addr.arpa.    PTR     dc-lab.lab.local.
-11.1.10.10.in-addr.arpa.    PTR     wallix-node1.lab.local.
-12.1.10.10.in-addr.arpa.    PTR     wallix-node2.lab.local.
+; Forward zone: lab.local (hosted on dc-lab 10.10.1.60, Cyber VLAN)
+siem-lab        A       10.10.0.10
+monitor-lab     A       10.10.0.20
+haproxy-1       A       10.10.1.5
+haproxy-2       A       10.10.1.6
+wallix          A       10.10.1.100     ; HAProxy VIP
+wallix-bastion  A       10.10.1.11
+wallix-rds      A       10.10.1.30
+fortiauth       A       10.10.1.50
+dc-lab          A       10.10.1.60
+win-srv-01      A       10.10.2.10
+win-srv-02      A       10.10.2.11
+rhel10-srv      A       10.10.2.20
+rhel9-srv       A       10.10.2.21
 ```
 
-### Load Balancer Configuration (If Required)
+### HAProxy Configuration (lab — single Bastion backend)
 
 ```
-; HAProxy configuration for production
+; HAProxy lab configuration (single Bastion node backend)
+; VIP: 10.10.1.100 (haproxy-1 MASTER / haproxy-2 BACKUP)
 frontend wallix_https
-    bind *:443
+    bind 10.10.1.100:443
     mode tcp
-    default_backend wallix_nodes
+    default_backend wallix_https_backend
 
-backend wallix_nodes
+backend wallix_https_backend
     mode tcp
-    balance roundrobin
     option tcp-check
-    server wallix-node1 10.10.1.11:443 check
-    server wallix-node2 10.10.1.12:443 check backup
+    server wallix-bastion 10.10.1.11:443 check inter 5s rise 2 fall 3
 
 frontend wallix_ssh
-    bind *:22
+    bind 10.10.1.100:22
     mode tcp
-    default_backend wallix_ssh_nodes
+    default_backend wallix_ssh_backend
 
-backend wallix_ssh_nodes
+backend wallix_ssh_backend
     mode tcp
-    balance roundrobin
-    server wallix-node1 10.10.1.11:22 check
-    server wallix-node2 10.10.1.12:22 check backup
+    server wallix-bastion 10.10.1.11:22 check inter 5s rise 2 fall 3
 ```
 
 ### Networking Team Contacts
@@ -171,10 +172,12 @@ backend wallix_ssh_nodes
 
 ### Log Sources
 
-| Source | Type | Protocol | Port | Format |
-|--------|------|----------|------|--------|
-| wallix-node1 | PAM Logs | Syslog/TLS | 6514 | CEF |
-| wallix-node2 | PAM Logs | Syslog/TLS | 6514 | CEF |
+> **Lab**: SIEM is siem-lab (10.10.0.10, Management VLAN 100). Log sources are wallix-bastion (10.10.1.11, DMZ VLAN) and fortiauth (10.10.1.50, Cyber VLAN).
+
+| Source | IP | Type | Protocol | Port | Format |
+|--------|----|------|----------|------|--------|
+| wallix-bastion | 10.10.1.11 | PAM Logs | Syslog/TLS | 6514 | CEF |
+| fortiauth | 10.10.1.50 | MFA Logs | Syslog/UDP | 514 | Syslog |
 
 ### Log Categories
 
@@ -189,7 +192,7 @@ backend wallix_ssh_nodes
 ### CEF Field Mapping
 
 ```
-CEF:0|WALLIX|WALLIX Bastion|12.3.2|<signature_id>|<name>|<severity>|<extensions>
+CEF:0|WALLIX|WALLIX Bastion|12.1.x|<signature_id>|<name>|<severity>|<extensions>
 
 Signature IDs:
 100 - User Login Success
@@ -290,25 +293,30 @@ index=wallix "configuration changed" earliest=-24h
 
 ### Metrics Endpoints
 
-| Target | Endpoint | Port | Exporter |
-|--------|----------|------|----------|
-| wallix-node1 | /metrics | 9100 | node_exporter |
-| wallix-node1 | /metrics | 9104 | mysqld_exporter |
-| wallix-node2 | /metrics | 9100 | node_exporter |
-| wallix-node2 | /metrics | 9104 | mysqld_exporter |
-| dc-lab | /metrics | 9182 | windows_exporter |
+> **Lab**: Monitoring is monitor-lab (10.10.0.20, Management VLAN 100). Prometheus scrapes wallix-bastion (single node), fortiauth, dc-lab, haproxy nodes, and target hosts.
+
+| Target | IP | Endpoint | Port | Exporter |
+|--------|----|----------|------|----------|
+| wallix-bastion | 10.10.1.11 | /metrics | 9100 | node_exporter |
+| wallix-bastion | 10.10.1.11 | /metrics | 9104 | mysqld_exporter |
+| fortiauth | 10.10.1.50 | /metrics | 9100 | node_exporter |
+| dc-lab | 10.10.1.60 | /metrics | 9182 | windows_exporter |
+| haproxy-1 | 10.10.1.5 | /metrics | 9101 | haproxy_exporter |
+| haproxy-2 | 10.10.1.6 | /metrics | 9101 | haproxy_exporter |
+| rhel10-srv | 10.10.2.20 | /metrics | 9100 | node_exporter |
+| rhel9-srv | 10.10.2.21 | /metrics | 9100 | node_exporter |
 
 ### Key Metrics to Monitor
 
 | Metric | Query | Threshold | Action |
 |--------|-------|-----------|--------|
-| Node Up | `up{job="wallix"}` | < 2 | Page on-call |
+| Bastion Up | `up{job="wallix-bastion"}` | == 0 | Page on-call |
 | CPU Usage | `100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)` | > 80% | Investigate |
 | Memory | `(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100` | > 85% | Investigate |
 | Disk /var/wab | `(1 - node_filesystem_avail_bytes{mountpoint="/var/wab"} / node_filesystem_size_bytes) * 100` | > 80% | Clean recordings |
-| MariaDB Up | `mysql_up` | 0 | Page on-call |
-| Replication Lag | `mysql_slave_status_seconds_behind_master` | > 60s | Investigate |
-| Connections | `mysql_global_status_threads_connected` | > 80 | Investigate |
+| MariaDB Up | `mysql_up` | == 0 | Page on-call |
+| DB Connections | `mysql_global_status_threads_connected` | > 80 | Investigate |
+| HAProxy Up | `up{job="haproxy"}` | == 0 | Check VRRP/VIP |
 
 ### Grafana Dashboard IDs
 
@@ -316,7 +324,7 @@ index=wallix "configuration changed" earliest=-24h
 |-----------|---|---------|
 | WALLIX Bastion Overview | 1001 | System health overview |
 | MariaDB | 1002 | Database performance |
-| HA Cluster | 1003 | Cluster status |
+| HAProxy VIP | 1003 | HAProxy Active-Passive status |
 | Session Metrics | 1004 | Session activity |
 
 ### Alert Rules
@@ -326,13 +334,13 @@ index=wallix "configuration changed" earliest=-24h
 groups:
   - name: wallix-critical
     rules:
-      - alert: WALLIX BastionNodeDown
-        expr: up{job="wallix"} == 0
+      - alert: BastionNodeDown
+        expr: up{job="wallix-bastion"} == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "WALLIX Bastion node down"
+          summary: "WALLIX Bastion node down (single node — immediate impact)"
 
       - alert: MariaDBDown
         expr: mysql_up == 0
@@ -343,13 +351,13 @@ groups:
   - name: wallix-warning
     rules:
       - alert: HighCPU
-        expr: (100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",job="wallix"}[5m])) * 100)) > 80
+        expr: (100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle",job="wallix-bastion"}[5m])) * 100)) > 80
         for: 5m
         labels:
           severity: warning
 
       - alert: HighMemory
-        expr: (1 - (node_memory_MemAvailable_bytes{job="wallix"} / node_memory_MemTotal_bytes{job="wallix"})) * 100 > 85
+        expr: (1 - (node_memory_MemAvailable_bytes{job="wallix-bastion"} / node_memory_MemTotal_bytes{job="wallix-bastion"})) * 100 > 85
         for: 5m
         labels:
           severity: warning
@@ -359,12 +367,12 @@ groups:
 
 | Alert | Runbook |
 |-------|---------|
-| WALLIX BastionNodeDown | See "HA Failover Procedure" |
-| MariaDBDown | See "Database Recovery" |
+| BastionNodeDown | Restart wallix-bastion service; escalate if unresponsive |
+| MariaDBDown | See "Database Recovery" — single node, no failover |
 | HighCPU | Identify top processes, check for stuck sessions |
 | HighMemory | Clear session cache, check for memory leaks |
 | DiskSpaceLow | Archive old recordings, clean temp files |
-| ReplicationLag | Check network, restart replica if needed |
+| HAProxy VIP lost | Check keepalived on both haproxy nodes, verify VRRP |
 
 ### Observability Team Contacts
 
@@ -379,10 +387,12 @@ groups:
 
 ### AD Integration Summary
 
+> **Lab**: AD DC is dc-lab (10.10.1.60, Cyber VLAN 120). FortiAuthenticator is fortiauth (10.10.1.50, Cyber VLAN 120). WALLIX Bastion (10.10.1.11, DMZ VLAN 110) reaches both via Fortigate inter-VLAN routing.
+
 | Setting | Value |
 |---------|-------|
 | Domain | LAB.LOCAL |
-| DC | dc-lab.lab.local |
+| DC | dc-lab.lab.local (10.10.1.60, Cyber VLAN) |
 | Protocol | LDAPS (port 636) |
 | Service Account | wallix-svc |
 | Base DN | DC=lab,DC=local |
@@ -395,10 +405,8 @@ groups:
 | WALLIX Bastion-Admins | LDAP-Admins | Full administration |
 | WALLIX Bastion-Operators | LDAP-Operators | View/operate, no config |
 | WALLIX Bastion-Auditors | LDAP-Auditors | Audit access only |
-| Linux-Admins | LDAP-Linux-Admins | Access to Linux targets |
-| Windows-Admins | LDAP-Windows-Admins | Access to Windows targets |
-| Network-Admins | LDAP-Network-Admins | Access to network devices |
-| OT-Engineers | LDAP-OT-Engineers | Access to OT targets |
+| Linux-Admins | LDAP-Linux-Admins | Access to Linux targets (VLAN 130) |
+| Windows-Admins | LDAP-Windows-Admins | Access to Windows targets (VLAN 130) |
 
 ### User Provisioning Process
 
@@ -406,9 +414,8 @@ groups:
 1. Create user in AD under: OU=Users,OU=WALLIX Bastion,DC=lab,DC=local
 2. Add to appropriate group(s):
    - WALLIX Bastion-Admins (for PAM administrators)
-   - Linux-Admins (for Linux access)
-   - Windows-Admins (for Windows access)
-   - OT-Engineers (for OT access)
+   - Linux-Admins (for rhel10-srv / rhel9-srv access)
+   - Windows-Admins (for win-srv-01 / win-srv-02 access)
 3. User syncs automatically on next login
 4. WALLIX Bastion inherits group permissions
 
@@ -419,16 +426,18 @@ Deprovisioning:
 4. Active sessions remain until timeout
 ```
 
-### MFA Configuration (If Applicable)
+### MFA Configuration
 
 ```
-MFA Provider: ____________
-Integration: RADIUS / FortiToken
+MFA Provider: FortiAuthenticator 6.4+ (fortiauth, 10.10.1.50, Cyber VLAN 120)
+Integration: RADIUS (UDP 1812/1813)
+Token Type: TOTP only (FortiToken Mobile — no Push notifications)
 
 Configuration in WALLIX Bastion:
-- System > Authentication > MFA
-- Provider: [configured provider]
-- Required for: All users / Admin only
+- System > Authentication > RADIUS
+- Server: 10.10.1.50 (Cyber VLAN, inter-VLAN via Fortigate)
+- Port: 1812
+- Required for: All privileged users
 ```
 
 ### SSO Configuration (If Applicable)
@@ -452,92 +461,75 @@ WALLIX Bastion SAML Settings:
 
 ---
 
-## Handoff 5: OT / ICS Team
+## Handoff 5: Cyber VLAN Team
 
-### OT Network Segment
+### Cyber VLAN Network Segment
 
-| VLAN | Subnet | Purpose |
-|------|--------|---------|
-| OT-Test | 10.10.3.0/24 | OT test devices |
+> **Note**: The Cyber VLAN (120) and DMZ VLAN (110) share the 10.10.1.x address range but are logically separated by VLAN tag. Fortigate handles inter-VLAN routing between them.
 
-### OT Targets
+| Host | IP | VLAN | Role |
+|------|----|------|------|
+| fortiauth | 10.10.1.50 | Cyber (120) | FortiAuthenticator 6.4+ — RADIUS/TOTP |
+| dc-lab | 10.10.1.60 | Cyber (120) | Active Directory DC — DNS, LDAP, Kerberos |
 
-| Device | IP | Type | Protocol | Account |
-|--------|---|------|----------|---------|
-| plc-sim | 10.10.3.10 | PLC Simulator | Modbus/SSH | root |
-
-### Access Patterns for OT
+### Inter-VLAN Connectivity Requirements
 
 ```
 +===============================================================================+
-|                        OT ACCESS THROUGH WALLIX Bastion                               |
+|               CYBER VLAN INTER-VLAN ROUTING (via Fortigate)                   |
 +===============================================================================+
-
-  OT Engineer                  WALLIX Bastion                       PLC/HMI
-  ===========                  ======                       =======
-
-  1. Engineer authenticates to WALLIX Bastion (MFA)
-  2. Requests session to OT target
-  3. Approval workflow (if required)
-  4. WALLIX Bastion creates tunneled connection
-  5. Session recorded (video + commands)
-  6. Engineer accesses OT device
-  7. Session ends, recording archived
-
-  +------------+            +------------+            +------------+
-  |  OT Eng    |    SSH     |   WALLIX Bastion   |   Tunnel   |  PLC-SIM   |
-  |    MFA     | ---------> |   Proxy    | ---------> |   Modbus   |
-  +------------+            +------------+            +------------+
-                                  |
-                             Recording
-                              Storage
-
+|                                                                               |
+|  DMZ VLAN 110                           Cyber VLAN 120                        |
+|  +-----------------------+              +------------------+                  |
+|  | wallix-bastion        |  LDAPS 636   | dc-lab           |                  |
+|  | 10.10.1.11            |----------->  | 10.10.1.60       |                  |
+|  |                       |  LDAP 389    |                  |                  |
+|  |                       |----------->  +------------------+                  |
+|  |                       |  Kerberos 88                                       |
+|  |                       |----------->  +------------------+                  |
+|  |                       |  RADIUS 1812 | fortiauth        |                  |
+|  |                       |----------->  | 10.10.1.50       |                  |
+|  +-----------------------+              |                  |                  |
+|                                         +--------+---------+                  |
+|                                                  |                            |
+|                                          LDAP 389 (sync)                      |
+|                                                  |                            |
+|                                         +--------+---------+                  |
+|                                         | dc-lab           |                  |
+|                                         | 10.10.1.60       |                  |
+|                                         +------------------+                  |
+|                                                                               |
 +===============================================================================+
 ```
 
-### Modbus Access via SSH Tunnel
+### FortiAuthenticator Handoff Details
 
-```bash
-# Engineer connects to WALLIX Bastion
-ssh ot-engineer@wallix.lab.local
+| Setting | Value |
+|---------|-------|
+| Host | fortiauth.lab.local (10.10.1.50) |
+| VLAN | Cyber VLAN 120 |
+| RADIUS Port | 1812/1813 |
+| Token Type | TOTP only (FortiToken Mobile) — no Push |
+| LDAP Sync Source | dc-lab (10.10.1.60) |
+| RADIUS Clients | wallix-bastion (10.10.1.11) |
 
-# Select: plc-sim / Modbus Tunnel
+### Active Directory Handoff Details
 
-# This creates local port forward:
-# localhost:502 -> plc-sim:502
+| Setting | Value |
+|---------|-------|
+| Host | dc-lab.lab.local (10.10.1.60) |
+| VLAN | Cyber VLAN 120 |
+| DNS Server | 10.10.1.60 (all VMs use this) |
+| Domain | LAB.LOCAL |
+| LDAPS Port | 636 |
+| Kerberos Realm | LAB.LOCAL |
 
-# Then use Modbus client locally
-modbus-cli localhost:502
-```
-
-### OT Session Recording
-
-- All sessions to OT targets recorded
-- Video capture for graphical sessions
-- Command logging for CLI sessions
-- Session approval may be required
-- Recordings retained per policy
-
-### Emergency Access Procedure
-
-```
-For emergency OT access when WALLIX Bastion is unavailable:
-
-1. Contact OT Lead and Security
-2. Use break-glass credentials stored in:
-   [Location: ____________]
-3. Log all access manually
-4. Report to security within 24h
-5. Rotate credentials after use
-```
-
-### OT Team Contacts
+### Cyber VLAN Team Contacts
 
 | Role | Name | Email | Phone |
 |------|------|-------|-------|
-| OT Lead | __________ | __________ | __________ |
-| ICS Engineer | __________ | __________ | __________ |
-| Plant Manager | __________ | __________ | __________ |
+| FortiAuth Admin | __________ | __________ | __________ |
+| AD Admin | __________ | __________ | __________ |
 
 ---
 
@@ -547,11 +539,11 @@ For emergency OT access when WALLIX Bastion is unavailable:
 
 | Standard | Requirement | WALLIX Bastion Feature |
 |----------|-------------|----------------|
-| IEC 62443 | Access control | RBAC, MFA |
-| IEC 62443 | Audit trail | Session recording |
-| IEC 62443 | Secure credentials | Vault, rotation |
-| SOC 2 | Access logging | Audit logs, SIEM |
-| ISO 27001 | Privileged access | PAM controls |
+| ISO 27001 | Privileged access | RBAC, MFA |
+| ISO 27001 | Audit trail | Session recording, SIEM integration |
+| ISO 27001 | Secure credentials | Vault, automatic rotation |
+| SOC 2 | Access logging | Audit logs, SIEM (siem-lab 10.10.0.10) |
+| NIS2 | MFA for privileged accounts | FortiAuthenticator TOTP |
 
 ### Audit Log Location
 
@@ -560,7 +552,7 @@ For emergency OT access when WALLIX Bastion is unavailable:
 | Authentication | /var/log/wabaudit/audit.log | 90 days |
 | Session | /var/wab/recorded/ | 365 days |
 | Admin | /var/log/wabengine/wabengine.log | 90 days |
-| SIEM | siem-lab.lab.local | Per policy |
+| SIEM | siem-lab (10.10.0.10, Management VLAN) | Per policy |
 
 ### Security Assessment Checklist
 
@@ -606,7 +598,7 @@ For security incidents involving WALLIX Bastion:
 | SIEM | __________ | __________ | __________ |
 | Observability | __________ | __________ | __________ |
 | Identity | __________ | __________ | __________ |
-| OT/ICS | __________ | __________ | __________ |
+| Cyber VLAN (FortiAuth/AD) | __________ | __________ | __________ |
 | Security | __________ | __________ | __________ |
 
 ---
@@ -619,8 +611,12 @@ For security incidents involving WALLIX Bastion:
 | SIEM | __________ | __________ | __________ |
 | Observability | __________ | __________ | __________ |
 | Identity | __________ | __________ | __________ |
-| OT/ICS | __________ | __________ | __________ |
+| Cyber VLAN | __________ | __________ | __________ |
 | Security | __________ | __________ | __________ |
+
+---
+
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | Lab: single node (10.10.1.11) | FortiAuthenticator 6.4+ (10.10.1.50) | AD DC (10.10.1.60)*
 
 ---
 

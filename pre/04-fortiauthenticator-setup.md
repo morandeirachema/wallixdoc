@@ -4,6 +4,8 @@
 
 This guide covers deploying and configuring FortiAuthenticator to provide MFA (RADIUS + TOTP/FortiToken Mobile) for WALLIX Bastion users.
 
+> **Lab configuration**: FortiAuthenticator runs as a **single node** (no HA pair) in the **Cyber VLAN (VLAN 120)** at 10.10.1.50. TOTP only — no Push notifications. Active Directory is also in the Cyber VLAN (10.10.1.60), so FortiAuth connects to AD directly without inter-VLAN routing.
+
 ---
 
 ## Architecture
@@ -13,24 +15,26 @@ This guide covers deploying and configuring FortiAuthenticator to provide MFA (R
 |                    FORTIAUTHENTICATOR MFA ARCHITECTURE                        |
 +===============================================================================+
 |                                                                               |
-|  WALLIX Bastion Nodes            FortiAuthenticator           Active Directory|
-|  =============                   ====================         ================|
+|  DMZ VLAN 110                    Cyber VLAN 120                              |
+|  =============                   ====================                         |
 |                                                                               |
-|  +--------------+                +-----------------+          +-----------+   |
-|  |WALLIXBastion1|----RADIUS----->| FortiAuth       |---LDAP-->|    AD     |   |
-|  |10.10.1.11    |    (1812)      | 10.10.1.50      |  (389)   |10.10.0.10 |   |
-|  +--------------+                |                 |          +-----------+   |
-|                                  | MFA Validation: |                          |
-|  +--------------+                | - LDAP Auth     |                          |
-|  |WALLIXBastion2|----RADIUS----->| - TOTP/Token    |                          |
-|  |10.10.1.12    |                | - Push Notify   |                          |
-|  +--------------+                +-----------------+                          |
+|  +-----------------+             +-----------------+   +-----------------+   |
+|  | wallix-bastion  |--RADIUS---->| fortiauth       |   | dc-lab (AD DC)  |   |
+|  | 10.10.1.11      |  1812/UDP   | 10.10.1.50      |   | 10.10.1.60      |   |
+|  | (DMZ VLAN 110)  |            |(Cyber VLAN 120) |   | (Cyber VLAN 120)|   |
+|  | inter-VLAN via  |             |                 |   |                 |   |
+|  | Fortigate       |             | MFA Validation: |   |                 |   |
+|  +-----------------+             | - LDAP Auth     +-->| LDAP :389       |   |
+|                                  | - TOTP only     |   | (direct, same   |   |
+|                                  | - No Push       |   |  Cyber VLAN)    |   |
+|                                  +-----------------+   +-----------------+   |
 |                                       |                                       |
 |                                       v                                       |
 |                               +-----------------+                             |
 |                               | FortiToken      |                             |
 |                               | Mobile App      |                             |
 |                               | (User's Phone)  |                             |
+|                               | TOTP codes only |                             |
 |                               +-----------------+                             |
 |                                                                               |
 +===============================================================================+
@@ -53,14 +57,15 @@ This guide covers deploying and configuring FortiAuthenticator to provide MFA (R
 
 ```
 Hostname: fortiauth.lab.local
-OS: FortiAuthenticator 6.5.x
+OS: FortiAuthenticator 6.4+
 vCPU: 2
 RAM: 4 GB
 Disk: 40 GB
-Network: OT DMZ (10.10.1.0/24)
+Network: LAB-Cyber (VLAN 120)
 IP: 10.10.1.50/24
 Gateway: 10.10.1.1
-DNS: 10.10.0.10
+DNS: 10.10.1.60  (dc-lab, same Cyber VLAN)
+Note: Single node — no HA pair. TOTP only.
 ```
 
 ### Initial Deployment
@@ -88,13 +93,13 @@ DEPLOYMENT WIZARD:
 - Storage: Select datastore
 - Network Mapping:
   - Source Network: VM Network
-  - Destination Network: WALLIX Bastion-OT-DMZ (VLAN 110)
+  - Destination Network: LAB-Cyber (VLAN 120)
 - Customize template:
   - Admin Password: FortiAuth2026!
   - IP Address: 10.10.1.50
   - Netmask: 255.255.255.0
   - Gateway: 10.10.1.1
-  - DNS: 10.10.0.10
+  - DNS: 10.10.1.60
 - Power on after deployment: Yes
 
 5. Click Finish and wait for deployment to complete
@@ -110,13 +115,13 @@ export GOVC_PASSWORD=YourPassword
 export GOVC_INSECURE=true
 export GOVC_DATACENTER=Datacenter1
 export GOVC_DATASTORE=Datastore1
-export GOVC_NETWORK="WALLIX Bastion-OT-DMZ"
+export GOVC_NETWORK="LAB-Cyber"
 
 # Import OVA
 govc import.ova \
   -name=fortiauth \
   -ds=Datastore1 \
-  -net="WALLIX Bastion-OT-DMZ" \
+  -net="LAB-Cyber" \
   -pool=/Datacenter1/host/Cluster1/Resources \
   FortiAuthenticator_VM64.ova
 
@@ -143,11 +148,11 @@ Connect-VIServer -Server vcenter.company.com
 $ovfConfig = Get-OvfConfiguration -Ovf "C:\Downloads\FortiAuthenticator_VM64.ova"
 
 # Configure network properties
-$ovfConfig.NetworkMapping.VM_Network.Value = "WALLIX Bastion-OT-DMZ"
+$ovfConfig.NetworkMapping.VM_Network.Value = "LAB-Cyber"
 $ovfConfig.Common.ip0.Value = "10.10.1.50"
 $ovfConfig.Common.netmask0.Value = "255.255.255.0"
 $ovfConfig.Common.gateway.Value = "10.10.1.1"
-$ovfConfig.Common.dns1.Value = "10.10.0.10"
+$ovfConfig.Common.dns1.Value = "10.10.1.60"
 
 # Deploy OVA
 Import-VApp -Source "C:\Downloads\FortiAuthenticator_VM64.ova" `
@@ -214,7 +219,7 @@ config system interface
 end
 
 config system dns
-    set primary 10.10.0.10
+    set primary 10.10.1.60
     set secondary 8.8.8.8
 end
 
@@ -259,7 +264,7 @@ Click **Create New** and configure:
 |  GENERAL                                                                      |
 |  -------                                                                      |
 |  Name:                  LAB-AD                                                |
-|  Server Name/IP:        dc-lab.lab.local                                      |
+|  Server Name/IP:        dc-lab.lab.local (10.10.1.60, same Cyber VLAN)       |
 |  Port:                  389                                                   |
 |  Common Name ID:        sAMAccountName                                        |
 |  Distinguished Name:    DC=lab,DC=local                                       |
@@ -302,28 +307,15 @@ Click **Create New**:
 
 ```
 +===============================================================================+
-|  RADIUS CLIENT CONFIGURATION - WALLIX Bastion NODE 1                          |
+|  RADIUS CLIENT CONFIGURATION - WALLIX BASTION (single node)                   |
 +===============================================================================+
 |                                                                               |
-|  Name:                  WALLIX Bastion-Node1                                  |
+|  Name:                  wallix-bastion                                        |
 |  IP/Netmask:            10.10.1.11/32                                         |
 |  Secret:                WallixRadius2026!                                     |
 |  Authentication Type:   PAP                                                   |
 |                                                                               |
-+===============================================================================+
-```
-
-Click **Create New** again for Node 2:
-
-```
-+===============================================================================+
-|  RADIUS CLIENT CONFIGURATION - WALLIX Bastion NODE 2                          |
-+===============================================================================+
-|                                                                               |
-|  Name:                  WALLIX Bastion-Node2                                  |
-|  IP/Netmask:            10.10.1.12/32                                         |
-|  Secret:                WallixRadius2026!                                     |
-|  Authentication Type:   PAP                                                   |
+|  Note: Only one RADIUS client — the lab has a single Bastion node.            |
 |                                                                               |
 +===============================================================================+
 ```
@@ -350,7 +342,7 @@ Click **Create New**:
 |  TWO-FACTOR AUTHENTICATION                                                    |
 |  -------------------------                                                    |
 |  [x] Require two-factor authentication                                        |
-|  Token Type:            FortiToken Mobile                                     |
+|  Token Type:            FortiToken Mobile (TOTP only — no Push)              |
 |                                                                               |
 |  ACCOUNTING                                                                   |
 |  ----------                                                                   |
@@ -576,10 +568,10 @@ Need help? Contact IT Support.
 +===================================================================================+
 | Time       | User       | Client                | Result        | Reason          |
 +===================================================================================+
-| 10:23:45   | jadmin     | WALLIX Bastion-Node1  | Success       | LDAP + Token OK |
-| 10:22:13   | soperator  | WALLIX Bastion-Node2  | Success       | LDAP + Token OK |
-| 10:20:05   | totengineer| WALLIX Bastion-Node1  | Failed        | Invalid token   |
-| 10:18:32   | lnetwork   | WALLIX Bastion-Node2  | Success       | LDAP + Token OK |
+| 10:23:45   | jadmin     | wallix-bastion        | Success       | LDAP + TOTP OK  |
+| 10:22:13   | soperator  | wallix-bastion        | Success       | LDAP + TOTP OK  |
+| 10:20:05   | totengineer| wallix-bastion        | Failed        | Invalid token   |
+| 10:18:32   | lnetwork   | wallix-bastion        | Success       | LDAP + TOTP OK  |
 +===================================================================================+
 ```
 
@@ -594,7 +586,7 @@ Need help? Contact IT Support.
 |                                                                               |
 |  [x] Enable syslog                                                            |
 |                                                                               |
-|  Server 1:              10.10.0.50 (siem-lab)                                 |
+|  Server 1:              10.10.0.10 (siem-lab, Management VLAN)                |
 |  Port:                  514                                                   |
 |  Protocol:              UDP                                                   |
 |  Facility:              local7                                                |
@@ -727,18 +719,22 @@ Encryption Password: FortiAuthBackup2026!
 |-----------|-------|
 | **Hostname** | fortiauth.lab.local |
 | **IP Address** | 10.10.1.50/24 |
+| **VLAN** | 120 (Cyber) |
 | **Admin URL** | https://10.10.1.50 |
 | **Admin User** | admin |
 | **Admin Pass** | FortiAuth2026! |
+| **Mode** | Single node (no HA) |
+| **Token method** | TOTP only |
 
 ### RADIUS Configuration
 
 | Setting | Value |
 |---------|-------|
-| **RADIUS Port** | 1812 (UDP) |
+| **RADIUS Port** | 1812/1813 (UDP) |
 | **RADIUS Secret** | WallixRadius2026! |
 | **Auth Type** | PAP |
-| **LDAP Server** | dc-lab.lab.local:389 |
+| **RADIUS Client** | wallix-bastion (10.10.1.11) |
+| **LDAP Server** | dc-lab.lab.local:389 (10.10.1.60, Cyber VLAN) |
 
 ### TOTP Settings
 
@@ -756,12 +752,14 @@ Encryption Password: FortiAuthBackup2026!
 |-------|--------|
 | FortiAuth accessible via HTTPS | [ ] |
 | LDAP connection to AD successful | [ ] |
-| RADIUS clients configured for WALLIX Bastion nodes | [ ] |
+| RADIUS client configured for wallix-bastion (10.10.1.11) | [ ] |
 | Users imported from AD | [ ] |
 | FortiToken Mobile tokens activated | [ ] |
 | Test RADIUS authentication successful | [ ] |
 | Syslog forwarding configured | [ ] |
 | Configuration backup created | [ ] |
+
+*Last updated: April 2026 | FortiAuthenticator 6.4+ | Single node, Cyber VLAN 120 (10.10.1.50) | TOTP only*
 
 ---
 

@@ -1,4 +1,4 @@
-# 11 - Battery Tests for Client Demonstrations
+# 14 - Battery Tests for Client Demonstrations
 
 ## WALLIX Bastion Comprehensive Test Suite
 
@@ -8,17 +8,19 @@ This document provides a complete battery of tests to demonstrate WALLIX Bastion
 
 ## Test Categories
 
+> **Lab configuration**: Single WALLIX Bastion node (10.10.1.11, DMZ VLAN 110). HAProxy 2-node Active-Passive (VIP 10.10.1.100). FortiAuthenticator TOTP only (10.10.1.50, Cyber VLAN). AD DC (10.10.1.60, Cyber VLAN). Targets: win-srv-01/02 (10.10.2.x), rhel10-srv/rhel9-srv (10.10.2.x).
+
 | Category | Tests | Duration | Purpose |
 |----------|-------|----------|---------|
-| [Authentication Tests](#1-authentication-tests) | 8 | 30 min | MFA, LDAP, Kerberos |
+| [Authentication Tests](#1-authentication-tests) | 8 | 30 min | TOTP MFA, LDAP, Kerberos |
 | [Session Management Tests](#2-session-management-tests) | 10 | 45 min | Recording, monitoring |
 | [Password Management Tests](#3-password-management-tests) | 6 | 20 min | Vault, rotation |
-| [High Availability Tests](#4-high-availability-tests) | 8 | 40 min | Failover, replication |
+| [HAProxy VIP Tests](#4-haproxy-vip-tests) | 5 | 25 min | VIP failover, Cyber VLAN connectivity |
 | [Performance Tests](#5-performance-tests) | 5 | 30 min | Load, stress |
 | [Security Tests](#6-security-tests) | 6 | 25 min | Hardening, audit |
-| [OT/Industrial Tests](#7-otindustrial-tests) | 5 | 20 min | Protocols, PLCs |
+| [Integration Tests](#7-integration-tests) | 5 | 20 min | SIEM, monitoring, AD |
 
-**Total Duration**: ~3.5 hours
+**Total Duration**: ~3 hours
 
 ---
 
@@ -31,25 +33,33 @@ This document provides a complete battery of tests to demonstrate WALLIX Bastion
 
 Before starting battery tests, verify:
 
-[ ] WALLIX Bastion cluster is healthy
+[ ] WALLIX Bastion is healthy (single node)
     Command: wabadmin status
     Expected: All services running
 
-[ ] HA replication is active
-    Command: bastion-replication status
-    Expected: Sync Status: OK
+[ ] HAProxy VIP is active
+    Command: ip addr show on haproxy-1 (check for 10.10.1.100)
+    Expected: VIP held by haproxy-1 (MASTER)
 
-[ ] AD integration is working
-    Command: Test LDAP bind in Web UI
-    Expected: Connection successful
+[ ] AD/LDAP integration is working
+    Command: Test LDAP bind in Web UI (System > Authentication)
+    Expected: Connection to dc-lab (10.10.1.60) successful
+
+[ ] FortiAuthenticator RADIUS reachable
+    Command: radtest testuser testpass 10.10.1.50 1812 sharedsecret
+    Expected: Access-Challenge or Access-Accept
 
 [ ] Test targets are reachable
-    Command: ping linux-test && ping windows-test
-    Expected: All respond
+    Command: ping 10.10.2.10 && ping 10.10.2.20
+    Expected: win-srv-01 and rhel10-srv respond
 
 [ ] Monitoring stack is operational
-    Command: curl http://monitor-lab:9090/-/healthy
+    Command: curl http://10.10.0.20:9090/-/healthy
     Expected: Prometheus is Healthy
+
+[ ] SIEM receiving logs
+    Command: Check siem-lab (10.10.0.10) for recent wallix events
+    Expected: Events present from last 10 minutes
 
 +===============================================================================+
 ```
@@ -158,29 +168,33 @@ automatically authenticated without entering any credentials."
 |  TEST 1.4: MULTI-FACTOR AUTHENTICATION                                        |
 +===============================================================================+
 
-OBJECTIVE: Verify MFA enforcement for privileged access
+OBJECTIVE: Verify TOTP MFA enforcement via FortiAuthenticator
 
 STEPS:
 1. Login as user with MFA requirement
 2. Enter username/password
-3. When prompted, enter TOTP code from authenticator app
+3. When prompted, enter 6-digit TOTP code from FortiToken Mobile app
 4. Complete login
 
 EXPECTED RESULT:
-- MFA challenge displayed after password
-- TOTP code validated
-- Session established with MFA flag
+- MFA TOTP challenge displayed after password
+- TOTP code validated against FortiAuthenticator (10.10.1.50)
+- Session established with MFA flag in audit log
 
 SUCCESS CRITERIA:
 [ ] MFA prompt appears after password
-[ ] Invalid codes are rejected
-[ ] Valid codes grant access
+[ ] Invalid TOTP codes are rejected
+[ ] Valid TOTP codes grant access
 [ ] Audit log shows MFA was used
+[ ] FortiAuthenticator logs show RADIUS Accept
+
+LAB NOTE:
+FortiToken Push is NOT configured in this lab. TOTP only.
 
 CLIENT TALKING POINT:
-"For high-security access, we enforce multi-factor authentication.
-This can be TOTP apps, hardware tokens, or integrated with your
-existing MFA solution like FortiAuthenticator."
+"For high-security access, we enforce multi-factor authentication
+via FortiAuthenticator. TOTP tokens generate a new code every 30
+seconds — even offline, with no network dependency."
 
 +===============================================================================+
 ```
@@ -834,257 +848,176 @@ SUCCESS CRITERIA:
 
 ---
 
-## 4. High Availability Tests
+## 4. HAProxy VIP Tests
 
-### Test 4.1: Cluster Status Verification
+> **Lab scope**: WALLIX Bastion is a single node — no Bastion cluster, no bastion-replication, no MariaDB HA. HAProxy Active-Passive (haproxy-1 / haproxy-2) with Keepalived VRRP provides VIP failover. These tests validate the HAProxy layer and Cyber VLAN connectivity.
+
+### Test 4.1: HAProxy VIP Status
 
 ```
 +===============================================================================+
-|  TEST 4.1: CLUSTER STATUS VERIFICATION                                        |
+|  TEST 4.1: HAPROXY VIP STATUS VERIFICATION                                    |
 +===============================================================================+
 
-OBJECTIVE: Verify HA cluster is healthy
+OBJECTIVE: Verify HAProxy Active-Passive VIP is active
 
 COMMANDS:
-# On any node:
-wabadmin status
-bastion-replication status
-bastion-replication --monitoring
+# On haproxy-1 (expected MASTER):
+ip addr show | grep 10.10.1.100
+systemctl status keepalived
+systemctl status haproxy
+
+# On haproxy-2 (expected BACKUP):
+ip addr show | grep 10.10.1.100   # should show nothing
+
+# Check HAProxy stats:
+curl http://10.10.1.5:8404/stats   # haproxy-1
+curl http://10.10.1.6:8404/stats   # haproxy-2
 
 EXPECTED RESULT:
-- All services running on both nodes
-- VIP active on one node
-- Replication synchronized
+- VIP 10.10.1.100 active on haproxy-1
+- haproxy-2 in BACKUP state
+- Backend wallix-bastion (10.10.1.11) shows UP
 
 SUCCESS CRITERIA:
-[ ] wabadmin shows all services running
-[ ] bastion-replication --status shows both nodes connected
-[ ] Replication shows 0 seconds lag
+[ ] VIP present on haproxy-1
+[ ] HAProxy backend shows wallix-bastion UP
+[ ] Keepalived state is MASTER on haproxy-1
+
++===============================================================================+
+```
+
+### Test 4.2: VIP Failover (Planned)
+
+```
++===============================================================================+
+|  TEST 4.2: PLANNED VIP FAILOVER                                               |
++===============================================================================+
+
+OBJECTIVE: Demonstrate VIP migration when haproxy-1 goes down
+
+STEPS:
+1. Confirm VIP on haproxy-1: ip addr show | grep 10.10.1.100
+2. Connect a session through VIP: https://wallix.lab.local
+3. Stop keepalived on haproxy-1:
+   systemctl stop keepalived
+4. Observe VIP migrates to haproxy-2:
+   ip addr show on haproxy-2 | grep 10.10.1.100
+5. Verify wallix.lab.local still reachable via haproxy-2
+6. Restore: systemctl start keepalived on haproxy-1
+
+EXPECTED RESULT:
+- VIP migrates to haproxy-2 within 5 seconds
+- WALLIX Bastion web UI still accessible
+- Sessions through VIP continue
+
+SUCCESS CRITERIA:
+[ ] VIP failover in < 5 seconds
+[ ] WALLIX Bastion accessible after failover
+[ ] VRRP logs show state transition
 
 CLIENT TALKING POINT:
-"The HA cluster is continuously monitored. Both nodes are active,
-with real-time database replication ensuring no data loss."
+"HAProxy Active-Passive ensures the load balancer is never a single
+point of failure. VIP migration is automatic and sub-5-second."
 
 +===============================================================================+
 ```
 
-### Test 4.2: Active-Active Load Distribution
+### Test 4.3: VIP Failover (Unplanned — Power Off)
 
 ```
 +===============================================================================+
-|  TEST 4.2: ACTIVE-ACTIVE LOAD DISTRIBUTION                                    |
+|  TEST 4.3: UNPLANNED VIP FAILOVER - VM POWER OFF                             |
 +===============================================================================+
 
-OBJECTIVE: Show both nodes handle requests
+OBJECTIVE: Simulate haproxy-1 hard failure
 
 STEPS:
-1. Check which node holds VIP
-2. Connect to VIP, verify which node responds
-3. Start sessions on both nodes
-4. View session distribution
+1. Power off haproxy-1 VM in vSphere
+2. Watch haproxy-2 for VIP acquisition
+3. Test WALLIX Bastion is accessible: https://wallix.lab.local
+4. Power on haproxy-1 — confirm it returns as BACKUP (not MASTER)
 
 EXPECTED RESULT:
-- Sessions can run on either node
-- Load is distributed
-- Failover is seamless
+- haproxy-2 acquires VIP automatically
+- Access continues without manual intervention
+- haproxy-1 comes back as BACKUP
 
 SUCCESS CRITERIA:
-[ ] Sessions work through VIP
-[ ] Both nodes handle connections
-[ ] No single point of failure
+[ ] VIP acquired by haproxy-2 < 10 seconds
+[ ] No manual intervention required
+[ ] haproxy-1 returns as BACKUP on restart
 
 +===============================================================================+
 ```
 
-### Test 4.3: Planned Failover
+### Test 4.4: Cyber VLAN Connectivity (LDAP/Kerberos)
 
 ```
 +===============================================================================+
-|  TEST 4.3: PLANNED FAILOVER                                                   |
+|  TEST 4.4: CYBER VLAN CONNECTIVITY — AD (dc-lab 10.10.1.60)                  |
 +===============================================================================+
 
-OBJECTIVE: Demonstrate planned maintenance failover
+OBJECTIVE: Verify wallix-bastion can reach dc-lab across inter-VLAN (Fortigate)
 
-STEPS:
-1. Note which node has VIP (e.g., node1)
-2. Start active session through VIP
-3. Initiate failover: stop keepalived on current master to migrate VIP
-4. Observe VIP migration
-5. Verify session continues
+COMMANDS (from wallix-bastion):
+# LDAPS (port 636):
+openssl s_client -connect 10.10.1.60:636 -showcerts
+
+# LDAP (port 389):
+ldapsearch -H ldap://10.10.1.60 -b "DC=lab,DC=local" \
+  -D "wallix-svc@lab.local" -w "ServicePass123!" \
+  "(objectClass=user)" cn | head -20
+
+# Kerberos (port 88):
+kinit pam-user@LAB.LOCAL
+klist
 
 EXPECTED RESULT:
-- VIP moves to node2
-- Active sessions continue
-- No user disconnection
+- LDAPS connection established with valid certificate
+- LDAP search returns user list from AD
+- Kerberos ticket obtained successfully
 
 SUCCESS CRITERIA:
-[ ] Failover completes in < 30 seconds
-[ ] Sessions remain active
-[ ] No data loss
+[ ] LDAPS connection to 10.10.1.60:636 succeeds
+[ ] LDAP user query returns results
+[ ] Kerberos TGT obtained for lab user
+[ ] WALLIX Bastion LDAP test (Web UI) shows Connected
+
++===============================================================================+
+```
+
+### Test 4.5: Cyber VLAN Connectivity (FortiAuthenticator RADIUS)
+
+```
++===============================================================================+
+|  TEST 4.5: CYBER VLAN CONNECTIVITY — FORTIAUTH (10.10.1.50)                  |
++===============================================================================+
+
+OBJECTIVE: Verify wallix-bastion can reach fortiauth RADIUS across inter-VLAN
+
+COMMANDS (from wallix-bastion):
+# Test RADIUS reachability (NAS-IP = wallix-bastion):
+radtest pam-user "password+TOTP" 10.10.1.50 1812 <shared_secret>
+
+# From siem-lab, verify FortiAuth syslog arrives:
+tail -f /var/log/wazuh/alerts/alerts.log | grep fortiauth
+
+EXPECTED RESULT:
+- RADIUS challenge received (Access-Challenge for TOTP)
+- After valid TOTP code: Access-Accept
+- FortiAuth logs show authentication attempt
+
+SUCCESS CRITERIA:
+[ ] RADIUS port 1812 reachable from wallix-bastion
+[ ] Access-Challenge returned (TOTP prompt)
+[ ] Valid TOTP code yields Access-Accept
+[ ] FortiAuth syslog appears in SIEM
 
 CLIENT TALKING POINT:
-"For planned maintenance, we can fail over without any user impact.
-Sessions continue uninterrupted while we update or reboot servers."
-
-+===============================================================================+
-```
-
-### Test 4.4: Unplanned Failover (Node Failure)
-
-```
-+===============================================================================+
-|  TEST 4.4: UNPLANNED FAILOVER - NODE FAILURE                                  |
-+===============================================================================+
-
-OBJECTIVE: Simulate node crash and verify automatic recovery
-
-STEPS:
-1. Note active node with VIP
-2. Start active session through VIP
-3. SIMULATE FAILURE: bastion-replication --stop (on active node)
-   Or: Power off active node VM
-4. Observe automatic failover
-5. Verify session reconnects
-
-EXPECTED RESULT:
-- Cluster detects failure
-- VIP moves automatically
-- Services resume on surviving node
-
-SUCCESS CRITERIA:
-[ ] Failover completes in < 60 seconds
-[ ] Automatic without intervention
-[ ] Alert generated
-
-CLIENT TALKING POINT:
-"If a node fails unexpectedly, the cluster automatically fails over.
-Users may see a brief disconnect but can immediately reconnect."
-
-+===============================================================================+
-```
-
-### Test 4.5: Database Replication Test
-
-```
-+===============================================================================+
-|  TEST 4.5: DATABASE REPLICATION TEST                                          |
-+===============================================================================+
-
-OBJECTIVE: Verify database changes replicate
-
-STEPS:
-1. On node1: Create a test authorization
-2. On node2: Verify authorization exists
-3. Check replication lag
-
-EXPECTED RESULT:
-- Change replicates in < 1 second
-- Both nodes have identical data
-- No replication errors
-
-SUCCESS CRITERIA:
-[ ] Replication lag < 1 second
-[ ] Data consistent on both nodes
-[ ] No replication errors
-
-COMMANDS:
-# Check replication status
-bastion-replication status
-
-# Create test on node1, verify on node2
-wabadmin authorization list
-
-CLIENT TALKING POINT:
-"Database replication is synchronous - changes are visible on both
-nodes within milliseconds, ensuring no data is ever lost."
-
-+===============================================================================+
-```
-
-### Test 4.6: Split-Brain Prevention
-
-```
-+===============================================================================+
-|  TEST 4.6: SPLIT-BRAIN PREVENTION                                             |
-+===============================================================================+
-
-OBJECTIVE: Verify cluster prevents split-brain
-
-STEPS:
-1. Block network between nodes (simulate partition)
-2. Observe bastion-replication --elevate-master activation
-3. Verify only one node remains active
-4. Restore network, observe recovery
-
-EXPECTED RESULT:
-- bastion-replication elevates surviving node to master
-- Only one node has VIP
-- Services remain consistent
-
-SUCCESS CRITERIA:
-[ ] Split-brain prevented
-[ ] Master elevation works correctly
-[ ] Recovery is automatic
-
-CLIENT TALKING POINT:
-"Split-brain scenarios are automatically prevented. The cluster uses
-fencing to ensure only one node is ever active, preventing data corruption."
-
-+===============================================================================+
-```
-
-### Test 4.7: Session Persistence After Failover
-
-```
-+===============================================================================+
-|  TEST 4.7: SESSION PERSISTENCE AFTER FAILOVER                                 |
-+===============================================================================+
-
-OBJECTIVE: Verify session data survives failover
-
-STEPS:
-1. Connect session, execute commands
-2. Trigger failover
-3. Reconnect and verify session recording complete
-4. Check audit log shows complete activity
-
-EXPECTED RESULT:
-- Session recording is complete
-- No gap in audit data
-- All commands logged
-
-SUCCESS CRITERIA:
-[ ] Recording includes all activity
-[ ] No data loss
-[ ] Audit trail complete
-
-+===============================================================================+
-```
-
-### Test 4.8: Recovery and Rejoin
-
-```
-+===============================================================================+
-|  TEST 4.8: RECOVERY AND REJOIN                                                |
-+===============================================================================+
-
-OBJECTIVE: Verify failed node can rejoin cluster
-
-STEPS:
-1. After failover test, start failed node
-2. Verify it rejoins cluster
-3. Check replication synchronizes
-4. Verify both nodes operational
-
-EXPECTED RESULT:
-- Node rejoins automatically
-- Replication catches up
-- Cluster returns to normal
-
-SUCCESS CRITERIA:
-[ ] Automatic rejoin
-[ ] Full resync completes
-[ ] Cluster healthy again
+"TOTP-based MFA via FortiAuthenticator requires no network push —
+codes are generated offline on the user's device and validated over
+RADIUS. Inter-VLAN security boundaries are respected."
 
 +===============================================================================+
 ```
@@ -1122,7 +1055,7 @@ COMMANDS:
 # Monitor during test
 top
 wabadmin status
-bastion-replication --monitoring
+curl http://10.10.0.20:9090/api/v1/query?query=up
 
 CLIENT TALKING POINT:
 "The system is designed for enterprise scale - hundreds of concurrent
@@ -1443,166 +1376,168 @@ when, and why. Reports can be scheduled and sent automatically."
 
 ---
 
-## 7. OT/Industrial Tests
+## 7. Integration Tests
 
-### Test 7.1: Modbus Protocol Proxying
+### Test 7.1: SIEM Log Forwarding
 
 ```
 +===============================================================================+
-|  TEST 7.1: MODBUS PROTOCOL PROXYING                                           |
+|  TEST 7.1: SIEM LOG FORWARDING VERIFICATION                                   |
 +===============================================================================+
 
-OBJECTIVE: Demonstrate Modbus session through WALLIX Bastion
+OBJECTIVE: Verify WALLIX Bastion events reach siem-lab (10.10.0.10)
 
 STEPS:
-1. Configure Modbus target (plc-sim)
-2. Connect through WALLIX Bastion
-3. Read holding registers
-4. Write coil values
-5. Verify session recorded
+1. Generate authentication events (login success and failure)
+2. Start and end an SSH session
+3. On siem-lab, verify events arrived in Wazuh:
+   tail -f /var/log/wazuh/alerts/alerts.log | grep wallix
+4. Search for CEF events in Wazuh dashboard
 
 EXPECTED RESULT:
-- Modbus connection works
-- Read/write operations succeed
-- Session is fully audited
+- Auth events arrive within 30 seconds
+- Session events (start/end) arrive
+- CEF format parsed correctly
 
 SUCCESS CRITERIA:
-[ ] Modbus connection establishes
-[ ] Register read/write works
-[ ] Session recording shows operations
+[ ] Auth success events visible in SIEM
+[ ] Auth failure events visible in SIEM
+[ ] Session start/end events visible
+[ ] Wazuh alert triggered for failed logins
 
 CLIENT TALKING POINT:
-"Industrial protocols like Modbus are natively proxied and recorded.
-Every PLC access is fully audited, meeting IEC 62443 requirements."
+"All security events are forwarded to the SIEM in real-time using
+CEF format. Pre-built parsers make events immediately searchable."
 
 +===============================================================================+
 ```
 
-### Test 7.2: OPC UA Connection
+### Test 7.2: Prometheus Metrics Scraping
 
 ```
 +===============================================================================+
-|  TEST 7.2: OPC UA CONNECTION                                                  |
+|  TEST 7.2: PROMETHEUS METRICS SCRAPING (monitor-lab 10.10.0.20)              |
 +===============================================================================+
 
-OBJECTIVE: Demonstrate OPC UA session through WALLIX Bastion
+OBJECTIVE: Verify monitor-lab scrapes wallix-bastion metrics
 
 STEPS:
-1. Configure OPC UA endpoint
-2. Connect through WALLIX Bastion
-3. Browse address space
-4. Read node values
-5. Verify recording
+1. On monitor-lab, check Prometheus targets:
+   curl http://10.10.0.20:9090/api/v1/targets | python3 -m json.tool
+2. Verify wallix-bastion (10.10.1.11) shows state: up
+3. Open Grafana (http://10.10.0.20:3000) and check dashboards
+4. Verify node_exporter metrics present for wallix-bastion
 
 EXPECTED RESULT:
-- OPC UA session works
-- Address space browsable
-- All operations logged
+- wallix-bastion target is UP
+- CPU, memory, disk metrics present
+- Grafana dashboard shows current data
 
 SUCCESS CRITERIA:
-[ ] OPC UA connection works
-[ ] Node values readable
-[ ] Session recorded
+[ ] Prometheus target wallix-bastion shows UP
+[ ] node_exporter metrics visible
+[ ] mysqld_exporter metrics visible
+[ ] Grafana WALLIX Bastion Overview dashboard populates
 
 +===============================================================================+
 ```
 
-### Test 7.3: Serial/Console Access
+### Test 7.3: AD/LDAP Group Sync
 
 ```
 +===============================================================================+
-|  TEST 7.3: SERIAL/CONSOLE ACCESS                                              |
+|  TEST 7.3: AD GROUP SYNC AND RBAC                                             |
 +===============================================================================+
 
-OBJECTIVE: Demonstrate serial console recording
+OBJECTIVE: Verify AD group membership maps to WALLIX Bastion permissions
 
 STEPS:
-1. Configure serial console target
-2. Connect through WALLIX Bastion
-3. Execute commands on serial device
-4. Verify recording
+1. Add test user to "Linux-Admins" AD group on dc-lab
+2. Login to WALLIX Bastion as that user
+3. Verify user can see Linux targets (rhel10-srv, rhel9-srv)
+4. Verify user cannot see Windows targets (win-srv-01, win-srv-02)
+5. Remove from group, re-test — access should be revoked
 
 EXPECTED RESULT:
-- Serial access works
-- Commands execute
-- Session recorded
+- Group membership grants correct access
+- Non-member groups produce access denied
+- Revocation works on next login
 
 SUCCESS CRITERIA:
-[ ] Serial connection works
-[ ] All I/O captured
-[ ] Recording complete
+[ ] Linux-Admins can access rhel10-srv and rhel9-srv
+[ ] Windows-Admins cannot access Linux targets
+[ ] Revocation denies access after re-login
+
++===============================================================================+
+```
+
+### Test 7.4: FortiAuthenticator TOTP End-to-End
+
+```
++===============================================================================+
+|  TEST 7.4: FORTIAUTH TOTP END-TO-END FLOW                                    |
++===============================================================================+
+
+OBJECTIVE: Verify complete TOTP MFA flow: User -> Bastion -> FortiAuth -> AD
+
+STEPS:
+1. Open https://wallix.lab.local (via HAProxy VIP)
+2. Enter AD credentials (lab\pam-user / UserPass123!)
+3. Receive TOTP challenge (FortiAuthenticator via RADIUS)
+4. Enter 6-digit TOTP code from FortiToken Mobile
+5. Verify login success
+6. Check FortiAuth logs: Admin > Logs > Authentication
+7. Check WALLIX Bastion audit log for MFA event
+
+EXPECTED RESULT:
+- Password phase: RADIUS Access-Challenge
+- TOTP phase: RADIUS Access-Accept
+- WALLIX Bastion session created with MFA=true flag
+
+SUCCESS CRITERIA:
+[ ] AD password validated
+[ ] TOTP challenge presented
+[ ] Valid TOTP code accepted
+[ ] Audit log shows auth_method=RADIUS+TOTP
+
+LAB NOTE: Push notifications are NOT configured. TOTP only.
+
++===============================================================================+
+```
+
+### Test 7.5: Target Connectivity (All 4 Targets)
+
+```
++===============================================================================+
+|  TEST 7.5: TARGET CONNECTIVITY — VLAN 130 (10.10.2.0/24)                     |
++===============================================================================+
+
+OBJECTIVE: Verify wallix-bastion can reach all 4 target VMs in Targets VLAN
+
+STEPS:
+1. From WALLIX Bastion web UI, connect to each target:
+   - win-srv-01 (10.10.2.10) — RDP as Administrator
+   - win-srv-02 (10.10.2.11) — RDP as Administrator
+   - rhel10-srv (10.10.2.20) — SSH as root
+   - rhel9-srv  (10.10.2.21) — SSH as root
+2. Verify session starts and recording begins
+3. Execute simple command/action in each session
+4. Disconnect and verify recording is available
+
+EXPECTED RESULT:
+- All 4 targets connect successfully
+- Session recording starts immediately
+- Recordings playable after disconnect
+
+SUCCESS CRITERIA:
+[ ] win-srv-01 RDP session connects and records
+[ ] win-srv-02 RDP session connects and records
+[ ] rhel10-srv SSH session connects and records
+[ ] rhel9-srv SSH session connects and records
 
 CLIENT TALKING POINT:
-"Even legacy serial connections to PLCs and RTUs can be recorded.
-No protocol is too old or specialized to audit."
-
-+===============================================================================+
-```
-
-### Test 7.4: Emergency Access Mode
-
-```
-+===============================================================================+
-|  TEST 7.4: EMERGENCY ACCESS MODE                                              |
-+===============================================================================+
-
-OBJECTIVE: Demonstrate offline credential cache for OT
-
-STEPS:
-1. Simulate network isolation from WALLIX Bastion
-2. Access cached credentials on local agent
-3. Connect to target using cached creds
-4. Verify audit sync when reconnected
-
-EXPECTED RESULT:
-- Offline access works
-- Credentials available from cache
-- Audit syncs when online
-
-SUCCESS CRITERIA:
-[ ] Cache works offline
-[ ] Credentials accessible
-[ ] Audit eventually consistent
-
-CLIENT TALKING POINT:
-"For air-gapped or intermittently connected OT sites, cached credentials
-ensure operations continue even when network is unavailable."
-
-+===============================================================================+
-```
-
-### Test 7.5: Vendor Maintenance Access
-
-```
-+===============================================================================+
-|  TEST 7.5: VENDOR MAINTENANCE ACCESS                                          |
-+===============================================================================+
-
-OBJECTIVE: Demonstrate third-party vendor access workflow
-
-STEPS:
-1. Create time-limited vendor account
-2. Configure access to specific PLC
-3. Vendor connects through web portal
-4. Vendor performs maintenance
-5. Session is recorded
-6. Account expires automatically
-
-EXPECTED RESULT:
-- Vendor access is time-limited
-- Only specified targets accessible
-- Full session recording
-- Automatic expiration
-
-SUCCESS CRITERIA:
-[ ] Time-limited access works
-[ ] Scope is restricted
-[ ] Recording complete
-[ ] Auto-expiration works
-
-CLIENT TALKING POINT:
-"Vendor access is controlled with surgical precision - specific targets,
-specific timeframes, full recording, and automatic expiration."
+"WALLIX Bastion proxies all protocols - RDP, SSH - to target systems
+in isolated network segments. No direct user access to targets."
 
 +===============================================================================+
 ```
@@ -1626,12 +1561,12 @@ specific timeframes, full recording, and automatic expiration."
   Authentication Tests              ___/8     ___/8     ___/8
   Session Management Tests          ___/10    ___/10    ___/10
   Password Management Tests         ___/6     ___/6     ___/6
-  High Availability Tests           ___/8     ___/8     ___/8
+  HAProxy VIP Tests                 ___/5     ___/5     ___/5
   Performance Tests                 ___/5     ___/5     ___/5
   Security Tests                    ___/6     ___/6     ___/6
-  OT/Industrial Tests               ___/5     ___/5     ___/5
+  Integration Tests                 ___/5     ___/5     ___/5
   ----------------------------------------------------------------
-  TOTAL                             ___/48    ___/48    ___/48
+  TOTAL                             ___/45    ___/45    ___/45
 
   OVERALL STATUS:   [ ] PASS    [ ] CONDITIONAL PASS    [ ] FAIL
 
@@ -1655,16 +1590,20 @@ For time-limited client demos, use this abbreviated sequence:
 
 | Time | Test | Key Demonstration |
 |------|------|-------------------|
-| 0-5 min | [1.2](#test-12-ldap-authentication) | LDAP login shows AD integration |
+| 0-5 min | [1.4](#test-14-multi-factor-authentication) | TOTP MFA via FortiAuthenticator |
 | 5-10 min | [2.1](#test-21-ssh-session-recording) | SSH session shows recording |
 | 10-15 min | [2.3](#test-23-real-time-session-monitoring) | Live monitoring impresses |
 | 15-20 min | [3.1](#test-31-password-checkout) | Vault shows credential management |
-| 20-25 min | [4.4](#test-44-unplanned-failover-node-failure) | Failover shows HA |
-| 25-30 min | [6.5](#test-65-siem-alert-integration) | SIEM shows security integration |
+| 20-25 min | [4.2](#test-42-planned-vip-failover) | HAProxy VIP failover demonstrates resilience |
+| 25-30 min | [7.1](#test-71-siem-log-forwarding-verification) | SIEM shows security event flow |
+
+---
+
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | Lab: single node (10.10.1.11) | FortiAuthenticator 6.4+ TOTP only | HAProxy Active-Passive (VIP 10.10.1.100)*
 
 ---
 
 <p align="center">
-  <a href="./10-team-handoffs.md">← Back to Team Handoffs</a> •
+  <a href="./13-team-handoffs.md">← Back to Team Handoffs</a> •
   <a href="./README.md">Back to Pre-Production Index</a>
 </p>

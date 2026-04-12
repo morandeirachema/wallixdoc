@@ -4,40 +4,36 @@
 
 This guide covers setting up realistic enterprise test targets including Windows Server 2022 and RHEL 10/9 systems for PAM testing with Fortigate MFA integration.
 
+> **Lab configuration**: 4 target VMs in **Targets VLAN (VLAN 130), 10.10.2.0/24**. WALLIX Bastion (DMZ VLAN 110) accesses them via Fortigate inter-VLAN routing. MFA uses TOTP only — no Push notifications.
+
 ---
 
 ## Target Architecture Overview
 
 ```
 +===============================================================================+
-|  TEST TARGET ARCHITECTURE                                                     |
+|  TEST TARGET ARCHITECTURE — TARGETS VLAN 130 (10.10.2.0/24)                  |
 +===============================================================================+
 |                                                                               |
-|  SERVER ZONE (10.10.2.0/24)                                                   |
+|  WINDOWS SERVER 2022 TARGETS                                                  |
 |                                                                               |
-|  +-------------------------------------------------------------------------+  |
-|  |  WINDOWS SERVER 2022 TARGETS                                            |  |
-|  |                                                                         |  |
-|  |  +------------------+  +------------------+  +------------------+       |  |
-|  |  | win-srv-01       |  | win-srv-02       |  | win-srv-03       |       |  |
-|  |  | 10.10.2.10       |  | 10.10.2.11       |  | 10.10.2.12       |       |  |
-|  |  | General Purpose  |  | SQL Server       |  | File Server      |       |  |
-|  |  | RDP/WinRM        |  | RDP/WinRM        |  | RDP/WinRM        |       |  |
-|  |  +------------------+  +------------------+  +------------------+       |  |
-|  |                                                                         |  |
-|  +-------------------------------------------------------------------------+  |
+|  +---------------------------+  +---------------------------+                 |
+|  | win-srv-01                |  | win-srv-02                |                 |
+|  | 10.10.2.10                |  | 10.10.2.11                |                 |
+|  | General Purpose / RDP     |  | SQL Server / RDP          |                 |
+|  | WinRM 5985/5986           |  | WinRM 5985/5986           |                 |
+|  +---------------------------+  +---------------------------+                 |
 |                                                                               |
-|  +-------------------------------------------------------------------------+  |
-|  |  RHEL TARGETS                                                           |  |
-|  |                                                                         |  |
-|  |  +------------------+  +------------------+  +------------------+       |  |
-|  |  | rhel10-srv       |  | rhel10-db        |  | rhel9-srv        |       |  |
-|  |  | 10.10.2.20       |  | 10.10.2.21       |  | 10.10.2.22       |       |  |
-|  |  | Web Server       |  | PostgreSQL/MySQL |  | Legacy App       |       |  |
-|  |  | SSH              |  | SSH              |  | SSH              |       |  |
-|  |  +------------------+  +------------------+  +------------------+       |  |
-|  |                                                                         |  |
-|  +-------------------------------------------------------------------------+  |
+|  RHEL TARGETS                                                                 |
+|                                                                               |
+|  +---------------------------+  +---------------------------+                 |
+|  | rhel10-srv                |  | rhel9-srv                 |                 |
+|  | 10.10.2.20                |  | 10.10.2.21                |                 |
+|  | RHEL 10 App Server / SSH  |  | RHEL 9 Legacy Server/SSH  |                 |
+|  +---------------------------+  +---------------------------+                 |
+|                                                                               |
+|  All targets reached from wallix-bastion (10.10.1.11, DMZ VLAN 110)          |
+|  via Fortigate inter-VLAN routing. 4 VMs total.                              |
 |                                                                               |
 +===============================================================================+
 ```
@@ -52,15 +48,13 @@ This guide covers setting up realistic enterprise test targets including Windows
 |--------|-----|------|-----------|-----------|
 | win-srv-01 | 10.10.2.10 | General Purpose | RDP, WinRM | 2 vCPU, 8GB RAM, 60GB |
 | win-srv-02 | 10.10.2.11 | SQL Server | RDP, WinRM | 4 vCPU, 16GB RAM, 100GB |
-| win-srv-03 | 10.10.2.12 | File Server | RDP, WinRM, SMB | 2 vCPU, 8GB RAM, 200GB |
 
 ### RHEL Targets
 
 | Target | IP | Role | Protocols | Resources |
 |--------|-----|------|-----------|-----------|
-| rhel10-srv | 10.10.2.20 | Web Server (Nginx/Apache) | SSH | 2 vCPU, 4GB RAM, 40GB |
-| rhel10-db | 10.10.2.21 | Database (PostgreSQL/MySQL) | SSH | 4 vCPU, 8GB RAM, 100GB |
-| rhel9-srv | 10.10.2.22 | Legacy Application | SSH | 2 vCPU, 4GB RAM, 40GB |
+| rhel10-srv | 10.10.2.20 | Linux App Server (RHEL 10) | SSH | 2 vCPU, 4GB RAM, 40GB |
+| rhel9-srv | 10.10.2.21 | Legacy Linux Server (RHEL 9) | SSH | 2 vCPU, 4GB RAM, 40GB |
 
 ---
 
@@ -76,7 +70,7 @@ Rename-Computer -NewName "win-srv-01" -Restart
 
 # Configure static IP
 New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress 10.10.2.10 -PrefixLength 24 -DefaultGateway 10.10.2.1
-Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 10.10.0.10
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 10.10.1.60
 
 # Join domain
 $Credential = Get-Credential  # Enter domain admin credentials
@@ -121,7 +115,7 @@ Rename-Computer -NewName "win-srv-02" -Restart
 
 # Configure network
 New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress 10.10.2.11 -PrefixLength 24 -DefaultGateway 10.10.2.1
-Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 10.10.0.10
+Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 10.10.1.60
 
 # Join domain
 $Credential = Get-Credential
@@ -148,45 +142,7 @@ New-LocalUser -Name "svc-sql" -Password $SvcPassword -FullName "SQL Server Servi
 New-NetFirewallRule -Name "SQL-Server" -DisplayName "SQL Server" -Enabled True -Direction Inbound -Protocol TCP -LocalPort 1433 -Action Allow
 ```
 
-### File Server Target (win-srv-03)
-
-```powershell
-# On win-srv-03 VM (10.10.2.12)
-
-# Set hostname
-Rename-Computer -NewName "win-srv-03" -Restart
-
-# Configure network
-New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress 10.10.2.12 -PrefixLength 24 -DefaultGateway 10.10.2.1
-Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 10.10.0.10
-
-# Join domain
-$Credential = Get-Credential
-Add-Computer -DomainName "lab.local" -Credential $Credential -Restart
-
-# Enable RDP and WinRM
-Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
-Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-Enable-PSRemoting -Force
-
-# Install File Server role
-Install-WindowsFeature -Name FS-FileServer -IncludeManagementTools
-
-# Create shared folders
-New-Item -Path "D:\Shares\Finance" -ItemType Directory -Force
-New-Item -Path "D:\Shares\HR" -ItemType Directory -Force
-New-Item -Path "D:\Shares\IT" -ItemType Directory -Force
-
-# Create SMB shares
-New-SmbShare -Name "Finance$" -Path "D:\Shares\Finance" -FullAccess "LAB\Domain Admins"
-New-SmbShare -Name "HR$" -Path "D:\Shares\HR" -FullAccess "LAB\Domain Admins"
-New-SmbShare -Name "IT$" -Path "D:\Shares\IT" -FullAccess "LAB\Domain Admins"
-
-# Create file server admin account
-$Password = ConvertTo-SecureString "FileAdmin123!" -AsPlainText -Force
-New-LocalUser -Name "fileadmin" -Password $Password -FullName "File Server Administrator"
-Add-LocalGroupMember -Group "Administrators" -Member "fileadmin"
-```
+<!-- win-srv-03 not deployed in the lab (only win-srv-01 and win-srv-02) -->
 
 ---
 
@@ -211,7 +167,7 @@ interface-name=eth0
 method=manual
 addresses=10.10.2.20/24
 gateway=10.10.2.1
-dns=10.10.0.10
+dns=10.10.1.60
 dns-search=lab.local
 
 [ipv6]
@@ -268,100 +224,12 @@ dnf install -y realmd sssd oddjob oddjob-mkhomedir adcli samba-common-tools
 realm join --user=Administrator lab.local
 ```
 
-### Database Server (rhel10-db)
-
-```bash
-# On rhel10-db VM (10.10.2.21)
-
-# Set hostname
-hostnamectl set-hostname rhel10-db.lab.local
-
-# Configure network
-cat > /etc/NetworkManager/system-connections/eth0.nmconnection << 'EOF'
-[connection]
-id=eth0
-type=ethernet
-interface-name=eth0
-
-[ipv4]
-method=manual
-addresses=10.10.2.21/24
-gateway=10.10.2.1
-dns=10.10.0.10
-dns-search=lab.local
-
-[ipv6]
-method=disabled
-EOF
-
-chmod 600 /etc/NetworkManager/system-connections/eth0.nmconnection
-nmcli connection reload
-nmcli connection up eth0
-
-# Update system
-dnf update -y
-
-# Install PostgreSQL
-dnf install -y postgresql-server postgresql
-postgresql-setup --initdb
-systemctl enable --now postgresql
-
-# Configure PostgreSQL for remote access
-sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /var/lib/pgsql/data/postgresql.conf
-echo "host    all    all    10.10.0.0/16    md5" >> /var/lib/pgsql/data/pg_hba.conf
-systemctl restart postgresql
-
-# Create database admin account
-sudo -u postgres psql -c "CREATE USER dbadmin WITH PASSWORD 'DbAdmin123!' SUPERUSER;"
-sudo -u postgres psql -c "CREATE DATABASE testdb OWNER dbadmin;"
-
-# Alternatively, install MySQL/MariaDB
-dnf install -y mariadb-server
-systemctl enable --now mariadb
-
-# Secure MySQL installation
-mysql_secure_installation <<EOF
-
-y
-MySqlRoot123!
-MySqlRoot123!
-y
-y
-y
-y
-EOF
-
-# Create MySQL admin account
-mysql -u root -pMySqlRoot123! -e "CREATE USER 'dbadmin'@'%' IDENTIFIED BY 'DbAdmin123!';"
-mysql -u root -pMySqlRoot123! -e "GRANT ALL PRIVILEGES ON *.* TO 'dbadmin'@'%' WITH GRANT OPTION;"
-mysql -u root -pMySqlRoot123! -e "FLUSH PRIVILEGES;"
-
-# Configure firewall
-firewall-cmd --permanent --add-service=ssh
-firewall-cmd --permanent --add-port=5432/tcp  # PostgreSQL
-firewall-cmd --permanent --add-port=3306/tcp  # MySQL
-firewall-cmd --reload
-
-# Create admin account
-useradd -m -s /bin/bash dbadmin
-echo "DbAdmin123!" | passwd --stdin dbadmin
-usermod -aG wheel dbadmin
-
-# Configure sudo
-echo "dbadmin ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/dbadmin
-
-# SSH key setup for WALLIX
-mkdir -p /home/dbadmin/.ssh
-chmod 700 /home/dbadmin/.ssh
-touch /home/dbadmin/.ssh/authorized_keys
-chmod 600 /home/dbadmin/.ssh/authorized_keys
-chown -R dbadmin:dbadmin /home/dbadmin/.ssh
-```
+<!-- rhel10-db not deployed in the lab (only rhel10-srv and rhel9-srv) -->
 
 ### Legacy Server RHEL 9 (rhel9-srv)
 
 ```bash
-# On rhel9-srv VM (10.10.2.22)
+# On rhel9-srv VM (10.10.2.21)
 
 # Set hostname
 hostnamectl set-hostname rhel9-srv.lab.local
@@ -375,9 +243,9 @@ interface-name=eth0
 
 [ipv4]
 method=manual
-addresses=10.10.2.22/24
+addresses=10.10.2.21/24
 gateway=10.10.2.1
-dns=10.10.0.10
+dns=10.10.1.60
 dns-search=lab.local
 
 [ipv6]
@@ -475,40 +343,21 @@ Device: win-srv-02
   - sqladmin / SqlAdmin123!
   - svc-sql / SqlSvc123!
 
-Device: win-srv-03
-- Host: 10.10.2.12
-- Domain: Windows-Servers
-- Description: File Server
-- Services:
-  - RDP (port 3389)
-  - WinRM (ports 5985/5986)
-- Accounts:
-  - fileadmin / FileAdmin123!
-
 # RHEL Servers
 Device: rhel10-srv
 - Host: 10.10.2.20
 - Domain: Linux-RHEL
-- Description: RHEL 10 Web Server
+- Description: RHEL 10 Linux App Server
 - Services:
   - SSH (port 22)
 - Accounts:
   - webadmin / WebAdmin123!
   - svc-nginx / NginxSvc123!
 
-Device: rhel10-db
+Device: rhel9-srv
 - Host: 10.10.2.21
 - Domain: Linux-RHEL
-- Description: RHEL 10 Database Server
-- Services:
-  - SSH (port 22)
-- Accounts:
-  - dbadmin / DbAdmin123!
-
-Device: rhel9-srv
-- Host: 10.10.2.22
-- Domain: Linux-RHEL
-- Description: RHEL 9 Legacy Application Server
+- Description: RHEL 9 Legacy Linux Server
 - Services:
   - SSH (port 22)
 - Accounts:
@@ -522,15 +371,15 @@ Device: rhel9-srv
 Configuration > Target Groups > Add
 
 Group: All-Windows-Servers
-- Members: win-srv-01, win-srv-02, win-srv-03
+- Members: win-srv-01, win-srv-02
 
 Group: All-Linux-Servers
-- Members: rhel10-srv, rhel10-db, rhel9-srv
+- Members: rhel10-srv, rhel9-srv
 
 Group: Database-Servers
-- Members: win-srv-02, rhel10-db
+- Members: win-srv-02
 
-Group: Web-Servers
+Group: App-Servers
 - Members: rhel10-srv, rhel9-srv
 ```
 
@@ -581,10 +430,10 @@ Authorization: Emergency-Access
 # From WALLIX Bastion or jump host
 
 # Test RDP connectivity
-nmap -p 3389 10.10.2.10 10.10.2.11 10.10.2.12
+nmap -p 3389 10.10.2.10 10.10.2.11
 
 # Test WinRM connectivity
-nmap -p 5985,5986 10.10.2.10 10.10.2.11 10.10.2.12
+nmap -p 5985,5986 10.10.2.10 10.10.2.11
 
 # Test WinRM authentication (from Linux with pywinrm)
 pip3 install pywinrm
@@ -606,12 +455,11 @@ EOF
 
 ```bash
 # Test SSH connectivity
-nmap -p 22 10.10.2.20 10.10.2.21 10.10.2.22
+nmap -p 22 10.10.2.20 10.10.2.21
 
 # Test SSH authentication
-ssh webadmin@10.10.2.20 'hostname; whoami'
-ssh dbadmin@10.10.2.21 'hostname; whoami'
-ssh appadmin@10.10.2.22 'hostname; whoami'
+ssh webadmin@10.10.2.20 'hostname; whoami'   # rhel10-srv
+ssh appadmin@10.10.2.21 'hostname; whoami'   # rhel9-srv
 
 # Test SSH key-based access (after WALLIX key injection)
 ssh -i /path/to/wallix_key webadmin@10.10.2.20
@@ -697,14 +545,12 @@ cat /home/webadmin/.ssh/authorized_keys
 
 ## Target Verification Checklist
 
-| Target | Network | SSH/RDP | WinRM | AD Joined | WALLIX Config | Auth Test | Recording |
-|--------|---------|---------|-------|-----------|---------------|-----------|-----------|
-| win-srv-01 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| win-srv-02 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| win-srv-03 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
-| rhel10-srv | [ ] | [ ] | N/A | [ ] | [ ] | [ ] | [ ] |
-| rhel10-db | [ ] | [ ] | N/A | [ ] | [ ] | [ ] | [ ] |
-| rhel9-srv | [ ] | [ ] | N/A | [ ] | [ ] | [ ] | [ ] |
+| Target | IP | Network | SSH/RDP | WinRM | AD Joined | WALLIX Config | Auth Test | Recording |
+|--------|-----|---------|---------|-------|-----------|---------------|-----------|-----------|
+| win-srv-01 | 10.10.2.10 | VLAN 130 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| win-srv-02 | 10.10.2.11 | VLAN 130 | [ ] | [ ] | [ ] | [ ] | [ ] | [ ] |
+| rhel10-srv | 10.10.2.20 | VLAN 130 | [ ] | N/A | [ ] | [ ] | [ ] | [ ] |
+| rhel9-srv  | 10.10.2.21 | VLAN 130 | [ ] | N/A | [ ] | [ ] | [ ] | [ ] |
 
 ---
 
@@ -717,8 +563,6 @@ cat /home/webadmin/.ssh/authorized_keys
 | WinRM HTTPS | 5986 | Windows | Production recommended |
 | SSH | 22 | RHEL | Key or password authentication |
 | SQL Server | 1433 | win-srv-02 | Database access |
-| PostgreSQL | 5432 | rhel10-db | Database access |
-| MySQL | 3306 | rhel10-db | Database access |
 
 ---
 
@@ -775,9 +619,11 @@ ssh -v webadmin@localhost
 ls -la /home/webadmin/.ssh/
 ```
 
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | 4 targets in Targets VLAN 130 (10.10.2.0/24) | TOTP MFA only*
+
 ---
 
 <p align="center">
-  <a href="./08-ha-active-active.md">← Previous: HA Active-Active Configuration</a> •
+  <a href="./08-ha-active-active.md">← Previous: HA Reference Guide</a> •
   <a href="./10-siem-integration.md">Next: SIEM Integration →</a>
 </p>

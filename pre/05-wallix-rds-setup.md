@@ -4,6 +4,8 @@
 
 This guide covers deploying and configuring WALLIX RDS (Remote Desktop Session Manager) for advanced RDP session proxying, recording, and analysis.
 
+> **Lab configuration**: WALLIX RDS is in the **DMZ VLAN (VLAN 110)** at 10.10.1.30, alongside the single WALLIX Bastion node (10.10.1.11). RDP targets are in the Targets VLAN (10.10.2.x), reached via Fortigate inter-VLAN routing.
+
 ---
 
 ## Architecture
@@ -13,22 +15,21 @@ This guide covers deploying and configuring WALLIX RDS (Remote Desktop Session M
 |                    WALLIX RDS ARCHITECTURE                                    |
 +===============================================================================+
 |                                                                               |
-|  Users                WALLIX Bastion Cluster WALLIX RDS        Windows Targets|
-|  =====                =============          ===========       ============== |
+|  Users                DMZ VLAN 110             WALLIX RDS     Targets VLAN 130|
+|  =====                ===========              ===========    =============== |
 |                                                                               |
-|  +------+             +------------+         +-----------+      +-----------+ |
-|  |Client|---RDP----->|WALLIXBastion|---RDP-->| WALLIX    |--RDP>| Windows   | |
-|  |      |  (3389)    | (Proxy)     | (3390)  | RDS       |(3389)| Server    | |
-|  +------+            |10.10.1.11   |         |10.10.1.30 |      |10.10.2.30 | |
-|                      +-------------+         +-----------+      +-----------+ |
-|                             |                     |                           |
-|                             |                     |                           |
-|                      +-------------+          +-----------+                   |
-|                      |WALLIXBastion|          | Features: |                   |
-|                      | (Backup)    |          | - OCR     |                   |
-|                      |10.10.1.12   |          | - Video   |                   |
-|                      +-------------+          | - Metadata|                   |
-|                                               +-----------+                   |
+|  +------+             +------------------+     +-----------+  +-----------+  |
+|  |Client|---RDP----->| wallix-bastion   |---->| WALLIX    |->| Windows   |  |
+|  |      |  (3389)    | 10.10.1.11       |(3390)| RDS       |  | Server    |  |
+|  +------+            | (single node)    |     |10.10.1.30 |  |10.10.2.10 |  |
+|                      +------------------+     +-----------+  +-----------+  |
+|                                                    |                         |
+|                                               +-----------+                  |
+|                                               | Features: |                  |
+|                                               | - OCR     |                  |
+|                                               | - Video   |                  |
+|                                               | - Metadata|                  |
+|                                               +-----------+                  |
 |                                                    |                          |
 |                                                    v                          |
 |                                             +-----------+                     |
@@ -73,12 +74,11 @@ Hostname: wallix-rds.lab.local
 OS: Windows Server 2022 Standard
 vCPU: 4
 RAM: 8 GB
-Disk 1: 80 GB (OS + Application)
-Disk 2: 200 GB (Session Storage - optional)
-Network: OT DMZ (10.10.1.0/24)
+Disk: 100 GB (OS + Application + recordings)
+Network: LAB-DMZ (VLAN 110)
 IP: 10.10.1.30/24
 Gateway: 10.10.1.1
-DNS: 10.10.0.10
+DNS: 10.10.1.60  (dc-lab, Cyber VLAN, via Fortigate inter-VLAN routing)
 ```
 
 ### Windows Server Installation
@@ -94,7 +94,7 @@ New-NetIPAddress -InterfaceAlias "Ethernet" -IPAddress 10.10.1.30 `
     -PrefixLength 24 -DefaultGateway 10.10.1.1
 
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet" `
-    -ServerAddresses 10.10.0.10,8.8.8.8
+    -ServerAddresses 10.10.1.60,8.8.8.8
 
 # Set timezone
 Set-TimeZone -Name "Eastern Standard Time"
@@ -187,7 +187,7 @@ New-Item -Path "C:\Temp\WALLIX" -ItemType Directory -Force
 
 # Example:
 # Invoke-WebRequest -Uri "https://support.wallix.com/downloads/..." `
-#     -OutFile "C:\Temp\WALLIX\WALLIX_Session_Manager_12.3.2_x64.exe"
+#     -OutFile "C:\Temp\WALLIX\WALLIX_Session_Manager_12.1.x_x64.exe"
 ```
 
 ---
@@ -200,7 +200,7 @@ New-Item -Path "C:\Temp\WALLIX" -ItemType Directory -Force
 
 ```powershell
 # Run the installer
-Start-Process -FilePath "C:\Temp\WALLIX\WALLIX_Session_Manager_12.3.2_x64.exe" `
+Start-Process -FilePath "C:\Temp\WALLIX\WALLIX_Session_Manager_12.1.x_x64.exe" `
     -Wait -Verb RunAs
 ```
 
@@ -700,6 +700,8 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\W
 | Session recording verified | [ ] |
 | OCR and keystroke logging working | [ ] |
 | Retention policy configured | [ ] |
+
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | wallix-rds: 10.10.1.30 (DMZ VLAN 110)*
 
 ---
 

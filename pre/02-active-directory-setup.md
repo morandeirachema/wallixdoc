@@ -15,7 +15,10 @@ This guide covers setting up Active Directory for WALLIX Bastion authentication 
 | Forest Functional Level | Windows Server 2016 |
 | Domain Functional Level | Windows Server 2016 |
 | DC Hostname | dc-lab.lab.local |
-| DC IP Address | 10.10.1.10 |
+| DC IP Address | 10.10.1.60 |
+| VLAN | 120 (Cyber) |
+
+> **Network note**: The AD DC is in the Cyber VLAN (VLAN 120). WALLIX Bastion (DMZ VLAN 110) connects to it via Fortigate inter-VLAN routing on ports 636/389/88. FortiAuthenticator (also Cyber VLAN 120) connects directly, no routing needed.
 
 ---
 
@@ -24,8 +27,8 @@ This guide covers setting up Active Directory for WALLIX Bastion authentication 
 ### Using PowerShell
 
 ```powershell
-# Set static IP first
-New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress 10.10.1.10 -PrefixLength 24 -DefaultGateway 10.10.1.1
+# Set static IP first (Cyber VLAN 120, 10.10.1.60)
+New-NetIPAddress -InterfaceAlias "Ethernet0" -IPAddress 10.10.1.60 -PrefixLength 24 -DefaultGateway 10.10.1.1
 Set-DnsClientServerAddress -InterfaceAlias "Ethernet0" -ServerAddresses 127.0.0.1
 
 # Rename computer
@@ -251,7 +254,7 @@ Restart-Computer
 ### Verify LDAPS
 
 ```powershell
-# Test LDAPS connectivity
+# Test LDAPS connectivity (DC is at 10.10.1.60, Cyber VLAN)
 $LdapConnection = New-Object System.DirectoryServices.Protocols.LdapConnection("dc-lab.lab.local:636")
 $LdapConnection.SessionOptions.SecureSocketLayer = $true
 $LdapConnection.SessionOptions.VerifyServerCertificate = { $true }  # Lab only - skip verification
@@ -278,15 +281,18 @@ certutil -encode C:\lab-ca.cer C:\lab-ca.pem
 
 ```powershell
 # Add DNS records for lab infrastructure
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix-node1" -IPv4Address "10.10.1.11"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix-node2" -IPv4Address "10.10.1.12"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix" -IPv4Address "10.10.1.100"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "siem-lab" -IPv4Address "10.10.1.50"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "monitor-lab" -IPv4Address "10.10.1.60"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "linux-test" -IPv4Address "10.10.2.10"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "windows-test" -IPv4Address "10.10.2.20"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "network-test" -IPv4Address "10.10.2.30"
-Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "plc-sim" -IPv4Address "10.10.3.10"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "siem-lab"        -IPv4Address "10.10.0.10"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "monitor-lab"     -IPv4Address "10.10.0.20"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "haproxy-1"       -IPv4Address "10.10.1.5"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "haproxy-2"       -IPv4Address "10.10.1.6"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix"          -IPv4Address "10.10.1.100"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix-bastion"  -IPv4Address "10.10.1.11"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "wallix-rds"      -IPv4Address "10.10.1.30"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "fortiauth"       -IPv4Address "10.10.1.50"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "win-srv-01"      -IPv4Address "10.10.2.10"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "win-srv-02"      -IPv4Address "10.10.2.11"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "rhel10-srv"      -IPv4Address "10.10.2.20"
+Add-DnsServerResourceRecordA -ZoneName "lab.local" -Name "rhel9-srv"       -IPv4Address "10.10.2.21"
 
 # Verify
 Get-DnsServerResourceRecord -ZoneName "lab.local" | Where-Object { $_.RecordType -eq "A" }
@@ -382,7 +388,9 @@ Set-ADAccountPassword -Identity "jadmin" -NewPassword (ConvertTo-SecureString "N
 
 ---
 
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | dc-lab: 10.10.1.60 (Cyber VLAN 120)*
+
 <p align="center">
-  <a href="./01-infrastructure-setup.md">← Previous</a> •
-  <a href="./03-wallix-installation.md">Next: WALLIX Bastion Installation →</a>
+  <a href="./01-infrastructure-setup.md">← Previous: Infrastructure Setup</a> •
+  <a href="./03-haproxy-setup.md">Next: HAProxy Setup →</a>
 </p>

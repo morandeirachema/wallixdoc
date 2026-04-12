@@ -1,8 +1,10 @@
-# 07 - SIEM Integration
+# 10 - SIEM Integration
 
 ## Configuring Log Forwarding to SIEM Platform
 
-This guide covers integrating WALLIX Bastion with Splunk or ELK for security monitoring.
+This guide covers integrating WALLIX Bastion with Wazuh (primary) or alternative SIEM platforms for security monitoring.
+
+> **Lab configuration**: SIEM (siem-lab / Wazuh) is at **10.10.0.10** in the **Management VLAN (VLAN 100)**. The single WALLIX Bastion node (10.10.1.11, DMZ VLAN) forwards syslog to the SIEM. AD DC is at 10.10.1.60 (Cyber VLAN).
 
 ---
 
@@ -13,19 +15,20 @@ This guide covers integrating WALLIX Bastion with Splunk or ELK for security mon
 |                            SIEM INTEGRATION                                   |
 +===============================================================================+
 
-  WALLIX Bastion Cluster                                   SIEM Platform
-  ==============                                   =============
+  DMZ VLAN 110                              Management VLAN 100
+  ============                              ====================
 
   +------------------+                        +-----------------------+
-  |  wallix-node1    |----+                   |      siem-lab         |
-  |  Syslog Client   |    |    Syslog/TLS     |                       |
-  +------------------+    +------------------>|   Splunk Enterprise   |
-                          |    Port 6514      |   or ELK Stack        |
-  +------------------+    |                   |                       |
-  |  wallix-node2    |----+                   |   - Log indexing      |
-  |  Syslog Client   |                        |   - Dashboards        |
-  +------------------+                        |   - Alerts            |
-                                              +-----------------------+
+  |  wallix-bastion  |                        |      siem-lab         |
+  |  10.10.1.11      |----Syslog/TLS--------->|      10.10.0.10       |
+  |  Syslog Client   |    Port 6514           |                       |
+  +------------------+                        |   Wazuh SIEM          |
+                                              |   (or ELK/Splunk)     |
+  +------------------+                        |                       |
+  |  fortiauth       |----Syslog/UDP--------->|   - Log indexing      |
+  |  10.10.1.50      |    Port 514            |   - Dashboards        |
+  |  (Cyber VLAN)    |                        |   - Alerts            |
+  +------------------+                        +-----------------------+
 
   LOG TYPES FORWARDED:
   - Authentication events (login success/failure)
@@ -44,7 +47,7 @@ This guide covers integrating WALLIX Bastion with Splunk or ELK for security mon
 ### Step 1: Install Splunk on siem-lab
 
 ```bash
-# On siem-lab VM (10.10.1.50)
+# On siem-lab VM (10.10.0.10, Management VLAN 100)
 
 # Download Splunk Enterprise
 wget -O splunk.deb "https://download.splunk.com/products/splunk/releases/9.1.0/linux/splunk-9.1.0-linux-2.6-amd64.deb"
@@ -60,7 +63,7 @@ dpkg -i splunk.deb
 # Enable boot start
 /opt/splunk/bin/splunk enable boot-start
 
-# Access: http://10.10.1.50:8000
+# Access: http://10.10.0.10:8000
 ```
 
 ### Step 2: Configure Splunk Syslog Input
@@ -97,7 +100,7 @@ EOF
 
 ### Step 3: Configure WALLIX Bastion Syslog
 
-On **both WALLIX Bastion nodes**:
+On **wallix-bastion** (single node, 10.10.1.11):
 
 ```bash
 # Edit syslog configuration
@@ -105,7 +108,7 @@ cat >> /etc/opt/wab/wabengine.conf << 'EOF'
 
 [syslog]
 enabled = true
-server = siem-lab.lab.local
+server = 10.10.0.10        # siem-lab, Management VLAN
 port = 514
 protocol = tcp
 # For TLS: port = 6514, protocol = tls
@@ -115,7 +118,7 @@ EOF
 
 # Or configure via Web UI:
 # System > Settings > Syslog
-# - Server: siem-lab.lab.local
+# - Server: 10.10.0.10 (siem-lab, Management VLAN)
 # - Port: 514
 # - Protocol: TCP
 # - Format: CEF
@@ -321,10 +324,10 @@ Create visualizations for:
 ### CEF Format (Common Event Format)
 
 ```
-CEF:0|WALLIX|WALLIX Bastion|12.3.2|100|User Login|5|src=10.10.1.50 suser=jadmin outcome=success
-CEF:0|WALLIX|WALLIX Bastion|12.3.2|101|User Login Failed|7|src=10.10.1.50 suser=baduser outcome=failure reason=invalid_password
-CEF:0|WALLIX|WALLIX Bastion|12.3.2|200|Session Started|3|src=10.10.1.50 suser=jadmin dhost=linux-test duser=root protocol=SSH
-CEF:0|WALLIX|WALLIX Bastion|12.3.2|201|Session Ended|3|src=10.10.1.50 suser=jadmin dhost=linux-test duration=300
+CEF:0|WALLIX|WALLIX Bastion|12.1.x|100|User Login|5|src=10.10.1.50 suser=jadmin outcome=success
+CEF:0|WALLIX|WALLIX Bastion|12.1.x|101|User Login Failed|7|src=10.10.1.50 suser=baduser outcome=failure reason=invalid_password
+CEF:0|WALLIX|WALLIX Bastion|12.1.x|200|Session Started|3|src=10.10.1.50 suser=jadmin dhost=linux-test duser=root protocol=SSH
+CEF:0|WALLIX|WALLIX Bastion|12.1.x|201|Session Ended|3|src=10.10.1.50 suser=jadmin dhost=linux-test duration=300
 ```
 
 ### Syslog Format
@@ -369,9 +372,11 @@ curl -X GET "localhost:9200/wallix-*/_search?q=*&size=10&pretty"
 | Dashboard created | [ ] |
 | Alerts configured | [ ] |
 
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | SIEM: siem-lab 10.10.0.10 (Management VLAN 100)*
+
 ---
 
 <p align="center">
-  <a href="./06-test-targets.md">← Previous</a> •
-  <a href="./08-observability.md">Next: Observability Stack →</a>
+  <a href="./09-test-targets.md">← Previous: Test Targets</a> •
+  <a href="./11-observability.md">Next: Observability Stack →</a>
 </p>

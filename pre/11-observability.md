@@ -4,6 +4,8 @@
 
 This guide covers deploying a monitoring stack for WALLIX Bastion infrastructure visibility.
 
+> **Lab configuration**: Prometheus and Grafana run on **monitor-lab (10.10.0.20)** in the **Management VLAN (VLAN 100)**. Scrape targets include the single Bastion node (10.10.1.11), FortiAuth (10.10.1.50), AD DC (10.10.1.60), SIEM (10.10.0.10), and target servers.
+
 ---
 
 ## Observability Architecture
@@ -13,36 +15,38 @@ This guide covers deploying a monitoring stack for WALLIX Bastion infrastructure
 |                          OBSERVABILITY STACK                                  |
 +===============================================================================+
 
-  WALLIX Bastion Cluster                                  Monitoring Stack
-  ==============                                  ================
+  Management VLAN 100                       All VLANs (scrape via Fortigate)
+  ====================                      ================================
 
-  +------------------+                       +-------------------------+
-  |  wallix-node1    |                       |     monitoring-lab      |
-  |  Metrics Export  |----+                  |     10.10.1.60          |
-  |  Port 9100       |    |                  |                         |
-  +------------------+    |    Scrape        |  +-------------------+  |
-                          +------------------->  |    Prometheus    |  |
-  +------------------+    |    Port 9090     |  |    :9090          |  |
-  |  wallix-node2    |----+                  |  +---------+---------+  |
-  |  Metrics Export  |                       |            |            |
-  |  Port 9100       |                       |            v            |
-  +------------------+                       |  +-------------------+  |
-                                             |  |    Grafana        |  |
-  +------------------+                       |  |    :3000          |  |
-  |  dc-lab          |----+                  |  +-------------------+  |
-  |  Port 9182       |    |    Scrape        |                         |
-  +------------------+    +-------------------> +-------------------+  |
-                                             |  |   Alertmanager    |  |
-  +------------------+                       |  |    :9093          |  |
-  |  siem-lab        |----+                  |  +-------------------+  |
-  |  Port 9100       |    |    Scrape        |                         |
-  +------------------+    +------------------>-------------------------+
+                                            +------------------+
+                                            | wallix-bastion   |
+                                            | 10.10.1.11 :9100 |
+                                            | (DMZ VLAN 110)   |
+                                            +------------------+
+
+  +----------------------------+            +------------------+
+  |     monitor-lab            |   Scrape   | fortiauth        |
+  |     10.10.0.20             |<---------->| 10.10.1.50 :9100 |
+  |  Prometheus :9090          |            | (Cyber VLAN 120) |
+  |  Grafana :3000             |            +------------------+
+  |  Alertmanager :9093        |
+  +----------------------------+            +------------------+
+                                            | dc-lab           |
+                                            | 10.10.1.60 :9182 |
+                                            | (Cyber VLAN 120) |
+                                            +------------------+
+
+                                            +------------------+
+                                            | siem-lab         |
+                                            | 10.10.0.10 :9100 |
+                                            | (Mgmt VLAN 100)  |
+                                            +------------------+
 
   METRICS COLLECTED:
   - System: CPU, Memory, Disk, Network
   - WALLIX Bastion: Sessions, Authentications, API calls
-  - MariaDB: Connections, Replication lag
-  - Cluster: bastion-replication status, VIP health
+  - MariaDB: Connections (single node)
+  - HAProxy: Connection stats, VIP health
 
 +===============================================================================+
 ```
@@ -51,11 +55,11 @@ This guide covers deploying a monitoring stack for WALLIX Bastion infrastructure
 
 ## Step 1: Install Prometheus
 
-### On monitoring-lab (10.10.1.60)
+### On monitor-lab (10.10.0.20, Management VLAN 100)
 
 ```bash
 # Set hostname
-hostnamectl set-hostname monitoring-lab.lab.local
+hostnamectl set-hostname monitor-lab.lab.local
 
 # Configure network
 cat > /etc/netplan/00-installer-config.yaml << 'EOF'
@@ -63,12 +67,12 @@ network:
   version: 2
   ethernets:
     ens192:
-      addresses: [10.10.1.60/24]
+      addresses: [10.10.0.20/24]
       routes:
         - to: default
-          via: 10.10.1.1
+          via: 10.10.0.1
       nameservers:
-        addresses: [10.10.1.10]
+        addresses: [10.10.1.60]
         search: [lab.local]
 EOF
 netplan apply
@@ -115,58 +119,70 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
-  # WALLIX Bastion Nodes
+  # WALLIX Bastion (single node)
   - job_name: 'wallix'
     static_configs:
       - targets:
-        - 'wallix-node1.lab.local:9100'
-        - 'wallix-node2.lab.local:9100'
+        - '10.10.1.11:9100'
         labels:
           service: 'wallix'
+          vlan: 'dmz'
           environment: 'lab'
 
-  # WALLIX Bastion MariaDB
+  # WALLIX Bastion MariaDB (single node)
   - job_name: 'wallix-mariadb'
     static_configs:
       - targets:
-        - 'wallix-node1.lab.local:9104'
-        - 'wallix-node2.lab.local:9104'
+        - '10.10.1.11:9104'
         labels:
           service: 'mariadb'
 
-  # WALLIX Bastion Application Metrics
-  - job_name: 'wallix-app'
+  # HAProxy nodes
+  - job_name: 'haproxy'
     static_configs:
       - targets:
-        - 'wallix-node1.lab.local:9091'
-        - 'wallix-node2.lab.local:9091'
+        - '10.10.1.5:8405'
+        - '10.10.1.6:8405'
         labels:
-          service: 'wallix-app'
+          service: 'haproxy'
+          vlan: 'dmz'
 
-  # Active Directory DC
+  # FortiAuthenticator (Cyber VLAN 120)
+  - job_name: 'fortiauth'
+    static_configs:
+      - targets:
+        - '10.10.1.50:9100'
+        labels:
+          service: 'fortiauth'
+          vlan: 'cyber'
+
+  # Active Directory DC (Cyber VLAN 120)
   - job_name: 'windows'
     static_configs:
       - targets:
-        - 'dc-lab.lab.local:9182'
+        - '10.10.1.60:9182'
         labels:
           service: 'active-directory'
+          vlan: 'cyber'
 
-  # SIEM Server
+  # SIEM Server (Management VLAN 100)
   - job_name: 'siem'
     static_configs:
       - targets:
-        - 'siem-lab.lab.local:9100'
+        - '10.10.0.10:9100'
         labels:
           service: 'siem'
+          vlan: 'management'
 
-  # Test Targets
+  # Linux test targets (Targets VLAN 130)
   - job_name: 'test-targets'
     static_configs:
       - targets:
-        - 'linux-test.lab.local:9100'
+        - '10.10.2.20:9100'    # rhel10-srv
+        - '10.10.2.21:9100'    # rhel9-srv
         labels:
           service: 'test-target'
-          os: 'linux'
+          vlan: 'targets'
 EOF
 
 chown prometheus:prometheus /etc/prometheus/prometheus.yml
@@ -207,9 +223,9 @@ curl http://localhost:9090/-/healthy
 
 ---
 
-## Step 2: Install Node Exporter on WALLIX Bastion Nodes
+## Step 2: Install Node Exporter on WALLIX Bastion Node
 
-### On both wallix-node1 and wallix-node2
+### On wallix-bastion (10.10.1.11, single node)
 
 ```bash
 # Create user
@@ -298,7 +314,7 @@ curl http://localhost:9104/metrics | grep mysql_up
 
 ## Step 4: Install Grafana
 
-### On monitoring-lab
+### On monitor-lab
 
 ```bash
 # Add Grafana repository
@@ -314,7 +330,7 @@ apt install -y grafana
 cat > /etc/grafana/grafana.ini << 'EOF'
 [server]
 http_port = 3000
-domain = monitoring-lab.lab.local
+domain = monitor-lab.lab.local
 
 [security]
 admin_user = admin
@@ -354,7 +370,7 @@ curl -X POST http://admin:GrafanaAdmin123!@localhost:3000/api/datasources \
 
 ## Step 5: Install Alertmanager
 
-### On monitoring-lab
+### On monitor-lab
 
 ```bash
 # Create user
@@ -529,8 +545,8 @@ groups:
           severity: warning
           service: mariadb
         annotations:
-          summary: "MariaDB replication lag on {{ $labels.instance }}"
-          description: "Replication lag is {{ $value }} seconds."
+          summary: "MariaDB high lag on {{ $labels.instance }}"
+          description: "MariaDB query lag is {{ $value }} seconds. (Note: lab uses single node — no replication)"
 
       # Too Many Connections
       - alert: MariaDBTooManyConnections
@@ -543,18 +559,18 @@ groups:
           summary: "Too many MariaDB connections on {{ $labels.instance }}"
           description: "Current connections: {{ $value }}"
 
-  - name: cluster
+  - name: bastion
     rules:
-      # VIP Not Assigned
-      - alert: ClusterVIPDown
+      # Bastion node down (single node in lab)
+      - alert: BastionNodeDown
         expr: absent(up{instance=~".*:9100",job="wallix"} == 1) or (sum(up{job="wallix"}) < 1)
         for: 2m
         labels:
           severity: critical
           service: wallix
         annotations:
-          summary: "WALLIX Bastion cluster VIP may be down"
-          description: "No WALLIX Bastion nodes are responding."
+          summary: "WALLIX Bastion node is down"
+          description: "wallix-bastion (10.10.1.11) is not responding."
 EOF
 
 chown prometheus:prometheus /etc/prometheus/rules/wallix.yml
@@ -736,7 +752,7 @@ curl -s http://admin:GrafanaAdmin123!@localhost:3000/api/health
 |-------|--------|
 | Prometheus installed | [ ] |
 | Node exporter on WALLIX Bastion nodes | [ ] |
-| MariaDB exporter on WALLIX Bastion nodes | [ ] |
+| MariaDB exporter on wallix-bastion (single node) | [ ] |
 | Grafana installed | [ ] |
 | Prometheus data source configured | [ ] |
 | Alertmanager installed | [ ] |
@@ -745,9 +761,11 @@ curl -s http://admin:GrafanaAdmin123!@localhost:3000/api/health
 | Windows exporter on DC | [ ] |
 | All targets healthy | [ ] |
 
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | monitor-lab: 10.10.0.20 (Management VLAN 100)*
+
 ---
 
 <p align="center">
-  <a href="./07-siem-integration.md">← Previous</a> •
-  <a href="./09-validation-testing.md">Next: Validation Testing →</a>
+  <a href="./10-siem-integration.md">← Previous: SIEM Integration</a> •
+  <a href="./12-validation-testing.md">Next: Validation Testing →</a>
 </p>

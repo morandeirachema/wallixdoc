@@ -4,6 +4,8 @@
 
 This guide covers integrating WALLIX Bastion with Active Directory for user authentication and FortiAuthenticator for MFA.
 
+> **Lab network note**: WALLIX Bastion (DMZ VLAN 110, 10.10.1.11) connects to AD (Cyber VLAN 120, 10.10.1.60) via Fortigate inter-VLAN routing on ports 636/389/88. FortiAuthenticator (Cyber VLAN 120, 10.10.1.50) connects to AD directly within the same VLAN. This is a single Bastion node — no wallix-node2.
+
 ---
 
 ## Integration Overview
@@ -20,17 +22,19 @@ This guide covers integrating WALLIX Bastion with Active Directory for user auth
      credentials        RADIUS req             validates        queries AD
                                                TOTP code
 
-  +----------+       +-------------+      +----------+      +-------------+
-  |  jadmin  |------>|WALLIXBastion|----->|FortiAuth |----->|   DC-LAB    |
-  | password |HTTPS  |             |RADIUS|          | LDAP |             |
-  | + TOTP   |       |10.10.1.11   |:1812 |10.10.1.50|:389  | 10.10.0.10  |
-  +----------+       +-------------+      +----------+      +-------------+
-                           |                  |                 |
-                           |<-Access-Accept---|<--User Info-----|
-                           |   + Attributes   |
-                           |
+  +----------+       +------------------+  +------------+  +------------------+
+  |  jadmin  |------>| wallix-bastion   |->| fortiauth  |->| dc-lab (AD DC)   |
+  | password |HTTPS  | 10.10.1.11       |  | 10.10.1.50 |  | 10.10.1.60       |
+  | + TOTP   |       | DMZ VLAN 110     |  |Cyber VLAN  |  | Cyber VLAN 120   |
+  +----------+       |                  |  | 120        |  | (direct intra-   |
+                     | RADIUS :1812/UDP |  | LDAP :389  |  |  VLAN from FA)   |
+                     | inter-VLAN via   |  +------------+  +------------------+
+                     | Fortigate        |        |                 |
+                     +------------------+        |<--User Info-----|
+                           |                  Access-Accept
+                           |<-----------------
                      5. Grant access based
-                        on AD groups + MFA
+                        on AD groups + TOTP MFA
 
 +===============================================================================+
 ```
@@ -50,8 +54,10 @@ This guide covers integrating WALLIX Bastion with Active Directory for user auth
 ### Verify Connectivity
 
 ```bash
-# Test LDAPS from WALLIX Bastion node
+# Test LDAPS from WALLIX Bastion node (DMZ -> Cyber VLAN via Fortigate)
+# AD DC is at 10.10.1.60 (Cyber VLAN 120) — traffic crosses Fortigate inter-VLAN
 openssl s_client -connect dc-lab.lab.local:636 -CApath /etc/ssl/certs/
+# or: openssl s_client -connect 10.10.1.60:636
 
 # Test LDAP bind
 ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
@@ -84,10 +90,11 @@ ldapsearch -x -H ldaps://dc-lab.lab.local:636 \
 |                                                                               |
 |  CONNECTION                                                                   |
 |  ----------                                                                   |
-|  Server:                dc-lab.lab.local                                      |
+|  Server:                dc-lab.lab.local (10.10.1.60, Cyber VLAN 120)        |
 |  Port:                  636                                                   |
 |  Use SSL/TLS:           [x] LDAPS                                             |
 |  Verify Certificate:    [x] Yes (uncheck if using self-signed)                |
+|  Note: Bastion (DMZ) -> AD (Cyber) via Fortigate inter-VLAN routing          |
 |                                                                               |
 |  BIND CREDENTIALS                                                             |
 |  ----------------                                                             |
@@ -625,9 +632,11 @@ update-ca-certificates
 | Permissions applied correctly | [ ] |
 | Authentication logs visible in FortiAuth | [ ] |
 
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | AD: dc-lab 10.10.1.60 (Cyber VLAN 120) | FortiAuth: 10.10.1.50 (Cyber VLAN 120)*
+
 ---
 
 <p align="center">
   <a href="./05-wallix-rds-setup.md">← Previous: WALLIX RDS Setup</a> •
-  <a href="./07-wallix-installation.md">Next: WALLIX Bastion Installation →</a>
+  <a href="./08-ha-active-active.md">Next: HA Reference Guide →</a>
 </p>

@@ -7,7 +7,9 @@ This guide covers two load balancing options for WALLIX Bastion:
 - **Option A** — HAProxy + Keepalived (Linux-based, active/standby with VIP failover)
 - **Option B** — FortiGate Virtual IP (firewall-based, no extra VMs required)
 
-Choose the option that fits your infrastructure. Both provide HA load balancing across the two Bastion nodes per site.
+> **Lab note**: HAProxy has 2 nodes (Active-Passive with Keepalived VRRP) and its VIP failover is valid to test in the lab. The backend is a **single WALLIX Bastion node** (10.10.1.11 only) — there is no wallix-node2 in the lab. DNS for the HAProxy nodes uses the AD DC at 10.10.1.60 (Cyber VLAN).
+
+Choose the option that fits your infrastructure. Both forward traffic to the single Bastion node.
 
 ---
 
@@ -38,13 +40,11 @@ Choose the option that fits your infrastructure. Both provide HA load balancing 
 |                    |                             |                            |
 |                    +-------------+---------------+                            |
 |                                  |                                            |
-|                    +-------------+-------------+                              |
-|                    |                           |                              |
-|              +---------------+               +---------------+                |
-|              | WALLIX Bastion|               | WALLIX Bastion|                |
-|              | Node 1        |               | Node 2        |                |
-|              |10.10.1.11     |               |10.10.1.12     |                |
-|              +---------------+               +---------------+                |
+|                         +----------------+                                   |
+|                         | WALLIX Bastion |                                   |
+|                         | (single node)  |                                   |
+|                         | 10.10.1.11     |                                   |
+|                         +----------------+                                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -76,7 +76,7 @@ auto ens192
 iface ens192 inet static
     address 10.10.1.5/24
     gateway 10.10.1.1
-    dns-nameservers 10.10.0.10
+    dns-nameservers 10.10.1.60
     dns-search lab.local
 EOF
 
@@ -87,9 +87,9 @@ systemctl restart networking
 cat >> /etc/hosts << 'EOF'
 10.10.1.5   haproxy-1.lab.local haproxy-1
 10.10.1.6   haproxy-2.lab.local haproxy-2
-10.10.1.11  wallix-node1.lab.local wallix-node1
-10.10.1.12  wallix-node2.lab.local wallix-node2
+10.10.1.11  wallix-bastion.lab.local wallix-bastion
 10.10.1.100 wallix.lab.local wallix
+10.10.1.60  dc-lab.lab.local dc-lab
 EOF
 ```
 
@@ -183,9 +183,8 @@ backend wallix_https_backend
     option tcp-check
     option log-health-checks
 
-    # Active-Active: both nodes serve traffic
-    server wallix-node1 10.10.1.11:443 check inter 5s rise 2 fall 3 maxconn 1000
-    server wallix-node2 10.10.1.12:443 check inter 5s rise 2 fall 3 maxconn 1000
+    # Single Bastion node in lab (no Active-Active cluster)
+    server wallix-bastion 10.10.1.11:443 check inter 5s rise 2 fall 3 maxconn 1000
 
 #---------------------------------------------------------------------
 # WALLIX Bastion SSH Proxy Frontend
@@ -205,9 +204,8 @@ backend wallix_ssh_backend
     option tcp-check
     option log-health-checks
 
-    # Active-Active SSH
-    server wallix-node1 10.10.1.11:22 check inter 5s rise 2 fall 3
-    server wallix-node2 10.10.1.12:22 check inter 5s rise 2 fall 3
+    # Single Bastion node in lab
+    server wallix-bastion 10.10.1.11:22 check inter 5s rise 2 fall 3
 
 #---------------------------------------------------------------------
 # WALLIX Bastion RDP Proxy Frontend
@@ -227,9 +225,8 @@ backend wallix_rdp_backend
     option tcp-check
     option log-health-checks
 
-    # Active-Active RDP
-    server wallix-node1 10.10.1.11:3389 check inter 5s rise 2 fall 3
-    server wallix-node2 10.10.1.12:3389 check inter 5s rise 2 fall 3
+    # Single Bastion node in lab
+    server wallix-bastion 10.10.1.11:3389 check inter 5s rise 2 fall 3
 
 #---------------------------------------------------------------------
 # WALLIX Bastion HTTP Redirect
@@ -350,7 +347,7 @@ auto ens192
 iface ens192 inet static
     address 10.10.1.6/24
     gateway 10.10.1.1
-    dns-nameservers 10.10.0.10
+    dns-nameservers 10.10.1.60
     dns-search lab.local
 EOF
 
@@ -360,9 +357,9 @@ systemctl restart networking
 cat >> /etc/hosts << 'EOF'
 10.10.1.5   haproxy-1.lab.local haproxy-1
 10.10.1.6   haproxy-2.lab.local haproxy-2
-10.10.1.11  wallix-node1.lab.local wallix-node1
-10.10.1.12  wallix-node2.lab.local wallix-node2
+10.10.1.11  wallix-bastion.lab.local wallix-bastion
 10.10.1.100 wallix.lab.local wallix
+10.10.1.60  dc-lab.lab.local dc-lab
 EOF
 ```
 
@@ -598,13 +595,12 @@ frontend wallix_https
 |                    |   Monitor (TCP checks)       |                            |
 |                    +==============+===============+                            |
 |                                   |                                           |
-|                    +--------------+--------------+                             |
-|                    |                             |                             |
-|              +---------------+           +---------------+                    |
-|              | WALLIX Bastion|           | WALLIX Bastion|                    |
-|              | Node 1        |           | Node 2        |                    |
-|              | 10.10.1.11    |           | 10.10.1.12    |                    |
-|              +---------------+           +---------------+                    |
+|                                   |                                           |
+|                         +-----------------+                                  |
+|                         | WALLIX Bastion  |                                  |
+|                         | (single node)   |                                  |
+|                         | 10.10.1.11      |                                  |
+|                         +-----------------+                                  |
 |                                                                               |
 +===============================================================================+
 ```
@@ -678,16 +674,10 @@ end
 Define the two WALLIX Bastion backend nodes.
 
 ```bash
+# Single Bastion node in lab
 config firewall real-server
     edit 1
         set ip 10.10.1.11
-        set port 443
-        set status active
-        set health-check enable
-        set holddown-interval 30
-    next
-    edit 2
-        set ip 10.10.1.12
         set port 443
         set status active
         set health-check enable
@@ -714,17 +704,10 @@ config firewall vip
         set persistence source-ip
         set monitor "wallix-https-monitor"
 
+        # Single Bastion node in lab
         config realservers
             edit 1
                 set ip 10.10.1.11
-                set port 443
-                set status active
-                set weight 100
-                set max-connections 1000
-                set health-check inherit
-            next
-            edit 2
-                set ip 10.10.1.12
                 set port 443
                 set status active
                 set weight 100
@@ -750,16 +733,10 @@ config firewall vip
         set persistence source-ip
         set monitor "wallix-ssh-monitor"
 
+        # Single Bastion node in lab
         config realservers
             edit 1
                 set ip 10.10.1.11
-                set port 22
-                set status active
-                set weight 100
-                set health-check inherit
-            next
-            edit 2
-                set ip 10.10.1.12
                 set port 22
                 set status active
                 set weight 100
@@ -784,16 +761,10 @@ config firewall vip
         set persistence source-ip
         set monitor "wallix-rdp-monitor"
 
+        # Single Bastion node in lab
         config realservers
             edit 1
                 set ip 10.10.1.11
-                set port 3389
-                set status active
-                set weight 100
-                set health-check inherit
-            next
-            edit 2
-                set ip 10.10.1.12
                 set port 3389
                 set status active
                 set weight 100
@@ -817,14 +788,10 @@ config firewall vip
         set ldb-method round-robin
         set monitor "wallix-https-monitor"
 
+        # Single Bastion node in lab
         config realservers
             edit 1
                 set ip 10.10.1.11
-                set port 443
-                set status active
-            next
-            edit 2
-                set ip 10.10.1.12
                 set port 443
                 set status active
             next
@@ -1018,12 +985,14 @@ execute log display
 
 ## Quick Reference
 
-| VIP Name | Port | LB Method | Backends |
+| VIP Name | Port | LB Method | Backends (lab: single node) |
 |----------|------|-----------|----------|
-| wallix-vip-https | 443 | round-robin | 10.10.1.11, 10.10.1.12 |
-| wallix-vip-ssh | 22 | least-session | 10.10.1.11, 10.10.1.12 |
-| wallix-vip-rdp | 3389 | least-session | 10.10.1.11, 10.10.1.12 |
-| wallix-vip-http-redirect | 80 → 443 | round-robin | 10.10.1.11, 10.10.1.12 |
+| wallix-vip-https | 443 | round-robin | 10.10.1.11 |
+| wallix-vip-ssh | 22 | least-session | 10.10.1.11 |
+| wallix-vip-rdp | 3389 | least-session | 10.10.1.11 |
+| wallix-vip-http-redirect | 80 → 443 | round-robin | 10.10.1.11 |
+
+*Last updated: April 2026 | WALLIX Bastion 12.1.x | HAProxy backend: single Bastion node (10.10.1.11)*
 
 ---
 
