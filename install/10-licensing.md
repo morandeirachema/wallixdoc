@@ -274,8 +274,8 @@ wabadmin license-info
 # Expected:
 # License Status: Active
 # Source: License Server (license-server.corp.local)
-# Sessions: 450 (pool shared across 5 sites)
-# Current Usage: 127/450 (28%)
+# Sessions: 150 (pool shared across 5 sites, 30/site)
+# Current Usage: 38/150 (25%)
 ```
 
 ### License Activation Per Site
@@ -513,7 +513,7 @@ wabadmin syslog filter \
   --include "license_checkout,license_release,license_denied,license_expiry"
 
 # Example syslog message:
-# <189>1 2026-02-05T14:23:45.123Z bastion1 wabadmin - - [license event="checkout" user="jdoe" sessions_used=288 sessions_total=450]
+# <189>1 2026-04-05T14:23:45.123Z bastion1 wabadmin - - [license event="checkout" user="jdoe" sessions_used=42 sessions_total=150]
 ```
 
 ---

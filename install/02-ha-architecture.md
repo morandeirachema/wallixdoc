@@ -66,7 +66,7 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 |                         |    HAProxy (HA Pair)     |                          |
 |                         |  Load Balancer           |                          |
 |                         |                          |                          |
-|                         |  VIP: 10.x.x.10          |                          |
+|                         |  VIP: 10.10.X.100          |                          |
 |                         |  Keepalived VRRP         |                          |
 |                         +-----------+--------------+                          |
 |                                     |                                         |
@@ -77,7 +77,7 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 |  |  WALLIX BASTION NODE 1         | |  WALLIX BASTION NODE 2         |        |
 |  |  (ACTIVE)                      | |  (ACTIVE)                      |        |
 |  |                                | |                                |        |
-|  |  IP: 10.x.x.11                 | |  IP: 10.x.x.12                 |        |
+|  |  IP: 10.10.X.11                 | |  IP: 10.10.X.12                 |        |
 |  |  Load: 50% traffic             | |  Load: 50% traffic             |        |
 |  |                                | |                                |        |
 |  |  +---------------------------+ | |  +---------------------------+ |        |
@@ -248,9 +248,9 @@ keepalived              # VRRP for HAProxy HA
 |  - bond1: Replication traffic (dedicated VLAN, recommended)                   |
 |                                                                               |
 |  IP Addressing:                                                               |
-|  - Node 1: 10.x.x.11/24 (bond0)                                               |
-|  - Node 2: 10.x.x.12/24 (bond0)                                               |
-|  - VIP: 10.x.x.10/24 (HAProxy virtual IP)                                     |
+|  - Node 1: 10.10.X.11/24 (bond0)                                               |
+|  - Node 2: 10.10.X.12/24 (bond0)                                               |
+|  - VIP: 10.10.X.100/24 (HAProxy virtual IP)                                     |
 |                                                                               |
 |  Replication Network:                                                         |
 |  - SSH tunnel port 2242 (autossh, managed by bastion-replication)             |
@@ -275,7 +275,7 @@ keepalived              # VRRP for HAProxy HA
 |                         |  Virtual IP (Floating)   |                          |
 |                         |  Keepalived VRRP         |                          |
 |                         |                          |                          |
-|                         |  VIP: 10.x.x.10          |                          |
+|                         |  VIP: 10.10.X.100          |                          |
 |                         +-----------+--------------+                          |
 |                                     |                                         |
 |                    +----------------+                                         |
@@ -285,11 +285,11 @@ keepalived              # VRRP for HAProxy HA
 |  |  WALLIX BASTION NODE 1         |                                           |
 |  |  (PRIMARY - ACTIVE)            |                                           |
 |  |                                |                                           |
-|  |  IP: 10.x.x.11                 |          +-------------------------------+|
-|  |  VIP: 10.x.x.10 (current)      |          |  WALLIX BASTION NODE 2        ||
+|  |  IP: 10.10.X.11                 |          +-------------------------------+|
+|  |  VIP: 10.10.X.100 (current)      |          |  WALLIX BASTION NODE 2        ||
 |  |  Load: 100% traffic            |          |  (STANDBY - PASSIVE)          ||
 |  |                                |          |                               ||
-|  |  +---------------------------+ |          |  IP: 10.x.x.12                ||
+|  |  +---------------------------+ |          |  IP: 10.10.X.12                ||
 |  |  | WALLIX Bastion            | |          |  VIP: - (not assigned)        ||
 |  |  | Services (Running)        | |          |  Load: 0% (idle)              ||
 |  |  |                           | |          |                               ||
@@ -326,7 +326,7 @@ keepalived              # VRRP for HAProxy HA
 |    1. Node 2 detects missing heartbeat (3 consecutive = 6 seconds)            |
 |    2. Node 2 promotes MariaDB replica to primary                              |
 |    3. Node 2 starts WALLIX services                                           |
-|    4. Node 2 assumes VIP 10.x.x.10                                            |
+|    4. Node 2 assumes VIP 10.10.X.100                                            |
 |    5. Node 2 sends gratuitous ARP                                             |
 |                                                                               |
 |  FAILOVER TIME: 30-60 seconds                                                 |
@@ -477,9 +477,9 @@ keepalived              # VRRP for VIP management
 |  - bond1: Replication traffic (dedicated VLAN, optional but recommended)      |
 |                                                                               |
 |  IP Addressing:                                                               |
-|  - Node 1: 10.x.x.11/24 (bond0) - Primary (Master)                            |
-|  - Node 2: 10.x.x.12/24 (bond0) - Standby (Slave)                             |
-|  - VIP: 10.x.x.10/24 (Floating IP managed by Keepalived)                      |
+|  - Node 1: 10.10.X.11/24 (bond0) - Primary (Master)                            |
+|  - Node 2: 10.10.X.12/24 (bond0) - Standby (Slave)                             |
+|  - VIP: 10.10.X.100/24 (Floating IP managed by Keepalived)                      |
 |                                                                               |
 |  Replication Network (Optional but Recommended):                              |
 |  - SSH tunnel port 2242 (autossh, managed by bastion-replication)             |
