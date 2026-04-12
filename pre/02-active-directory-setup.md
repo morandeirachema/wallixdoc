@@ -388,7 +388,7 @@ Set-ADAccountPassword -Identity "jadmin" -NewPassword (ConvertTo-SecureString "N
 
 ---
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | dc-lab: 10.10.1.60 (Cyber VLAN 120)*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | dc-lab: 10.10.1.60 (Cyber VLAN 120)
 
 <p align="center">
   <a href="./01-infrastructure-setup.md">← Previous: Infrastructure Setup</a> •

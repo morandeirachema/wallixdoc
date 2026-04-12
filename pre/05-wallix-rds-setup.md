@@ -83,7 +83,7 @@ DNS: 10.10.1.60  (dc-lab, Cyber VLAN, via Fortigate inter-VLAN routing)
 
 ### Windows Server Installation
 
-**PowerShell (as Administrator):**
+**PowerShell (as Administrator):*
 
 ```powershell
 # Set computer name
@@ -173,10 +173,10 @@ choco install psqlodbc -y
 ### From WALLIX Support Portal
 
 1. Login to WALLIX Support: `https://support.wallix.com`
-2. Navigate to: **Downloads > WALLIX Bastion > Session Managers**
+2. Navigate to: **Downloads > WALLIX Bastion > Session Managers*
 3. Download: `WALLIX_Session_Manager_12.x_x64.exe`
 
-**Or via command line:**
+**Or via command line:*
 
 ```powershell
 # Create download directory
@@ -196,7 +196,7 @@ New-Item -Path "C:\Temp\WALLIX" -ItemType Directory -Force
 
 ### Installation Steps
 
-**Run installer as Administrator:**
+**Run installer as Administrator:*
 
 ```powershell
 # Run the installer
@@ -204,7 +204,7 @@ Start-Process -FilePath "C:\Temp\WALLIX\WALLIX_Session_Manager_12.1.x_x64.exe" `
     -Wait -Verb RunAs
 ```
 
-**Installation Wizard:**
+**Installation Wizard:*
 
 ```
 +===============================================================================+
@@ -301,10 +301,10 @@ New-NetFirewallRule -DisplayName "WALLIX RDS - HTTPS Management" `
 
 ### Via WALLIX Bastion Web UI
 
-**Login to WALLIX Bastion Admin: `https://10.10.1.100/admin`**
+**Login to WALLIX Bastion Admin: `https://10.10.1.100/admin`*
 
-1. Navigate to: **Configuration > Session Managers**
-2. Click **Add Session Manager**
+1. Navigate to: **Configuration > Session Managers*
+2. Click **Add Session Manager*
 
 ```
 +===============================================================================+
@@ -373,9 +373,9 @@ curl -k -X POST "https://10.10.1.100/api/sessionmanagers" \
 
 ### Create Connection Policy
 
-**In WALLIX Bastion Web UI:**
+**In WALLIX Bastion Web UI:*
 
-**Navigate to: Configuration > Connection Policies**
+**Navigate to: Configuration > Connection Policies*
 
 ```
 +===============================================================================+
@@ -415,9 +415,9 @@ curl -k -X POST "https://10.10.1.100/api/sessionmanagers" \
 
 1. Launch **Remote Desktop Connection** (mstsc.exe)
 2. Computer: `10.10.1.100` (WALLIX Bastion VIP)
-3. Click **Connect**
+3. Click **Connect*
 
-**Login prompt:**
+**Login prompt:*
 ```
 Username: jadmin@windows-server01
 Password: JohnAdmin123!123456
@@ -431,11 +431,11 @@ Password: JohnAdmin123!123456
 
 ### Verify Session Recording
 
-**In WALLIX Bastion Web UI:**
+**In WALLIX Bastion Web UI:*
 
-1. Navigate to: **Audit > Session Recordings**
+1. Navigate to: **Audit > Session Recordings*
 2. Find session: `jadmin @ windows-server01`
-3. Click **Play**
+3. Click **Play*
 4. Verify:
    - [ ] Video playback works
    - [ ] OCR text is extracted
@@ -448,7 +448,7 @@ Password: JohnAdmin123!123456
 
 ### View Active Sessions
 
-**On WALLIX RDS Server:**
+**On WALLIX RDS Server:*
 
 ```powershell
 # View active RDP sessions
@@ -479,7 +479,7 @@ Get-Counter '\PhysicalDisk(_Total)\Disk Reads/sec','\PhysicalDisk(_Total)\Disk W
 
 ### Session Recording Retention
 
-**Configure retention policy in WALLIX Bastion:**
+**Configure retention policy in WALLIX Bastion:*
 
 ```
 Configuration > System > Session Recording
@@ -492,7 +492,7 @@ Retention Policy:
 
 ### Automatic Cleanup
 
-**PowerShell script for cleanup (run as scheduled task):**
+**PowerShell script for cleanup (run as scheduled task):*
 
 ```powershell
 # cleanup-sessions.ps1
@@ -518,7 +518,7 @@ foreach ($session in $OldSessions) {
 }
 ```
 
-**Schedule cleanup task:**
+**Schedule cleanup task:*
 
 ```powershell
 # Create scheduled task to run daily at 2 AM
@@ -701,7 +701,7 @@ Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Terminal Server\W
 | OCR and keystroke logging working | [ ] |
 | Retention policy configured | [ ] |
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | wallix-rds: 10.10.1.30 (DMZ VLAN 110)*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | wallix-rds: 10.10.1.30 (DMZ VLAN 110)
 
 ---
 

@@ -323,7 +323,7 @@ Should show:
 
 ### Enable RADIUS Authentication in WALLIX Bastion
 
-**Navigate to: Configuration > Authentication > RADIUS**
+Navigate to: **Configuration > Authentication > RADIUS**
 
 Click **Add RADIUS Server**:
 
@@ -377,7 +377,7 @@ radtest jadmin "JohnAdmin123!123456" 10.10.1.50 0 WallixRadius2026!
 
 ### Enable MFA for User Groups
 
-**Navigate to: Configuration > User Groups**
+Navigate to: **Configuration > User Groups**
 
 For each user group, configure MFA:
 
@@ -418,7 +418,7 @@ Configuration > Authentication > Settings
 
 ## Step 8: Configure Authentication Chain (LDAP + RADIUS)
 
-**Navigate to: Configuration > Authentication > Authentication Chain**
+Navigate to: **Configuration > Authentication > Authentication Chain**
 
 ```
 +===============================================================================+
@@ -459,10 +459,10 @@ Configuration > Authentication > Settings
    Password: JohnAdmin123!456789
             └─ AD Password ─┘└─ TOTP ─┘
    ```
-3. Click **Login**
+3. Click **Login*
 4. Verify successful authentication
 
-**Expected behavior:**
+**Expected behavior:*
 - WALLIX Bastion validates AD password via LDAP
 - WALLIX Bastion sends full credential to FortiAuth via RADIUS
 - FortiAuth validates TOTP code
@@ -632,7 +632,7 @@ update-ca-certificates
 | Permissions applied correctly | [ ] |
 | Authentication logs visible in FortiAuth | [ ] |
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | AD: dc-lab 10.10.1.60 (Cyber VLAN 120) | FortiAuth: 10.10.1.50 (Cyber VLAN 120)*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | AD: dc-lab 10.10.1.60 (Cyber VLAN 120) | FortiAuth: 10.10.1.50 (Cyber VLAN 120)
 
 ---
 

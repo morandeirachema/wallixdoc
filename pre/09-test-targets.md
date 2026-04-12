@@ -619,7 +619,7 @@ ssh -v webadmin@localhost
 ls -la /home/webadmin/.ssh/
 ```
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | 4 targets in Targets VLAN 130 (10.10.2.0/24) | TOTP MFA only*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | 4 targets in Targets VLAN 130 (10.10.2.0/24) | TOTP MFA only
 
 ---
 

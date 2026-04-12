@@ -761,7 +761,7 @@ curl -s http://admin:GrafanaAdmin123!@localhost:3000/api/health
 | Windows exporter on DC | [ ] |
 | All targets healthy | [ ] |
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | monitor-lab: 10.10.0.20 (Management VLAN 100)*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | monitor-lab: 10.10.0.20 (Management VLAN 100)
 
 ---
 

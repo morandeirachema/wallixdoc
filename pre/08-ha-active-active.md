@@ -155,7 +155,7 @@ systemctl restart mariadb
 systemctl stop mariadb
 
 # Remove existing data
-rm -rf /var/lib/mysql/*
+rm -rf /var/lib/mysql/
 
 # Clone from primary using mariabackup
 mariabackup --backup --target-dir=/tmp/backup \
@@ -496,7 +496,7 @@ sudo mysql -e "SHOW SLAVE STATUS\G" | grep -E "(Slave_IO_Running|Slave_SQL_Runni
 
 # Re-sync from primary (destructive - data loss on replica)
 systemctl stop mariadb
-rm -rf /var/lib/mysql/*
+rm -rf /var/lib/mysql/
 
 # Backup from primary
 mariabackup --backup --target-dir=/tmp/backup \
@@ -522,7 +522,7 @@ START SLAVE;
 SQL
 ```
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | REFERENCE ONLY — lab uses single Bastion node*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | REFERENCE ONLY — lab uses single Bastion node
 
 ---
 

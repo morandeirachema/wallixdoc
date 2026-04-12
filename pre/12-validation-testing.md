@@ -689,7 +689,7 @@ echo "Tests completed. Log saved to: $LOG_FILE" | tee -a "$LOG_FILE"
 | Security | Audit logs working | [ ] | |
 | Performance | Auth < 500ms | [ ] | |
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | Single Bastion node | HAProxy VIP tested | TOTP MFA only*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | Single Bastion node | HAProxy VIP tested | TOTP MFA only
 
 ---
 

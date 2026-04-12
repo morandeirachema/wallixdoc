@@ -1599,7 +1599,7 @@ For time-limited client demos, use this abbreviated sequence:
 
 ---
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | Lab: single node (10.10.1.11) | FortiAuthenticator 6.4+ TOTP only | HAProxy Active-Passive (VIP 10.10.1.100)*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | Lab: single node (10.10.1.11) | FortiAuthenticator 6.4+ TOTP only | HAProxy Active-Passive (VIP 10.10.1.100)
 
 ---
 

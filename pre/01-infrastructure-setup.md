@@ -23,7 +23,7 @@ This guide covers provisioning all 12 VMs for the pre-production lab environment
 - Debian 12 (Bookworm) OVA template or ISO
 - Ubuntu 22.04 LTS ISO
 - Windows Server 2022 ISO
-- FortiAuthenticator 6.4+ OVA (from Fortinet Support Portal: https://support.fortinet.com)
+- FortiAuthenticator 6.4+ OVA (from [Fortinet Support Portal](https://support.fortinet.com))
 
 ### Network VLANs
 
@@ -335,7 +335,7 @@ rhel9-srv         A     10.10.2.21
 | `rhel10-srv` | 130 (Targets) | 10.10.2.20 | RHEL 10 | 2 vCPU, 4GB, 40GB |
 | `rhel9-srv` | 130 (Targets) | 10.10.2.21 | RHEL 9 | 2 vCPU, 4GB, 40GB |
 
-**Total: 12 VMs**
+Total: 12 VMs
 
 ---
 

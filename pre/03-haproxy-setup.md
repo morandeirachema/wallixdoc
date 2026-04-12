@@ -657,7 +657,7 @@ end
 
 ### Via GUI
 
-1. Go to **Policy & Objects > Health Check**
+1. Go to **Policy & Objects > Health Check*
 2. Create New:
    - **Name**: `wallix-https-monitor`
    - **Type**: TCP
@@ -888,7 +888,7 @@ diagnose server-load-balance real-server list
 
 ### Via GUI
 
-1. Go to **Policy & Objects > Virtual IPs**
+1. Go to **Policy & Objects > Virtual IPs*
 2. Check each VIP shows both real servers as **Up** (green)
 3. Go to **FortiView > All Sessions** to monitor active connections
 
@@ -992,7 +992,7 @@ execute log display
 | wallix-vip-rdp | 3389 | least-session | 10.10.1.11 |
 | wallix-vip-http-redirect | 80 → 443 | round-robin | 10.10.1.11 |
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | HAProxy backend: single Bastion node (10.10.1.11)*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | HAProxy backend: single Bastion node (10.10.1.11)
 
 ---
 

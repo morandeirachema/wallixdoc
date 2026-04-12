@@ -616,7 +616,7 @@ For security incidents involving WALLIX Bastion:
 
 ---
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | Lab: single node (10.10.1.11) | FortiAuthenticator 6.4+ (10.10.1.50) | AD DC (10.10.1.60)*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | Lab: single node (10.10.1.11) | FortiAuthenticator 6.4+ (10.10.1.50) | AD DC (10.10.1.60)
 
 ---
 

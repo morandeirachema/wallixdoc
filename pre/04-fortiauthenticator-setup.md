@@ -72,12 +72,12 @@ Note: Single node — no HA pair. TOTP only.
 
 #### VMware vSphere/ESXi (Recommended)
 
-**Download FortiAuthenticator OVA:**
+**Download FortiAuthenticator OVA:*
 - Visit: https://support.fortinet.com
 - Navigate to: Downloads > FortiAuthenticator
 - Download: FortiAuthenticator VM (OVA format) version 6.5.x or later
 
-**Deploy OVA using vCenter:**
+**Deploy OVA using vCenter:*
 
 ```
 1. Log into vCenter Server (https://vcenter.company.com)
@@ -105,7 +105,7 @@ DEPLOYMENT WIZARD:
 5. Click Finish and wait for deployment to complete
 ```
 
-**Deploy OVA using govc CLI:**
+**Deploy OVA using govc CLI:*
 
 ```bash
 # Set environment variables
@@ -138,7 +138,7 @@ sleep 60
 govc vm.ip fortiauth
 ```
 
-**Deploy OVA using PowerCLI:**
+**Deploy OVA using PowerCLI:*
 
 ```powershell
 # Connect to vCenter
@@ -252,7 +252,7 @@ Password: FortiAuth2026!
 
 ### LDAP Server Configuration
 
-**Navigate to: Authentication > LDAP**
+**Navigate to: Authentication > LDAP*
 
 Click **Create New** and configure:
 
@@ -301,7 +301,7 @@ Click **Create New** and configure:
 
 ### RADIUS Server Settings
 
-**Navigate to: Authentication > RADIUS Service > Clients**
+**Navigate to: Authentication > RADIUS Service > Clients*
 
 Click **Create New**:
 
@@ -322,7 +322,7 @@ Click **Create New**:
 
 ### RADIUS Policy Configuration
 
-**Navigate to: Authentication > RADIUS Service > Policies**
+**Navigate to: Authentication > RADIUS Service > Policies*
 
 Click **Create New**:
 
@@ -357,7 +357,7 @@ Click **Create New**:
 
 ### User Import
 
-**Navigate to: Authentication > User Management > Local Users**
+**Navigate to: Authentication > User Management > Local Users*
 
 Click **Import > LDAP**:
 
@@ -393,7 +393,7 @@ Click **Import**.
 
 ### Enable FortiToken Mobile
 
-**Navigate to: Authentication > FortiTokens > FortiToken Mobile**
+**Navigate to: Authentication > FortiTokens > FortiToken Mobile*
 
 ```
 +===============================================================================+
@@ -419,12 +419,12 @@ Click **Import**.
 
 ### Generate Activation Codes for Users
 
-**For each imported user:**
+**For each imported user:*
 
-1. Navigate to: **Authentication > User Management > Local Users**
+1. Navigate to: **Authentication > User Management > Local Users*
 2. Click user (e.g., `jadmin`)
 3. Click **Tokens** tab
-4. Click **Send Activation Code**
+4. Click **Send Activation Code*
 
 ```
 Activation Method:
@@ -442,7 +442,7 @@ Activation Method:
 
 ### Test from FortiAuthenticator
 
-**Navigate to: Monitor > Authentication > RADIUS**
+**Navigate to: Monitor > Authentication > RADIUS*
 
 Click **Test Authentication**:
 
@@ -527,7 +527,7 @@ radtest jadmin "JohnAdmin123!123456" 10.10.1.50 0 WallixRadius2026!
 
 ### Setting Up FortiToken Mobile
 
-**Send to users:**
+**Send to users:*
 
 ```
 Subject: Set up Multi-Factor Authentication for WALLIX Bastion
@@ -562,7 +562,7 @@ Need help? Contact IT Support.
 
 ### View Authentication Logs
 
-**Navigate to: Monitor > Authentication > RADIUS**
+**Navigate to: Monitor > Authentication > RADIUS*
 
 ```
 +===================================================================================+
@@ -577,7 +577,7 @@ Need help? Contact IT Support.
 
 ### Enable Syslog Forwarding
 
-**Navigate to: System > Log Settings > Remote Logging**
+**Navigate to: System > Log Settings > Remote Logging*
 
 ```
 +===============================================================================+
@@ -686,7 +686,7 @@ Authentication > User Management > Local Users > Import > LDAP
 
 ### Backup FortiAuthenticator Config
 
-**Navigate to: System > Maintenance > Backup**
+**Navigate to: System > Maintenance > Backup*
 
 ```
 Backup Type: Configuration + User Database
@@ -700,7 +700,7 @@ Save to: /secure/backups/fortiauth-backup-<date>.tgz
 
 ### Restore from Backup
 
-**Navigate to: System > Maintenance > Restore**
+**Navigate to: System > Maintenance > Restore*
 
 ```
 Upload backup file: fortiauth-backup-<date>.tgz
@@ -759,7 +759,7 @@ Encryption Password: FortiAuthBackup2026!
 | Syslog forwarding configured | [ ] |
 | Configuration backup created | [ ] |
 
-*Last updated: April 2026 | FortiAuthenticator 6.4+ | Single node, Cyber VLAN 120 (10.10.1.50) | TOTP only*
+Last updated: April 2026 | FortiAuthenticator 6.4+ | Single node, Cyber VLAN 120 (10.10.1.50) | TOTP only
 
 ---
 

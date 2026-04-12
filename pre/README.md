@@ -5,6 +5,7 @@
 This guide covers setting up a pre-production environment that simulates **one site (Site 1) of the production architecture**, simplified — same VLAN design but no HA clustering for Bastion or FortiAuthenticator.
 
 ### Lab Features
+
 - 1x WALLIX Bastion 12.1.x (single node, no cluster)
 - 2x HAProxy load balancers (Active-Passive with Keepalived VIP) — VIP failover tested in lab
 - 1x WALLIX RDS for RDP session proxying (DMZ VLAN)
@@ -251,6 +252,7 @@ This guide covers setting up a pre-production environment that simulates **one s
 ## Lab Objectives Checklist
 
 ### Phase 1: Core Platform
+
 - [ ] WALLIX Bastion single node operational
 - [ ] HAProxy VIP failover tested (haproxy-1 <-> haproxy-2)
 - [ ] AD authentication working (LDAPS to dc-lab on Cyber VLAN)
@@ -258,12 +260,14 @@ This guide covers setting up a pre-production environment that simulates **one s
 - [ ] Basic session management functional
 
 ### Phase 2: Integration
+
 - [ ] SIEM (Wazuh) receiving logs from Bastion
 - [ ] Prometheus scraping metrics from all nodes
 - [ ] Grafana dashboards operational
 - [ ] Alerts configured
 
 ### Phase 3: Testing
+
 - [ ] SSH session through WALLIX Bastion
 - [ ] RDP session through WALLIX Bastion with RDS
 - [ ] Password rotation tested
@@ -271,6 +275,7 @@ This guide covers setting up a pre-production environment that simulates **one s
 - [ ] HAProxy VIP failover verified
 
 ### Phase 4: Team Validation
+
 - [ ] Networking team sign-off
 - [ ] SIEM team sign-off
 - [ ] Observability team sign-off
@@ -300,7 +305,7 @@ pre/
 
 ---
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | FortiAuthenticator 6.4+*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | FortiAuthenticator 6.4+
 
 <p align="center">
   <a href="./01-infrastructure-setup.md">Start: Infrastructure Setup →</a>

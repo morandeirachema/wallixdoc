@@ -372,7 +372,7 @@ curl -X GET "localhost:9200/wallix-*/_search?q=*&size=10&pretty"
 | Dashboard created | [ ] |
 | Alerts configured | [ ] |
 
-*Last updated: April 2026 | WALLIX Bastion 12.1.x | SIEM: siem-lab 10.10.0.10 (Management VLAN 100)*
+Last updated: April 2026 | WALLIX Bastion 12.1.x | SIEM: siem-lab 10.10.0.10 (Management VLAN 100)
 
 ---
 
