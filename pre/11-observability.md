@@ -347,7 +347,7 @@ EOF
 systemctl enable grafana-server
 systemctl start grafana-server
 
-# Access: http://10.10.1.60:3000
+# Access: http://10.10.0.20:3000
 # Login: admin / GrafanaAdmin123!
 ```
 
@@ -740,9 +740,9 @@ curl -s http://admin:GrafanaAdmin123!@localhost:3000/api/health
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Prometheus | http://10.10.1.60:9090 | None |
-| Grafana | http://10.10.1.60:3000 | admin / GrafanaAdmin123! |
-| Alertmanager | http://10.10.1.60:9093 | None |
+| Prometheus | http://10.10.0.20:9090 | None |
+| Grafana | http://10.10.0.20:3000 | admin / GrafanaAdmin123! |
+| Alertmanager | http://10.10.0.20:9093 | None |
 
 ---
 

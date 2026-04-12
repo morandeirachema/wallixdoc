@@ -288,7 +288,7 @@ Get-Service -Name "WallixSessionManager" | Select-Object Status, StartType
 # Allow RDP connections from WALLIX Bastion nodes
 New-NetFirewallRule -DisplayName "WALLIX RDS - RDP from WALLIX Bastion" `
     -Direction Inbound -LocalPort 3389 -Protocol TCP -Action Allow `
-    -RemoteAddress 10.10.1.11,10.10.1.12
+    -RemoteAddress 10.10.1.11
 
 # Allow HTTPS for management (optional)
 New-NetFirewallRule -DisplayName "WALLIX RDS - HTTPS Management" `
@@ -593,7 +593,7 @@ Remove-NetFirewallRule -DisplayName "Remote Desktop*"
 
 New-NetFirewallRule -DisplayName "WALLIX RDS - RDP from WALLIX Bastion" `
     -Direction Inbound -LocalPort 3389 -Protocol TCP -Action Allow `
-    -RemoteAddress 10.10.1.11,10.10.1.12
+    -RemoteAddress 10.10.1.11
 ```
 
 ### 2. Encryption

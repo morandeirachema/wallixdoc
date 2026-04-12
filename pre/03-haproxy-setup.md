@@ -939,7 +939,7 @@ config system snmp community
         set events cpu-high mem-low
         config hosts
             edit 1
-                set ip 10.10.0.50 255.255.255.255
+                set ip 10.10.0.10 255.255.255.255
             next
         end
     next
