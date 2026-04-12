@@ -1445,8 +1445,8 @@ Total Duration: 10 weeks (same, but more resource-intensive)
 | Item | Value |
 |------|-------|
 | Documentation Version | 1.0 |
-| WALLIX Bastion Version | 12.3.2 |
-| Last Updated | February 2026 |
+| WALLIX Bastion Version | 12.1.x |
+| Last Updated | April 2026 |
 
 ---
 

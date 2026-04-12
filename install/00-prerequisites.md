@@ -497,7 +497,7 @@ IP Addressing:
 
 | Component          | Operating System               | Version                | Notes |
 |--------------------|--------------------------------|------------------------|-------|
-| **WALLIX Bastion** | Pre-installed on appliance     | WALLIX Bastion 12.3.2  | Hardened Linux (Debian-based) |
+| **WALLIX Bastion** | Pre-installed on appliance     | WALLIX Bastion 12.1.x  | Hardened Linux (Debian-based) |
 | **HAProxy**        | Debian 12 (Bookworm) or RHEL 9 | Latest stable          | 64-bit |
 | **WALLIX RDS**     | Windows Server 2022            | Standard or Datacenter | 64-bit |
 
@@ -562,7 +562,7 @@ WALLIX Bastion includes an embedded MariaDB database.
 +===============================================================================+
 
 WALLIX Bastion Appliances:
-[ ] WALLIX Bastion 12.3.2 pre-installed on hardware appliances
+[ ] WALLIX Bastion 12.1.x pre-installed on hardware appliances
 [ ] License keys obtained from WALLIX (see Licensing section)
 [ ] MariaDB 10.11+ included in appliance image
 
@@ -591,7 +591,7 @@ External Services:
 
 ### WALLIX Bastion Disk Space Requirements
 
-Per the official WALLIX Bastion 12.3.2 deployment guide:
+Per the official WALLIX Bastion 12.1.x deployment guide:
 
 | Partition | Quota/Limit | Notes |
 |-----------|-------------|-------|
@@ -637,7 +637,7 @@ Before configuring WALLIX Bastion HA (Master/Master or Master/Slave):
 
 ---
 
-### Compatibility Matrix (WALLIX Bastion 12.3.2)
+### Compatibility Matrix (WALLIX Bastion 12.1.x)
 
 **RDP Target Servers**:
 - Windows 7/8/8.1/10/11 Pro and Enterprise
@@ -1140,7 +1140,7 @@ NETWORK (All Sites):
 [ ] Network connectivity tested between all components
 
 SOFTWARE (All Sites):
-[ ] WALLIX Bastion 12.3.2 verified on appliances
+[ ] WALLIX Bastion 12.1.x verified on appliances
 [ ] Debian 12 or RHEL 9 installed on HAProxy servers
 [ ] Windows Server 2022 installed on RDS servers
 [ ] Operating system updates applied
@@ -1205,7 +1205,7 @@ This prerequisites document outlines all requirements for deploying 5 WALLIX Bas
 
 - **Hardware**: 10 HAProxy servers, 10 Bastion appliances, 5 RDS servers
 - **Network**: MPLS connectivity (100+ Mbps per site), firewall rules, IP addressing
-- **Software**: WALLIX Bastion 12.3.2, Debian 12/RHEL 9 for HAProxy, Windows Server 2022 for RDS
+- **Software**: WALLIX Bastion 12.1.x, Debian 12/RHEL 9 for HAProxy, Windows Server 2022 for RDS
 - **Access Manager**: SSO, MFA, session brokering (managed by separate team)
 - **Licensing**: 500 AM sessions + 450 Bastion sessions (split pools)
 - **Security**: SSL certificates, service accounts, encryption keys, firewall rules
@@ -1239,6 +1239,6 @@ This prerequisites document outlines all requirements for deploying 5 WALLIX Bas
 | Item                   | Value |
 |------------------------|-------|
 | Documentation Version  | 1.0 |
-| WALLIX Bastion Version | 12.3.2 |
-| Last Updated           | February 2026 |
+| WALLIX Bastion Version | 12.1.x |
+| Last Updated           | April 2026 |
 | Author                 | PAM Deployment Team |

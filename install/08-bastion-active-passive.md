@@ -1,6 +1,6 @@
 # Active-Passive WALLIX Bastion Hardware Appliance Cluster
 
-> Step-by-step deployment guide for Master/Slave high availability configuration using `bastion-replication` on WALLIX Bastion 12.3.2
+> Step-by-step deployment guide for Master/Slave high availability configuration using `bastion-replication` on WALLIX Bastion 12.1.x
 
 ---
 
@@ -121,7 +121,7 @@
 | **Session Impact** | Active sessions disconnected, users must reconnect |
 | **Data Loss Risk** | Minimal (async replication with low lag) |
 
-### 1.3 Official Limitations (WALLIX Bastion 12.3.2)
+### 1.3 Official Limitations (WALLIX Bastion 12.1.x)
 
 **CRITICAL**: These limitations apply to Master/Slave mode:
 
@@ -204,7 +204,7 @@ The following items are **NOT replicated** and must be configured individually o
 | Virtual IP (VIP) | 10.10.X.10/24 | User-facing floating IP (managed by HAProxy/Keepalived) |
 | Default Gateway | 10.10.X.1 | Fortigate firewall |
 
-### 2.3 Official Prerequisites (WALLIX Bastion 12.3.2)
+### 2.3 Official Prerequisites (WALLIX Bastion 12.1.x)
 
 The following requirements MUST be met before configuring `bastion-replication`:
 
@@ -234,7 +234,7 @@ WALLIX Bastion appliances come with Debian 12 (Bookworm) pre-installed and harde
 ### 2.6 Prerequisites Checklist
 
 - [ ] 2x WALLIX Bastion HW appliances racked and powered on
-- [ ] Same WALLIX Bastion 12.3.2 version on both nodes
+- [ ] Same WALLIX Bastion 12.1.x version on both nodes
 - [ ] Encryption initialized on both nodes
 - [ ] Production network configured (VLAN X, IPs .11, .12, .10 reserved)
 - [ ] All nodes on same subnet (or max 1 router hop)
@@ -451,7 +451,7 @@ ip route show
 |                                                                               |
 |  Node 1 (Master)                       Node 2 (Slave)                         |
 |  +---------------------------+          +---------------------------+          |
-|  | WALLIX Bastion 12.3.2     |          | WALLIX Bastion 12.3.2     |          |
+|  | WALLIX Bastion 12.1.x     |          | WALLIX Bastion 12.1.x     |          |
 |  |                           |          |                           |          |
 |  | MariaDB (Read-Write)      |          | MariaDB (Read-Only)       |          |
 |  | Port 3306 (listens)       |          | Port 3307 (outbound src)  |          |

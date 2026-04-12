@@ -670,7 +670,7 @@ Create `/etc/haproxy/haproxy.cfg`:
 # WALLIX BASTION HAPROXY CONFIGURATION
 # Version: 2.8 LTS
 # Site: Site 1 (Adjust IPs for other sites)
-# Updated: February 2026
+# Updated: April 2026
 #===============================================================================
 
 #-------------------------------------------------------------------------------

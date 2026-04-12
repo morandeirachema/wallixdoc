@@ -228,7 +228,7 @@ Within the Cyber VLAN (same network, no Fortigate routing needed):
 | **Site 3 (Site 3 DC)**      | 10.10.3.0/24  | HAProxy, Bastion, RDS       | Datacenter Site C |
 | **Site 4 (Site 4 DC)**      | 10.10.4.0/24  | HAProxy, Bastion, RDS       | Datacenter Site D |
 | **Site 5 (Site 5 DC)**      | 10.10.5.0/24  | HAProxy, Bastion, RDS       | Datacenter Site E |
-| **Authentication Services** | 10.20.0.0/24  | FortiAuthenticator, AD/LDAP | Shared Infrastructure |
+| **Site X Cyber VLAN**       | 10.10.X.128/25 | FortiAuth HA pair, AD DC    | Per-site Cyber VLAN (X = 1-5) |
 | **Target Systems (Win)**    | 10.30.0.0/16  | Windows Server 2022         | Production |
 | **Target Systems (Linux)**  | 10.40.0.0/16  | RHEL 9/10                   | Production |
 
@@ -853,8 +853,16 @@ siem.company.com                 A    10.20.0.50
 10.10.5.11     PTR    bastion1-site5.company.com
 10.10.5.12     PTR    bastion2-site5.company.com
 
-10.20.0.60     PTR    fortiauth.company.com
-10.20.0.61     PTR    fortiauth-ha.company.com
+10.10.1.50     PTR    fortiauth1-site1.company.com
+10.10.1.51     PTR    fortiauth2-site1.company.com
+10.10.2.50     PTR    fortiauth1-site2.company.com
+10.10.2.51     PTR    fortiauth2-site2.company.com
+10.10.3.50     PTR    fortiauth1-site3.company.com
+10.10.3.51     PTR    fortiauth2-site3.company.com
+10.10.4.50     PTR    fortiauth1-site4.company.com
+10.10.4.51     PTR    fortiauth2-site4.company.com
+10.10.5.50     PTR    fortiauth1-site5.company.com
+10.10.5.51     PTR    fortiauth2-site5.company.com
 ```
 
 ### 6.3 SSL Certificate Requirements
@@ -1035,26 +1043,26 @@ nc -zv 10.10.1.12 3307
 #### Test 6: FortiAuthenticator RADIUS Connectivity
 
 ```bash
-# From Bastion Site 1 (10.10.1.11)
-# Test RADIUS authentication port
-nc -uzv 10.20.0.60 1812
+# From Bastion Site 1 (10.10.1.11) — FortiAuth is in Cyber VLAN (routed via Fortigate)
+# Test RADIUS authentication port to Site 1 primary FortiAuth
+nc -uzv 10.10.1.50 1812
 # Expected: Connection succeeded
 
 # Use radtest utility (if available)
-radtest testuser testpass 10.20.0.60 0 sharedsecret
+radtest testuser testpass 10.10.1.50 0 sharedsecret
 # Expected: Access-Accept or Access-Reject (not timeout)
 ```
 
 #### Test 7: Active Directory LDAPS Connectivity
 
 ```bash
-# From Bastion Site 1 (10.10.1.11)
-# Test LDAPS port
-openssl s_client -connect 10.20.0.10:636 -showcerts
+# From Bastion Site 1 (10.10.1.11) — AD is in Cyber VLAN (routed via Fortigate)
+# Test LDAPS port to Site 1 AD DC
+openssl s_client -connect 10.10.1.60:636 -showcerts
 # Expected: Certificate chain displayed, connection established
 
 # Test LDAP query (requires ldapsearch)
-ldapsearch -H ldaps://10.20.0.10:636 -x -b "dc=company,dc=local" "(objectclass=*)" -LLL
+ldapsearch -H ldaps://10.10.1.60:636 -x -b "dc=company,dc=local" "(objectclass=*)" -LLL
 # Expected: LDAP entries returned
 ```
 
@@ -1212,9 +1220,10 @@ for AM in 10.100.1.10 10.100.2.10; do
   fi
 done
 
-# Check FortiAuthenticator RADIUS
-if ! nc -uzv -w 2 10.20.0.60 1812 2>&1 | grep -q succeeded; then
-  echo "[$DATE] ERROR: FortiAuth RADIUS unreachable" >> $LOGFILE
+# Check FortiAuthenticator RADIUS (per-site Cyber VLAN — adjust IP for each site)
+FORTIAUTH_PRIMARY="10.10.1.50"   # Site 1 example; update per site
+if ! nc -uzv -w 2 "$FORTIAUTH_PRIMARY" 1812 2>&1 | grep -q succeeded; then
+  echo "[$DATE] ERROR: FortiAuth RADIUS unreachable at $FORTIAUTH_PRIMARY" >> $LOGFILE
 fi
 
 # Check HA replication status
@@ -1294,6 +1303,6 @@ tcpdump -i any -n 'udp port 1812 or udp port 1813'
 ---
 
 **Document Version**: 1.0
-**Last Updated**: February 2026
+**Last Updated**: April 2026
 **Validated By**: Network Engineering Team
 **Approval Status**: Pending Production Deployment

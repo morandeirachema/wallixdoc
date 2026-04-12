@@ -222,7 +222,7 @@ Each WALLIX Bastion site contains **2 hardware appliances** that can be deployed
 
 **Infrastructure:**
 - HAProxy 2.8+ in HA configuration (2 instances + Keepalived)
-- WALLIX Bastion 12.3.2 with built-in `bastion-replication` (Master/Master mode)
+- WALLIX Bastion 12.1.x with built-in `bastion-replication` (Master/Master mode)
 - Shared NFS/iSCSI storage for recordings
 - Low-latency network between nodes (< 5ms RTT)
 
@@ -452,7 +452,7 @@ keepalived              # VRRP for HAProxy HA
 ### Technical Requirements
 
 **Infrastructure:**
-- 2x WALLIX Bastion HW appliances (WALLIX Bastion 12.3.2)
+- 2x WALLIX Bastion HW appliances (WALLIX Bastion 12.1.x)
 - Shared NFS/iSCSI storage for recordings
 - Dedicated replication network (recommended)
 

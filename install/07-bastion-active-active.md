@@ -205,7 +205,7 @@
 
 | Component | Version | Purpose |
 |-----------|---------|---------|
-| **WALLIX Bastion** | 12.3.2 | PAM application (same version on both nodes) |
+| **WALLIX Bastion** | 12.1.x | PAM application (same version on both nodes) |
 | **MariaDB** | Bundled with Bastion | Database (managed by bastion-replication) |
 | **bastion-replication** | Bundled with Bastion | Master/Master replication tool |
 | **autossh** | Bundled with Bastion | Persistent SSH tunnel for replication |
@@ -274,7 +274,7 @@ The following requirements must be met before configuring Master/Master replicat
 - [ ] Same timezone set on both nodes
 - [ ] HAProxy servers deployed and tested (see separate guide)
 - [ ] Encryption initialized on both Bastion nodes
-- [ ] Same WALLIX Bastion version on both nodes (12.3.2)
+- [ ] Same WALLIX Bastion version on both nodes (12.1.x)
 - [ ] Each node installed independently (no VM cloning)
 - [ ] IPv4 addresses only (no FQDN/IPv6 in HA configuration)
 
@@ -638,7 +638,7 @@ chmod +x /usr/local/bin/check-replication-status.sh
 
 ### 6.1 Official Limitations (bastion-replication Master/Master)
 
-The following limitations apply to WALLIX Bastion 12.3.2 Master/Master replication:
+The following limitations apply to WALLIX Bastion 12.1.x Master/Master replication:
 
 | Limitation | Details |
 |------------|---------|
@@ -1597,7 +1597,7 @@ curl -k https://10.10.1.100/health
 
 - [ ] Hardware appliances configured and connected to network
 - [ ] Network interfaces bonded (optional but recommended)
-- [ ] Same WALLIX Bastion version on both nodes (12.3.2)
+- [ ] Same WALLIX Bastion version on both nodes (12.1.x)
 - [ ] Encryption initialized on both nodes
 - [ ] Same NTP source and timezone on both nodes
 - [ ] IPv4 only in HA configuration (no FQDN/IPv6)
@@ -1659,5 +1659,5 @@ curl -k https://10.10.1.100/health
 
 **Document Version**: 2.0
 **Last Updated**: 2026-03-23
-**Tested on**: WALLIX Bastion 12.3.2 HW appliances
+**Tested on**: WALLIX Bastion 12.1.x HW appliances
 **Validation Status**: Production-ready
