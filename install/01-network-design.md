@@ -1,6 +1,6 @@
-# Network Design - 5-Site MPLS Topology with Access Manager Integration
+# Network Design - 5-Site MPLS Topology
 
-> MPLS network architecture, connectivity matrix, and firewall rules for 5 WALLIX Bastion sites with 2 Access Manager datacenters
+> MPLS network architecture, per-site VLAN design, inter-VLAN firewall rules, and port matrix for 5 WALLIX Bastion sites with per-site FortiAuthenticator HA pairs and Active Directory
 
 ---
 
@@ -9,23 +9,24 @@
 | Property             | Value |
 |----------------------|-------|
 | **Purpose**          | Network topology and connectivity requirements for 5-site deployment |
-| **Deployment Model** | 5 datacenter sites + 2 Access Manager datacenters (DC-A, DC-B) |
-| **Network Type**     | MPLS (Access Managers ↔ Bastions only) |
-| **Version**          | WALLIX Bastion 12.3.2 |
-| **Last Updated**     | February 2026 |
+| **Deployment Model** | 5 sites, each with DMZ VLAN + Cyber VLAN; AM is client-managed |
+| **Network Type**     | MPLS (AM ↔ Bastions); Fortigate inter-VLAN routing per site |
+| **Version**          | WALLIX Bastion 12.1.x |
+| **Last Updated**     | April 2026 |
 
 ---
 
 ## Table of Contents
 
 1. [Network Topology Overview](#network-topology-overview)
-2. [MPLS Architecture](#mpls-architecture)
-3. [Site-Specific Network Details](#site-specific-network-details)
-4. [Complete Port Matrix](#complete-port-matrix)
-5. [Firewall Rules](#firewall-rules)
-6. [DNS Requirements](#dns-requirements)
-7. [NTP Configuration](#ntp-configuration)
-8. [Network Testing Procedures](#network-testing-procedures)
+2. [VLAN Design](#vlan-design)
+3. [MPLS Architecture](#mpls-architecture)
+4. [Site-Specific Network Details](#site-specific-network-details)
+5. [Complete Port Matrix](#complete-port-matrix)
+6. [Firewall Rules](#firewall-rules)
+7. [DNS Requirements](#dns-requirements)
+8. [NTP Configuration](#ntp-configuration)
+9. [Network Testing Procedures](#network-testing-procedures)
 
 ---
 
@@ -35,16 +36,14 @@
 
 ```
 +===============================================================================+
-|  5-SITE MPLS TOPOLOGY WITH ACCESS MANAGER INTEGRATION                         |
+|  5-SITE MPLS TOPOLOGY WITH PER-SITE FORTIAUTHENTICATOR AND AD                 |
 +===============================================================================+
 |                                                                               |
-|  DATACENTER A (DC-A)           DATACENTER B (DC-B)                            |
+|  DATACENTER A (DC-A)           DATACENTER B (DC-B)  [CLIENT-MANAGED]          |
 |  +---------------------+       +---------------------+                        |
 |  | Access Manager 1    |       | Access Manager 2    |                        |
-|  | 10.100.1.10         |  HA   | 10.100.2.10         |                        |
-|  | - SSO/MFA           |<----->| - SSO/MFA           |                        |
-|  | - Session Broker    |       | - Session Broker    |                        |
-|  | - License Server    |       | - License Server    |                        |
+|  | - SSO/SAML          |<----->| - SSO/SAML          |                        |
+|  | - Session Broker    |  HA   | - Session Broker    |                        |
 |  +---------+-----------+       +-----------+---------+                        |
 |            |                               |                                  |
 |            +-------------------------------+                                  |
@@ -56,8 +55,12 @@
 |      | DC-1  |  | DC-2  | | DC-3  | | DC-4  | | DC-5  |                       |
 |      +-------+  +-------+ +-------+ +-------+ +-------+                       |
 |                                                                               |
-|  KEY PRINCIPLE: NO direct Bastion-to-Bastion communication between sites      |
-|                 All inter-site traffic flows through Access Managers          |
+|  Each site has TWO VLANs (separated by Fortigate):                            |
+|  - DMZ VLAN:   HAProxy (HA) + Bastion (HA) + WALLIX RDS                       |
+|  - Cyber VLAN: FortiAuthenticator (HA pair) + Active Directory DC             |
+|                                                                               |
+|  KEY: NO direct Bastion-to-Bastion communication between sites.               |
+|       FortiAuth and AD are INDEPENDENT per site (not shared/centralized).     |
 |                                                                               |
 +===============================================================================+
 ```
@@ -74,30 +77,28 @@
 |                               v                                               |
 |                    +---------------------+                                    |
 |                    | Fortigate Firewall  |                                    |
-|                    | Site Perimeter      |                                    |
 |                    | 10.10.X.1           |                                    |
+|                    | Inter-VLAN routing  |                                    |
 |                    +----------+----------+                                    |
 |                               |                                               |
-|          +--------------------+--------------------+                          |
-|          |                                         |                          |
-|    +-----v-------+                          +------v------+                   |
-|    | HAProxy-1   |  VRRP (IP Proto 112)     | HAProxy-2   |                   |
-|    | Primary     |<------------------------>| Backup      |                   |
-|    | 10.10.X.5   |                          | 10.10.X.6   |                   |
-|    | VIP: X.100  |                          |             |                   |
-|    +------+------+                          +------+------+                   |
-|           |                                        |                          |
-|           +-------------------+--------------------+                          |
-|                               |                                               |
-|                  Load Balancing (443/22/3389)                                 |
-|                               |                                               |
-|          +--------------------+--------------------+                          |
-|          |                                         |                          |
-|    +-----v-----------+                      +------v----------+               |
-|    | WALLIX Bastion-1|   HA Cluster Sync    | WALLIX Bastion-2|               |
-|    | 10.10.X.11      |<-------------------->| 10.10.X.12      |               |
-|    |                 | SSH Tunnel: 2242/tcp |                 |               |
-|    |                 | MariaDB: 3306-7/tcp  |                 |               |
+|          +--------------------+----------------------------+                  |
+|          DMZ VLAN (10.10.X.0/25)   Cyber VLAN (10.10.X.128/25)               |
+|          |                                                 |                  |
+|    +-----v-------+  +----------+    +------------------+  |                  |
+|    | HAProxy-1   |  | HAProxy-2|    | FortiAuth-1      |  |                  |
+|    | 10.10.X.5   |  | 10.10.X.6|    | 10.10.X.50 (PRI) |  |                  |
+|    | VIP: X.100  |<>|          |    | VIP: 10.10.X.52  |  |                  |
+|    +------+------+  +----------+    +------------------+  |                  |
+|           |                         +------------------+  |                  |
+|           | Load Balancing           | FortiAuth-2     |  |                  |
+|           | 443/22/3389              | 10.10.X.51 (SEC)|  |                  |
+|           |                         +------------------+  |                  |
+|    +------v----------+ +----------+ +------------------+  |                  |
+|    | WALLIX Bastion-1| |Bastion-2 | | Active Dir. DC   |  |                  |
+|    | 10.10.X.11      |<>10.10.X.12| | 10.10.X.60       |  |                  |
+|    |                 | HA Sync    | +------------------+  |                  |
+|    |                 | 2242/tcp   |                        |                  |
+|    |                 | 3306-7/tcp |                        |                  |
 |    +-----------------+                      +-----------------+               |
 |          |                                         |                          |
 |          +-------------------+---------------------+                          |
@@ -114,6 +115,66 @@
 |                                                                               |
 +===============================================================================+
 ```
+
+---
+
+## VLAN Design
+
+Each site uses two VLANs separated by the Fortigate firewall. The Fortigate performs inter-VLAN routing and enforces access control between them.
+
+### VLAN Summary (Per Site, where X = site number 1-5)
+
+| VLAN | Subnet | Components | Purpose |
+|------|--------|------------|---------|
+| **DMZ VLAN** | 10.10.X.0/25 | HAProxy-1/2, Bastion-1/2, WALLIX RDS | User-facing PAM layer |
+| **Cyber VLAN** | 10.10.X.128/25 | FortiAuthenticator-1/2, Active Directory DC | Authentication services |
+
+### Per-Site IP Addressing
+
+**DMZ VLAN (10.10.X.0/25)**:
+
+| Component | IP | Notes |
+|-----------|----|-------|
+| Fortigate (DMZ interface) | 10.10.X.1 | Default gateway for DMZ VLAN |
+| HAProxy-1 (Primary) | 10.10.X.5 | Active load balancer |
+| HAProxy-2 (Backup) | 10.10.X.6 | Standby load balancer |
+| HAProxy VIP | 10.10.X.100 | Keepalived virtual IP (user entry point) |
+| WALLIX Bastion-1 | 10.10.X.11 | HA cluster node 1 |
+| WALLIX Bastion-2 | 10.10.X.12 | HA cluster node 2 |
+| WALLIX RDS | 10.10.X.30 | OT jump host |
+
+**Cyber VLAN (10.10.X.128/25)**:
+
+| Component | IP | Notes |
+|-----------|----|-------|
+| Fortigate (Cyber interface) | 10.10.X.129 | Default gateway for Cyber VLAN |
+| FortiAuthenticator-1 (Primary) | 10.10.X.50 | RADIUS primary |
+| FortiAuthenticator-2 (Secondary) | 10.10.X.51 | RADIUS secondary (HA) |
+| FortiAuth VIP (Management) | 10.10.X.52 | Floats to active FortiAuth node |
+| Active Directory DC | 10.10.X.60 | LDAP/DNS for this site |
+
+### Inter-VLAN Traffic (Fortigate Policies)
+
+The Fortigate enforces the following inter-VLAN rules. All other DMZ ↔ Cyber traffic is denied by default.
+
+| Source (VLAN) | Destination (VLAN) | Port | Protocol | Purpose |
+|---------------|-------------------|------|----------|---------|
+| Bastion (DMZ) | FortiAuth-1 (Cyber) | 1812 | UDP | RADIUS authentication |
+| Bastion (DMZ) | FortiAuth-1 (Cyber) | 1813 | UDP | RADIUS accounting |
+| Bastion (DMZ) | FortiAuth-2 (Cyber) | 1812 | UDP | RADIUS failover |
+| Bastion (DMZ) | FortiAuth-2 (Cyber) | 1813 | UDP | RADIUS failover accounting |
+| Bastion (DMZ) | AD DC (Cyber) | 636 | TCP | LDAPS user/group lookup |
+| Bastion (DMZ) | AD DC (Cyber) | 389 | TCP | LDAP fallback |
+| Bastion (DMZ) | AD DC (Cyber) | 3268 | TCP | Global Catalog |
+
+Within the Cyber VLAN (same network, no Fortigate routing needed):
+
+| Source | Destination | Port | Protocol | Purpose |
+|--------|-------------|------|----------|---------|
+| FortiAuth-1 | AD DC | 389 | TCP | LDAP user sync |
+| FortiAuth-1 | AD DC | 636 | TCP | LDAPS user sync |
+| FortiAuth-2 | AD DC | 389 | TCP | LDAP user sync |
+| FortiAuth-1 | FortiAuth-2 | 443 | TCP | HA replication |
 
 ---
 
@@ -195,80 +256,129 @@
 
 ### 3.2 Site 1 (Site 1 DC)
 
-| Component           | IP Address  | VLAN    | Purpose |
-|---------------------|-------------|---------|---------|
-| Fortigate Firewall  | 10.10.1.1   | VLAN 11 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.1.5   | VLAN 11 | Load balancer |
-| HAProxy-2 (Backup)  | 10.10.1.6   | VLAN 11 | Load balancer (VRRP) |
-| HAProxy VIP         | 10.10.1.100 | VLAN 11 | Virtual IP (user entry point) |
-| WALLIX Bastion-1    | 10.10.1.11  | VLAN 11 | HA cluster node 1 |
-| WALLIX Bastion-2    | 10.10.1.12  | VLAN 11 | HA cluster node 2 |
-| WALLIX RDS          | 10.10.1.30  | VLAN 11 | Jump host (OT RemoteApp) |
-| Default Gateway     | 10.10.1.1   | VLAN 11 | Fortigate internal interface |
+**DMZ VLAN (10.10.1.0/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| Fortigate (DMZ interface) | 10.10.1.1 | Inter-VLAN router; MPLS gateway |
+| HAProxy-1 (Primary) | 10.10.1.5 | Active load balancer |
+| HAProxy-2 (Backup) | 10.10.1.6 | Standby load balancer (VRRP) |
+| HAProxy VIP | 10.10.1.100 | User entry point (virtual IP) |
+| WALLIX Bastion-1 | 10.10.1.11 | HA cluster node 1 |
+| WALLIX Bastion-2 | 10.10.1.12 | HA cluster node 2 |
+| WALLIX RDS | 10.10.1.30 | Jump host (OT RemoteApp) |
+
+**Cyber VLAN (10.10.1.128/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| Fortigate (Cyber interface) | 10.10.1.129 | Default gateway for Cyber VLAN |
+| FortiAuthenticator-1 (Primary) | 10.10.1.50 | RADIUS primary |
+| FortiAuthenticator-2 (Secondary) | 10.10.1.51 | RADIUS secondary (HA) |
+| FortiAuth VIP | 10.10.1.52 | Management VIP |
+| Active Directory DC | 10.10.1.60 | LDAP/DNS for Site 1 |
 
 ### 3.3 Site 2 (Site 2 DC)
 
-| Component           | IP Address  | VLAN    | Purpose |
-|---------------------|-------------|---------|---------|
-| Fortigate Firewall  | 10.10.2.1   | VLAN 12 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.2.5   | VLAN 12 | Load balancer |
-| HAProxy-2 (Backup)  | 10.10.2.6   | VLAN 12 | Load balancer (VRRP) |
-| HAProxy VIP         | 10.10.2.100 | VLAN 12 | Virtual IP (user entry point) |
-| WALLIX Bastion-1    | 10.10.2.11  | VLAN 12 | HA cluster node 1 |
-| WALLIX Bastion-2    | 10.10.2.12  | VLAN 12 | HA cluster node 2 |
-| WALLIX RDS          | 10.10.2.30  | VLAN 12 | Jump host (OT RemoteApp) |
-| Default Gateway     | 10.10.2.1   | VLAN 12 | Fortigate internal interface |
+**DMZ VLAN (10.10.2.0/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| Fortigate (DMZ interface) | 10.10.2.1 | Inter-VLAN router; MPLS gateway |
+| HAProxy-1 (Primary) | 10.10.2.5 | Active load balancer |
+| HAProxy-2 (Backup) | 10.10.2.6 | Standby load balancer (VRRP) |
+| HAProxy VIP | 10.10.2.100 | User entry point (virtual IP) |
+| WALLIX Bastion-1 | 10.10.2.11 | HA cluster node 1 |
+| WALLIX Bastion-2 | 10.10.2.12 | HA cluster node 2 |
+| WALLIX RDS | 10.10.2.30 | Jump host (OT RemoteApp) |
+
+**Cyber VLAN (10.10.2.128/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| FortiAuthenticator-1 (Primary) | 10.10.2.50 | RADIUS primary |
+| FortiAuthenticator-2 (Secondary) | 10.10.2.51 | RADIUS secondary (HA) |
+| FortiAuth VIP | 10.10.2.52 | Management VIP |
+| Active Directory DC | 10.10.2.60 | LDAP/DNS for Site 2 |
 
 ### 3.4 Site 3 (Site 3 DC)
 
-| Component           | IP Address  | VLAN    | Purpose |
-|---------------------|-------------|---------|---------|
-| Fortigate Firewall  | 10.10.3.1   | VLAN 13 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.3.5   | VLAN 13 | Load balancer |
-| HAProxy-2 (Backup)  | 10.10.3.6   | VLAN 13 | Load balancer (VRRP) |
-| HAProxy VIP         | 10.10.3.100 | VLAN 13 | Virtual IP (user entry point) |
-| WALLIX Bastion-1    | 10.10.3.11  | VLAN 13 | HA cluster node 1 |
-| WALLIX Bastion-2    | 10.10.3.12  | VLAN 13 | HA cluster node 2 |
-| WALLIX RDS          | 10.10.3.30  | VLAN 13 | Jump host (OT RemoteApp) |
-| Default Gateway     | 10.10.3.1   | VLAN 13 | Fortigate internal interface |
+**DMZ VLAN (10.10.3.0/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| Fortigate (DMZ interface) | 10.10.3.1 | Inter-VLAN router; MPLS gateway |
+| HAProxy-1 (Primary) | 10.10.3.5 | Active load balancer |
+| HAProxy-2 (Backup) | 10.10.3.6 | Standby load balancer (VRRP) |
+| HAProxy VIP | 10.10.3.100 | User entry point (virtual IP) |
+| WALLIX Bastion-1 | 10.10.3.11 | HA cluster node 1 |
+| WALLIX Bastion-2 | 10.10.3.12 | HA cluster node 2 |
+| WALLIX RDS | 10.10.3.30 | Jump host (OT RemoteApp) |
+
+**Cyber VLAN (10.10.3.128/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| FortiAuthenticator-1 (Primary) | 10.10.3.50 | RADIUS primary |
+| FortiAuthenticator-2 (Secondary) | 10.10.3.51 | RADIUS secondary (HA) |
+| FortiAuth VIP | 10.10.3.52 | Management VIP |
+| Active Directory DC | 10.10.3.60 | LDAP/DNS for Site 3 |
 
 ### 3.5 Site 4 (Site 4 DC)
 
-| Component           | IP Address  | VLAN    | Purpose |
-|---------------------|-------------|---------|---------|
-| Fortigate Firewall  | 10.10.4.1   | VLAN 14 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.4.5   | VLAN 14 | Load balancer |
-| HAProxy-2 (Backup)  | 10.10.4.6   | VLAN 14 | Load balancer (VRRP) |
-| HAProxy VIP         | 10.10.4.100 | VLAN 14 | Virtual IP (user entry point) |
-| WALLIX Bastion-1    | 10.10.4.11  | VLAN 14 | HA cluster node 1 |
-| WALLIX Bastion-2    | 10.10.4.12  | VLAN 14 | HA cluster node 2 |
-| WALLIX RDS          | 10.10.4.30  | VLAN 14 | Jump host (OT RemoteApp) |
-| Default Gateway     | 10.10.4.1   | VLAN 14 | Fortigate internal interface |
+**DMZ VLAN (10.10.4.0/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| Fortigate (DMZ interface) | 10.10.4.1 | Inter-VLAN router; MPLS gateway |
+| HAProxy-1 (Primary) | 10.10.4.5 | Active load balancer |
+| HAProxy-2 (Backup) | 10.10.4.6 | Standby load balancer (VRRP) |
+| HAProxy VIP | 10.10.4.100 | User entry point (virtual IP) |
+| WALLIX Bastion-1 | 10.10.4.11 | HA cluster node 1 |
+| WALLIX Bastion-2 | 10.10.4.12 | HA cluster node 2 |
+| WALLIX RDS | 10.10.4.30 | Jump host (OT RemoteApp) |
+
+**Cyber VLAN (10.10.4.128/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| FortiAuthenticator-1 (Primary) | 10.10.4.50 | RADIUS primary |
+| FortiAuthenticator-2 (Secondary) | 10.10.4.51 | RADIUS secondary (HA) |
+| FortiAuth VIP | 10.10.4.52 | Management VIP |
+| Active Directory DC | 10.10.4.60 | LDAP/DNS for Site 4 |
 
 ### 3.6 Site 5 (Site 5 DC)
 
-| Component           | IP Address  | VLAN    | Purpose |
-|---------------------|-------------|---------|---------|
-| Fortigate Firewall  | 10.10.5.1   | VLAN 15 | Perimeter security |
-| HAProxy-1 (Primary) | 10.10.5.5   | VLAN 15 | Load balancer |
-| HAProxy-2 (Backup)  | 10.10.5.6   | VLAN 15 | Load balancer (VRRP) |
-| HAProxy VIP         | 10.10.5.100 | VLAN 15 | Virtual IP (user entry point) |
-| WALLIX Bastion-1    | 10.10.5.11  | VLAN 15 | HA cluster node 1 |
-| WALLIX Bastion-2    | 10.10.5.12  | VLAN 15 | HA cluster node 2 |
-| WALLIX RDS          | 10.10.5.30  | VLAN 15 | Jump host (OT RemoteApp) |
-| Default Gateway     | 10.10.5.1   | VLAN 15 | Fortigate internal interface |
+**DMZ VLAN (10.10.5.0/25)**:
 
-### 3.7 Shared Infrastructure
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| Fortigate (DMZ interface) | 10.10.5.1 | Inter-VLAN router; MPLS gateway |
+| HAProxy-1 (Primary) | 10.10.5.5 | Active load balancer |
+| HAProxy-2 (Backup) | 10.10.5.6 | Standby load balancer (VRRP) |
+| HAProxy VIP | 10.10.5.100 | User entry point (virtual IP) |
+| WALLIX Bastion-1 | 10.10.5.11 | HA cluster node 1 |
+| WALLIX Bastion-2 | 10.10.5.12 | HA cluster node 2 |
+| WALLIX RDS | 10.10.5.30 | Jump host (OT RemoteApp) |
 
-| Component                      | IP Address | VLAN    | Purpose |
-|--------------------------------|------------|---------|---------|
-| FortiAuthenticator (Primary)   | 10.20.0.60 | VLAN 20 | MFA (RADIUS) |
-| FortiAuthenticator (Secondary) | 10.20.0.61 | VLAN 20 | MFA (RADIUS backup) |
-| Active Directory DC1           | 10.20.0.10 | VLAN 20 | LDAP/authentication |
-| Active Directory DC2           | 10.20.0.11 | VLAN 20 | LDAP/authentication (backup) |
-| NTP Server 1                   | 10.20.0.20 | VLAN 20 | Time synchronization |
-| NTP Server 2                   | 10.20.0.21 | VLAN 20 | Time synchronization (backup) |
-| SIEM (Splunk/Elastic)          | 10.20.0.50 | VLAN 20 | Log aggregation |
+**Cyber VLAN (10.10.5.128/25)**:
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| FortiAuthenticator-1 (Primary) | 10.10.5.50 | RADIUS primary |
+| FortiAuthenticator-2 (Secondary) | 10.10.5.51 | RADIUS secondary (HA) |
+| FortiAuth VIP | 10.10.5.52 | Management VIP |
+| Active Directory DC | 10.10.5.60 | LDAP/DNS for Site 5 |
+
+### 3.7 Shared Infrastructure (SIEM, NTP)
+
+> FortiAuthenticator and Active Directory are NOT shared — each site has its own. The following are truly shared services.
+
+| Component | IP Address | Purpose |
+|-----------|------------|---------|
+| NTP Server 1 | 10.20.0.20 | Time synchronization |
+| NTP Server 2 | 10.20.0.21 | Time synchronization (backup) |
+| SIEM (Splunk/Elastic) | 10.20.0.50 | Log aggregation |
 
 ---
 
@@ -322,34 +432,41 @@
 | AM1 (10.100.1.10) | AM2 (10.100.2.10) | 3306      | TCP/MariaDB  | Database replication |
 | AM1 (10.100.1.10) | AM2 (10.100.2.10) | 443       | TCP/HTTPS    | Cluster heartbeat |
 
-### 4.3 Authentication & MFA
+### 4.3 Authentication and MFA (Per-Site, Inter-VLAN)
 
-#### WALLIX Bastion → FortiAuthenticator
+> FortiAuthenticator and AD are local to each site. All traffic below is inter-VLAN (DMZ -> Cyber VLAN) via the site's Fortigate. Use site-specific IPs (10.10.X.50, 10.10.X.60, etc.).
 
-| Source           | Destination            | Port | Protocol   | Purpose |
-|------------------|------------------------|------|------------|---------|
-| Bastion Site 1-5 | FortiAuth (10.20.0.60) | 1812 | TCP+UDP/RADIUS | User authentication (MFA) |
-| Bastion Site 1-5 | FortiAuth (10.20.0.60) | 1813 | TCP+UDP/RADIUS | Accounting/audit logs |
-| Bastion Site 1-5 | FortiAuth (10.20.0.61) | 1812 | TCP+UDP/RADIUS | Failover authentication |
-| Bastion Site 1-5 | FortiAuth (10.20.0.61) | 1813 | TCP+UDP/RADIUS | Failover accounting |
+#### WALLIX Bastion (DMZ) → FortiAuthenticator (Cyber VLAN)
 
-#### WALLIX Bastion → Active Directory
+| Source | Destination | Port | Protocol | Purpose |
+|--------|-------------|------|----------|---------|
+| Bastion-1/2 (10.10.X.11/12) | FortiAuth-1 (10.10.X.50) | 1812 | UDP/RADIUS | Primary MFA authentication |
+| Bastion-1/2 (10.10.X.11/12) | FortiAuth-1 (10.10.X.50) | 1813 | UDP/RADIUS | Primary RADIUS accounting |
+| Bastion-1/2 (10.10.X.11/12) | FortiAuth-2 (10.10.X.51) | 1812 | UDP/RADIUS | Secondary MFA (failover) |
+| Bastion-1/2 (10.10.X.11/12) | FortiAuth-2 (10.10.X.51) | 1813 | UDP/RADIUS | Secondary RADIUS accounting |
 
-| Source           | Destination         | Port | Protocol   | Purpose |
-|------------------|---------------------|------|------------|---------|
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 389  | TCP/LDAP   | User/group lookups |
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 636  | TCP/LDAPS  | Secure LDAP (preferred) |
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 3268 | TCP/GC     | Global Catalog queries |
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 3269 | TCP/GC-SSL | Secure Global Catalog |
-| Bastion Site 1-5 | AD DC1 (10.20.0.10) | 88   | TCP/UDP    | Kerberos authentication |
-| Bastion Site 1-5 | AD DC2 (10.20.0.11) | 636  | TCP/LDAPS  | Failover LDAP |
+#### WALLIX Bastion (DMZ) → Active Directory (Cyber VLAN)
 
-#### FortiAuthenticator → Active Directory
+| Source | Destination | Port | Protocol | Purpose |
+|--------|-------------|------|----------|---------|
+| Bastion-1/2 (10.10.X.11/12) | AD DC (10.10.X.60) | 636 | TCP/LDAPS | Secure LDAP user/group lookup |
+| Bastion-1/2 (10.10.X.11/12) | AD DC (10.10.X.60) | 389 | TCP/LDAP | LDAP fallback |
+| Bastion-1/2 (10.10.X.11/12) | AD DC (10.10.X.60) | 3268 | TCP | Global Catalog queries |
+| Bastion-1/2 (10.10.X.11/12) | AD DC (10.10.X.60) | 88 | TCP/UDP | Kerberos (optional) |
 
-| Source                 | Destination         | Port | Protocol  | Purpose |
-|------------------------|---------------------|------|-----------|---------|
-| FortiAuth (10.20.0.60) | AD DC1 (10.20.0.10) | 389  | TCP/LDAP  | User synchronization |
-| FortiAuth (10.20.0.60) | AD DC1 (10.20.0.10) | 636  | TCP/LDAPS | Secure user sync |
+#### FortiAuthenticator (Cyber VLAN) → Active Directory (Cyber VLAN, Same Segment)
+
+| Source | Destination | Port | Protocol | Purpose |
+|--------|-------------|------|----------|---------|
+| FortiAuth-1 (10.10.X.50) | AD DC (10.10.X.60) | 389 | TCP/LDAP | User synchronization |
+| FortiAuth-1 (10.10.X.50) | AD DC (10.10.X.60) | 636 | TCP/LDAPS | Secure user sync (recommended) |
+| FortiAuth-2 (10.10.X.51) | AD DC (10.10.X.60) | 389 | TCP/LDAP | Secondary sync |
+
+#### FortiAuthenticator HA Replication (Cyber VLAN, Same Segment)
+
+| Source | Destination | Port | Protocol | Purpose |
+|--------|-------------|------|----------|---------|
+| FortiAuth-1 (10.10.X.50) | FortiAuth-2 (10.10.X.51) | 443 | TCP/HTTPS | HA configuration sync |
 
 ### 4.4 WALLIX Bastion HA Cluster (Per Site)
 
@@ -488,30 +605,45 @@ NAT: None
 Logging: Enable
 ```
 
-#### Policy 5: Bastion to FortiAuthenticator
+#### Policy 5: Bastion (DMZ) to FortiAuthenticator (Cyber VLAN)
 
 ```
-Source Zone: Management
+Source Zone: DMZ
 Source Address: Bastion-1 (10.10.X.11), Bastion-2 (10.10.X.12)
-Destination Zone: Authentication
-Destination Address: FortiAuth (10.20.0.60, 10.20.0.61)
-Service: RADIUS (1812/1813 TCP+UDP)
+Destination Zone: Cyber
+Destination Address: FortiAuth-1 (10.10.X.50), FortiAuth-2 (10.10.X.51)
+Service: RADIUS (1812 UDP), RADIUS Accounting (1813 UDP)
 Action: ACCEPT
 NAT: None
 Logging: Enable
+Note: Inter-VLAN rule on per-site Fortigate
 ```
 
-#### Policy 6: Bastion to Active Directory
+#### Policy 6: Bastion (DMZ) to Active Directory (Cyber VLAN)
 
 ```
-Source Zone: Management
+Source Zone: DMZ
 Source Address: Bastion-1 (10.10.X.11), Bastion-2 (10.10.X.12)
-Destination Zone: Authentication
-Destination Address: AD DC1 (10.20.0.10), AD DC2 (10.20.0.11)
-Service: LDAPS (636), Global Catalog SSL (3269), Kerberos (88 TCP/UDP)
+Destination Zone: Cyber
+Destination Address: AD DC (10.10.X.60)
+Service: LDAPS (636 TCP), LDAP (389 TCP), Global Catalog (3268 TCP)
 Action: ACCEPT
 NAT: None
 Logging: Enable
+Note: Inter-VLAN rule on per-site Fortigate
+```
+
+#### Policy 6b: FortiAuthenticator (Cyber VLAN) to Active Directory (Cyber VLAN)
+
+```
+Source Zone: Cyber
+Source Address: FortiAuth-1 (10.10.X.50), FortiAuth-2 (10.10.X.51)
+Destination Zone: Cyber
+Destination Address: AD DC (10.10.X.60)
+Service: LDAP (389 TCP), LDAPS (636 TCP)
+Action: ACCEPT (same-VLAN, no routing needed)
+NAT: None
+Logging: Disable (high frequency)
 ```
 
 #### Policy 7: Bastion to Target Systems
@@ -591,8 +723,10 @@ Logging: Enable (security events)
 |  ALLOW: HAProxy → Bastion (443, 22)                                           |
 |  ALLOW: Bastion → Access Manager (443) via MPLS                               |
 |  ALLOW: Access Manager → Bastion (443, 22) via MPLS                           |
-|  ALLOW: Bastion → FortiAuthenticator (1812/1813 TCP+UDP)                      |
-|  ALLOW: Bastion → Active Directory (636, 3269, 88)                            |
+|  ALLOW: Bastion (DMZ) → FortiAuth (Cyber) [1812/1813 UDP] inter-VLAN         |
+|  ALLOW: Bastion (DMZ) → AD DC (Cyber) [636, 389, 3268 TCP] inter-VLAN        |
+|  ALLOW: FortiAuth → AD DC [389/636 TCP] same Cyber VLAN                      |
+|  ALLOW: FortiAuth-1 ↔ FortiAuth-2 [443 TCP] HA sync                          |
 |  ALLOW: Bastion → Targets (3389, 22, 5985/5986)                               |
 |  ALLOW: Bastion-1 ↔ Bastion-2 (2242, 3306, 3307) [HA VLAN]                    |
 |  ALLOW: HAProxy-1 ↔ HAProxy-2 (IP proto 112) [VRRP]                           |
@@ -676,11 +810,18 @@ bastion2-site5.company.com       A    10.10.5.12
 rds-site5.company.com            A    10.10.5.30
 ```
 
+#### Per-Site Cyber VLAN Records (Repeat for Sites 1-5, substituting X)
+
+```
+fortiauth1-siteX.company.com     A    10.10.X.50    (Primary FortiAuth)
+fortiauth2-siteX.company.com     A    10.10.X.51    (Secondary FortiAuth)
+fortiauth-vip-siteX.company.com  A    10.10.X.52    (FortiAuth Management VIP)
+dc-siteX.company.local           A    10.10.X.60    (Active Directory DC)
+```
+
 #### Shared Infrastructure
 
 ```
-fortiauth.company.com            A    10.20.0.60    (Primary)
-fortiauth-ha.company.com         A    10.20.0.61    (Secondary)
 ntp1.company.com                 A    10.20.0.20
 ntp2.company.com                 A    10.20.0.21
 siem.company.com                 A    10.20.0.50
@@ -1139,9 +1280,9 @@ tcpdump -i any -n 'udp port 1812 or udp port 1813'
 
 - [00-prerequisites.md](00-prerequisites.md) - Hardware and software requirements
 - [02-ha-architecture.md](02-ha-architecture.md) - HA cluster design (Active-Active vs Active-Passive)
-- [03-access-manager-integration.md](03-access-manager-integration.md) - Access Manager SSO/MFA integration
-- [05-haproxy-setup.md](05-haproxy-setup.md) - HAProxy load balancer configuration
-- [11-architecture-diagrams.md](11-architecture-diagrams.md) - Additional network diagrams
+- [15-access-manager-integration.md](15-access-manager-integration.md) - Access Manager SSO/MFA integration
+- [06-haproxy-setup.md](06-haproxy-setup.md) - HAProxy load balancer configuration
+- [12-architecture-diagrams.md](12-architecture-diagrams.md) - Additional network diagrams
 
 ### External Resources
 

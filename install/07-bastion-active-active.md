@@ -1,4 +1,4 @@
-# 06 - Active-Active WALLIX Bastion HW Appliance Cluster Setup
+# 07 - Active-Active WALLIX Bastion HW Appliance Cluster Setup
 
 > Comprehensive guide for deploying Active-Active High Availability clusters using WALLIX Bastion hardware appliances with `bastion-replication` Master/Master mode
 
@@ -9,10 +9,10 @@
 | Property | Value |
 |----------|-------|
 | **Purpose** | Active-Active HA cluster configuration for WALLIX Bastion HW appliances |
-| **Deployment Model** | 2 hardware appliances per site in Active-Active (Master/Master) mode |
-| **Version** | WALLIX Bastion 12.3.2 |
-| **Prerequisites** | [02-ha-architecture.md](02-ha-architecture.md), [01-network-design.md](01-network-design.md) |
-| **Last Updated** | March 2026 |
+| **Deployment Model** | 2 hardware appliances per site in Active-Active (Master/Master) mode; DMZ VLAN |
+| **Version** | WALLIX Bastion 12.1.x |
+| **Prerequisites** | [02-ha-architecture.md](02-ha-architecture.md), [01-network-design.md](01-network-design.md), [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md) |
+| **Last Updated** | April 2026 |
 
 ---
 
@@ -1619,10 +1619,16 @@ curl -k https://10.10.1.100/health
 ### Next Steps
 
 1. **Integrate with Access Manager:** Configure SSO and session brokering
-   - See: [03-access-manager-integration.md](03-access-manager-integration.md)
+   - See: [15-access-manager-integration.md](15-access-manager-integration.md)
 
-2. **Configure Authentication:** Set up LDAP/AD, FortiAuthenticator MFA
-   - See: `/docs/pam/06-authentication/`
+2. **Configure RADIUS MFA (FortiAuthenticator):** Use per-site FortiAuth HA pair (Cyber VLAN)
+   - Primary RADIUS server: 10.10.X.50 (FortiAuth-1)
+   - Secondary RADIUS server: 10.10.X.51 (FortiAuth-2)
+   - See: [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md)
+
+3. **Configure LDAP/AD:** Connect to per-site Active Directory (Cyber VLAN)
+   - AD DC: 10.10.X.60
+   - See: [04-ad-per-site.md](04-ad-per-site.md)
 
 3. **Deploy to Additional Sites:** Replicate configuration for Sites 2-5
    - See: [01-network-design.md](01-network-design.md)

@@ -13,8 +13,9 @@
 | **Failover Method** | Manual promotion via `bastion-replication --elevate-master` |
 | **Complexity** | Medium (simpler than Active-Active) |
 | **Best For** | Sites with < 100 concurrent sessions, simplicity priority |
-| **Version** | WALLIX Bastion 12.3.2 |
-| **Last Updated** | March 2026 |
+| **Version** | WALLIX Bastion 12.1.x |
+| **Prerequisites** | [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md), [04-ad-per-site.md](04-ad-per-site.md) |
+| **Last Updated** | April 2026 |
 
 ---
 
@@ -242,8 +243,8 @@ WALLIX Bastion appliances come with Debian 12 (Bookworm) pre-installed and harde
 - [ ] Firewall rules configured (see [01-network-design.md](01-network-design.md))
 - [ ] NTP servers reachable from both nodes (same source, same timezone)
 - [ ] IPv4 addresses only (no FQDN/IPv6 in HA config)
-- [ ] FortiAuthenticator RADIUS accessible (10.20.0.60)
-- [ ] Active Directory LDAPS accessible (10.20.0.10:636)
+- [ ] FortiAuthenticator RADIUS VIP accessible (10.10.X.52, Cyber VLAN, inter-VLAN via Fortigate)
+- [ ] Active Directory LDAPS accessible (10.10.X.60:636, Cyber VLAN, inter-VLAN via Fortigate)
 - [ ] HAProxy load balancer configured to point to VIP (10.10.X.10)
 
 ---
@@ -272,8 +273,8 @@ wabadmin network-config --interface bond0 --ip 10.10.X.11/24 --gateway 10.10.X.1
 # Set hostname
 wabadmin hostname-set bastion-node1.company.com
 
-# Configure DNS servers
-wabadmin dns-set --primary 10.20.0.10 --secondary 10.20.0.11
+# Configure DNS servers (use per-site AD DC in Cyber VLAN)
+wabadmin dns-set --primary 10.10.X.60 --secondary 8.8.8.8
 
 # Verify configuration
 wabadmin network-status
@@ -287,14 +288,14 @@ Interface: bond0
   Status: UP
 
 Hostname: bastion-node1.company.com
-DNS: 10.20.0.10, 10.20.0.11
+DNS: 10.10.X.60
 ```
 
 #### 3.1.3 Configure NTP
 
 ```bash
-# Configure NTP servers (MUST be same source on all nodes)
-wabadmin ntp-set --servers 10.20.0.20,10.20.0.21
+# Configure NTP servers (use organizational NTP or public pool)
+wabadmin ntp-set --servers ntp1.company.com,ntp2.company.com
 
 # Force time sync
 wabadmin ntp-sync
@@ -306,7 +307,7 @@ wabadmin ntp-status
 Expected output:
 ```
 NTP Status: Synchronized
-Reference ID: 10.20.0.20
+Reference ID: ntp1.company.com
 Stratum: 3
 Offset: -0.003 seconds
 ```
@@ -575,16 +576,16 @@ bastion-replication --monitoring
 ```bash
 # Web UI: Configuration > Authentication > RADIUS
 
-# Add FortiAuthenticator primary
+# Add FortiAuthenticator primary (Cyber VLAN)
 RADIUS Server 1:
-  IP: 10.20.0.60
+  IP: 10.10.X.50  # FortiAuth-1 (site-specific, replace X with site number)
   Port: 1812
   Shared Secret: RADIUS_SECRET_REDACTED
   Timeout: 5 seconds
 
-# Add FortiAuthenticator secondary
+# Add FortiAuthenticator secondary (Cyber VLAN)
 RADIUS Server 2:
-  IP: 10.20.0.61
+  IP: 10.10.X.51  # FortiAuth-2 (site-specific, replace X with site number)
   Port: 1812
   Shared Secret: RADIUS_SECRET_REDACTED
   Timeout: 5 seconds
@@ -595,9 +596,9 @@ RADIUS Server 2:
 ```bash
 # Web UI: Configuration > Authentication > LDAP
 
-# Add Active Directory
+# Add Active Directory (Cyber VLAN)
 LDAP Server:
-  Hostname: 10.20.0.10
+  Hostname: 10.10.X.60  # AD DC (site-specific, replace X with site number)
   Port: 636 (LDAPS)
   Base DN: dc=company,dc=local
   Bind DN: cn=wallixsvc,ou=Service Accounts,dc=company,dc=local
@@ -1126,7 +1127,7 @@ wabadmin keys-export --output /var/backups/wallix/keys-$(date +%Y%m%d).tar.gz.en
 ## Related Documentation
 
 - [02-ha-architecture.md](02-ha-architecture.md) - Active-Active vs Active-Passive comparison
-- [06-bastion-active-active.md](06-bastion-active-active.md) - Active-Active cluster setup (alternative)
+- [07-bastion-active-active.md](07-bastion-active-active.md) - Active-Active cluster setup (alternative)
 - [01-network-design.md](01-network-design.md) - Network topology and port requirements
 - [11-high-availability](../docs/pam/11-high-availability/README.md) - Detailed HA concepts
 
@@ -1141,14 +1142,31 @@ wabadmin keys-export --output /var/backups/wallix/keys-$(date +%Y%m%d).tar.gz.en
 ---
 
 **Document Version**: 2.0
-**Last Updated**: March 2026
+**Last Updated**: April 2026
 **Deployment Model**: Master/Slave (2-node cluster via bastion-replication)
-**Tested On**: WALLIX Bastion 12.3.2 with Debian 12
+**Tested On**: WALLIX Bastion 12.1.x with Debian 12
 
 ---
 
 **Next Steps:**
 
-1. **Proceed to testing**: [10-testing-validation.md](10-testing-validation.md)
-2. **Configure HAProxy**: [05-haproxy-setup.md](05-haproxy-setup.md)
-3. **Set up monitoring**: [/docs/pam/12-monitoring-observability/](../docs/pam/12-monitoring-observability/README.md)
+1. **Integrate with Access Manager:** Configure SSO and session brokering (Bastion-side only)
+   - See: [15-access-manager-integration.md](15-access-manager-integration.md)
+
+2. **Configure RADIUS MFA (FortiAuthenticator):** Use per-site FortiAuth HA pair (Cyber VLAN)
+   - Primary RADIUS server: 10.10.X.50 (FortiAuth-1)
+   - Secondary RADIUS server: 10.10.X.51 (FortiAuth-2)
+   - See: [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md)
+
+3. **Configure LDAP/AD:** Connect to per-site Active Directory (Cyber VLAN)
+   - AD DC: 10.10.X.60
+   - See: [04-ad-per-site.md](04-ad-per-site.md)
+
+4. **Deploy to Additional Sites:** Replicate configuration for Sites 2-5
+   - See: [01-network-design.md](01-network-design.md)
+
+5. **Proceed to testing**: [11-testing-validation.md](11-testing-validation.md)
+
+6. **Configure HAProxy**: [06-haproxy-setup.md](06-haproxy-setup.md)
+
+7. **Set up monitoring**: [/docs/pam/12-monitoring-observability/](../docs/pam/12-monitoring-observability/README.md)

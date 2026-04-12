@@ -1158,19 +1158,73 @@ If you start with Active-Passive and need to migrate to Active-Active:
 
 ---
 
+---
+
+## FortiAuthenticator HA Options (Per Site)
+
+Each site has an independent FortiAuthenticator HA pair in the Cyber VLAN. Like the Bastion cluster, FortiAuthenticator uses a Primary/Secondary (Active-Passive) model.
+
+```
++===============================================================================+
+|  FORTIAUTHENTICATOR HA MODEL (PER SITE)                                       |
++===============================================================================+
+|                                                                               |
+|  Cyber VLAN                                                                   |
+|                                                                               |
+|  +----------------------------------+  +----------------------------------+    |
+|  |  FortiAuthenticator-1 (PRIMARY)  |  |  FortiAuthenticator-2 (SECONDARY)|    |
+|  |  10.10.X.50                      |  |  10.10.X.51                      |    |
+|  |  Role: Master (Active)           |  |  Role: Slave (Standby)           |    |
+|  |  Handles: All RADIUS requests    |  |  Handles: Synced, ready to        |    |
+|  |  Manages: Cluster VIP X.52      |<->|  promote if Primary fails        |    |
+|  +----------------------------------+  +----------------------------------+    |
+|                                                                               |
+|  Failover: Automatic (FortiAuth HA built-in, ~30-60 second promotion)         |
+|  Sync: User database, RADIUS clients, policies, FortiToken data               |
+|  VIP: 10.10.X.52 (floats to active node for management)                       |
+|                                                                               |
+|  WALLIX Bastion configures BOTH X.50 and X.51 as RADIUS servers               |
+|  (primary and secondary). Bastion retries secondary after timeout.            |
+|                                                                               |
++===============================================================================+
+```
+
+### FortiAuthenticator HA vs Bastion HA
+
+| Aspect | Bastion HA | FortiAuth HA |
+|--------|-----------|--------------|
+| Model | Active-Active OR Active-Passive | Active-Passive (Primary/Secondary) |
+| Failover time | < 1s (A-A) or 30-60s (A-P) | ~30-60 seconds (automatic promotion) |
+| Configuration | bastion-replication | FortiAuthenticator built-in HA |
+| VLAN | DMZ VLAN | Cyber VLAN |
+| Sync | MariaDB replication | FortiAuth sync (users, policies, tokens) |
+| Client config | HAProxy load balances | Bastion configures both IPs as RADIUS servers |
+
+### FortiAuth HA Mirrors Bastion HA per Site
+
+Both components use Active-Passive HA at the site level. Both are independent per site — there is no cross-site FortiAuth or cross-site Bastion communication.
+
+For full FortiAuthenticator HA setup, see [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md).
+
+---
+
 ## Next Steps
 
 After choosing your HA model:
 
-1. **For Active-Passive:** Proceed to [07-bastion-active-passive.md](07-bastion-active-passive.md)
-2. **For Active-Active:** Proceed to [06-bastion-active-active.md](06-bastion-active-active.md)
-3. **For detailed HA concepts:** Review [/docs/pam/11-high-availability/README.md](../docs/pam/11-high-availability/README.md)
-4. **For load balancer setup:** See [05-haproxy-setup.md](05-haproxy-setup.md)
+1. **For Active-Passive Bastion:** Proceed to [08-bastion-active-passive.md](08-bastion-active-passive.md)
+2. **For Active-Active Bastion:** Proceed to [07-bastion-active-active.md](07-bastion-active-active.md)
+3. **For FortiAuthenticator HA setup:** See [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md)
+4. **For load balancer setup:** See [06-haproxy-setup.md](06-haproxy-setup.md)
+5. **For detailed HA concepts:** Review [/docs/pam/11-high-availability/README.md](../docs/pam/11-high-availability/README.md)
 
 ---
 
 ## Related Documentation
 
+- [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md) - Per-site FortiAuth HA pair setup
+- [07-bastion-active-active.md](07-bastion-active-active.md) - Active-Active cluster setup
+- [08-bastion-active-passive.md](08-bastion-active-passive.md) - Active-Passive cluster setup
 - [11 - High Availability & Disaster Recovery](../docs/pam/11-high-availability/README.md) - Detailed HA concepts
 - [32 - Load Balancer](../docs/pam/32-load-balancer/README.md) - HAProxy configuration
 - [29 - Disaster Recovery](../docs/pam/29-disaster-recovery/README.md) - DR procedures
@@ -1178,4 +1232,4 @@ After choosing your HA model:
 
 ---
 
-*Document Version: 1.1 | Last Updated: 2026-03-23*
+*Document Version: 2.0 | Last Updated: April 2026*

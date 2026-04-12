@@ -4,6 +4,19 @@
 
 ---
 
+## Document Information
+
+| Property | Value |
+|----------|-------|
+| **Purpose** | Per-site WALLIX RDS configuration for OT RemoteApp access |
+| **VLAN Placement** | DMZ VLAN (10.10.X.0/25) — same VLAN as HAProxy and Bastion |
+| **IP per site** | 10.10.X.30 (RDS server, site-specific) |
+| **Version** | WALLIX Bastion 12.1.x / Windows Server 2022 |
+| **Prerequisites** | [05-site-deployment.md](05-site-deployment.md) |
+| **Last Updated** | April 2026 |
+
+---
+
 ## Table of Contents
 
 1. [Overview](#overview)
@@ -38,9 +51,11 @@ WALLIX RDS (Remote Desktop Service) provides a secure jump host for accessing ta
 |-----------|-------|
 | **Deployment per Site** | 1 WALLIX RDS server |
 | **Total Deployment** | 5 RDS servers (1 per site) |
+| **VLAN Placement** | DMZ VLAN (10.10.X.0/25) — co-located with HAProxy and Bastion |
 | **Operating System** | Windows Server 2022 |
 | **Access Method** | RemoteApp via RDP |
-| **Target Systems** | As defined per deployment requirements |
+| **IP Address** | 10.10.X.30 (replace X with site number 1-5) |
+| **Target Systems** | ~100-200 per site (Windows Server 2022, RHEL 10/9) |
 
 ### Why Jump Host Architecture?
 
@@ -1168,8 +1183,8 @@ Set-RDSessionCollectionConfiguration -CollectionName "Secure Access" `
 
 After completing WALLIX RDS setup:
 
-1. **Configure Licensing**: [09-licensing.md](09-licensing.md) - License pools and integration
-2. **End-to-End Testing**: [10-testing-validation.md](10-testing-validation.md) - Validate full deployment
+1. **Configure Licensing**: [10-licensing.md](10-licensing.md) - License pools and integration
+2. **End-to-End Testing**: [11-testing-validation.md](11-testing-validation.md) - Validate full deployment
 3. **Operational Runbooks**: [/docs/pam/21-operational-runbooks/](../docs/pam/21-operational-runbooks/) - Day-2 operations
 
 ---

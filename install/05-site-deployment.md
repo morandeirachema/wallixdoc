@@ -1,6 +1,6 @@
 # Site Deployment Template
 
-> Per-site deployment guide for replicating WALLIX Bastion infrastructure across 5 datacenter site sites
+> Per-site deployment guide for replicating WALLIX Bastion infrastructure across 5 datacenter sites, including Cyber VLAN (FortiAuthenticator HA, Active Directory) and DMZ VLAN (HAProxy, Bastion, RDS) components
 
 ---
 
@@ -8,73 +8,56 @@
 
 1. [Overview](#overview)
 2. [Site Deployment Phases](#site-deployment-phases)
-3. [Phase 1: Infrastructure Preparation](#phase-1-infrastructure-preparation)
-4. [Phase 2: HAProxy Load Balancer Deployment](#phase-2-haproxy-load-balancer-deployment)
-5. [Phase 3: Bastion Cluster Deployment](#phase-3-bastion-cluster-deployment)
-6. [Phase 4: WALLIX RDS Jump Host](#phase-4-wallix-rds-jump-host)
-7. [Phase 5: Access Manager Integration](#phase-5-access-manager-integration)
-8. [Phase 6: Site Testing](#phase-6-site-testing)
-9. [Site Replication Checklist](#site-replication-checklist)
-10. [Deployment Timeline](#deployment-timeline)
+3. [Phase 0: FortiAuthenticator HA Deployment (Cyber VLAN)](#phase-0-fortiauthenticator-ha-deployment-cyber-vlan)
+4. [Phase 1: AD LDAP Integration (Cyber VLAN)](#phase-1-ad-ldap-integration-cyber-vlan)
+5. [Phase 2: Infrastructure Preparation](#phase-2-infrastructure-preparation)
+6. [Phase 3: HAProxy Load Balancer Deployment](#phase-3-haproxy-load-balancer-deployment)
+7. [Phase 4: Bastion Cluster Deployment](#phase-4-bastion-cluster-deployment)
+8. [Phase 5: WALLIX RDS Jump Host](#phase-5-wallix-rds-jump-host)
+9. [Phase 6: Verify AM Connectivity](#phase-6-verify-am-connectivity)
+10. [Phase 7: Site Testing](#phase-7-site-testing)
+11. [Site Replication Checklist](#site-replication-checklist)
+12. [Deployment Timeline](#deployment-timeline)
 
 ---
 
 ## Overview
 
-This document provides a comprehensive, repeatable template for deploying WALLIX Bastion infrastructure at each of the 5 datacenter site sites. Each site contains identical components configured for local operation while integrating with centralized Access Managers.
+This document provides a comprehensive, repeatable template for deploying WALLIX Bastion infrastructure at each of the 5 datacenter sites. Each site is self-contained with its own FortiAuthenticator HA pair and Active Directory in the Cyber VLAN, and Bastion/HAProxy/RDS in the DMZ VLAN. Sites connect to the client-managed Access Manager via MPLS for SSO and session brokering, but MFA and AD authentication are handled locally.
 
 ### Per-Site Architecture
 
 ```
 +===============================================================================+
-|  PER-SITE DEPLOYMENT ARCHITECTURE                                             |
+|  PER-SITE DEPLOYMENT ARCHITECTURE (DMZ VLAN + CYBER VLAN)                     |
 +===============================================================================+
 |                                                                               |
-|                            External Users / Operators                         |
-|                                       |                                       |
-|                                       v                                       |
-|                          MPLS Network (from Access Managers)                  |
-|                                       |                                       |
-|                                       v                                       |
-|                           +----------------------+                            |
-|                           |  Fortigate Firewall  |                            |
-|                           |  - SSL VPN           |                            |
-|                           |  - RADIUS Proxy      |                            |
-|                           +----------+-----------+                            |
-|                                      |                                        |
-|                                      v                                        |
-|                          HAProxy VIP: 10.10.X.100                             |
-|                                      |                                        |
-|                      +---------------+---------------+                        |
-|                      |                               |                        |
-|              +-------v------+                +-------v------+                 |
-|              |  HAProxy-1   |   Keepalived   |  HAProxy-2   |                 |
-|              |  10.10.X.5   |<-------------->|  10.10.X.6   |                 |
-|              |  (MASTER)    |     VRRP       |  (BACKUP)    |                 |
-|              +--------------+                +--------------+                 |
-|                      |                               |                        |
-|                      +---------------+---------------+                        |
-|                                      |                                        |
-|                      +---------------+---------------+                        |
-|                      |                               |                        |
-|              +-------v------+                +-------v------+                 |
-|              | WALLIX       |  Replication   | WALLIX       |                 |
-|              | Bastion-1    |<-------------->| Bastion-2    |                 |
-|              | 10.10.X.11   |  MariaDB HA    | 10.10.X.12   |                 |
-|              | (Active)     |                | (Active)     |                 |
-|              +--------------+                +--------------+                 |
-|                      |                               |                        |
-|                      +---------------+---------------+                        |
-|                                      |                                        |
-|                                      v                                        |
-|                           +----------------------+                            |
-|                           |  WALLIX RDS          |                            |
-|                           |  10.10.X.30          |                            |
-|                           |  (OT Jump Host)      |                            |
-|                           +----------+-----------+                            |
-|                                      |                                        |
-|                                      v                                        |
-|                           Target Systems (Windows/Linux)                      |
+|  MPLS Network (from Access Manager - client-managed)                          |
+|       |                                                                       |
+|       v                                                                       |
+|  +-------------------------------+                                            |
+|  |  Fortigate Firewall           |  Inter-VLAN routing: DMZ <-> Cyber         |
+|  |  10.10.X.1                   |                                            |
+|  +----------+--------------------+                                            |
+|             |                                                                 |
+|  DMZ VLAN (10.10.X.0/25)        Cyber VLAN (10.10.X.128/25)                  |
+|  +------------------------+      +------------------------------------------+|
+|  | HAProxy VIP: X.100     |      | FortiAuth-1 (Primary)  10.10.X.50        ||
+|  | +-----------+          |      | FortiAuth-2 (Secondary) 10.10.X.51       ||
+|  | | HAProxy-1 |<VRRP>    |      | FortiAuth VIP          10.10.X.52        ||
+|  | | 10.10.X.5 |HAProxy-2 |      |                                          ||
+|  | +-----------+10.10.X.6 | <RADIUS 1812/1813>   FortiAuth -> AD LDAP       ||
+|  |                        |      | Active Directory DC     10.10.X.60        ||
+|  | +----------+----------+|      +------------------------------------------+|
+|  | | Bastion-1 | Bastion-2||                                                  |
+|  | | 10.10.X.11|10.10.X.12||  <-- Bastion -> FortiAuth: RADIUS inter-VLAN    |
+|  | +----------+----------+|      Bastion -> AD: LDAPS inter-VLAN              |
+|  |                        |                                                   |
+|  | WALLIX RDS: 10.10.X.30 |                                                   |
+|  +------------------------+                                                   |
+|       |                                                                       |
+|       v                                                                       |
+|  Target Systems (~100-200 per site): Windows Server 2022, RHEL 10/9           |
 |                                                                               |
 +===============================================================================+
 ```
@@ -83,11 +66,15 @@ This document provides a comprehensive, repeatable template for deploying WALLIX
 
 Each site contains:
 
-| Component | Quantity | Configuration | Purpose |
-|-----------|----------|---------------|---------|
-| **HAProxy** | 2 | Active-Passive with Keepalived VRRP | Load balancing with HA |
-| **WALLIX Bastion** | 2 | Active-Active OR Active-Passive | PAM enforcement and session recording |
-| **WALLIX RDS** | 1 | Standalone | Jump host for OT RemoteApp access |
+| Component | Quantity | VLAN | Configuration | Purpose |
+|-----------|----------|------|---------------|---------|
+| **FortiAuthenticator** | 2 | Cyber | Primary/Secondary HA pair | RADIUS MFA for Bastion |
+| **Active Directory DC** | 1 | Cyber | Standalone DC | LDAP/AD for Bastion and FortiAuth |
+| **HAProxy** | 2 | DMZ | Active-Passive with Keepalived VRRP | Load balancing with HA |
+| **WALLIX Bastion** | 2 | DMZ | Active-Active OR Active-Passive | PAM enforcement and session recording |
+| **WALLIX RDS** | 1 | DMZ | Standalone | Jump host for OT RemoteApp access |
+
+**Scale per site**: ~100-200 target servers; ~25 privileged users
 
 ### Site Locations
 
@@ -116,43 +103,67 @@ Each site contains:
 |  DEPLOYMENT PHASES (PER SITE)                                                 |
 +===============================================================================+
 |                                                                               |
-|  Phase 1: Infrastructure Preparation                                          |
-|  - Network configuration                                                      |
-|  - IP addressing                                                              |
-|  - DNS records                                                                |
-|  - Firewall rules                                                             |
+|  Phase 0: FortiAuthenticator HA Deployment (Cyber VLAN)                       |
+|  - Provision 2x FortiAuth in Cyber VLAN (X.50, X.51)                          |
+|  - Configure Primary/Secondary HA pair                                        |
+|  - Connect to local AD (X.60) for user sync                                   |
+|  - Configure RADIUS clients for Bastion nodes                                 |
+|  Reference: 03-fortiauthenticator-ha.md                                       |
+|  Duration: 2-3 days                                                           |
+|                                                                               |
+|  Phase 1: AD LDAP Integration (Cyber VLAN)                                    |
+|  - Verify/configure AD DC (X.60) in Cyber VLAN                                |
+|  - Create service accounts (svc_wallix_bastion, svc_fortiauth)                |
+|  - Verify inter-VLAN connectivity (DMZ -> Cyber via Fortigate)                |
+|  Reference: 04-ad-per-site.md                                                 |
 |  Duration: 1-2 days                                                           |
 |                                                                               |
-|  Phase 2: HAProxy Load Balancer Deployment                                    |
+|  Phase 2: Infrastructure Preparation (DMZ VLAN)                               |
+|  - Network configuration, IP addressing                                       |
+|  - DNS records for DMZ VLAN components                                        |
+|  - SSL/TLS certificates                                                       |
+|  - Fortigate inter-VLAN firewall rules                                        |
+|  Duration: 1-2 days                                                           |
+|                                                                               |
+|  Phase 3: HAProxy Load Balancer Deployment (DMZ VLAN)                         |
 |  - Install and configure HAProxy-1 and HAProxy-2                              |
 |  - Configure Keepalived VRRP                                                  |
 |  - Test VIP failover                                                          |
+|  Reference: 06-haproxy-setup.md                                               |
 |  Duration: 1-2 days                                                           |
 |                                                                               |
-|  Phase 3: Bastion Cluster Deployment                                          |
+|  Phase 4: Bastion Cluster Deployment (DMZ VLAN)                               |
 |  - Deploy WALLIX Bastion appliances                                           |
 |  - Configure HA (Active-Active OR Active-Passive)                             |
 |  - Configure MariaDB replication                                              |
+|  - Configure RADIUS MFA (FortiAuth X.50/X.51)                                 |
+|  - Configure LDAP/AD (AD DC X.60)                                             |
 |  - Test cluster failover                                                      |
+|  Reference: 07-bastion-active-active.md / 08-bastion-active-passive.md        |
 |  Duration: 1-2 weeks (Site 1), 2-3 days (Sites 2-5)                           |
 |                                                                               |
-|  Phase 4: WALLIX RDS Jump Host                                                |
+|  Phase 5: WALLIX RDS Jump Host (DMZ VLAN)                                     |
 |  - Deploy Windows Server 2022                                                 |
 |  - Install WALLIX RDS software                                                |
 |  - Integrate with Bastion cluster                                             |
+|  Reference: 09-rds-jump-host.md                                               |
 |  Duration: 2-3 days                                                           |
 |                                                                               |
-|  Phase 5: Access Manager Integration                                          |
-|  - Configure SSO (SAML/OIDC)                                                  |
-|  - Configure MFA (FortiAuthenticator)                                         |
-|  - Configure session brokering                                                |
-|  - Register site with Access Managers                                         |
-|  Duration: 2-3 days                                                           |
+|  Phase 6: Verify AM Connectivity (MPLS)                                       |
+|  - Verify MPLS reachability: Bastion <-> Access Manager                       |
+|  - Provide Bastion URLs and API keys to client AM team                        |
+|  - SAML/SSO configured on Bastion side                                        |
+|  - Client AM team registers this site in Access Manager                       |
+|  Note: Full AM integration done once all sites are deployed.                  |
+|  Reference: 15-access-manager-integration.md                                  |
+|  Duration: 1-2 days (coordination with client)                                |
 |                                                                               |
-|  Phase 6: Site Testing                                                        |
-|  - End-to-end authentication testing                                          |
+|  Phase 7: Site Testing                                                        |
+|  - End-to-end authentication testing (FortiAuth RADIUS + AD LDAP)             |
 |  - Session recording validation                                               |
-|  - HA failover testing                                                        |
+|  - FortiAuth HA failover testing                                              |
+|  - Bastion HA failover testing                                                |
+|  - HAProxy HA failover testing                                                |
 |  - Performance benchmarking                                                   |
 |  Duration: 3-5 days                                                           |
 |                                                                               |
@@ -161,9 +172,62 @@ Each site contains:
 
 ---
 
-## Phase 1: Infrastructure Preparation
+## Phase 0: FortiAuthenticator HA Deployment (Cyber VLAN)
 
-### Step 1.1: Network Planning
+Before configuring the DMZ VLAN components, deploy and configure the FortiAuthenticator HA pair in the Cyber VLAN. The Bastion cluster depends on FortiAuth for RADIUS authentication.
+
+**Full procedure**: [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md)
+
+### Summary of Phase 0 Actions
+
+1. Provision FortiAuthenticator-1 at `10.10.X.50` and FortiAuthenticator-2 at `10.10.X.51` in the Cyber VLAN.
+2. Configure HA Primary/Secondary pairing (FortiAuth VIP: `10.10.X.52`).
+3. Connect to local AD DC (`10.10.X.60`) for user synchronization.
+4. Import ~25 privileged users from the `OU=Privileged Users` in AD.
+5. Configure RADIUS clients: `10.10.X.11` (Bastion-1) and `10.10.X.12` (Bastion-2).
+6. Assign FortiToken Mobile licenses and enroll users.
+7. Test RADIUS authentication from a test client.
+
+**Fortigate rules required for Phase 0**:
+
+```
+FortiAuth-1/2 (Cyber) -> AD DC (Cyber): LDAP 389/636 TCP   (same VLAN, no Fortigate routing)
+FortiAuth-1 <-> FortiAuth-2: HTTPS 443 TCP                  (HA sync, same VLAN)
+```
+
+**Deliverable**: FortiAuthenticator HA pair operational, RADIUS responding, users enrolled with FortiToken.
+
+---
+
+## Phase 1: AD LDAP Integration (Cyber VLAN)
+
+The Active Directory domain controller must be reachable from both the Cyber VLAN (for FortiAuth) and the DMZ VLAN (for Bastion). The Fortigate inter-VLAN rules must allow Bastion (DMZ) to reach the AD DC (Cyber).
+
+**Full procedure**: [04-ad-per-site.md](04-ad-per-site.md)
+
+### Summary of Phase 1 Actions
+
+1. Verify AD DC (`10.10.X.60`) is joined to the `company.local` domain.
+2. Create service accounts: `svc_wallix_bastion` and `svc_fortiauth` (read-only LDAP bind).
+3. Create AD groups: `PAM-Admins`, `PAM-Users`, `PAM-Readonly`.
+4. Populate `OU=Privileged Users` with the ~25 site users.
+5. Verify Fortigate inter-VLAN rules allow: Bastion (DMZ) → AD (Cyber) LDAPS 636 TCP.
+6. Test LDAP connectivity from the Bastion nodes (once installed in Phase 4).
+
+**Fortigate rules required for Phase 1**:
+
+```
+Bastion (DMZ) -> AD DC (Cyber): LDAPS 636 TCP    ALLOW
+Bastion (DMZ) -> AD DC (Cyber): LDAP 389 TCP     ALLOW (fallback)
+```
+
+**Deliverable**: AD groups and users ready; service accounts created; inter-VLAN LDAP rules configured.
+
+---
+
+## Phase 2: Infrastructure Preparation
+
+### Step 2.1: Network Planning (formerly Step 1.1)
 
 Prepare site-specific network parameters:
 
@@ -261,21 +325,33 @@ Configure firewall rules for site-internal and external connectivity:
 | Bastion-1 | Bastion-2 | 3307 | TCP | MariaDB replication source |
 | Bastion-1, Bastion-2 | WALLIX RDS | 3389 | TCP | RDP to jump host |
 
-**Outbound from Site:**
+**Outbound from Site (DMZ VLAN to Cyber VLAN - via Fortigate inter-VLAN rules):**
 
 | Source | Destination | Port | Protocol | Purpose |
 |--------|-------------|------|----------|---------|
-| Bastion-1, Bastion-2 | Access Manager | 443 | TCP | SSO callbacks, health checks |
-| Bastion-1, Bastion-2 | FortiAuthenticator | 1812 | UDP | RADIUS authentication |
-| Bastion-1, Bastion-2 | FortiAuthenticator | 1813 | UDP | RADIUS accounting |
-| Bastion-1, Bastion-2 | Active Directory | 389 | TCP | LDAP authentication |
-| Bastion-1, Bastion-2 | Active Directory | 636 | TCP | LDAPS (secure) |
-| Bastion-1, Bastion-2 | Active Directory | 88 | TCP/UDP | Kerberos |
-| Bastion-1, Bastion-2 | NTP Server | 123 | UDP | Time sync |
-| Bastion-1, Bastion-2 | DNS Server | 53 | UDP/TCP | Name resolution |
-| Bastion-1, Bastion-2 | Target Systems | 22 | TCP | SSH to Linux targets |
-| Bastion-1, Bastion-2 | Target Systems | 3389 | TCP | RDP to Windows targets |
-| WALLIX RDS | Target Systems | 3389 | TCP | RDP to OT targets |
+| Bastion-1/2 (DMZ) | FortiAuth-1 (Cyber, X.50) | 1812 | UDP | RADIUS primary MFA |
+| Bastion-1/2 (DMZ) | FortiAuth-1 (Cyber, X.50) | 1813 | UDP | RADIUS primary accounting |
+| Bastion-1/2 (DMZ) | FortiAuth-2 (Cyber, X.51) | 1812 | UDP | RADIUS failover MFA |
+| Bastion-1/2 (DMZ) | FortiAuth-2 (Cyber, X.51) | 1813 | UDP | RADIUS failover accounting |
+| Bastion-1/2 (DMZ) | AD DC (Cyber, X.60) | 636 | TCP | LDAPS user/group lookup |
+| Bastion-1/2 (DMZ) | AD DC (Cyber, X.60) | 389 | TCP | LDAP fallback |
+
+**Outbound from Site (MPLS to Access Manager - client-managed):**
+
+| Source | Destination | Port | Protocol | Purpose |
+|--------|-------------|------|----------|---------|
+| Bastion-1/2 | Access Manager (AM1, AM2) | 443 | TCP | SSO callbacks, health checks |
+
+**Outbound from Site (to Targets):**
+
+| Source | Destination | Port | Protocol | Purpose |
+|--------|-------------|------|----------|---------|
+| Bastion-1/2 | Target Systems (Windows) | 3389 | TCP | RDP |
+| Bastion-1/2 | Target Systems (Linux) | 22 | TCP | SSH |
+| Bastion-1/2 | Target Systems (Windows) | 5985-5986 | TCP | WinRM password rotation |
+| WALLIX RDS | OT Target Systems | 3389 | TCP | RDP RemoteApp |
+| Bastion-1/2 | NTP Server | 123 | UDP | Time sync |
+| Bastion-1/2 | DNS (AD DC, X.60) | 53 | UDP/TCP | Name resolution |
 
 **Test Connectivity:**
 
@@ -334,7 +410,7 @@ cat bastion-site1.crt bastion-site1.key ca-chain.crt > bastion-site1.pem
 
 Deploy and configure 2 HAProxy servers in Active-Passive HA configuration.
 
-**Reference**: See [05-haproxy-setup.md](05-haproxy-setup.md) for complete HAProxy installation and configuration.
+**Reference**: See [06-haproxy-setup.md](06-haproxy-setup.md) for complete HAProxy installation and configuration.
 
 ### Step 2.1: HAProxy Server Preparation
 
@@ -629,8 +705,8 @@ systemctl start haproxy
 Deploy 2 WALLIX Bastion HW appliances in HA configuration.
 
 **Choose HA Model:**
-- **Active-Active**: See [06-bastion-active-active.md](06-bastion-active-active.md)
-- **Active-Passive**: See [07-bastion-active-passive.md](07-bastion-active-passive.md)
+- **Active-Active**: See [07-bastion-active-active.md](07-bastion-active-active.md)
+- **Active-Passive**: See [08-bastion-active-passive.md](08-bastion-active-passive.md)
 
 ### Step 3.1: Initial Appliance Setup
 
@@ -706,7 +782,7 @@ wabadmin reboot
 
 **Option A: Active-Active Configuration**
 
-See [06-bastion-active-active.md](06-bastion-active-active.md) for complete instructions.
+See [07-bastion-active-active.md](07-bastion-active-active.md) for complete instructions.
 
 **Quick Overview:**
 
@@ -718,7 +794,7 @@ See [06-bastion-active-active.md](06-bastion-active-active.md) for complete inst
 
 **Option B: Active-Passive Configuration**
 
-See [07-bastion-active-passive.md](07-bastion-active-passive.md) for complete instructions.
+See [08-bastion-active-passive.md](08-bastion-active-passive.md) for complete instructions.
 
 **Quick Overview:**
 
@@ -805,7 +881,7 @@ wabadmin db-replication-status
 
 Deploy Windows Server 2022 with WALLIX RDS software for OT RemoteApp access.
 
-**Reference**: See [08-rds-jump-host.md](08-rds-jump-host.md) for complete RDS installation and configuration.
+**Reference**: See [09-rds-jump-host.md](09-rds-jump-host.md) for complete RDS installation and configuration.
 
 ### Step 4.1: Deploy Windows Server VM
 
@@ -920,7 +996,7 @@ Test-NetConnection -ComputerName 10.10.1.11 -Port 443
 
 Integrate site with centralized Access Managers for SSO, MFA, and session brokering.
 
-**Reference**: See [03-access-manager-integration.md](03-access-manager-integration.md) for complete integration steps.
+**Reference**: See [15-access-manager-integration.md](15-access-manager-integration.md) for complete integration steps.
 
 ### Step 5.1: Export Bastion SAML Metadata
 
@@ -1354,13 +1430,13 @@ Total Duration: 10 weeks (same, but more resource-intensive)
 | [00-prerequisites.md](00-prerequisites.md) | Hardware, network, licensing requirements |
 | [01-network-design.md](01-network-design.md) | MPLS topology, firewall rules, port matrix |
 | [02-ha-architecture.md](02-ha-architecture.md) | Active-Active vs Active-Passive comparison |
-| [03-access-manager-integration.md](03-access-manager-integration.md) | SSO, MFA, session brokering |
-| [05-haproxy-setup.md](05-haproxy-setup.md) | HAProxy load balancer configuration |
-| [06-bastion-active-active.md](06-bastion-active-active.md) | Active-Active cluster setup |
-| [07-bastion-active-passive.md](07-bastion-active-passive.md) | Active-Passive cluster setup |
-| [08-rds-jump-host.md](08-rds-jump-host.md) | WALLIX RDS deployment |
-| [09-licensing.md](09-licensing.md) | License pool management |
-| [10-testing-validation.md](10-testing-validation.md) | End-to-end testing procedures |
+| [15-access-manager-integration.md](15-access-manager-integration.md) | SSO, MFA, session brokering |
+| [06-haproxy-setup.md](06-haproxy-setup.md) | HAProxy load balancer configuration |
+| [07-bastion-active-active.md](07-bastion-active-active.md) | Active-Active cluster setup |
+| [08-bastion-active-passive.md](08-bastion-active-passive.md) | Active-Passive cluster setup |
+| [09-rds-jump-host.md](09-rds-jump-host.md) | WALLIX RDS deployment |
+| [10-licensing.md](10-licensing.md) | License pool management |
+| [11-testing-validation.md](11-testing-validation.md) | End-to-end testing procedures |
 
 ---
 
@@ -1376,9 +1452,9 @@ Total Duration: 10 weeks (same, but more resource-intensive)
 
 **Next Steps:**
 1. Complete Phase 1 infrastructure preparation for Site 1
-2. Begin HAProxy deployment following [05-haproxy-setup.md](05-haproxy-setup.md)
+2. Begin HAProxy deployment following [06-haproxy-setup.md](06-haproxy-setup.md)
 3. Choose HA architecture from [02-ha-architecture.md](02-ha-architecture.md)
-4. Follow Bastion deployment guide ([06-bastion-active-active.md](06-bastion-active-active.md) or [07-bastion-active-passive.md](07-bastion-active-passive.md))
-5. Deploy RDS following [08-rds-jump-host.md](08-rds-jump-host.md)
-6. Complete Access Manager integration per [03-access-manager-integration.md](03-access-manager-integration.md)
+4. Follow Bastion deployment guide ([07-bastion-active-active.md](07-bastion-active-active.md) or [08-bastion-active-passive.md](08-bastion-active-passive.md))
+5. Deploy RDS following [09-rds-jump-host.md](09-rds-jump-host.md)
+6. Complete Access Manager integration per [15-access-manager-integration.md](15-access-manager-integration.md)
 7. Replicate to Sites 2-5 using this guide as template

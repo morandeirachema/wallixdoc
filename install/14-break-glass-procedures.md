@@ -12,8 +12,8 @@
 | **Classification** | Confidential - Restricted Distribution |
 | **Authorization Required** | CISO or IT Director approval before invocation |
 | **Review Frequency** | Quarterly, or after any break glass invocation |
-| **Version** | 1.0 |
-| **Last Updated** | February 2026 |
+| **Version** | 2.0 |
+| **Last Updated** | April 2026 |
 
 ---
 
@@ -97,7 +97,7 @@ Break glass procedures should **only** be invoked when **all** of the following 
 
 - [ ] Normal authentication channel is confirmed unavailable (not just slow)
 - [ ] The outage affects critical business operations
-- [ ] Standard troubleshooting has been attempted (see [12-contingency-plan.md](12-contingency-plan.md))
+- [ ] Standard troubleshooting has been attempted (see [13-contingency-plan.md](13-contingency-plan.md))
 - [ ] An authorized approver has granted permission
 - [ ] The break glass invocation is logged in the incident tracking system
 
@@ -236,7 +236,9 @@ BREAK GLASS - ACCESS MANAGER DOWN
 
 ### Scenario B: FortiAuthenticator Down
 
-**Condition**: Both FortiAuthenticator nodes are down. MFA challenges fail. SSO and Bastion are operational.
+**Condition**: FortiAuthenticator at a specific site is experiencing failures. MFA (TOTP) challenges fail. SSO and Bastion are operational.
+
+**Important**: Each site has its own FortiAuthenticator HA pair (Primary at 10.10.X.50, Secondary at 10.10.X.51, VIP at 10.10.X.52 in the Cyber VLAN). A single-node failure causes automatic RADIUS failover — this is NOT a break glass scenario. Break glass is only needed when both nodes of a site's FortiAuth pair are confirmed down.
 
 **Break Glass Level**: 2
 **Approver**: Operations Manager
@@ -244,37 +246,47 @@ BREAK GLASS - ACCESS MANAGER DOWN
 **Procedure**:
 
 ```bash
-# Step 1: Confirm FortiAuthenticator is down
-nc -zvu 10.20.0.60 1812  # Primary
-nc -zvu 10.20.0.61 1812  # Secondary
+# Step 1: Identify the affected site (replace X with site number 1-5)
+# Check FortiAuth HA VIP first
+nc -zvu 10.10.X.52 1812   # FortiAuth VIP (should fail if both nodes are down)
+nc -zvu 10.10.X.50 1812   # Primary FortiAuth
+nc -zvu 10.10.X.51 1812   # Secondary FortiAuth
 
-# Step 2: Temporarily disable MFA requirement on each Bastion
-for site in 1 2 3 4 5; do
-  ssh bg-admin@bastion1-site${site}.company.com <<'REMOTE'
-    wabadmin auth configure --mfa-mode disabled
-    echo "MFA disabled on Site ${site}"
+# Step 2: If VIP is down but a node responds, force failover on FortiAuthenticator
+#   Log in to FortiAuthenticator admin console (HTTPS on 10.10.X.50 or .51)
+#   Navigate to: System > High Availability > Failover
+#   This may restore service without break glass
+
+# Step 3: Only if both nodes are confirmed down — temporarily disable MFA
+#   on the AFFECTED SITE ONLY
+ssh bg-admin@bastion1-siteX.company.com <<'REMOTE'
+  wabadmin auth configure --mfa-mode disabled
+  echo "MFA disabled on Site X"
 REMOTE
-done
+# Note: Only disable MFA on the affected site — other sites retain TOTP
 
-# Step 3: Users authenticate with username/password only (no MFA token)
-# SSO may still work if AM is up (without MFA step)
+# Step 4: Users at the affected site authenticate with AD credentials only
+# (no TOTP code required until FortiAuth is restored)
+# SAML SSO login via AM still works (AM coordinates auth policy)
 
-# Step 4: Log the break glass invocation
-echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') BREAK-GLASS-INVOKED level=2 scenario=MFA-down approver=[NAME] operator=[NAME]" \
+# Step 5: Log the break glass invocation
+echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') BREAK-GLASS-INVOKED level=2 scenario=FortiAuth-down site=X approver=[NAME] operator=[NAME]" \
   >> /var/log/break-glass-audit.log
 
-# Step 5: IMPORTANT - Set a time limit for MFA bypass
+# Step 6: IMPORTANT - Set a hard time limit for MFA bypass
 # Schedule re-check in 2 hours:
 echo "wabadmin auth configure --mfa-mode required" | at now + 2 hours
 ```
 
-**Security Note**: With MFA disabled, authentication relies solely on passwords. Monitor for unusual login patterns during this period.
+**Security Note**: With MFA disabled at a site, authentication relies solely on AD passwords for that site. Monitor the affected site's Bastion logs closely for unusual login patterns. Other sites are unaffected and retain TOTP enforcement.
 
 **Validation**:
-- [ ] Users can authenticate without MFA token
-- [ ] SSO flow completes (if AM is up) without MFA step
-- [ ] Session recording is active
-- [ ] MFA bypass is time-limited
+- [ ] Confirmed both FortiAuth nodes (10.10.X.50 and .51) are down before disabling MFA
+- [ ] MFA bypass applied only to the affected site, not all 5 sites
+- [ ] Users at affected site can authenticate with AD credentials only
+- [ ] Other sites retain normal TOTP authentication
+- [ ] Session recording is active at affected site
+- [ ] MFA bypass is time-limited (at job scheduled)
 - [ ] Break glass invocation logged
 
 ---
@@ -303,10 +315,9 @@ ping -c 3 -W 2 10.10.X.6    # HAProxy-2
 # Change: bastion-siteX.company.com → 10.10.X.11
 # Or add: bastion-direct-siteX.company.com → 10.10.X.11
 
-# Step 4: Update Access Manager to use direct Bastion URL
-curl -X PATCH https://am.company.com/api/v1/bastions/bastion-siteX \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{"url": "https://10.10.X.11"}'
+# Step 4: Notify client AM team to update Bastion URL in AM
+#   Client AM team will point bastion-siteX in AM to https://10.10.X.11 (direct)
+#   We do not have API access to client AM — coordinate via phone/ticket
 
 # Step 5: Log the break glass invocation
 echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') BREAK-GLASS-INVOKED level=3 scenario=HAProxy-down site=X approver=[NAME] operator=[NAME]" \
@@ -328,9 +339,9 @@ BREAK GLASS - LOAD BALANCER DOWN AT SITE X
 ```
 
 **Validation**:
-- [ ] Users can connect directly to Bastion IPs
+- [ ] Users can connect directly to Bastion IPs (10.10.X.11 or .12)
 - [ ] SSO authentication works (if AM is up)
-- [ ] Access Manager updated with direct Bastion URL
+- [ ] Client AM team notified to update Bastion URL in AM dashboard
 - [ ] Break glass invocation logged
 
 ---
@@ -349,10 +360,9 @@ BREAK GLASS - LOAD BALANCER DOWN AT SITE X
 ping -c 3 -W 2 10.10.X.11  # Bastion-1
 ping -c 3 -W 2 10.10.X.12  # Bastion-2
 
-# Step 2: Disable site in Access Manager
-curl -X PATCH https://am.company.com/api/v1/bastions/bastion-siteX \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{"enabled": false}'
+# Step 2: Notify client AM team — site X Bastion cluster is down
+#   Client AM team will disable the site in AM and reroute sessions to healthy sites
+#   We do not manage AM — coordinate with client team via phone/ticket
 
 # Step 3: Redirect users to nearest alternative site
 # Site mapping for failover:
@@ -393,8 +403,8 @@ BREAK GLASS - BASTION DOWN AT SITE X
 
 **Validation**:
 - [ ] Users redirected to alternative site successfully
-- [ ] Alternative site has sufficient license capacity
-- [ ] Access Manager routing updated
+- [ ] Alternative site has sufficient license capacity (verify with `wabadmin license status`)
+- [ ] Client AM team notified and routing updated in AM dashboard
 - [ ] Break glass invocation logged
 
 ---
@@ -423,7 +433,7 @@ ping -c 3 -W 2 10.10.X.30   # WALLIX RDS
 #     is unavailable until site is restored
 
 # Step 4: Activate disaster recovery plan
-# See 12-contingency-plan.md, Scenario 15: Full Site Loss
+# See 13-contingency-plan.md, Scenario 15: Full Site Loss
 
 # Step 5: Log the break glass invocation
 echo "$(date -u '+%Y-%m-%dT%H:%M:%SZ') BREAK-GLASS-INVOKED level=4 scenario=full-site-down site=X approver=[NAME] operator=[NAME]" \
@@ -654,12 +664,13 @@ done
 # 3. Revert DNS changes (if made in Scenario C)
 # Restore: bastion-siteX.company.com → 10.10.X.100 (VIP)
 
-# 4. Revert Access Manager URL changes
-curl -X PATCH https://am.company.com/api/v1/bastions/bastion-siteX \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{"url": "https://bastion-siteX.company.com", "enabled": true}'
+# 4. Coordinate with client AM team to revert AM routing changes
+#   - Restore Bastion URL to https://bastion-siteX.company.com (VIP)
+#   - Re-enable any disabled sites in AM dashboard
+#   - Confirm SSO flow is working from all affected sites
 
-# 5. Re-enable disabled sites in Access Manager
+# 5. Verify Bastion health check endpoint is responding (AM uses this)
+curl -sk https://10.10.X.100/healthz && echo "Bastion VIP healthy"
 ```
 
 ### Step 3: Credential Rotation
@@ -775,15 +786,15 @@ Complete within 5 business days:
 
 | Document | Relevance |
 |----------|-----------|
-| [12-contingency-plan.md](12-contingency-plan.md) | Disaster recovery (attempt before break glass) |
-| [03-access-manager-integration.md](03-access-manager-integration.md) | SSO/MFA configuration details |
-| [05-haproxy-setup.md](05-haproxy-setup.md) | HAProxy troubleshooting |
-| [06-bastion-active-active.md](06-bastion-active-active.md) | Bastion cluster recovery |
-| [07-bastion-active-passive.md](07-bastion-active-passive.md) | Bastion cluster recovery |
-| [10-testing-validation.md](10-testing-validation.md) | Post-recovery validation |
+| [13-contingency-plan.md](13-contingency-plan.md) | Disaster recovery (attempt before break glass) |
+| [15-access-manager-integration.md](15-access-manager-integration.md) | SSO/MFA configuration details |
+| [06-haproxy-setup.md](06-haproxy-setup.md) | HAProxy troubleshooting |
+| [07-bastion-active-active.md](07-bastion-active-active.md) | Bastion cluster recovery |
+| [08-bastion-active-passive.md](08-bastion-active-passive.md) | Bastion cluster recovery |
+| [11-testing-validation.md](11-testing-validation.md) | Post-recovery validation |
 | [HOWTO.md](HOWTO.md) | Initial break glass account setup (Phase 3) |
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: February 2026
+**Document Version**: 2.0
+**Last Updated**: April 2026

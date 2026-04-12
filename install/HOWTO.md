@@ -1,6 +1,6 @@
 # WALLIX Bastion - Master Installation Guide
 
-> Step-by-step deployment instructions for 5-site enterprise PAM infrastructure with Access Manager integration
+> Step-by-step deployment instructions for 5-site enterprise PAM infrastructure
 
 ---
 
@@ -9,7 +9,7 @@
 1. [Overview](#overview)
 2. [Deployment Timeline](#deployment-timeline)
 3. [Phase 1: Planning and Prerequisites (Week 1)](#phase-1-planning-and-prerequisites-week-1)
-4. [Phase 2: Access Manager Integration (Week 2)](#phase-2-access-manager-integration-week-2)
+4. [Phase 2: Per-Site FortiAuthenticator HA Setup (Week 2)](#phase-2-per-site-fortiauthenticator-ha-setup-week-2)
 5. [Phase 3: Site 1 Deployment (Weeks 3-4)](#phase-3-site-1-deployment-weeks-3-4)
 6. [Phase 4-7: Sites 2-5 Deployment (Weeks 5-8)](#phase-4-7-sites-2-5-deployment-weeks-5-8)
 7. [Phase 8: Final Integration (Week 9)](#phase-8-final-integration-week-9)
@@ -21,7 +21,7 @@
 
 ## Overview
 
-This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-site WALLIX Bastion infrastructure integrated with 2 WALLIX Access Managers in high availability configuration.
+This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-site WALLIX Bastion infrastructure with per-site FortiAuthenticator HA, per-site Active Directory, and Bastion-side integration with a client-managed Access Manager.
 
 ### Architecture Summary
 
@@ -30,14 +30,12 @@ This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-
 |  DEPLOYMENT ARCHITECTURE                                                      |
 +===============================================================================+
 |                                                                               |
-|  Access Manager Layer (HA):                                                   |
+|  Client-Managed (not deployed by us):                                         |
 |  +-------------------------+          +-------------------------+             |
 |  | Access Manager 1 (DC-A) |  <---->  | Access Manager 2 (DC-B) |             |
-|  | - SSO / MFA             |          | - SSO / MFA             |             |
-|  | - Session Brokering     |          | - Session Brokering     |             |
-|  | - License Pool (500)    |          | - License Pool (500)    |             |
+|  | - SSO / Session Broker  |          | - SSO / Session Broker  |             |
 |  +------------+------------+          +------------+------------+             |
-|               |                                    |                          |
+|               |  MPLS                              |                          |
 |               +------------------------------------+                          |
 |                            MPLS Network                                       |
 |       +----------------+--------+--------+--------+----------------+          |
@@ -47,11 +45,10 @@ This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-
 |  | (DC-1)  |      | (DC-2)  |       | (DC-3)  |  | (DC-4)  |  | (DC-5)  |     |
 |  +---------+      +---------+       +---------+  +---------+  +---------+     |
 |                                                                               |
-|  Each Site:                                                                   |
-|  - 2x HAProxy (Active-Passive)                                                |
-|  - 2x WALLIX Bastion (Active-Active OR Active-Passive)                        |
-|  - 1x WALLIX RDS (Jump host for OT RemoteApp)                                 |
-|  - License Pool Share: 450 sessions across all 5 sites                        |
+|  Each Site (Our Scope):                                                       |
+|  - DMZ VLAN (10.10.X.0/25): 2x HAProxy, 2x Bastion, 1x RDS                  |
+|  - Cyber VLAN (10.10.X.128/25): FortiAuth HA pair + AD DC                    |
+|  - Bastion license: 30 sessions/site, 150 total (5 sites)                    |
 |                                                                               |
 +===============================================================================+
 ```
@@ -61,12 +58,14 @@ This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-
 | Aspect | Details |
 |--------|---------|
 | **Total Sites** | 5 (all in datacenter site buildings) |
-| **Access Managers** | 2 (HA, separate datacenters) |
+| **Access Managers** | 2 (client-managed, separate datacenters — not deployed by us) |
 | **HA Models** | Active-Active OR Active-Passive (per site choice) |
 | **Network** | MPLS connectivity, no direct site-to-site Bastion communication |
 | **Total Duration** | 10 weeks (Site 1: 3-4 weeks, Sites 2-5: 1 week each) |
 | **Total Appliances** | 10 Bastion HW appliances, 10 HAProxy servers, 5 RDS servers |
-| **Licensed Capacity** | 950 concurrent sessions (500 AM + 450 Bastion shared) |
+| **FortiAuthenticator** | Per site: 1x Primary + 1x Secondary HA pair (10 total) |
+| **Active Directory** | Per site: 1x AD DC in Cyber VLAN (5 total) |
+| **Licensed Capacity** | 150 concurrent Bastion sessions (30/site; AM licensing is client-managed) |
 
 ---
 
@@ -77,25 +76,25 @@ This guide provides a comprehensive, step-by-step walkthrough for deploying a 5-
 | Phase | Duration | Components | Key Deliverables |
 |-------|----------|------------|------------------|
 | **Phase 1: Planning** | Week 1 | Prerequisites, network design | Network ready, licenses confirmed |
-| **Phase 2: Access Manager** | Week 2 | SSO, MFA, brokering | Integration tested, APIs documented |
+| **Phase 2: FortiAuth HA** | Week 2 | Per-site FortiAuth HA, AD/LDAP, FortiToken | RADIUS and LDAP integration ready |
 | **Phase 3: Site 1** | Week 3-4 | HAProxy, Bastion HA, RDS | Fully functional site, template created |
 | **Phase 4: Site 2** | Week 5 | Replicate Site 1 | Second site operational |
 | **Phase 5: Site 3** | Week 6 | Replicate Site 1 | Third site operational |
 | **Phase 6: Site 4** | Week 7 | Replicate Site 1 | Fourth site operational |
 | **Phase 7: Site 5** | Week 8 | Replicate Site 1 | All sites deployed |
-| **Phase 8: Integration** | Week 9 | License pooling, testing | Multi-site validated |
+| **Phase 8: Integration** | Week 9 | Testing, AM coordination | Multi-site validated |
 | **Phase 9: Go-Live** | Week 10 | Production cutover | Production operational |
 
 ### Critical Path Dependencies
 
 ```
-Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
-                                                      ↓
-                                           Weeks 5-8 (Sites 2-5 in parallel)
-                                                      ↓
-                                           Week 9 (Final Integration)
-                                                      ↓
-                                           Week 10 (Go-Live)
+Week 1 (Planning) → Week 2 (FortiAuth HA + AD) → Weeks 3-4 (Site 1)
+                                                         ↓
+                                              Weeks 5-8 (Sites 2-5 in parallel)
+                                                         ↓
+                                              Week 9 (Final Integration + AM coord)
+                                                         ↓
+                                              Week 10 (Go-Live)
 ```
 
 **Key Constraint**: Site 1 must be fully operational and tested before replicating to Sites 2-5.
@@ -124,25 +123,32 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 - [ ] 10x WALLIX Bastion HW appliances received, racked, powered
 - [ ] 10x HAProxy servers (VMs or physical) provisioned
 - [ ] 5x Windows Server 2022 (RDS) ready
-- [ ] IPMI/iLO access configured for all appliances
+- [ ] 10x FortiAuthenticator VMs provisioned (2 per site, in Cyber VLAN)
+- [ ] 5x Active Directory DCs provisioned (1 per site, in Cyber VLAN)
+- [ ] IPMI/iLO access configured for all Bastion appliances
 
 # Network readiness
-- [ ] MPLS circuits installed (Access Manager ↔ all sites)
-- [ ] DNS records created (all components)
+- [ ] MPLS circuits installed (all sites interconnected + AM reachable)
+- [ ] DMZ VLAN (10.10.X.0/25) and Cyber VLAN (10.10.X.128/25) configured per site
+- [ ] Fortigate inter-VLAN routing rules configured (DMZ ↔ Cyber)
+- [ ] DNS records created (all components, per-site)
 - [ ] NTP servers configured and reachable
 - [ ] SSL/TLS certificates obtained (wildcard or per-host)
 - [ ] Firewall rules pre-approved
 
 # Licensing
-- [ ] Access Manager license pool confirmed (500 sessions)
-- [ ] Bastion license pool purchased (450 sessions)
+- [ ] Bastion license pool purchased (150 concurrent sessions total, 30/site)
+- [ ] FortiToken Mobile licenses obtained (150 recommended; FTM-ELIC)
 - [ ] License activation keys received
+- [ ] Client AM licensing confirmed with client team (not our scope)
 
 # Security
-- [ ] AD/LDAP service accounts created
-- [ ] FortiAuthenticator RADIUS shared secret obtained
+- [ ] Per-site AD/LDAP service accounts created (DC at 10.10.X.60)
+- [ ] Per-site FortiAuthenticator RADIUS shared secret defined (one per site)
+- [ ] FortiToken Mobile (TOTP) enrollment plan confirmed with security team
 - [ ] Backup storage configured (offsite)
 - [ ] Encryption keys generated
+- [ ] Client AM team contact obtained (for Bastion registration coordination)
 ```
 
 **Deliverable**: Completed prerequisite checklist with sign-off.
@@ -155,24 +161,26 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 
 **Key Decisions**:
 
-1. **IP Address Allocation**
+1. **IP Address Allocation** (per-site VLAN split)
 
    ```
    Site 1 (DC-1):
-   - HAProxy VIP:        10.10.1.100
-   - HAProxy-1:          10.10.1.5
-   - HAProxy-2:          10.10.1.6
-   - Bastion-1:          10.10.1.11
-   - Bastion-2:          10.10.1.12
-   - WALLIX RDS:         10.10.1.30
+   DMZ VLAN (10.10.1.0/25):
+   - HAProxy VIP:          10.10.1.100
+   - HAProxy-1:            10.10.1.5
+   - HAProxy-2:            10.10.1.6
+   - Bastion-1:            10.10.1.11
+   - Bastion-2:            10.10.1.12
+   - WALLIX RDS:           10.10.1.30
+   Cyber VLAN (10.10.1.128/25):
+   - FortiAuth Primary:    10.10.1.50
+   - FortiAuth Secondary:  10.10.1.51
+   - FortiAuth VIP:        10.10.1.52
+   - Active Directory DC:  10.10.1.60
 
    Site 2 (DC-2):
-   - HAProxy VIP:        10.10.2.100
-   - HAProxy-1:          10.10.2.5
-   - HAProxy-2:          10.10.2.6
-   - Bastion-1:          10.10.2.11
-   - Bastion-2:          10.10.2.12
-   - WALLIX RDS:         10.10.2.30
+   DMZ VLAN (10.10.2.0/25): same pattern with .2. prefix
+   Cyber VLAN (10.10.2.128/25): .50/.51/.52/.60
 
    (Pattern repeats for Sites 3-5)
    ```
@@ -185,6 +193,9 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
    bastion1-site1.company.com     A    10.10.1.11
    bastion2-site1.company.com     A    10.10.1.12
    rds-site1.company.com          A    10.10.1.30
+   fortiauth1-site1.company.com   A    10.10.1.50
+   fortiauth2-site1.company.com   A    10.10.1.51
+   dc-site1.company.com           A    10.10.1.60
    ```
 
 3. **Firewall Rules**
@@ -192,10 +203,11 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
    **Reference**: [01-network-design.md](01-network-design.md) for complete port matrix.
 
    **Critical Ports**:
-   - Access Manager → Bastion: TCP 443 (HTTPS API)
-   - Bastion → FortiAuthenticator: UDP 1812/1813 (RADIUS)
+   - Bastion (DMZ) → FortiAuthenticator (Cyber): UDP 1812/1813 (RADIUS) — inter-VLAN via Fortigate
+   - Bastion (DMZ) → Active Directory (Cyber): TCP 389/636 (LDAP/LDAPS) — inter-VLAN via Fortigate
    - HAProxy → Bastion: TCP 443, TCP 3389, TCP 22
    - Users → HAProxy VIP: TCP 443 (Web UI), TCP 22 (SSH), TCP 3389 (RDP)
+   - Bastion → AM (MPLS): TCP 443 (HTTPS health check, SAML) — client provides AM URL
 
 **Deliverable**: Network design document with IP allocations, DNS records, and approved firewall rules.
 
@@ -218,8 +230,8 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 **Recommendation**: While the decision matrix above suggests Active-Active for Site 1 based on expected load, consider starting with **Active-Passive** during initial deployment for simplicity. Convert to Active-Active later once the site is stabilized and the team is comfortable with operations.
 
 **Configuration References**:
-- Active-Active: [06-bastion-active-active.md](06-bastion-active-active.md)
-- Active-Passive: [07-bastion-active-passive.md](07-bastion-active-passive.md)
+- Active-Active: [07-bastion-active-active.md](07-bastion-active-active.md)
+- Active-Passive: [08-bastion-active-passive.md](08-bastion-active-passive.md)
 
 **Deliverable**: HA model selection document with justification per site.
 
@@ -232,8 +244,8 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 1. **Download Software**
 
    ```bash
-   # WALLIX Bastion ISO
-   wget https://download.wallix.com/bastion/12.3/wallix-bastion-12.3.2.iso
+   # WALLIX Bastion ISO (obtain from WALLIX support portal)
+   # https://support.wallix.com — download latest 12.1.x ISO
 
    # HAProxy packages
    apt-get update && apt-get install -y haproxy keepalived
@@ -243,7 +255,7 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 
    ```bash
    # Burn ISO to USB for appliance installation
-   dd if=wallix-bastion-12.3.2.iso of=/dev/sdX bs=4M status=progress
+   dd if=wallix-bastion-12.1.x.iso of=/dev/sdX bs=4M status=progress
    sync
    ```
 
@@ -260,218 +272,186 @@ Week 1 (Planning) → Week 2 (Access Manager) → Weeks 3-4 (Site 1)
 ### Week 1 Deliverables Checklist
 
 - [ ] All prerequisites validated and signed off
-- [ ] Network design documented (IP, DNS, firewall rules)
+- [ ] Network design documented (IP, DNS, firewall rules, both VLANs)
 - [ ] HA model selected per site with justification
 - [ ] Installation environment prepared (software, media, templates)
-- [ ] Access Manager team coordination meeting scheduled for Week 2
+- [ ] FortiAuthenticator licenses and FortiToken Mobile licenses confirmed
+- [ ] Client AM team contact established (for Bastion registration in Week 9)
 
 ---
 
-## Phase 2: Access Manager Integration (Week 2)
+## Phase 2: Per-Site FortiAuthenticator HA Setup (Week 2)
 
 ### Objectives
 
-- Configure Access Manager for session brokering
-- Integrate FortiAuthenticator for MFA
-- Test SSO authentication flow
-- Document API endpoints for Bastion integration
+- Deploy and configure FortiAuthenticator HA pair at Site 1 (template for Sites 2-5)
+- Configure FortiToken Mobile (TOTP) enrollment
+- Configure Active Directory / LDAP integration on FortiAuthenticator
+- Validate RADIUS authentication from a test Bastion client
+- Document per-site FortiAuth configuration as template for Sites 2-5
 
-### Step 2.1: Review Access Manager Architecture
-
-**Action**: Read [03-access-manager-integration.md](03-access-manager-integration.md)
-
-**Coordination with Access Manager Team**:
-
-The Access Manager infrastructure is managed by a separate team. This phase focuses on **Bastion-side integration** only.
-
-**Information to Obtain from Access Manager Team**:
-
-```yaml
-# SSO Configuration
-sso_method: "SAML" | "OIDC" | "LDAP"
-idp_metadata_url: "https://am.company.com/saml/metadata"
-entity_id: "https://am.company.com"
-assertion_consumer_url: "https://bastion-siteX.company.com/auth/sso"
-
-# Session Brokering API
-brokering_api_url: "https://am.company.com/api/v1/sessions"
-api_key: "AM_API_KEY_REDACTED"
-api_secret: "AM_API_SECRET_REDACTED"
-
-# MFA Configuration
-fortiauth_radius_primary: "10.20.0.60"
-fortiauth_radius_secondary: "10.20.0.61"
-radius_shared_secret: "RADIUS_SECRET_REDACTED"
-radius_timeout: 5
-
-# License Integration (Optional)
-license_pool_api: "https://am.company.com/api/v1/licenses"
-license_pool_id: "bastion-pool-450"
-```
-
-**Deliverable**: Integration parameters document from Access Manager team.
+**Reference**: [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md) for detailed FortiAuth HA procedures.
 
 ---
 
-### Step 2.2: Configure SSO Integration
+### Step 2.1: Deploy FortiAuthenticator HA Pair (Site 1)
 
-**Action**: Configure SAML/OIDC on Access Manager side (handled by AM team).
+**Action**: Deploy two FortiAuthenticator VMs in the Site 1 Cyber VLAN.
 
-**Bastion Configuration** (to be applied in Phase 3):
-
-```bash
-# On Bastion (Phase 3), configure SSO provider
-wabadmin sso configure --provider saml \
-  --idp-metadata "https://am.company.com/saml/metadata" \
-  --entity-id "https://bastion-site1.company.com" \
-  --assertion-consumer-url "https://bastion-site1.company.com/auth/sso"
+```
+Site 1 Cyber VLAN (10.10.1.128/25):
+- FortiAuth Primary (FAC-1):   10.10.1.50
+- FortiAuth Secondary (FAC-2): 10.10.1.51
+- FortiAuth Cluster VIP:       10.10.1.52
 ```
 
-**Test Plan**:
-1. Verify metadata exchange between AM and Bastion
-2. Test user login via SSO (redirect to AM, return to Bastion)
-3. Validate user attributes mapping (username, groups, email)
+**Configuration Summary**:
 
-**Deliverable**: SSO configuration tested between AM test environment and pre-prod lab.
+```bash
+# On FAC-1 (Primary):
+# 1. Set hostname, IP, and HA role via web console
+#    System > Network > Interfaces
+#    System > High Availability > HA Configuration
+#    Role: Primary
+#    Cluster IP: 10.10.1.52
+
+# 2. On FAC-2 (Secondary):
+#    System > High Availability > HA Configuration
+#    Role: Secondary
+#    Primary IP: 10.10.1.50
+
+# 3. Verify HA sync
+#    System > High Availability > Status
+#    Expected: both nodes "In sync"
+```
+
+**Deliverable**: FortiAuthenticator HA pair operational at Site 1.
 
 ---
 
-### Step 2.3: Integrate FortiAuthenticator MFA
+### Step 2.2: Configure Active Directory Integration on FortiAuthenticator
 
-**Action**: Configure RADIUS authentication for MFA.
-
-**FortiAuthenticator Configuration** (handled by Security team):
-
-```yaml
-# RADIUS Client Configuration (on FortiAuthenticator)
-client_name: "WALLIX-Bastion-Site1"
-client_ip: "10.10.1.11"  # Bastion-1
-nas_id: "bastion-site1"
-shared_secret: "RADIUS_SECRET_REDACTED"
-token_type: "FortiToken"
-```
-
-**Bastion Configuration** (Phase 3):
+**Action**: Connect FortiAuthenticator to the Site 1 AD DC (10.10.1.60, Cyber VLAN).
 
 ```bash
-# Configure RADIUS authentication
-wabadmin auth configure --method radius \
-  --primary-server 10.20.0.60 \
-  --secondary-server 10.20.0.61 \
-  --shared-secret "RADIUS_SECRET_REDACTED" \
-  --timeout 5 \
-  --retry 3
+# On FortiAuthenticator web console:
+# Authentication > Remote Auth. Servers > LDAP
+
+# LDAP Server Settings:
+Name:        COMPANY-DC-SITE1
+Server:      10.10.1.60
+Port:        636 (LDAPS)
+Base DN:     DC=company,DC=local
+Bind DN:     CN=svc_wallix,OU=Service Accounts,DC=company,DC=local
+Bind Pwd:    [LDAP_PASSWORD]
+User Filter: (objectClass=user)
+
+# Test: Authentication > User Management > Import Remote Users
+# Verify: privileged users visible from AD
 ```
 
-**Test Plan**:
-1. Test RADIUS authentication with FortiToken (push notification)
-2. Test fallback to secondary RADIUS server
-3. Validate MFA for privileged accounts
-4. Test MFA bypass for service accounts (if required)
-
-**Deliverable**: FortiAuthenticator RADIUS integration tested and documented.
+**Deliverable**: FortiAuthenticator LDAP connected to Site 1 AD DC.
 
 ---
 
-### Step 2.4: Configure Session Brokering
+### Step 2.3: Configure FortiToken Mobile (TOTP)
 
-**Action**: Set up session routing between Access Manager and Bastion sites.
-
-**Brokering Logic** (configured on Access Manager):
-
-```yaml
-# Session routing rules (example)
-routing_rules:
-  - name: "Route by AD Site"
-    condition: "user.ad_site == 'Site-1'"
-    target: "bastion-site1.company.com"
-
-  - name: "Route by User Group"
-    condition: "user.groups contains 'IT-Admins'"
-    target: "bastion-site1.company.com"
-
-  - name: "Load Balance"
-    condition: "true"  # Default
-    target: "round_robin([site1, site2, site3, site4, site5])"
-```
-
-**Bastion API Configuration** (Phase 3):
+**Action**: Assign FortiToken Mobile licenses and configure TOTP.
 
 ```bash
-# Register Bastion with Access Manager
-curl -X POST https://am.company.com/api/v1/bastions \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "bastion-site1",
-    "url": "https://bastion-site1.company.com",
-    "api_key": "BASTION_API_KEY",
-    "capacity": 90,
-    "health_check_url": "https://bastion-site1.company.com/health"
-  }'
+# On FortiAuthenticator:
+# System > FortiTokens > FortiToken Mobile
+# Import FTM-ELIC license batch
+
+# Token Settings:
+Token Type:    FortiToken Mobile (software)
+TOTP window:   1 (30-second window, +/-1 window = 90-second tolerance)
+Auth Method:   TOTP only (no push notifications)
+
+# Assign tokens to users:
+# Authentication > User Management > Local Users → [select user] → Token: FortiToken Mobile
+# Send QR code for enrollment to user's authenticator app (Google Authenticator compatible)
 ```
 
-**Test Plan**:
-1. Test session creation via Access Manager API
-2. Verify session routing to correct Bastion site
-3. Test failover when primary site unavailable
-4. Validate session attributes passed from AM to Bastion
+**Security Note**: TOTP only — push authentication is NOT configured. Users must enter the 6-digit TOTP code from their FortiToken Mobile app.
 
-**Deliverable**: Session brokering tested with all 5 sites registered (Sites 2-5 in Phase 4-7).
+**Deliverable**: FortiToken Mobile enrolled for test users at Site 1.
 
 ---
 
-### Step 2.5: Document API Integration
+### Step 2.4: Configure RADIUS Clients on FortiAuthenticator
 
-**Action**: Document all API endpoints and authentication methods.
-
-**API Endpoints Summary**:
-
-| Endpoint | Method | Purpose | Authentication |
-|----------|--------|---------|----------------|
-| `/api/v1/sessions` | POST | Create new session | API Key |
-| `/api/v1/sessions/{id}` | GET | Get session status | API Key |
-| `/api/v1/sessions/{id}` | DELETE | Terminate session | API Key |
-| `/api/v1/bastions` | GET | List registered Bastions | API Key |
-| `/api/v1/licenses/pool` | GET | Check license availability | API Key |
-| `/auth/sso` | POST | SSO authentication | SAML assertion |
-| `/health` | GET | Health check | None (public) |
-
-**Example API Call**:
+**Action**: Register both Bastion nodes as RADIUS clients.
 
 ```bash
-# Create session via Access Manager
-curl -X POST https://am.company.com/api/v1/sessions \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user": "john.doe@company.com",
-    "target": "server01.company.com",
-    "protocol": "ssh",
-    "bastion_hint": "site1"
-  }'
+# On FortiAuthenticator:
+# Authentication > RADIUS Service > Clients
 
-# Response
-{
-  "session_id": "550e8400-e29b-41d4-a716-446655440000",
-  "bastion_url": "https://bastion-site1.company.com",
-  "connection_string": "ssh://john.doe@bastion-site1.company.com:22",
-  "expires_at": "2026-02-05T18:00:00Z"
-}
+# Add RADIUS Client (repeat for each Bastion node):
+Name:          WALLIX-Bastion1-Site1
+Client IP:     10.10.1.11          # Bastion-1, DMZ VLAN
+Shared Secret: SITE1_RADIUS_SECRET  # Site-specific secret
+NAS ID:        bastion-site1
+
+Name:          WALLIX-Bastion2-Site1
+Client IP:     10.10.1.12          # Bastion-2, DMZ VLAN
+Shared Secret: SITE1_RADIUS_SECRET
+NAS ID:        bastion-site1
 ```
 
-**Deliverable**: API integration guide with examples and error codes.
+**Deliverable**: Bastion nodes registered as RADIUS clients on Site 1 FortiAuth.
+
+---
+
+### Step 2.5: Validate RADIUS Authentication
+
+**Action**: Test RADIUS from a test client (pre-prod lab or temporary script).
+
+```bash
+# Test RADIUS with radtest (install: apt-get install freeradius-utils)
+radtest testuser@company.local TOTP_CODE 10.10.1.52 0 SITE1_RADIUS_SECRET
+# Expected: Access-Accept
+
+# Test primary failover: take down FAC-1, verify VIP stays up via FAC-2
+nc -zvu 10.10.1.52 1812   # Should still respond
+```
+
+**Deliverable**: RADIUS authentication validated, HA failover tested.
+
+---
+
+### Step 2.6: Create Per-Site FortiAuth Configuration Template
+
+**Action**: Export and document Site 1 FortiAuth config as template for Sites 2-5.
+
+```bash
+# Export config from FAC-1:
+# System > Dashboard > System Information > [Export Configuration]
+
+# Document per-site variables (change for each site):
+# SITE_ID:           1 (→ 2, 3, 4, 5)
+# FAC_PRIMARY_IP:    10.10.X.50
+# FAC_SECONDARY_IP:  10.10.X.51
+# FAC_VIP:           10.10.X.52
+# AD_DC_IP:          10.10.X.60
+# RADIUS_SECRET:     SITEХ_RADIUS_SECRET
+# BASTION1_IP:       10.10.X.11
+# BASTION2_IP:       10.10.X.12
+```
+
+**Deliverable**: FortiAuth configuration template ready for Sites 2-5 replication.
 
 ---
 
 ### Week 2 Deliverables Checklist
 
-- [ ] SSO integration tested (SAML/OIDC)
-- [ ] FortiAuthenticator RADIUS integration validated
-- [ ] Session brokering API documented and tested
-- [ ] API endpoint reference created
-- [ ] Integration credentials securely stored
-- [ ] Test results documented and approved
+- [ ] FortiAuthenticator HA pair deployed and synced at Site 1
+- [ ] FortiAuthenticator connected to Site 1 AD DC (10.10.1.60)
+- [ ] FortiToken Mobile (TOTP) licenses assigned and enrolled for test users
+- [ ] Bastion nodes registered as RADIUS clients
+- [ ] RADIUS authentication validated (Access-Accept with TOTP code)
+- [ ] FortiAuth HA failover tested (FAC-1 → FAC-2, VIP stays up)
+- [ ] Per-site configuration template documented for Sites 2-5
 
 ---
 
@@ -490,7 +470,7 @@ curl -X POST https://am.company.com/api/v1/sessions \
 
 #### Step 3.1: Deploy HAProxy Load Balancer Pair
 
-**Action**: Follow [05-haproxy-setup.md](05-haproxy-setup.md)
+**Action**: Follow [06-haproxy-setup.md](06-haproxy-setup.md)
 
 **Configuration Summary**:
 
@@ -608,7 +588,7 @@ ping 10.10.1.100
 
 **Option A: Active-Passive (Recommended for Initial Deployment)**
 
-Follow [07-bastion-active-passive.md](07-bastion-active-passive.md)
+Follow [08-bastion-active-passive.md](08-bastion-active-passive.md)
 
 **Summary**:
 
@@ -620,7 +600,7 @@ wabadmin setup --hostname bastion1-site1.company.com \
                --ip 10.10.1.11 \
                --netmask 255.255.255.0 \
                --gateway 10.10.1.1 \
-               --dns 10.20.0.10 \
+               --dns 10.10.1.60 \
                --ntp ntp.company.com
 
 # 2. Configure as primary
@@ -640,7 +620,7 @@ wabadmin setup --hostname bastion2-site1.company.com \
                --ip 10.10.1.12 \
                --netmask 255.255.255.0 \
                --gateway 10.10.1.1 \
-               --dns 10.20.0.10 \
+               --dns 10.10.1.60 \
                --ntp ntp.company.com
 
 # 2. Configure as secondary
@@ -656,9 +636,9 @@ wabadmin ha status
 
 **Option B: Active-Active (For High Load Sites)**
 
-Follow [06-bastion-active-active.md](06-bastion-active-active.md)
+Follow [07-bastion-active-active.md](07-bastion-active-active.md)
 
-**Note**: Active-Active requires `bastion-replication` Master/Master configuration. Refer to the official WALLIX Bastion 12.3.2 deployment guide.
+**Note**: Active-Active requires `bastion-replication` Master/Master configuration. Refer to the official WALLIX Bastion 12.1.x deployment guide.
 
 **Validation**:
 
@@ -683,27 +663,23 @@ wabadmin ha failback
 
 #### Step 3.3: Configure Authentication Integration
 
-**Action**: Integrate with Access Manager SSO and FortiAuthenticator MFA.
+**Action**: Integrate Bastion with per-site FortiAuthenticator (RADIUS) and Active Directory (LDAP/AD). Configure SAML SSO integration with client-managed AM.
 
 ```bash
 # On primary Bastion (Bastion-1)
 
-# 1. Configure SSO (SAML)
-wabadmin sso configure --provider saml \
-  --idp-metadata "https://am.company.com/saml/metadata" \
-  --entity-id "https://bastion-site1.company.com" \
-  --assertion-consumer-url "https://bastion-site1.company.com/auth/sso"
-
-# 2. Configure RADIUS MFA
+# 1. Configure RADIUS MFA (FortiAuthenticator VIP in Site 1 Cyber VLAN)
 wabadmin auth configure --method radius \
-  --primary-server 10.20.0.60 \
-  --secondary-server 10.20.0.61 \
-  --shared-secret "RADIUS_SECRET_REDACTED" \
+  --primary-server 10.10.1.50 \
+  --secondary-server 10.10.1.51 \
+  --shared-secret "SITE1_RADIUS_SECRET" \
   --timeout 5 \
   --retry 3
+# Note: VIP (10.10.1.52) is also an option; using .50/.51 directly ensures
+# both nodes are tried explicitly. Confirm preferred approach with FortiAuth docs.
 
-# 3. Configure LDAP/AD user sync
-wabadmin ldap configure --server ldap.company.com \
+# 2. Configure LDAP/AD user sync (Site 1 AD DC, Cyber VLAN)
+wabadmin ldap configure --server 10.10.1.60 \
   --port 636 \
   --use-ssl \
   --base-dn "DC=company,DC=local" \
@@ -712,25 +688,40 @@ wabadmin ldap configure --server ldap.company.com \
   --user-filter "(objectClass=user)" \
   --sync-interval 300
 
-# 4. Test authentication
-wabadmin auth test --user john.doe@company.com
+# 3. Configure SSO (SAML) integration with client-managed Access Manager
+#    Obtain SAML IdP metadata URL from client AM team
+wabadmin sso configure --provider saml \
+  --idp-metadata "https://am1.client.com/saml/metadata" \
+  --entity-id "https://bastion-site1.company.com" \
+  --assertion-consumer-url "https://bastion-site1.company.com/auth/sso"
+
+# 4. Test RADIUS authentication (TOTP — enter 6-digit code from FortiToken Mobile)
+wabadmin auth test-radius --user john.doe@company.local --token 123456
+
+# 5. Test LDAP connectivity
+wabadmin ldap test --user john.doe@company.local
 ```
 
 **Validation**:
 
 ```bash
-# Test SSO login via web UI
+# Test direct RADIUS authentication (TOTP)
+# Provide AD username + 6-digit TOTP code from FortiToken Mobile app
+wabadmin auth test-radius --user john.doe@company.local --token 123456
+# Expected: Authentication successful (Access-Accept from FortiAuth)
+
+# Test LDAP user sync
+wabadmin ldap sync --dry-run
+
+# Test SSO login via web UI (if AM team has configured Bastion as SAML SP)
 # 1. Open browser: https://bastion-site1.company.com
 # 2. Click "Login with SSO"
-# 3. Redirect to Access Manager
-# 4. Authenticate with AD credentials + FortiToken MFA
+# 3. Redirect to client Access Manager
+# 4. Authenticate with AD credentials + FortiToken TOTP
 # 5. Return to Bastion dashboard
-
-# Test direct RADIUS authentication
-wabadmin auth test-radius --user john.doe@company.com --token 123456
 ```
 
-**Deliverable**: SSO and MFA authentication working end-to-end.
+**Deliverable**: RADIUS MFA (TOTP), LDAP/AD sync, and SAML SSO working end-to-end.
 
 ---
 
@@ -738,7 +729,7 @@ wabadmin auth test-radius --user john.doe@company.com --token 123456
 
 #### Step 3.4: Deploy WALLIX RDS Jump Host
 
-**Action**: Follow [08-rds-jump-host.md](08-rds-jump-host.md)
+**Action**: Follow [09-rds-jump-host.md](09-rds-jump-host.md)
 
 **Configuration Summary**:
 
@@ -787,51 +778,50 @@ rdesktop -u john.doe@bastion-site1.company.com -p - 10.10.1.100:3389
 
 ---
 
-#### Step 3.5: Register Bastion with Access Manager
+#### Step 3.5: Coordinate Bastion Registration with Client AM Team
 
-**Action**: Register Site 1 Bastion with Access Manager for session brokering.
+**Action**: Provide the client AM team with Site 1 Bastion details for registration in their Access Manager. The AM is client-managed — we do not have admin access to it.
 
-```bash
-# From Access Manager (or via API)
-curl -X POST https://am.company.com/api/v1/bastions \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "bastion-site1",
-    "url": "https://bastion-site1.company.com",
-    "api_key": "BASTION1_API_KEY",
-    "api_secret": "BASTION1_API_SECRET",
-    "capacity": 90,
-    "location": "Site 1 DC",
-    "health_check_url": "https://bastion-site1.company.com/health",
-    "health_check_interval": 30
-  }'
+**Information to Provide to Client AM Team**:
 
-# Verify registration
-curl -X GET https://am.company.com/api/v1/bastions/bastion-site1 \
-  -H "Authorization: Bearer AM_API_KEY"
+```yaml
+# Site 1 Bastion registration parameters
+bastion_name:         "bastion-site1"
+bastion_url:          "https://bastion-site1.company.com"
+health_check_url:     "https://bastion-site1.company.com/health"
+health_check_interval: 30   # seconds
+session_capacity:     30    # max concurrent sessions for Site 1
+location:             "Site 1 DC"
+
+# SAML SP metadata URL (for AM to configure Bastion as SAML SP)
+saml_metadata_url:    "https://bastion-site1.company.com/auth/saml/metadata"
 ```
 
-**Validation**:
+**Bastion Health Check Endpoint Verification**:
 
 ```bash
-# Test session brokering
-curl -X POST https://am.company.com/api/v1/sessions \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "user": "john.doe@company.com",
-    "target": "server01.company.com",
-    "protocol": "ssh",
-    "bastion_hint": "site1"
-  }'
+# Verify Bastion health check endpoint responds (AM uses this)
+curl -sk https://bastion-site1.company.com/health
+# Expected: HTTP 200 with JSON status
 
-# Verify session routed to Site 1 Bastion
-# Check session on Bastion
-wabadmin session list --active
+# Verify SAML SP metadata is accessible
+curl -sk https://bastion-site1.company.com/auth/saml/metadata
+# Expected: XML SAML metadata document
 ```
 
-**Deliverable**: Site 1 Bastion registered with Access Manager, session brokering tested.
+**Validation** (after client AM team confirms registration):
+
+```bash
+# Verify SSO redirect works (AM configured Bastion as SAML SP)
+# 1. Open: https://bastion-site1.company.com
+# 2. Click "Login with SSO"
+# 3. Should redirect to client AM login page
+
+# Test authenticated session via SSO
+# (Use a test account configured in client AM)
+```
+
+**Deliverable**: Client AM team has registered Site 1 Bastion, SSO redirect tested.
 
 ---
 
@@ -904,9 +894,9 @@ wabadmin session replay --id <session_id>
 
 ```bash
 # 1. Authentication
-- [ ] SSO login via web UI (redirect to Access Manager)
-- [ ] MFA with FortiToken (push notification)
-- [ ] LDAP user sync (verify user groups)
+- [ ] SSO login via web UI (redirect to client Access Manager)
+- [ ] MFA with FortiToken Mobile (TOTP 6-digit code, 30-second window)
+- [ ] LDAP user sync from Site 1 AD DC (10.10.1.60)
 - [ ] Service account authentication (no MFA)
 
 # 2. Session Management
@@ -934,10 +924,10 @@ wabadmin session replay --id <session_id>
 - [ ] Session recording of RemoteApp session
 - [ ] OT target access via RDS
 
-# 6. Access Manager Integration
-- [ ] Session brokering (AM routes session to Site 1)
-- [ ] API health check (AM polls Bastion health)
-- [ ] License check (verify license consumption)
+# 6. Access Manager Integration (Bastion-side verification only)
+- [ ] AM health check endpoint responds (https://bastion-site1.company.com/health)
+- [ ] SAML SP metadata accessible (https://bastion-site1.company.com/auth/saml/metadata)
+- [ ] SSO redirect works (clicking "Login with SSO" redirects to client AM)
 
 # 7. Audit and Compliance
 - [ ] Audit log generation
@@ -945,7 +935,7 @@ wabadmin session replay --id <session_id>
 - [ ] Compliance report generation (SOC2, ISO27001)
 ```
 
-**Reference**: [10-testing-validation.md](10-testing-validation.md) for detailed test procedures.
+**Reference**: [11-testing-validation.md](11-testing-validation.md) for detailed test procedures.
 
 **Deliverable**: Test results documented with all items passing.
 
@@ -1002,12 +992,13 @@ Total Time: ~8 hours (1 business day)
 
 - [ ] HAProxy HA pair deployed and failover tested
 - [ ] Bastion HA cluster deployed (Active-Passive or Active-Active)
-- [ ] SSO and MFA authentication working
+- [ ] RADIUS MFA (FortiToken TOTP) and LDAP/AD authentication working
+- [ ] SAML SSO integration configured (client AM team to register Bastion in AM)
 - [ ] WALLIX RDS operational with RemoteApp
-- [ ] Site 1 registered with Access Manager
+- [ ] Client AM team provided Site 1 Bastion registration parameters
 - [ ] Target systems configured and accessible
 - [ ] Comprehensive testing completed (100% pass rate)
-- [ ] Deployment template created for Sites 2-5
+- [ ] Deployment template created for Sites 2-5 (including per-site FortiAuth config)
 
 ---
 
@@ -1043,12 +1034,18 @@ Total Time: ~8 hours (1 business day)
 
 ```bash
 # Site 2 (DC-2)
-HAProxy VIP:   10.10.2.100
-HAProxy-1:     10.10.2.5
-HAProxy-2:     10.10.2.6
-Bastion-1:     10.10.2.11
-Bastion-2:     10.10.2.12
-WALLIX RDS:    10.10.2.30
+# DMZ VLAN (10.10.2.0/25)
+HAProxy VIP:        10.10.2.100
+HAProxy-1:          10.10.2.5
+HAProxy-2:          10.10.2.6
+Bastion-1:          10.10.2.11
+Bastion-2:          10.10.2.12
+WALLIX RDS:         10.10.2.30
+# Cyber VLAN (10.10.2.128/25)
+FortiAuth Primary:  10.10.2.50
+FortiAuth Secondary:10.10.2.51
+FortiAuth VIP:      10.10.2.52
+Active Directory:   10.10.2.60
 ```
 
 **DNS Records**:
@@ -1058,6 +1055,9 @@ bastion-site2.company.com      A    10.10.2.100
 bastion1-site2.company.com     A    10.10.2.11
 bastion2-site2.company.com     A    10.10.2.12
 rds-site2.company.com          A    10.10.2.30
+fortiauth1-site2.company.com   A    10.10.2.50
+fortiauth2-site2.company.com   A    10.10.2.51
+dc-site2.company.com           A    10.10.2.60
 ```
 
 **Deployment Steps** (using template):
@@ -1073,30 +1073,30 @@ rds-site2.company.com          A    10.10.2.30
 # - Configure HA cluster
 # - Apply license (from Bastion pool)
 
-# 3. Configure authentication (1 hour)
-# - Import SSO config from Site 1
-# - Configure RADIUS (same FortiAuthenticator)
-# - Configure LDAP sync
+# 3. Deploy per-site FortiAuthenticator HA (45 mins)
+# - Apply Site 2 values to FortiAuth template from Phase 2
+# - FAC Primary: 10.10.2.50, Secondary: 10.10.2.51, VIP: 10.10.2.52
+# - Connect to Site 2 AD DC (10.10.2.60, LDAPS 636)
+# - Register Bastion nodes (10.10.2.11, .12) as RADIUS clients
 
-# 4. Deploy WALLIX RDS (1 hour)
+# 4. Configure Bastion authentication (30 mins)
+# - Import SAML SSO config from Site 1 (update assertion-consumer-url hostname)
+# - Configure RADIUS: primary 10.10.2.50, secondary 10.10.2.51
+# - Configure LDAP: server 10.10.2.60
+
+# 5. Deploy WALLIX RDS (1 hour)
 # - Install Windows Server 2022
 # - Configure RemoteApp
 # - Add as target in Bastion
 
-# 5. Register with Access Manager (30 mins)
-curl -X POST https://am.company.com/api/v1/bastions \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "bastion-site2",
-    "url": "https://bastion-site2.company.com",
-    "api_key": "BASTION2_API_KEY",
-    "api_secret": "BASTION2_API_SECRET",
-    "capacity": 90,
-    "location": "Site 2 DC"
-  }'
+# 6. Coordinate with client AM team (30 mins)
+# - Provide Bastion Site 2 registration parameters
+# - URL: https://bastion-site2.company.com
+# - Health check: https://bastion-site2.company.com/health
+# - SAML metadata: https://bastion-site2.company.com/auth/saml/metadata
+# - Capacity: 30 sessions
 
-# 6. Add target systems (1 hour)
+# 7. Add target systems (1 hour)
 # - Import target list from Site 1 (or create site-specific)
 # - Configure credentials
 # - Grant user authorizations
@@ -1110,20 +1110,23 @@ curl -X POST https://am.company.com/api/v1/bastions \
 **Validation**:
 
 ```bash
-# Test multi-site routing
-# From Access Manager, create session with no bastion_hint
-curl -X POST https://am.company.com/api/v1/sessions \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{
-    "user": "john.doe@company.com",
-    "target": "server02.company.com",
-    "protocol": "ssh"
-  }'
+# Test RADIUS (TOTP) authentication on Site 2 Bastion
+wabadmin auth test-radius --user john.doe@company.local --token 123456
 
-# Verify Access Manager routes session to Site 1 or Site 2 (load balanced)
+# Test LDAP sync from Site 2 AD DC
+wabadmin ldap sync --dry-run
+
+# Test FortiAuth HA failover (Site 2)
+# Take down FAC-1 (10.10.2.50) — verify RADIUS still works via FAC-2
+nc -zvu 10.10.2.52 1812   # VIP should still respond
+
+# Verify Bastion health check (for AM to use)
+curl -sk https://bastion-site2.company.com/health
+
+# Confirm with client AM team that Site 2 Bastion is visible in AM dashboard
 ```
 
-**Deliverable**: Site 2 operational and integrated with Access Manager.
+**Deliverable**: Site 2 operational, FortiAuth HA and AD configured, client AM team provided registration parameters.
 
 ---
 
@@ -1133,11 +1136,11 @@ curl -X POST https://am.company.com/api/v1/sessions \
 
 **IP Allocation Summary**:
 
-| Site | HAProxy VIP | Bastion-1 | Bastion-2 | WALLIX RDS |
-|------|-------------|-----------|-----------|------------|
-| Site 3 | 10.10.3.100 | 10.10.3.11 | 10.10.3.12 | 10.10.3.30 |
-| Site 4 | 10.10.4.100 | 10.10.4.11 | 10.10.4.12 | 10.10.4.30 |
-| Site 5 | 10.10.5.100 | 10.10.5.11 | 10.10.5.12 | 10.10.5.30 |
+| Site | HAProxy VIP | Bastion-1 | Bastion-2 | WALLIX RDS | FortiAuth VIP | AD DC |
+|------|-------------|-----------|-----------|------------|---------------|-------|
+| Site 3 | 10.10.3.100 | 10.10.3.11 | 10.10.3.12 | 10.10.3.30 | 10.10.3.52 | 10.10.3.60 |
+| Site 4 | 10.10.4.100 | 10.10.4.11 | 10.10.4.12 | 10.10.4.30 | 10.10.4.52 | 10.10.4.60 |
+| Site 5 | 10.10.5.100 | 10.10.5.11 | 10.10.5.12 | 10.10.5.30 | 10.10.5.52 | 10.10.5.60 |
 
 **Parallel Deployment** (if resources permit):
 
@@ -1148,29 +1151,35 @@ curl -X POST https://am.company.com/api/v1/sessions \
 # Reduces 4 weeks to 2 weeks
 ```
 
-**Registration with Access Manager**:
+**Coordination with Client AM Team (Sites 3, 4, 5)**:
 
 ```bash
-# Register all sites
-for site in site3 site4 site5; do
-  curl -X POST https://am.company.com/api/v1/bastions \
-    -H "Authorization: Bearer AM_API_KEY" \
-    -H "Content-Type: application/json" \
-    -d "{
-      \"name\": \"bastion-${site}\",
-      \"url\": \"https://bastion-${site}.company.com\",
-      \"api_key\": \"${site^^}_API_KEY\",
-      \"capacity\": 90,
-      \"location\": \"Site ${site#site} DC\"
-    }"
+# Provide the following to client AM team for each site:
+for site in 3 4 5; do
+  echo "--- Site ${site} Bastion registration parameters ---"
+  echo "Name:         bastion-site${site}"
+  echo "URL:          https://bastion-site${site}.company.com"
+  echo "Health check: https://bastion-site${site}.company.com/health"
+  echo "SAML meta:    https://bastion-site${site}.company.com/auth/saml/metadata"
+  echo "Capacity:     30 sessions"
+  echo "Location:     Site ${site} DC"
+  echo ""
 done
 
-# Verify all sites registered
-curl -X GET https://am.company.com/api/v1/bastions \
-  -H "Authorization: Bearer AM_API_KEY"
+# Verify Bastion health check endpoints respond:
+for site in 3 4 5; do
+  echo "Site ${site}:"
+  curl -sk https://bastion-site${site}.company.com/health && echo "OK" || echo "FAIL"
+done
+
+# After client AM team confirms registration, test SSO redirect from each site
+for site in 3 4 5; do
+  echo "Testing SSO redirect Site ${site}..."
+  wabadmin sso status --site bastion-site${site}
+done
 ```
 
-**Deliverable**: Sites 3, 4, 5 operational and integrated with Access Manager.
+**Deliverable**: Sites 3, 4, 5 operational, per-site FortiAuth HA configured, client AM team provided registration parameters.
 
 ---
 
@@ -1180,8 +1189,9 @@ curl -X GET https://am.company.com/api/v1/bastions \
 - [ ] Site 3 deployed and operational (Week 6)
 - [ ] Site 4 deployed and operational (Week 7)
 - [ ] Site 5 deployed and operational (Week 8)
-- [ ] All 5 sites registered with Access Manager
-- [ ] Multi-site session brokering tested
+- [ ] Per-site FortiAuthenticator HA configured and validated at all 5 sites
+- [ ] Per-site AD/LDAP integration validated at all 5 sites
+- [ ] Client AM team provided registration parameters for all 5 sites
 - [ ] Deployment metrics collected (actual vs. estimated time)
 
 ---
@@ -1195,142 +1205,93 @@ curl -X GET https://am.company.com/api/v1/bastions \
 - Conduct comprehensive multi-site testing
 - Performance tuning and optimization
 
-### Step 8.1: Configure License Pooling
+### Step 8.1: Verify License Configuration Per Site
 
-**Action**: Integrate Bastion license pool with Access Manager.
+**Action**: Confirm Bastion license is applied and limits are correct on each site. License management is per-site on each Bastion cluster (not pooled through AM — AM licensing is client-managed).
 
-**Reference**: [09-licensing.md](09-licensing.md)
+**Reference**: [10-licensing.md](10-licensing.md)
 
 **Configuration**:
 
 ```bash
-# On Access Manager
-# Configure Bastion license pool (450 concurrent sessions shared)
+# Verify license on each Bastion site
+for site in 1 2 3 4 5; do
+  echo "Site ${site} license status:"
+  ssh bastion1-site${site}.company.com "wabadmin license status"
+  echo ""
+done
 
-curl -X POST https://am.company.com/api/v1/licenses/pools \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "bastion-pool-450",
-    "type": "shared",
-    "capacity": 450,
-    "bastions": [
-      "bastion-site1",
-      "bastion-site2",
-      "bastion-site3",
-      "bastion-site4",
-      "bastion-site5"
-    ],
-    "allocation_strategy": "dynamic",
-    "warning_threshold": 90
-  }'
+# Expected output per site:
+# License Status: Active
+# Max Concurrent Sessions: 30
+# Currently Used: [N]
+# Available: [30-N]
 
-# On each Bastion, configure license pool client
-wabadmin license configure --pool-mode shared \
-                           --pool-server "https://am.company.com/api/v1/licenses" \
-                           --pool-id "bastion-pool-450" \
-                           --pool-api-key "LICENSE_POOL_API_KEY"
+# Verify alerting threshold is set at 80% (24 of 30)
+# On each Bastion:
+wabadmin monitoring configure --license-alert-threshold 80
 
-# Verify license consumption
-wabadmin license status
-# Output:
-# License Pool: bastion-pool-450
-# Total Capacity: 450
-# Currently Used: 45
-# Available: 405
-# Site 1: 15 sessions
-# Site 2: 10 sessions
-# Site 3: 8 sessions
-# Site 4: 7 sessions
-# Site 5: 5 sessions
+# Confirm total across all sites: 30 x 5 = 150 max concurrent sessions
 ```
 
 **Validation**:
 
 ```bash
-# Test license exhaustion behavior
-# 1. Simulate 450 concurrent sessions
-# 2. Verify new session requests queued or rejected gracefully
-# 3. Verify license release when sessions end
-# 4. Verify alerting at 90% threshold (405 sessions)
+# Test license limit behavior per site
+# Simulate sessions at each site and verify new requests are rejected gracefully at 30
 
-# Check license pool via API
-curl -X GET https://am.company.com/api/v1/licenses/pool/bastion-pool-450 \
-  -H "Authorization: Bearer AM_API_KEY"
+# Verify monitoring alert at 80% (24 sessions) triggers correctly
+wabadmin monitoring test --alert license-threshold
 ```
 
-**Deliverable**: License pooling operational, consumption monitoring configured.
+**Deliverable**: Bastion license limits verified (30/site), monitoring thresholds configured.
 
 ---
 
-### Step 8.2: Optimize Session Brokering
+### Step 8.2: Coordinate Session Brokering Rules with Client AM Team
 
-**Action**: Fine-tune session routing rules for optimal load distribution.
+**Action**: Session brokering rules are configured in the client-managed Access Manager. In this step, we provide the client AM team with the recommended routing parameters based on our Bastion deployment, and verify the brokering works correctly from the Bastion side.
 
-**Brokering Rules**:
+**Information to Provide to Client AM Team**:
 
 ```yaml
-# On Access Manager
-routing_rules:
-  # Rule 1: Route by AD Site attribute
-  - name: "Route by AD Site"
-    priority: 1
-    condition: "user.ad_site == 'Site-1'"
-    target: "bastion-site1.company.com"
-    enabled: true
+# Recommended routing hints for client AM configuration:
 
-  - name: "Route by AD Site"
-    priority: 1
-    condition: "user.ad_site == 'Site-2'"
-    target: "bastion-site2.company.com"
-    enabled: true
+# Route by AD site (users authenticate against their local site AD):
+site1_bastion_url: "https://bastion-site1.company.com"
+site2_bastion_url: "https://bastion-site2.company.com"
+site3_bastion_url: "https://bastion-site3.company.com"
+site4_bastion_url: "https://bastion-site4.company.com"
+site5_bastion_url: "https://bastion-site5.company.com"
 
-  # Rule 2: Route by user group
-  - name: "IT Admins to Site 1"
-    priority: 2
-    condition: "user.groups contains 'IT-Admins'"
-    target: "bastion-site1.company.com"
-    enabled: true
+# Health check endpoints (AM uses these for failover routing):
+bastion_health_check_path: "/health"
+health_check_interval: 30   # seconds
 
-  # Rule 3: OT users via RDS
-  - name: "OT Users to Site 5"
-    priority: 3
-    condition: "user.groups contains 'OT-Operators'"
-    target: "bastion-site5.company.com"
-    enabled: true
+# Session capacity per Bastion site:
+session_capacity_per_site: 30
+total_capacity: 150   # 30 x 5 sites
 
-  # Rule 4: Load balancing (default)
-  - name: "Load Balance"
-    priority: 99
-    condition: "true"
-    target: "weighted_round_robin([
-      {site: 'bastion-site1', weight: 30},
-      {site: 'bastion-site2', weight: 25},
-      {site: 'bastion-site3', weight: 20},
-      {site: 'bastion-site4', weight: 15},
-      {site: 'bastion-site5', weight: 10}
-    ])"
-    enabled: true
-
-  # Rule 5: Failover
-  - name: "Failover to Available Sites"
-    priority: 100
-    condition: "primary_site.health == 'unhealthy'"
-    target: "first_healthy([site1, site2, site3, site4, site5])"
-    enabled: true
+# Failover priority: route to closest available site
 ```
 
-**Validation**:
+**Validation (Bastion-side)**:
 
 ```bash
-# Test routing rules
-# 1. Create sessions for users with different AD sites
-# 2. Verify routing to correct site
-# 3. Test load balancing (create 100 sessions, verify distribution)
-# 4. Test failover (stop Site 1, verify sessions route to other sites)
+# Verify health check endpoints respond at all 5 sites
+for site in 1 2 3 4 5; do
+  echo "Site ${site} health check:"
+  curl -sk https://bastion-site${site}.company.com/health && echo "OK" || echo "FAIL"
+done
+
+# Verify SSO flow works from each site
+for site in 1 2 3 4 5; do
+  echo "Testing SSO Site ${site}..."
+  wabadmin auth test-saml --site bastion-site${site} --provider ClientAccessManager
+done
 ```
 
-**Deliverable**: Session brokering optimized for performance and reliability.
+**Deliverable**: Client AM team provided with routing parameters, SSO validated from all 5 sites.
 
 ---
 
@@ -1338,30 +1299,27 @@ routing_rules:
 
 **Action**: Comprehensive testing across all 5 sites.
 
-**Reference**: [10-testing-validation.md](10-testing-validation.md)
+**Reference**: [11-testing-validation.md](11-testing-validation.md)
 
 **Test Scenarios**:
 
 ```bash
 # 1. Load Testing
-- [ ] 450 concurrent sessions across all 5 sites
+- [ ] 30 concurrent sessions per site (150 total across all 5 sites)
 - [ ] Performance metrics (latency, throughput, CPU, memory)
 - [ ] Session recording performance under load
 
 # 2. Failover Testing
-- [ ] Single site failure (Site 1 down, sessions route to Sites 2-5)
-- [ ] Multiple site failure (Sites 1-2 down, sessions route to Sites 3-5)
-- [ ] Access Manager failover (AM-1 down, AM-2 takes over)
-- [ ] HAProxy failover per site
-- [ ] Bastion cluster failover per site
+- [ ] HAProxy failover per site (VRRP, automatic)
+- [ ] Bastion cluster failover per site (active sessions preserved)
+- [ ] FortiAuthenticator HA failover per site (FAC-1 → FAC-2, RADIUS uninterrupted)
+- [ ] Single site failure (notify client AM team to reroute sessions)
 
 # 3. Integration Testing
-- [ ] SSO across all sites
-- [ ] MFA with FortiAuthenticator
-- [ ] LDAP user sync
-- [ ] Session brokering via Access Manager
-- [ ] License pool consumption
-- [ ] OT access via WALLIX RDS
+- [ ] RADIUS MFA (TOTP) across all 5 sites — per-site FortiAuth VIP
+- [ ] LDAP user sync from per-site AD DC at all 5 sites
+- [ ] SAML SSO from all 5 sites (client AM team to confirm routing)
+- [ ] OT access via WALLIX RDS (all 5 sites)
 
 # 4. Security Testing
 - [ ] TLS certificate validation
@@ -1382,15 +1340,14 @@ routing_rules:
 ```bash
 # Performance SLAs
 - Session connection time: < 3 seconds
-- Failover time: < 60 seconds
+- HAProxy/Bastion failover time: < 60 seconds
+- FortiAuth RADIUS failover time: 0 seconds (automatic VIP)
 - Session recording latency: < 100ms
 - API response time: < 500ms
-- License pool query: < 100ms
 
 # Availability SLAs
-- Site uptime: 99.9% (HA cluster)
-- Access Manager uptime: 99.95% (HA cluster)
-- Multi-site availability: 99.99% (1 site can fail)
+- Single site: 99.9% (HA cluster + FortiAuth HA + HAProxy HA)
+- Multi-site service: 99.99% (5-site redundancy)
 ```
 
 **Deliverable**: Multi-site testing completed with all scenarios passing.
@@ -1431,15 +1388,10 @@ wabadmin api configure --rate-limit 1000 \
                        --burst-limit 2000 \
                        --timeout 30
 
-# 5. Caching (Access Manager)
-# Enable session brokering cache (reduce API calls to Bastions)
-curl -X PATCH https://am.company.com/api/v1/config/cache \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{
-    "enabled": true,
-    "ttl": 300,
-    "max_entries": 10000
-  }'
+# 5. AM Health Check Optimization (coordinate with client AM team)
+# Ask client AM team to verify their health check polling interval
+# Recommended: 30s interval, 3 missed checks before marking site unhealthy
+# Our role: ensure Bastion /health endpoint responds within 2s
 ```
 
 **Deliverable**: Performance optimizations applied, benchmarks documented.
@@ -1448,8 +1400,9 @@ curl -X PATCH https://am.company.com/api/v1/config/cache \
 
 ### Week 9 Deliverables Checklist
 
-- [ ] License pooling configured and validated
-- [ ] Session brokering rules optimized
+- [ ] License limits verified (30/site, 150 total), monitoring thresholds set
+- [ ] Session brokering parameters provided to client AM team
+- [ ] SAML SSO validated from all 5 sites
 - [ ] Multi-site testing completed (100% pass rate)
 - [ ] Performance tuning applied
 - [ ] Monitoring and alerting configured
@@ -1480,11 +1433,11 @@ curl -X PATCH https://am.company.com/api/v1/config/cache \
 - [ ] Access Manager HA cluster operational
 
 # Integration
-- [ ] SSO authentication working (all sites)
-- [ ] MFA with FortiAuthenticator working
-- [ ] LDAP user sync operational
-- [ ] Session brokering via Access Manager working
-- [ ] License pooling operational (450 sessions shared)
+- [ ] SAML SSO authentication working (all 5 sites)
+- [ ] RADIUS MFA (FortiToken TOTP) working at all 5 sites
+- [ ] LDAP user sync operational (per-site AD DC)
+- [ ] Client AM team confirms all 5 Bastions registered and routing correctly
+- [ ] Bastion license limits verified (30/site, 150 total)
 
 # Security
 - [ ] SSL certificates valid (not expiring within 90 days)
@@ -1494,8 +1447,8 @@ curl -X PATCH https://am.company.com/api/v1/config/cache \
 - [ ] Backup strategy tested (restore validated)
 
 # Performance
-- [ ] Load testing passed (450 concurrent sessions)
-- [ ] Failover tested (all scenarios)
+- [ ] Load testing passed (30 concurrent sessions per site, 150 total)
+- [ ] Failover tested (HAProxy, Bastion cluster, FortiAuth HA per site)
 - [ ] Performance metrics within SLAs
 - [ ] Monitoring dashboards operational
 
@@ -1510,7 +1463,7 @@ curl -X PATCH https://am.company.com/api/v1/config/cache \
 **Validation Sign-Off**: Obtain approval from:
 - Infrastructure team
 - Security team
-- Access Manager team
+- Client AM team (confirm all 5 sites visible and routing correctly in AM)
 - Business stakeholders
 
 **Deliverable**: Pre-production validation complete with sign-off.
@@ -1549,7 +1502,7 @@ curl -X PATCH https://am.company.com/api/v1/config/cache \
 | Day 3-5 | Early Adopters | 50 | Pending |
 | Day 6-10 | Full Rollout | All | Pending |
 
-**Emergency Procedures**: Ensure all teams have reviewed [12-contingency-plan.md](12-contingency-plan.md) and [13-break-glass-procedures.md](13-break-glass-procedures.md) before go-live. Break glass accounts must be created, tested, and sealed credentials stored securely.
+**Emergency Procedures**: Ensure all teams have reviewed [13-contingency-plan.md](13-contingency-plan.md) and [14-break-glass-procedures.md](14-break-glass-procedures.md) before go-live. Break glass accounts must be created, tested, and sealed credentials stored securely.
 
 **Rollback Plan**:
 
@@ -1763,8 +1716,9 @@ curl -X PATCH https://am.company.com/api/v1/config/cache \
 | Deployment timeline | 10 weeks | TBD |
 | Budget | $XXX,XXX | TBD |
 | Sites deployed | 5 | 5 |
-| Appliances deployed | 10 | 10 |
-| Licensed capacity | 450 sessions | 450 |
+| Bastion appliances deployed | 10 | 10 |
+| FortiAuthenticator HA pairs | 5 (1 per site) | 5 |
+| Licensed Bastion capacity | 150 sessions (30/site) | 150 |
 | User satisfaction | > 90% | TBD |
 | Uptime (first 30 days) | 99.9% | TBD |
 
@@ -1845,26 +1799,22 @@ curl http://localhost:8404/stats
 haproxy -c -f /etc/haproxy/haproxy.cfg
 ```
 
-### Access Manager Integration
+### Access Manager Integration (Bastion-side only)
 
 ```bash
-# Register Bastion
-curl -X POST https://am.company.com/api/v1/bastions \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{"name": "bastion-site1", "url": "https://bastion-site1.company.com"}'
+# Verify Bastion health check endpoint (AM polls this)
+curl -sk https://bastion-site1.company.com/health
 
-# Check Bastion Health
-curl -X GET https://am.company.com/api/v1/bastions/bastion-site1/health \
-  -H "Authorization: Bearer AM_API_KEY"
+# Check SSO/SAML status
+wabadmin sso status
 
-# Create Session via Access Manager
-curl -X POST https://am.company.com/api/v1/sessions \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{"user": "john.doe", "target": "server01", "protocol": "ssh"}'
+# Verify SAML SP metadata is accessible
+curl -sk https://bastion-site1.company.com/auth/saml/metadata | head -5
 
-# Check License Pool
-curl -X GET https://am.company.com/api/v1/licenses/pool/bastion-pool-450 \
-  -H "Authorization: Bearer AM_API_KEY"
+# Test SAML authentication
+wabadmin auth test-saml --provider ClientAccessManager --user testuser
+
+# Note: AM registration and session brokering management is done by client AM team
 ```
 
 ### Monitoring and Diagnostics
@@ -1925,7 +1875,7 @@ systemctl restart keepalived
 iptables -I INPUT -p vrrp -j ACCEPT
 ```
 
-**Reference**: [05-haproxy-setup.md](05-haproxy-setup.md#troubleshooting)
+**Reference**: [06-haproxy-setup.md](06-haproxy-setup.md#troubleshooting)
 
 ---
 
@@ -1959,7 +1909,7 @@ sudo bastion-replication --start
 sudo bastion-replication --monitoring
 ```
 
-**Reference**: [07-bastion-active-passive.md](07-bastion-active-passive.md#split-brain-recovery)
+**Reference**: [08-bastion-active-passive.md](08-bastion-active-passive.md#split-brain-recovery)
 
 ---
 
@@ -1996,7 +1946,7 @@ openssl s_client -connect am.company.com:443 -showcerts
 # Browser: https://bastion-site1.company.com/auth/sso
 ```
 
-**Reference**: [03-access-manager-integration.md](03-access-manager-integration.md#sso-troubleshooting)
+**Reference**: [15-access-manager-integration.md](15-access-manager-integration.md#sso-troubleshooting)
 
 ---
 
@@ -2004,22 +1954,24 @@ openssl s_client -connect am.company.com:443 -showcerts
 
 **Symptoms**:
 - MFA authentication fails with timeout
-- FortiToken push notifications not received
+- TOTP authentication (6-digit code) is rejected
+- Bastion logs show RADIUS connection refused or timeout
+
+**Note**: Each site has its own FortiAuthenticator HA pair (Primary at 10.10.X.50, Secondary at 10.10.X.51, VIP at 10.10.X.52). Replace X with the affected site number.
 
 **Diagnosis**:
 
 ```bash
-# Test RADIUS connectivity
-wabadmin auth test-radius --user john.doe --token 123456
+# Test RADIUS connectivity to per-site FortiAuth VIP
+wabadmin auth test-radius --user john.doe@company.local --token 123456
 
-# Check FortiAuthenticator logs
-# (on FortiAuthenticator)
-diag debug application radiusd -1
-diag debug enable
+# Check RADIUS port reachability (inter-VLAN via Fortigate)
+nc -zvu 10.10.X.52 1812   # FortiAuth VIP
+nc -zvu 10.10.X.50 1812   # Primary
+nc -zvu 10.10.X.51 1812   # Secondary
 
-# Check network connectivity
-nc -zvu 10.20.0.60 1812
-nc -zvu 10.20.0.60 1813
+# Check FortiAuthenticator logs (on FortiAuthenticator admin console)
+# Log & Report > Log Access > Local Logs → filter by RADIUS
 ```
 
 **Resolution**:
@@ -2028,14 +1980,18 @@ nc -zvu 10.20.0.60 1813
 # Increase RADIUS timeout
 wabadmin auth configure --method radius --timeout 10
 
-# Test with secondary RADIUS server
-wabadmin auth configure --method radius --primary-server 10.20.0.61
+# If VIP is down but secondary is up, test directly
+nc -zvu 10.10.X.51 1812
+wabadmin auth configure --method radius --primary-server 10.10.X.51
 
-# Verify shared secret
-wabadmin auth test-radius --user john.doe --debug
+# Verify shared secret matches FortiAuth configuration
+wabadmin auth test-radius --user john.doe@company.local --debug
+
+# Check Fortigate inter-VLAN policy (DMZ → Cyber, UDP 1812/1813)
+# Verify no firewall rule is blocking Bastion → FortiAuth traffic
 ```
 
-**Reference**: [03-access-manager-integration.md](03-access-manager-integration.md#radius-troubleshooting)
+**Reference**: [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md)
 
 ---
 
@@ -2084,32 +2040,32 @@ wabadmin recording cleanup --older-than 90
 **Diagnosis**:
 
 ```bash
-# Check license status
+# Check license status on affected site
 wabadmin license status
-
-# Check license pool via Access Manager
-curl -X GET https://am.company.com/api/v1/licenses/pool/bastion-pool-450 \
-  -H "Authorization: Bearer AM_API_KEY"
+# Expected max: 30 concurrent sessions per site
 
 # List active sessions
 wabadmin session list --active --count
+
+# Check across all sites
+for site in 1 2 3 4 5; do
+  echo "Site ${site}:"
+  ssh bastion1-site${site}.company.com "wabadmin license status" 2>/dev/null || echo "UNREACHABLE"
+done
 ```
 
 **Resolution**:
 
 ```bash
-# Terminate idle sessions
-wabadmin session cleanup --idle-timeout 3600
+# Terminate idle sessions (free up licenses)
+wabadmin session cleanup --idle-timeout 1800
 
-# Increase license pool (requires purchase)
-# Contact WALLIX licensing team
-
-# Temporary: Increase warning threshold
-curl -X PATCH https://am.company.com/api/v1/licenses/pools/bastion-pool-450 \
-  -d '{"warning_threshold": 95}'
+# If genuine capacity issue, request emergency license increase
+# Contact WALLIX licensing: support@wallix.com
+# Reference: Bastion license (150 concurrent sessions, 30/site)
 ```
 
-**Reference**: [09-licensing.md](09-licensing.md#license-pool-exhaustion)
+**Reference**: [10-licensing.md](10-licensing.md#license-pool-exhaustion)
 
 ---
 
@@ -2117,8 +2073,8 @@ curl -X PATCH https://am.company.com/api/v1/licenses/pools/bastion-pool-450 \
 
 For comprehensive recovery procedures and emergency access when normal channels are unavailable:
 
-- **Disaster Recovery**: [12-contingency-plan.md](12-contingency-plan.md) - Failure scenarios, backup strategy, recovery procedures
-- **Break Glass Access**: [13-break-glass-procedures.md](13-break-glass-procedures.md) - Emergency access when SSO, MFA, or PAM is down
+- **Disaster Recovery**: [13-contingency-plan.md](13-contingency-plan.md) - Failure scenarios, backup strategy, recovery procedures
+- **Break Glass Access**: [14-break-glass-procedures.md](14-break-glass-procedures.md) - Emergency access when SSO, MFA, or PAM is down
 
 ---
 
@@ -2159,8 +2115,8 @@ For comprehensive recovery procedures and emergency access when normal channels 
 | **Installation Guides** | [/install/](../install/) |
 | **Pre-Production Lab** | [/pre/](../pre/) |
 | **Automation Examples** | [/examples/](../examples/) |
-| **Architecture Diagrams** | [11-architecture-diagrams.md](11-architecture-diagrams.md) |
-| **Testing Procedures** | [10-testing-validation.md](10-testing-validation.md) |
+| **Architecture Diagrams** | [12-architecture-diagrams.md](12-architecture-diagrams.md) |
+| **Testing Procedures** | [11-testing-validation.md](11-testing-validation.md) |
 
 ---
 

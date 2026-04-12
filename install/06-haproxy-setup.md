@@ -1,4 +1,4 @@
-# 05 - HAProxy Load Balancer Setup
+# 06 - HAProxy Load Balancer Setup
 
 ## Table of Contents
 
@@ -21,6 +21,8 @@
 ## Executive Summary
 
 This document provides comprehensive instructions for deploying and configuring HAProxy load balancers in high availability configuration for WALLIX Bastion sites. Each site requires **2 HAProxy servers** operating in **Active-Passive** mode with Keepalived VRRP for automatic failover.
+
+> **VLAN placement**: HAProxy servers are deployed in the **DMZ VLAN** (10.10.X.0/25). They are NOT in the Cyber VLAN. The Fortigate provides inter-VLAN routing between the DMZ VLAN (HAProxy, Bastion, RDS) and Cyber VLAN (FortiAuth, AD).
 
 ### Quick Overview
 
@@ -2298,8 +2300,8 @@ systemctl restart haproxy keepalived
 - [00-prerequisites.md](00-prerequisites.md) - Hardware and software requirements
 - [01-network-design.md](01-network-design.md) - Network topology and firewall rules
 - [02-ha-architecture.md](02-ha-architecture.md) - HA architecture comparison (Active-Active vs Active-Passive)
-- [06-bastion-active-active.md](06-bastion-active-active.md) - WALLIX Bastion Active-Active cluster setup
-- [07-bastion-active-passive.md](07-bastion-active-passive.md) - WALLIX Bastion Active-Passive cluster setup
+- [07-bastion-active-active.md](07-bastion-active-active.md) - WALLIX Bastion Active-Active cluster setup
+- [08-bastion-active-passive.md](08-bastion-active-passive.md) - WALLIX Bastion Active-Passive cluster setup
 
 ### External Resources
 
@@ -2311,9 +2313,9 @@ systemctl restart haproxy keepalived
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: February 2026
+**Document Version**: 2.0
+**Last Updated**: April 2026
 **Validated By**: Network Engineering Team
 **Approval Status**: Pending Production Deployment
 
-**Next Steps**: Proceed to [06-bastion-active-active.md](06-bastion-active-active.md) or [07-bastion-active-passive.md](07-bastion-active-passive.md) for WALLIX Bastion cluster configuration.
+**Next Steps**: Proceed to [07-bastion-active-active.md](07-bastion-active-active.md) or [08-bastion-active-passive.md](08-bastion-active-passive.md) for WALLIX Bastion cluster configuration.

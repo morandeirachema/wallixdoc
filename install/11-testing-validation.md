@@ -1,6 +1,6 @@
 # Testing and Validation - 5-Site Multi-Datacenter Deployment
 
-> Comprehensive testing procedures for validating WALLIX Bastion deployment across 5 sites with Access Manager integration
+> Comprehensive testing procedures for validating WALLIX Bastion deployment across 5 sites
 
 ---
 
@@ -9,10 +9,11 @@
 | Property | Value |
 |----------|-------|
 | **Purpose** | End-to-end testing and validation procedures |
-| **Scope** | 5 Bastion sites + 2 Access Managers + FortiAuthenticator |
+| **Scope** | 5 Bastion sites + per-site FortiAuthenticator HA + per-site AD |
+| **AM Testing** | Bastion-side connectivity only — AM itself is tested by client team |
 | **Timeline** | Phase 8-9 testing (Week 9 of deployment) |
-| **Version** | WALLIX Bastion 12.3.2 |
-| **Last Updated** | February 2026 |
+| **Version** | WALLIX Bastion 12.1.x |
+| **Last Updated** | April 2026 |
 
 ---
 
@@ -79,23 +80,25 @@
 Testing Scope:
 ==============
 
-Sites:
-- Site 1 (DC-1): 2x Bastion + 2x HAProxy + 1x RDS
-- Site 2 (DC-2): 2x Bastion + 2x HAProxy + 1x RDS
-- Site 3 (DC-3): 2x Bastion + 2x HAProxy + 1x RDS
-- Site 4 (DC-4): 2x Bastion + 2x HAProxy + 1x RDS
-- Site 5 (DC-5): 2x Bastion + 2x HAProxy + 1x RDS
+Per-Site Components (5 sites):
+- Site 1 (DC-1): 2x Bastion (HA) + 2x HAProxy (HA) + 1x RDS (DMZ VLAN)
+                 + 2x FortiAuthenticator (HA Primary/Secondary, Cyber VLAN)
+                 + 1x Active Directory DC (Cyber VLAN)
+- Site 2 (DC-2): same architecture as Site 1
+- Site 3 (DC-3): same architecture as Site 1
+- Site 4 (DC-4): same architecture as Site 1
+- Site 5 (DC-5): same architecture as Site 1
 
-Shared Infrastructure:
-- 2x Access Manager (DC-A, DC-B) in HA
-- 2x FortiAuthenticator (Primary, Secondary)
-- Active Directory (2x domain controllers)
-- MPLS network connectivity
+Client-Managed (NOT our scope to test):
+- 2x Access Manager (HA pair, client's team manages and tests)
 
-Target Systems:
-- 5x Windows Server 2022 (RDP targets)
-- 5x RHEL 10 (SSH targets)
-- 3x RHEL 9 (SSH legacy targets)
+MPLS:
+- Inter-site connectivity via MPLS (tested jointly with network team)
+
+Target Systems per site (~100-200 total, representative sample for testing):
+- 2x Windows Server 2022 (RDP targets)
+- 2x RHEL 10 (SSH targets)
+- 1x RHEL 9 (SSH legacy target)
 ```
 
 ---
@@ -392,107 +395,144 @@ wabadmin sessions --active | grep rds
 - [ ] OT targets reachable via RDS
 - [ ] Sessions recorded and audited
 
-### 1.4 Access Manager Testing
+### 1.4 Access Manager Integration Verification (Bastion Side Only)
 
-#### Test 1.4.1: Access Manager HA Status
+> The Access Manager is installed and tested by the client team. Our scope here is
+> verifying that the Bastion-side integration (SAML SP, health check endpoint, API key)
+> is correctly configured and reachable.
+
+#### Test 1.4.1: Bastion Health Check Endpoint Accessible from AM
 
 ```bash
-# Check AM HA status (coordinated with AM team)
-ssh admin@accessmanager-1.company.com
+# Verify health check endpoint is accessible (client AM team runs this from AM)
+# Test locally to confirm endpoint exists before handoff to client
+curl -k https://bastion-site1.company.com/health
+# Expected: {"status": "ok", "version": "12.1.x", "sessions_active": 0}
 
-# Check Access Manager service
-systemctl status wallix-access-manager
-# Expected: active (running)
-
-# Check HA replication status
-wab-am ha-status
-# Expected: Primary: AM1, Standby: AM2, Replication: Active
+# Test on all 5 sites
+for site in 1 2 3 4 5; do
+  echo "Site $site:"
+  curl -sk https://bastion-site${site}.company.com/health
+done
 ```
 
 **Expected Results:**
-- [ ] Access Manager service running on both nodes
-- [ ] HA pair synchronized and healthy
-- [ ] Replication active between AM nodes
-- [ ] Session broker active
+- [ ] Health check endpoint returns HTTP 200 on all 5 sites
+- [ ] Response includes status, version, and session count
 
-#### Test 1.4.2: Access Manager Session Brokering
+#### Test 1.4.2: SAML SP Metadata Accessible
 
 ```bash
-# Test session routing to Bastion sites
-# From Access Manager admin console:
+# Verify SAML SP metadata endpoint (AM team uses this to configure IdP side)
+curl -k https://bastion-site1.company.com/auth/saml/metadata
+# Expected: XML document with SP metadata (EntityDescriptor)
 
-# Check Bastion site health
-wab-am sites --status
-# Expected:
-# Site1: Healthy (15% load)
-# Site2: Healthy (25% load)
-# Site3: Healthy (30% load)
-# Site4: Healthy (20% load)
-# Site5: Healthy (10% load)
-
-# Test routing decision
-wab-am route-test --user "jsmith" --target "prod-db-01.company.com"
-# Expected: Routes to optimal site (lowest load, healthy)
+# Verify CA certificate imported and AM HTTPS trusted
+curl --cacert /etc/ssl/certs/am-ca.crt https://am1.client.com/health
+# Expected: HTTP 200 without certificate error
 ```
 
 **Expected Results:**
-- [ ] All Bastion sites registered with AM
-- [ ] Health checks successful for all sites
-- [ ] Routing policy working correctly
-- [ ] Failover to alternate sites functional
+- [ ] SAML SP metadata accessible on all 5 sites
+- [ ] AM CA certificate trusted on each Bastion node
+- [ ] SAML IdP configured on each Bastion site
 
-### 1.5 FortiAuthenticator Testing
-
-#### Test 1.5.1: FortiAuth RADIUS Service
+#### Test 1.4.3: SSO Login via AM (Joint Test with Client Team)
 
 ```bash
-# Test RADIUS authentication (coordinated with Security team)
-ssh admin@fortiauth.company.com
+# Coordinate with client AM team for this test
+# 1. Open browser: https://bastion-site1.company.com
+# 2. Click "Login with SSO"
+# 3. Browser redirects to AM SSO URL
+# 4. Authenticate with AD credentials + FortiToken MFA
+# 5. AM redirects back to Bastion with SAML assertion
+# 6. Bastion grants access and shows dashboard
+
+# Verify SAML authentication logged on Bastion
+wabadmin audit --last 10 | grep -i saml
+# Expected: SAML authentication event logged
+```
+
+**Expected Results:**
+- [ ] SSO login redirects to AM login page
+- [ ] Successful SAML assertion returns to Bastion
+- [ ] User receives correct Bastion access profile
+- [ ] Authentication event logged in Bastion audit
+
+### 1.5 FortiAuthenticator Testing (Per Site)
+
+#### Test 1.5.1: FortiAuth RADIUS Service (Per Site)
+
+Run this test on each site's FortiAuthenticator HA pair. Replace X with site number (1-5).
+
+```bash
+# Test RADIUS service on FortiAuth-1 (Primary, Cyber VLAN)
+ssh admin@10.10.X.50  # FortiAuth-1
 
 # Check RADIUS service status
 diagnose debug application radiusd -1
 # Expected: RADIUS daemon running
 
-# Test RADIUS authentication for test user
+# Test RADIUS authentication for test user (TOTP-only flow)
 radtest testuser TestP@ss123 localhost 0 sharedsecret
-# Expected: Access-Accept (or Access-Challenge for MFA)
+# Expected: Access-Challenge (TOTP prompt) — TOTP is the only MFA method
 
-# Check RADIUS accounting
-tail -f /var/log/radius/radacct/accessmanager-1/detail
-# Expected: Accounting records logged
+# Check RADIUS accounting records from Bastion
+tail -f /var/log/radius/radacct/bastion-site-X/detail
+# Expected: Accounting records logged from Bastion RADIUS clients
 ```
 
-**Expected Results:**
-- [ ] RADIUS service running on primary and secondary
-- [ ] RADIUS clients (Access Managers) configured
-- [ ] Test authentication successful
-- [ ] Accounting logs generated
+**Expected Results (per site):**
+- [ ] RADIUS service running on Primary (10.10.X.50) and Secondary (10.10.X.51)
+- [ ] Bastion registered as a RADIUS client on FortiAuth
+- [ ] RADIUS Access-Challenge returned for test user (TOTP flow)
+- [ ] Accounting logs generated for authentication events
 
-#### Test 1.5.2: FortiToken MFA
+#### Test 1.5.2: FortiToken TOTP Authentication
+
+FortiToken Mobile is configured for TOTP (time-based one-time password), not push notifications.
 
 ```bash
-# Test FortiToken push notification
-# Login to FortiAuthenticator web UI
-https://fortiauth.company.com
+# Test FortiToken TOTP authentication
+# Login to FortiAuthenticator web UI (Cyber VLAN)
+# https://10.10.X.52  (VIP for per-site FortiAuth HA)
 
 # Navigate to: Authentication > Test Authentication
 
 # Test user:
 Username: jsmith
-Password: [User's AD password]
+Password: [User's AD password + TOTP code]
+# Format: <ADpassword><6-digit TOTP>
 
-# Expected: Push notification sent to user's mobile device
+# Expected: RADIUS Access-Accept returned
 
-# User approves on FortiToken Mobile app
-
-# Expected: Authentication successful, Access-Accept returned
+# Verify in FortiAuth logs
+# Authentication > Authentication Log
+# Expected: jsmith — TOTP authenticated — ACCEPT
 ```
 
 **Expected Results:**
-- [ ] FortiToken push notifications delivered
-- [ ] Users can approve/deny MFA challenges
-- [ ] Timeout after 60 seconds if not approved
-- [ ] Fallback to OTP code functional
+- [ ] TOTP authentication succeeds for enrolled test user
+- [ ] Authentication fails for incorrect TOTP code
+- [ ] Timeout after 30-second TOTP window (TOTP rotation)
+- [ ] Authentication events logged in FortiAuth
+
+#### Test 1.5.3: FortiAuth AD/LDAP Integration
+
+```bash
+# Verify FortiAuth can authenticate users against per-site AD (Cyber VLAN)
+# FortiAuth admin panel: Authentication > LDAP > Test
+
+# LDAP server: 10.10.X.60 (AD DC, Cyber VLAN)
+# Test user: svc_fortiauth (service account bound to LDAP)
+
+# Expected: LDAP bind successful, user group memberships returned
+```
+
+**Expected Results:**
+- [ ] FortiAuth LDAP bind to 10.10.X.60 successful on all 5 sites
+- [ ] User groups correctly retrieved from AD
+- [ ] User authentication falls through to LDAP correctly
 
 ---
 
@@ -500,90 +540,62 @@ Password: [User's AD password]
 
 ### 2.1 SSO Integration Testing
 
-#### Test 2.1.1: SAML Authentication Flow
+#### Test 2.1.1: SAML Authentication Flow (Bastion → AM)
+
+This test requires the client AM team to participate. The Bastion acts as SAML SP; the AM acts as IdP.
 
 ```bash
-# Test SAML SSO from user perspective
+# Test SAML SSO from user perspective (coordinate with client AM team)
 
 # 1. Access Bastion portal
 curl -v https://bastion-site1.company.com/login
-# Expected: HTTP 302 redirect to Access Manager
+# Expected: HTTP 302 redirect to AM SSO URL
 
-# 2. Follow redirect to Access Manager
-# Expected: SAML authentication request received
+# 2. Follow redirect to AM SSO
+# Expected: AM login page displayed
 
-# 3. Simulate user login
-# Expected: Redirect to FortiAuthenticator for MFA
+# 3. User enters AD credentials + TOTP (FortiToken)
+# Expected: AM verifies credentials and MFA
 
-# 4. Complete MFA challenge
-# Expected: SAML assertion issued by Access Manager
+# 4. AM issues SAML assertion and redirects to Bastion ACS
+# Expected: Bastion receives SAML assertion
 
-# 5. Redirect back to Bastion
-# Expected: User authenticated, session created
+# 5. Bastion grants access
+# Expected: User sees Bastion dashboard
 
-# Verify SAML assertion
+# Verify SAML assertion received
 wabadmin audit --last 10 | grep -i saml
-# Expected: SAML authentication logged
+# Expected: SAML authentication event logged with username and groups
 ```
 
 **Expected Results:**
-- [ ] SAML redirect chain functions correctly
-- [ ] User attributes mapped properly (email, groups, etc.)
+- [ ] SAML redirect chain functions correctly (Bastion → AM → Bastion)
+- [ ] User attributes mapped properly (username, email, groups)
 - [ ] Session created after successful SAML authentication
-- [ ] SSO session persists across Bastion sites
-
-#### Test 2.1.2: OIDC Authentication Flow
-
-```bash
-# Test OIDC authentication (if configured)
-
-# 1. Access Bastion portal
-curl -v https://bastion-site1.company.com/login
-# Expected: HTTP 302 redirect to OIDC authorize endpoint
-
-# 2. Check OIDC discovery
-curl https://accessmanager.company.com/.well-known/openid-configuration
-# Expected: JSON with OIDC endpoints
-
-# 3. Complete authentication flow
-# Expected: Authorization code returned
-
-# 4. Token exchange
-# Expected: ID token and access token issued
-
-# Verify token claims
-wabadmin oidc-token decode --token [ID_TOKEN]
-# Expected: User claims (sub, email, groups) present
-```
-
-**Expected Results:**
-- [ ] OIDC discovery endpoint accessible
-- [ ] Authorization code flow completes successfully
-- [ ] Tokens issued with correct claims
-- [ ] Refresh token functionality working
+- [ ] Group-to-profile mapping grants correct access level
 
 ### 2.2 MFA Integration Testing
 
-#### Test 2.2.1: FortiToken Push Notification
+#### Test 2.2.1: FortiToken TOTP via Bastion
 
 ```bash
-# End-to-end MFA test
+# End-to-end MFA test: Bastion RADIUS client → FortiAuth per site
 
-# 1. User initiates login to Bastion (via Access Manager)
-# 2. User enters AD credentials
-# 3. Access Manager sends RADIUS request to FortiAuthenticator
+# Test from a Bastion node, using radtest against per-site FortiAuth
+# (Replace X with site number)
+ssh admin@bastion1-site1.company.com
 
-# Monitor RADIUS traffic on FortiAuth
+# Simulate RADIUS request to FortiAuth-1 (Cyber VLAN)
+radtest jsmith "CorrectADpass123456" 10.10.X.50 0 <RADIUS_SHARED_SECRET>
+# Expected: Access-Challenge (Bastion must relay TOTP code)
+
+# Monitor RADIUS traffic on Bastion
 tcpdump -i any -n 'udp port 1812 or udp port 1813'
-# Expected: RADIUS Access-Request from Access Manager
+# Expected: RADIUS Access-Request to 10.10.X.50, Access-Challenge returned
 
-# 4. FortiAuth sends push notification to user's mobile
-
-# 5. User approves on FortiToken Mobile app
-
-# 6. FortiAuth sends RADIUS Access-Accept to Access Manager
-
-# 7. Access Manager issues session token to Bastion
+# After user provides TOTP code:
+radtest jsmith "CorrectADpass123456<TOTP>" 10.10.X.50 0 <RADIUS_SHARED_SECRET>
+# Expected: Access-Accept
 
 # Verify in Bastion logs
 tail -f /var/log/wallix/auth.log | grep -i radius
@@ -591,109 +603,71 @@ tail -f /var/log/wallix/auth.log | grep -i radius
 ```
 
 **Expected Results:**
-- [ ] RADIUS communication between AM and FortiAuth functional
-- [ ] Push notifications delivered within 5 seconds
-- [ ] User can approve/deny within 60-second timeout
-- [ ] Failed MFA attempts logged and blocked
+- [ ] RADIUS communication between Bastion and FortiAuth functional (per site)
+- [ ] TOTP challenge-response flow completes within 30-second TOTP window
+- [ ] Failed MFA attempts (wrong TOTP) return Access-Reject and logged
+- [ ] Bastion sends RADIUS accounting correctly to FortiAuth
 
-#### Test 2.2.2: MFA Failover
+#### Test 2.2.2: FortiAuth HA RADIUS Failover (Per Site)
 
 ```bash
-# Test FortiAuth failover scenario
+# Test per-site FortiAuth RADIUS failover
+# Each Bastion has 2 RADIUS servers configured: Primary (X.50) and Secondary (X.51)
 
-# 1. Stop primary FortiAuthenticator
-ssh admin@fortiauth.company.com
-systemctl stop fortiauthd
+# Step 1: Verify Bastion RADIUS config
+wabadmin auth radius-list
+# Expected: FortiAuth-1 (10.10.X.50) and FortiAuth-2 (10.10.X.51) listed
 
-# 2. Attempt user login
-# Expected: Access Manager fails over to secondary FortiAuth
+# Step 2: Simulate primary FortiAuth failure
+ssh admin@10.10.X.50
+# Simulate failure (e.g., block RADIUS port or stop service for testing)
 
-# 3. Monitor failover in AM logs
-ssh admin@accessmanager-1.company.com
-tail -f /var/log/wallix/radius.log
-# Expected: "Primary RADIUS server timeout, trying secondary"
+# Step 3: Attempt user authentication on Bastion
+# Expected: Bastion RADIUS timeout on 10.10.X.50 (5s), fails over to 10.10.X.51
 
-# 4. Complete login with secondary FortiAuth
-# Expected: Authentication successful
+# Step 4: Monitor Bastion auth logs
+tail -f /var/log/wallix/auth.log
+# Expected: "RADIUS timeout on 10.10.X.50, trying 10.10.X.51"
+# Expected: Authentication completes successfully via secondary
 
-# 5. Restore primary FortiAuth
-systemctl start fortiauthd
-
-# 6. New logins should prefer primary
+# Step 5: Restore primary FortiAuth
+# Step 6: Verify new authentication requests prefer primary
 ```
 
 **Expected Results:**
-- [ ] Automatic failover to secondary FortiAuth
-- [ ] Users unaware of failover (transparent)
-- [ ] Failover time < 10 seconds
-- [ ] Automatic failback to primary after restoration
+- [ ] Automatic RADIUS failover to secondary FortiAuth (10.10.X.51)
+- [ ] Users complete authentication transparently
+- [ ] Failover time < 10 seconds (RADIUS timeout 5s + retry)
+- [ ] Primary used again after restoration
 
-### 2.3 Session Brokering Testing
+### 2.3 Bastion LDAP/AD Integration Testing
 
-#### Test 2.3.1: Site Selection Algorithm
+#### Test 2.3.1: AD LDAP Connectivity per Site
 
 ```bash
-# Test intelligent site selection
+# Verify Bastion LDAP connection to per-site AD DC (Cyber VLAN)
+# Replace X with site number
 
-# Scenario 1: All sites healthy, low load
-# Expected: Route to geographically closest site
+ssh admin@bastion1-site1.company.com
 
-# Scenario 2: Site 1 at 90% capacity
-# Expected: Route to Site 2 (next available)
+# Test LDAP connectivity to per-site DC
+wabadmin auth ldap-test --server 10.10.X.60
+# Expected: LDAP bind successful, server reachable
 
-# Scenario 3: Site 5 down
-# Expected: Route to alternate site, Site 5 excluded
+# Test user lookup
+wabadmin auth ldap-user-lookup --server 10.10.X.60 --username jsmith
+# Expected: User attributes returned (groups, email, etc.)
 
-# Test routing API
-curl -H "Authorization: Bearer YOUR_API_KEY" \
-  https://accessmanager.company.com/api/v1/route \
-  -d '{"user": "jsmith", "target": "prod-db-01.company.com"}'
-
-# Expected response:
-{
-  "selected_site": "site1",
-  "reason": "lowest_load",
-  "site_load": 15,
-  "alternatives": ["site5", "site4"]
-}
+# Verify group-to-profile mapping
+wabadmin auth ldap-groups --server 10.10.X.60 --username jsmith
+# Expected: AD groups listed, PAM-Users or PAM-Admins group present
 ```
 
 **Expected Results:**
-- [ ] Routing algorithm considers load, health, and proximity
-- [ ] Overloaded sites deprioritized
-- [ ] Failed sites excluded from routing
-- [ ] User affinity respected (same site for returning users)
-
-#### Test 2.3.2: Session Callbacks
-
-```bash
-# Test session lifecycle callbacks
-
-# 1. User logs in via Access Manager
-# 2. AM brokers session to Site 1
-
-# Monitor callbacks on Bastion
-tail -f /var/log/wallix/session-broker.log
-# Expected: "session.created" callback received from AM
-
-# 3. User terminates session
-
-# Expected: "session.terminated" callback received
-
-# 4. User transferred to different site (manual failover)
-
-# Expected: "session.transferred" callback received
-
-# Verify callback integrity
-wabadmin session-broker verify-callback --signature [CALLBACK_SIG]
-# Expected: Signature valid
-```
-
-**Expected Results:**
-- [ ] Session lifecycle events trigger callbacks
-- [ ] Callbacks authenticated with HMAC signature
-- [ ] Bastion updates session state based on callbacks
-- [ ] Failed callbacks retried automatically
+- [ ] LDAP connection to 10.10.X.60 successful on all 5 sites
+- [ ] User attributes correctly returned
+- [ ] Group memberships map to correct Bastion profiles
+- [ ] LDAP service account (svc_wallix_bastion) works on each site
 
 ---
 
@@ -712,16 +686,17 @@ wabadmin session-broker verify-callback --signature [CALLBACK_SIG]
 # Step 1: User initiates SSH connection
 ssh jsmith@bastion-site1.company.com
 
-# Expected: Redirect to Access Manager SSO login page
+# Expected: Bastion prompts for username/password + TOTP
+# (or redirects to SSO if AM is configured)
 
 # Step 2: User enters credentials
 Username: jsmith
-Password: [AD password]
+Password: [AD password + FortiToken TOTP code]
 
-# Expected: FortiToken push notification sent
+# Expected: RADIUS request sent to FortiAuth (Cyber VLAN), TOTP validated
 
-# Step 3: User approves MFA on mobile device
-# Expected: Authentication successful, redirect to Bastion
+# Step 3: Authentication successful
+# Expected: Authentication successful, Bastion target menu presented
 
 # Step 4: Bastion presents target selection menu
 Available targets:
@@ -750,7 +725,7 @@ wabadmin recordings --user jsmith --last 1
 ```
 
 **Expected Results:**
-- [ ] User authenticated via SSO + MFA
+- [ ] User authenticated via AD credentials + FortiToken TOTP
 - [ ] Target selection menu displayed
 - [ ] SSH session proxied through Bastion
 - [ ] Commands executed successfully on target
@@ -774,11 +749,12 @@ mstsc /v:bastion-site1.company.com:3389
 
 # Step 2: User enters credentials
 Username: jsmith@company.com
-Password: [Redirects to Access Manager SSO]
+Password: [AD password + FortiToken TOTP code]
 
-# Expected: Web-based SSO login in RDP client
+# Expected: RADIUS authentication via FortiAuth (Cyber VLAN)
+# (or SSO login if AM is configured)
 
-# Step 3: User completes SSO + MFA
+# Step 3: User completes authentication
 # Expected: Authenticated, target selection screen
 
 # Step 4: User selects target
@@ -803,7 +779,7 @@ wabadmin recordings --user jsmith --protocol rdp --last 1
 ```
 
 **Expected Results:**
-- [ ] RDP gateway authentication via SSO
+- [ ] RDP gateway authentication via AD + TOTP (or SSO via AM)
 - [ ] Full Windows desktop accessible
 - [ ] Mouse and keyboard input captured
 - [ ] Screen recording saved as video
@@ -823,9 +799,9 @@ wabadmin recordings --user jsmith --protocol rdp --last 1
 # Step 1: User logs into Bastion web UI
 https://bastion-site1.company.com
 
-# Expected: SSO redirect to Access Manager
+# Expected: Login page (or SSO redirect to AM if configured)
 
-# Step 2: Complete SSO + MFA
+# Step 2: Complete authentication (AD + TOTP or SSO)
 # Expected: Bastion dashboard displayed
 
 # Step 3: User selects OT target
@@ -1030,89 +1006,83 @@ bastion-replication --monitoring
 - [ ] `bastion-replication --dump-resync` resynchronizes restored node
 - [ ] Replication fully operational after resync
 
-### 4.3 Access Manager Failover
+### 4.3 Access Manager Failover (Client Team Test)
 
-#### Test 4.3.1: AM Primary Failure
+> AM failover testing is the client team's responsibility. They control the AM HA pair.
+> Our role is to verify that the Bastion remains functional during AM failover.
 
-```bash
-# Test Access Manager HA failover (coordinated with AM team)
-
-# Initial state: AM1 PRIMARY, AM2 STANDBY
-
-# Step 1: Initiate user logins
-# 5 users authenticating via AM1
-
-# Step 2: Simulate AM1 failure
-ssh admin@accessmanager-1.company.com
-systemctl stop wallix-access-manager
-
-# Step 3: Monitor failover
-# Bastion detects AM1 unreachable, fails over to AM2
-
-tail -f /var/log/wallix/auth.log | grep "Access Manager"
-# Expected: "AM1 unreachable, trying AM2"
-
-# Step 4: Verify authentication via AM2
-# Users in login process redirected to AM2
-# Expected: Authentication completes successfully
-
-# Step 5: Measure failover time
-# Expected: < 10 seconds (DNS/connection timeout)
-
-# Step 6: Restore AM1
-systemctl start wallix-access-manager
-
-# Expected: AM1 becomes PRIMARY again (manual failback or auto)
-```
-
-**Expected Results:**
-- [ ] Automatic failover to AM2 within 10 seconds
-- [ ] Users in-progress authentication complete via AM2
-- [ ] New authentication requests routed to AM2
-- [ ] Existing sessions unaffected
-- [ ] Failback to AM1 after restoration
-
-### 4.4 FortiAuthenticator Failover
-
-#### Test 4.4.1: FortiAuth Primary Failure
+#### Test 4.3.1: Bastion Behavior During AM Failover (Coordinate with Client)
 
 ```bash
-# Test FortiAuth RADIUS failover (coordinated with Security team)
+# Coordinate with client AM team to run this test
 
-# Initial state: FortiAuth Primary, FortiAuth Secondary
+# Step 1: Client AM team initiates AM1 failure (simulated or real)
 
-# Step 1: Initiate MFA challenges
-# 5 users completing MFA via primary FortiAuth
+# Step 2: Monitor Bastion authentication logs
+tail -f /var/log/wallix/auth.log | grep -i "access manager\|saml\|am"
+# Expected: SAML requests redirected to AM2 automatically
 
-# Step 2: Simulate primary FortiAuth failure
-ssh admin@fortiauth.company.com
-systemctl stop fortiauthd
+# Step 3: Attempt SSO login during AM1 failover
+# Expected: SSO login continues working via AM2 (within 10-60 seconds)
 
-# Step 3: Monitor failover
-# Access Manager detects RADIUS timeout, tries secondary
+# Step 4: Verify Bastion health check endpoint still responds
+curl -k https://bastion-site1.company.com/health
+# Expected: HTTP 200 (Bastion unaffected by AM failover)
 
-ssh admin@accessmanager-1.company.com
-tail -f /var/log/wallix/radius.log
-# Expected: "RADIUS timeout on primary, trying secondary"
-
-# Step 4: Verify MFA via secondary
-# Expected: Push notifications sent via secondary FortiAuth
-#           Users complete MFA successfully
-
-# Step 5: Measure failover time
-# Expected: < 5 seconds (RADIUS timeout is 5s)
-
-# Step 6: Restore primary FortiAuth
-systemctl start fortiauthd
-
-# Expected: New MFA requests routed to primary
+# Step 5: After AM1 restored, verify normal operation
 ```
 
-**Expected Results:**
-- [ ] RADIUS failover to secondary within 5 seconds
-- [ ] MFA challenges continue uninterrupted
-- [ ] Users unaware of failover
-- [ ] Automatic failback to primary after restoration
+**Expected Results (from Bastion side):**
+- [ ] Bastion health check endpoint unaffected during AM failover
+- [ ] SAML login recovers within AM failover window
+- [ ] Existing Bastion sessions unaffected (sessions not disrupted)
+- [ ] New SSO logins succeed after AM2 becomes active
+
+### 4.4 FortiAuthenticator HA Failover (Per Site)
+
+#### Test 4.4.1: FortiAuth Primary Failure (Per Site)
+
+Run this test for each site. Replace X with site number (1-5).
+
+```bash
+# Test per-site FortiAuth RADIUS failover
+# FortiAuth-1: 10.10.X.50 (Primary)
+# FortiAuth-2: 10.10.X.51 (Secondary)
+# Bastion has both configured as RADIUS servers
+
+# Step 1: Verify both FortiAuth nodes are operational
+ping 10.10.X.50  # FortiAuth-1
+ping 10.10.X.51  # FortiAuth-2
+
+# Step 2: Initiate test user authentication (5 attempts in parallel)
+# Expected: All RADIUS requests routed to FortiAuth-1 (primary)
+
+# Step 3: Simulate FortiAuth-1 failure
+# (Block RADIUS UDP port 1812 on FortiAuth-1, or stop service)
+ssh admin@10.10.X.50
+# Block port for testing: iptables -I INPUT -p udp --dport 1812 -j DROP
+
+# Step 4: Attempt user authentication on Bastion
+# Expected: 5-second RADIUS timeout on FortiAuth-1, then automatic failover to FortiAuth-2
+# Expected: Authentication completes via FortiAuth-2 (10.10.X.51)
+
+# Step 5: Monitor Bastion auth logs during failover
+tail -f /var/log/wallix/auth.log
+# Expected: "RADIUS server 10.10.X.50 timeout, trying 10.10.X.51"
+# Expected: "RADIUS authentication successful via 10.10.X.51"
+
+# Step 6: Restore FortiAuth-1
+# (Remove iptables rule: iptables -D INPUT -p udp --dport 1812 -j DROP)
+
+# Step 7: Verify RADIUS requests return to primary (FortiAuth-1)
+```
+
+**Expected Results (per site):**
+- [ ] RADIUS failover from 10.10.X.50 to 10.10.X.51 within 10 seconds
+- [ ] User authentication completes transparently
+- [ ] No user-visible authentication failure during failover
+- [ ] Bastion prefers primary (10.10.X.50) after restoration
+- [ ] FortiAuth HA internal replication remains healthy during test
 
 ---
 
@@ -1120,16 +1090,16 @@ systemctl start fortiauthd
 
 ### 5.1 Concurrent Session Load Testing
 
-#### Test 5.1.1: Load Test - 50 Concurrent Sessions (Per Site)
+#### Test 5.1.1: Load Test - 25 Concurrent Sessions (Per Site)
 
 ```bash
-# Load test with 50 concurrent SSH sessions
+# Load test with 25 concurrent SSH sessions (matching ~25 users per site)
 
 # Use load testing tool (JMeter, Locust, or custom script)
 
 # Test script: concurrent-ssh-load.sh
 #!/bin/bash
-for i in {1..50}; do
+for i in {1..25}; do
   ssh -o StrictHostKeyChecking=no \
       jsmith$i@bastion-site1.company.com \
       "hostname; sleep 300; exit" &
@@ -1147,7 +1117,7 @@ htop
 
 # Check session count
 wabadmin sessions --count
-# Expected: 50 active sessions
+# Expected: 25 active sessions
 
 # Measure session establishment time
 wabadmin sessions --active --show-latency
@@ -1155,51 +1125,51 @@ wabadmin sessions --active --show-latency
 ```
 
 **Expected Results:**
-- [ ] 50 concurrent sessions established successfully
+- [ ] 25 concurrent sessions established successfully
 - [ ] CPU usage < 60% (headroom for burst)
 - [ ] Memory usage < 70%
 - [ ] Disk I/O < 80% (recording overhead)
-- [ ] Network bandwidth < 500 Mbps
+- [ ] Network bandwidth < 200 Mbps
 - [ ] Session establishment time < 2 seconds per session
 
-#### Test 5.1.2: Load Test - 100 Concurrent Sessions (Active-Active)
+#### Test 5.1.2: Load Test - 30 Concurrent Sessions (Active-Active, per site limit)
 
 ```bash
-# Load test with 100 concurrent sessions (Active-Active only)
+# Load test with 30 concurrent sessions (matches license pool of 30/site)
 
-# Expected load distribution:
-# - Node 1: 50 sessions
-# - Node 2: 50 sessions
+# Expected load distribution (Active-Active):
+# - Node 1: 15 sessions
+# - Node 2: 15 sessions
 
-# Step 1: Initiate 100 concurrent SSH sessions
-for i in {1..100}; do
+# Step 1: Initiate 30 concurrent SSH sessions
+for i in {1..30}; do
   ssh jsmith$i@bastion-site1.company.com \
       "hostname; sleep 600; exit" &
 done
 
 # Step 2: Monitor load distribution via HAProxy
 echo "show servers state" | socat stdio /var/lib/haproxy/stats
-# Expected: Approximately 50 sessions per backend
+# Expected: Approximately 15 sessions per backend
 
 # Step 3: Monitor system resources on both nodes
 ssh admin@bastion1-site1.company.com "uptime; free -h"
 ssh admin@bastion2-site1.company.com "uptime; free -h"
 
 # Expected:
-# - Load average < 6.0 on each node
-# - Memory usage < 80% on each node
+# - Load average < 4.0 on each node
+# - Memory usage < 70% on each node
 
 # Step 4: Measure session recording disk I/O
 iostat -x 5 10
-# Expected: Disk write throughput < 200 MB/s
+# Expected: Disk write throughput < 100 MB/s
 ```
 
 **Expected Results:**
-- [ ] 100 sessions distributed evenly (50/50)
+- [ ] 30 sessions distributed evenly (15/15)
 - [ ] Both nodes handling load without degradation
 - [ ] No session establishment failures
 - [ ] Recording storage keeping up with write rate
-- [ ] Network throughput < 1 Gbps
+- [ ] Network throughput < 500 Mbps
 
 ### 5.2 Bandwidth Testing
 
@@ -1290,15 +1260,16 @@ curl -k https://bastion-site1.company.com
 nc -zv bastion-site1.company.com 22
 # Expected: Connection succeeded
 
-# Test 3: Bastion → Access Manager (HTTPS 443)
+# Test 3: Bastion (DMZ VLAN) → Access Manager via MPLS (HTTPS 443)
 ssh admin@bastion1-site1.company.com
-curl -k https://accessmanager.company.com/health
-# Expected: HTTP 200
+curl -k https://am1.client.com/health
+# Expected: HTTP 200 (client AM must be online)
 
-# Test 4: Bastion → FortiAuth (RADIUS 1812/1813)
-nc -uzv fortiauth.company.com 1812
-nc -uzv fortiauth.company.com 1813
-# Expected: Connection succeeded
+# Test 4: Bastion (DMZ VLAN) → FortiAuth (Cyber VLAN, RADIUS 1812)
+ssh admin@bastion1-site1.company.com
+nc -uzv 10.10.1.50 1812  # FortiAuth-1 Cyber VLAN
+nc -uzv 10.10.1.51 1812  # FortiAuth-2 Cyber VLAN
+# Expected: Connection succeeded (inter-VLAN traffic allowed by Fortigate)
 
 # Test 5: Bastion → Target (SSH 22, RDP 3389)
 ssh admin@bastion1-site1.company.com
@@ -1457,9 +1428,9 @@ echo | openssl s_client -connect bastion-site1.company.com:443 -showcerts
 bastion-replication --monitoring
 # Expected: Replication status OK (replication uses encrypted transport)
 
-# Step 2: Verify Bastion version (confirms 12.3.2 encryption defaults)
+# Step 2: Verify Bastion version (confirms 12.1.x encryption defaults)
 bastion-replication --version
-# Expected: Version 12.3.2 (or matching installed version)
+# Expected: Version 12.1.x (or matching installed version)
 
 # Step 3: Verify via web UI
 # Navigate to: Configuration > Replication
@@ -1470,7 +1441,7 @@ bastion-replication --version
 - [ ] Database replication encrypted in transit
 - [ ] `bastion-replication --version` confirms expected version
 - [ ] Replication monitoring shows no errors
-- [ ] Encryption settings align with WALLIX Bastion 12.3.2 defaults
+- [ ] Encryption settings align with WALLIX Bastion 12.1.x defaults
 
 ---
 
@@ -1481,15 +1452,16 @@ bastion-replication --version
 | ID | Criteria | Status | Evidence |
 |----|----------|--------|----------|
 | **F-01** | All 5 Bastion sites accessible via HAProxy VIP | [ ] Pass | Health check results |
-| **F-02** | SSO authentication functional via Access Manager | [ ] Pass | Test login logs |
-| **F-03** | MFA challenges delivered via FortiAuthenticator | [ ] Pass | MFA test results |
-| **F-04** | Session brokering routes users to optimal site | [ ] Pass | Routing decision logs |
-| **F-05** | SSH proxy sessions established successfully | [ ] Pass | 10 test sessions |
-| **F-06** | RDP proxy sessions established successfully | [ ] Pass | 10 test sessions |
-| **F-07** | OT access via RDS RemoteApp functional | [ ] Pass | 5 test sessions |
-| **F-08** | Credential vault stores and retrieves passwords | [ ] Pass | Credential tests |
-| **F-09** | Session recording captures all session activity | [ ] Pass | Recording review |
-| **F-10** | Audit logs generated for all user actions | [ ] Pass | Audit log export |
+| **F-02** | FortiToken TOTP authentication functional (all 5 sites) | [ ] Pass | RADIUS test results |
+| **F-03** | Per-site FortiAuth HA failover works (all 5 sites) | [ ] Pass | FortiAuth failover tests |
+| **F-04** | Per-site AD LDAP integration working (all 5 sites) | [ ] Pass | LDAP connectivity tests |
+| **F-05** | SSO via AM functional (Bastion-side SAML SP) | [ ] Pass | Joint test with AM team |
+| **F-06** | SSH proxy sessions established successfully | [ ] Pass | 10 test sessions |
+| **F-07** | RDP proxy sessions established successfully | [ ] Pass | 10 test sessions |
+| **F-08** | OT access via RDS RemoteApp functional | [ ] Pass | 5 test sessions |
+| **F-09** | Credential vault stores and retrieves passwords | [ ] Pass | Credential tests |
+| **F-10** | Session recording captures all session activity | [ ] Pass | Recording review |
+| **F-11** | Audit logs generated for all user actions | [ ] Pass | Audit log export |
 
 ### 7.2 Performance Acceptance Criteria
 
@@ -1499,12 +1471,13 @@ bastion-replication --version
 | **P-02** | HAProxy failover time | < 3 seconds | _____ s | [ ] Pass |
 | **P-03** | Bastion HA failover time (Master/Master) | < 5 seconds | _____ s | [ ] Pass |
 | **P-04** | Bastion HA failover time (Master/Slave) | < 60 seconds | _____ s | [ ] Pass |
-| **P-05** | Concurrent sessions per site | >= 100 | _____ | [ ] Pass |
+| **P-05** | Concurrent sessions per site | >= 25 (tested to 30) | _____ | [ ] Pass |
 | **P-06** | Session recording disk I/O | < 200 MB/s | _____ MB/s | [ ] Pass |
 | **P-07** | CPU utilization (50 sessions) | < 60% | _____ % | [ ] Pass |
 | **P-08** | Memory utilization (50 sessions) | < 70% | _____ % | [ ] Pass |
 | **P-09** | Network throughput (file transfer) | > 8 MB/s | _____ MB/s | [ ] Pass |
-| **P-10** | MPLS latency (Bastion <-> AM) | < 50 ms | _____ ms | [ ] Pass |
+| **P-10** | MPLS latency (Bastion → AM via MPLS) | < 50 ms | _____ ms | [ ] Pass |
+| **P-11** | Inter-VLAN latency (DMZ → Cyber VLAN) | < 5 ms | _____ ms | [ ] Pass |
 
 ### 7.3 Security Acceptance Criteria
 
@@ -1527,8 +1500,8 @@ bastion-replication --version
 |----|----------|--------|--------|
 | **A-01** | HAProxy HA pair functional | 99.99% | [ ] Pass |
 | **A-02** | Bastion HA replication functional | 99.9%+ | [ ] Pass |
-| **A-03** | Access Manager HA functional | 99.99% | [ ] Pass |
-| **A-04** | FortiAuth failover functional | < 5s | [ ] Pass |
+| **A-03** | AM HA functional (client team validates) | 99.99% | [ ] Pass |
+| **A-04** | Per-site FortiAuth HA failover functional (all 5 sites) | < 10s | [ ] Pass |
 | **A-05** | Session data replicated across nodes | Real-time | [ ] Pass |
 | **A-06** | Automatic failover tested | Working | [ ] Pass |
 | **A-07** | Automatic failback tested (optional) | Working | [ ] Pass |
@@ -1632,14 +1605,16 @@ After successful testing and validation:
 
 ## Related Documentation
 
-- [11 - Architecture Diagrams](11-architecture-diagrams.md) - Network topology and port reference
-- [01 - Network Design](01-network-design.md) - MPLS connectivity and firewall rules
-- [03 - Access Manager Integration](03-access-manager-integration.md) - SSO, MFA, session brokering
+- [12-architecture-diagrams.md](12-architecture-diagrams.md) - Network topology and port reference
+- [01-network-design.md](01-network-design.md) - MPLS connectivity and firewall rules
+- [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md) - Per-site FortiAuth HA configuration
+- [04-ad-per-site.md](04-ad-per-site.md) - Per-site Active Directory integration
+- [15-access-manager-integration.md](15-access-manager-integration.md) - Bastion-side AM integration
 - [HOWTO.md](HOWTO.md) - Main installation guide
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: March 2026
+**Document Version**: 2.0
+**Last Updated**: April 2026
 **Validated By**: QA Team
 **Approval Status**: Ready for Production Validation

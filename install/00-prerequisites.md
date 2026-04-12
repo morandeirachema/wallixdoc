@@ -1,6 +1,6 @@
-# Prerequisites - 5-Site WALLIX Bastion Deployment with Access Manager Integration
+# Prerequisites - 5-Site WALLIX Bastion Deployment
 
-> Comprehensive prerequisites checklist for deploying 5 WALLIX Bastion sites integrated with 2 WALLIX Access Managers in HA configuration
+> Comprehensive prerequisites checklist for deploying 5 WALLIX Bastion sites with per-site FortiAuthenticator HA pairs and per-site Active Directory
 
 ---
 
@@ -19,6 +19,10 @@
 
 ---
 
+> **Architecture note**: Each of the 5 sites contains its own independent FortiAuthenticator HA pair (Primary + Secondary) and its own Active Directory domain controller, both located in the **Cyber VLAN**. The WALLIX Bastion appliances, HAProxy, and RDS are in the **DMZ VLAN**. The Fortigate firewall handles inter-VLAN routing. The Access Manager is client-managed; our scope is Bastion-side integration only.
+
+---
+
 ## Deployment Overview
 
 ### Architecture Summary
@@ -27,17 +31,23 @@ This deployment consists of:
 
 | Component | Quantity | Configuration | Location |
 |-----------|----------|---------------|----------|
-| **WALLIX Access Manager** | 2 | HA (Active-Passive) | 2 separate datacenters (not managed by us) |
-| **WALLIX Bastion Sites** | 5 | Each site: 2 HW appliances (HA) | geographically distributed datacenters (separate buildings) |
-| **HAProxy Load Balancer** | 10 | 2 per site (Active-Passive) | Each datacenter site |
-| **WALLIX RDS Jump Host** | 5 | 1 per site | Each datacenter site |
+| **WALLIX Access Manager** | 2 | HA (Active-Passive), client-managed | 2 separate datacenters (NOT our deployment) |
+| **WALLIX Bastion Sites** | 5 | Each site: 2 HW appliances (HA) | Geographically distributed datacenters |
+| **HAProxy Load Balancer** | 10 | 2 per site (Active-Passive) | DMZ VLAN at each site |
+| **WALLIX RDS Jump Host** | 5 | 1 per site | DMZ VLAN at each site |
+| **FortiAuthenticator** | 10 | 2 per site (Primary/Secondary HA pair) | Cyber VLAN at each site |
+| **Active Directory DC** | 5 | 1 per site | Cyber VLAN at each site |
+
+**Scale**: Approximately 100-200 target servers per site; approximately 25 privileged users per site.
 
 ### Key Architectural Principles
 
-- **Network Isolation**: Access Managers communicate with Bastions via MPLS (NO direct Bastion-to-Bastion communication)
-- **High Availability**: Both Active-Active and Active-Passive options documented (see [02-ha-architecture.md](02-ha-architecture.md))
-- **Centralized Management**: Access Managers provide SSO, MFA, and session brokering
-- **Split Licensing**: Access Manager pool (500 sessions) + Bastion pool (450 sessions shared across 5 sites)
+- **VLAN Separation**: DMZ VLAN (Bastion, HAProxy, RDS) is separate from Cyber VLAN (FortiAuth HA pair, AD). Fortigate provides inter-VLAN routing.
+- **Per-Site MFA**: Each site has its own FortiAuthenticator HA pair in the Cyber VLAN — no centralized FortiAuth.
+- **Per-Site AD**: Each site has its own AD domain controller in the Cyber VLAN. Both Bastion and FortiAuth connect to the local site's AD.
+- **No Inter-Site Bastion Communication**: Bastions do NOT communicate directly between sites. All inter-site traffic routes through the Access Manager via MPLS.
+- **Access Manager is Client-Managed**: We configure only the Bastion-side integration. See [15-access-manager-integration.md](15-access-manager-integration.md).
+- **High Availability**: Both Active-Active and Active-Passive options documented (see [02-ha-architecture.md](02-ha-architecture.md)).
 
 ```
 +===============================================================================+
@@ -45,9 +55,7 @@ This deployment consists of:
 +===============================================================================+
 |                                                                               |
 |  Access Manager 1 (DC-A)  <---HA--->  Access Manager 2 (DC-B)                 |
-|  - SSO / MFA                          - SSO / MFA                             |
-|  - Session Brokering                  - Session Brokering                     |
-|  - License Management                 - License Management                    |
+|  CLIENT-MANAGED                       CLIENT-MANAGED                          |
 |          |                                    |                               |
 |          +------------------------------------+                               |
 |                          MPLS Network                                         |
@@ -58,10 +66,15 @@ This deployment consists of:
 |  | (DC-1)  |         | (DC-2)  |         | (DC-4)  |    | (DC-5)  |           |
 |  +---------+         +---------+         +---------+    +---------+           |
 |                                                                               |
-|  Each Site Contains:                                                          |
+|  Each Site Contains (DMZ VLAN):                                               |
 |  - 2x HAProxy (Active-Passive with Keepalived VRRP)                           |
 |  - 2x WALLIX Bastion HW Appliances (Active-Active or Active-Passive)          |
 |  - 1x WALLIX RDS (Jump host for OT RemoteApp access)                          |
+|                                                                               |
+|  Each Site Contains (Cyber VLAN):                                             |
+|  - 2x FortiAuthenticator (Primary/Secondary HA pair)                          |
+|  - 1x Active Directory domain controller                                      |
+|  - ~100-200 target servers (Windows Server 2022, RHEL 10/9)                   |
 |                                                                               |
 +===============================================================================+
 ```
@@ -74,19 +87,23 @@ This deployment consists of:
 
 Each of the 5 sites requires:
 
-| Component | Quantity | Purpose |
-|-----------|----------|---------|
-| HAProxy Servers | 2 | Active-Passive load balancer pair |
-| WALLIX Bastion Appliances | 2 | Active-Active or Active-Passive HA cluster |
-| WALLIX RDS Server | 1 | Jump host for OT access via RemoteApp |
+| Component | Quantity | VLAN | Purpose |
+|-----------|----------|------|---------|
+| HAProxy Servers | 2 | DMZ | Active-Passive load balancer pair |
+| WALLIX Bastion Appliances | 2 | DMZ | Active-Active or Active-Passive HA cluster |
+| WALLIX RDS Server | 1 | DMZ | Jump host for OT access via RemoteApp |
+| FortiAuthenticator | 2 | Cyber | Primary/Secondary HA pair for RADIUS MFA |
+| Active Directory DC | 1 | Cyber | LDAP/AD for user authentication and lookup |
 
 ### Total Hardware (All 5 Sites)
 
 | Component | Total Quantity | Notes |
 |-----------|----------------|-------|
-| HAProxy Servers | 10 | 2 per site |
-| WALLIX Bastion HW Appliances | 10 | 2 per site |
-| WALLIX RDS Servers | 5 | 1 per site |
+| HAProxy Servers | 10 | 2 per site, DMZ VLAN |
+| WALLIX Bastion HW Appliances | 10 | 2 per site, DMZ VLAN |
+| WALLIX RDS Servers | 5 | 1 per site, DMZ VLAN |
+| FortiAuthenticator | 10 | 2 per site, Cyber VLAN |
+| Active Directory DC | 5 | 1 per site, Cyber VLAN |
 
 ---
 
@@ -156,6 +173,56 @@ Each of the 5 sites requires:
 
 ---
 
+### FortiAuthenticator HA Pair (2 per site, Cyber VLAN)
+
+**Deployment**: Hardware appliance (e.g., FortiAuthenticator 300F) or VM in Cyber VLAN
+
+| Component | Specification | Notes |
+|-----------|---------------|-------|
+| **Model** | FortiAuthenticator 300F or equivalent VM | Sized for ~25 users per site |
+| **CPU** | 4+ cores | Hardware or vCPU |
+| **RAM** | 8+ GB | |
+| **Disk** | 100+ GB | Logs, user database |
+| **Network** | 2x 1 GbE NICs | Management (Cyber VLAN) + HA link |
+| **VLAN** | Cyber VLAN | Separate from DMZ VLAN |
+
+**Per Site**: 2 FortiAuthenticator appliances (Primary + Secondary HA pair)
+
+**Total for 5 Sites**: 10 FortiAuthenticator appliances
+
+**Cyber VLAN IPs**:
+- FortiAuthenticator-1 (Primary): `10.10.X.50`
+- FortiAuthenticator-2 (Secondary): `10.10.X.51`
+- FortiAuth VIP (Management): `10.10.X.52`
+
+See [03-fortiauthenticator-ha.md](03-fortiauthenticator-ha.md) for full setup guide.
+
+---
+
+### Active Directory Domain Controller (1 per site, Cyber VLAN)
+
+**Deployment**: Windows Server 2022 VM in Cyber VLAN
+
+| Component | Specification | Notes |
+|-----------|---------------|-------|
+| **CPU** | 4 vCPU | 2 GHz+ |
+| **RAM** | 8 GB | |
+| **Disk** | 100 GB+ | OS + AD database |
+| **Network** | 1x 1 GbE NIC | In Cyber VLAN |
+| **OS** | Windows Server 2022 | Standard or Datacenter |
+| **Roles** | AD DS, DNS Server | Required |
+| **VLAN** | Cyber VLAN | Separate from DMZ VLAN |
+
+**Per Site**: 1 AD domain controller
+
+**Total for 5 Sites**: 5 AD domain controllers
+
+**Cyber VLAN IP**: `10.10.X.60` (where X = site number)
+
+See [04-ad-per-site.md](04-ad-per-site.md) for full integration guide.
+
+---
+
 ### Hardware Checklist
 
 ```
@@ -163,7 +230,7 @@ Each of the 5 sites requires:
 |  HARDWARE READINESS CHECKLIST (Per Site)                                      |
 +===============================================================================+
 
-Site 1 (Site 1 DC):
+Site 1 (Site 1 DC) - DMZ VLAN:
 [ ] 2x HAProxy servers provisioned (physical or VM)
 [ ] 2x WALLIX Bastion HW appliances received and racked
 [ ] 1x WALLIX RDS server (Windows Server 2022) ready
@@ -171,33 +238,14 @@ Site 1 (Site 1 DC):
 [ ] All servers have IPMI/iLO access configured
 [ ] All servers have network cables connected (bonded NICs)
 
-Site 2 (Site 2 DC):
-[ ] 2x HAProxy servers provisioned
-[ ] 2x WALLIX Bastion HW appliances received and racked
-[ ] 1x WALLIX RDS server ready
-[ ] IPMI/iLO configured
-[ ] Network connectivity verified
+Site 1 (Site 1 DC) - Cyber VLAN:
+[ ] 2x FortiAuthenticator provisioned (10.10.1.50, 10.10.1.51)
+[ ] 1x Windows Server 2022 for AD DC provisioned (10.10.1.60)
+[ ] Inter-VLAN firewall rules configured on Fortigate (Cyber <-> DMZ)
+[ ] FortiAuthenticator licenses available (300F or VM)
+[ ] FortiToken Mobile licenses available (~30 per site)
 
-Site 3 (Site 3 DC):
-[ ] 2x HAProxy servers provisioned
-[ ] 2x WALLIX Bastion HW appliances received and racked
-[ ] 1x WALLIX RDS server ready
-[ ] IPMI/iLO configured
-[ ] Network connectivity verified
-
-Site 4 (Site 4 DC):
-[ ] 2x HAProxy servers provisioned
-[ ] 2x WALLIX Bastion HW appliances received and racked
-[ ] 1x WALLIX RDS server ready
-[ ] IPMI/iLO configured
-[ ] Network connectivity verified
-
-Site 5 (Site 5 DC):
-[ ] 2x HAProxy servers provisioned
-[ ] 2x WALLIX Bastion HW appliances received and racked
-[ ] 1x WALLIX RDS server ready
-[ ] IPMI/iLO configured
-[ ] Network connectivity verified
+Repeat per-site checklist for Sites 2-5 (adjust IPs: 10.10.X.50-60).
 
 +===============================================================================+
 ```
@@ -210,28 +258,35 @@ Site 5 (Site 5 DC):
 
 ```
 +===============================================================================+
-|  NETWORK TOPOLOGY - ACCESS MANAGER TO BASTION SITES                           |
+|  NETWORK TOPOLOGY - PER-SITE VLAN DESIGN                                      |
 +===============================================================================+
 |                                                                               |
-|  Access Manager 1 (DC-A)           Access Manager 2 (DC-B)                    |
-|  IP: <AM1-IP>                      IP: <AM2-IP>                               |
+|  Access Manager 1 (DC-A)  <--HA-->  Access Manager 2 (DC-B)  [CLIENT-MANAGED] |
 |         |                                 |                                   |
 |         +----------------+----------------+                                   |
-|                          |                                                    |
-|                    MPLS Network                                               |
-|         Bandwidth: 100+ Mbps per site                                         |
-|         Latency: < 50ms RTT preferred                                         |
+|                          MPLS Network                                         |
 |                          |                                                    |
 |         +----------------+----------------+----------------+                  |
 |         |                |                |                |                  |
-|    Site 1           Site 2           Site 3           Site 4,5                |
-|   10.10.1.0/24     10.10.2.0/24     10.10.3.0/24     10.10.4-5.0/24           |
-|         |                |                |                |                  |
-|    HAProxy VIP      HAProxy VIP      HAProxy VIP      HAProxy VIP             |
-|    10.10.1.100      10.10.2.100      10.10.3.100      10.10.4-5.100           |
-|         |                |                |                |                  |
-|  Bastion Nodes     Bastion Nodes     Bastion Nodes     Bastion Nodes          |
-|  10.10.1.11-12     10.10.2.11-12     10.10.3.11-12     10.10.4-5.11-12        |
+|    Site 1 (X=1)     Site 2 (X=2)     Site 3 (X=3)    Sites 4-5               |
+|                                                                               |
+|  Per-Site VLAN Design (where X = site number 1-5):                           |
+|                                                                               |
+|  DMZ VLAN (10.10.X.0/25):                                                    |
+|    HAProxy VIP:    10.10.X.100                                                |
+|    HAProxy-1:      10.10.X.5                                                  |
+|    HAProxy-2:      10.10.X.6                                                  |
+|    Bastion-1:      10.10.X.11                                                 |
+|    Bastion-2:      10.10.X.12                                                 |
+|    WALLIX RDS:     10.10.X.30                                                 |
+|                                                                               |
+|  Cyber VLAN (10.10.X.128/25):                                                 |
+|    FortiAuth-1:    10.10.X.50                                                 |
+|    FortiAuth-2:    10.10.X.51                                                 |
+|    FortiAuth VIP:  10.10.X.52                                                 |
+|    AD DC:          10.10.X.60                                                 |
+|                                                                               |
+|  Fortigate (10.10.X.1) routes between DMZ VLAN and Cyber VLAN.               |
 |                                                                               |
 +===============================================================================+
 ```
@@ -256,6 +311,8 @@ Adjust according to your network design.
 
 #### Site 1 (Site 1 DC)
 
+**DMZ VLAN (10.10.1.0/25)**:
+
 | Component | IP Address | Notes |
 |-----------|------------|-------|
 | HAProxy-1 | 10.10.1.5 | Active node |
@@ -264,30 +321,60 @@ Adjust according to your network design.
 | Bastion-1 | 10.10.1.11 | Active (or Active-Active) |
 | Bastion-2 | 10.10.1.12 | Active or Passive |
 | WALLIX RDS | 10.10.1.30 | Jump host |
+| Fortigate (DMZ interface) | 10.10.1.1 | Default gateway for DMZ VLAN |
 
-**Repeat similar allocation for Sites 2-5 with appropriate subnets (10.10.2.0/24, 10.10.3.0/24, etc.)**
+**Cyber VLAN (10.10.1.128/25)**:
+
+| Component | IP Address | Notes |
+|-----------|------------|-------|
+| FortiAuthenticator-1 | 10.10.1.50 | Primary RADIUS |
+| FortiAuthenticator-2 | 10.10.1.51 | Secondary RADIUS |
+| FortiAuth VIP | 10.10.1.52 | Management VIP (floats to active) |
+| Active Directory DC | 10.10.1.60 | LDAP/DNS for this site |
+| Fortigate (Cyber interface) | 10.10.1.129 | Default gateway for Cyber VLAN |
+
+**Repeat the same pattern for Sites 2-5, substituting X = 2, 3, 4, 5 in the third octet.**
 
 ---
 
-### Firewall Rules: Access Manager ↔ Bastion
+### Firewall Rules: Access Manager ↔ Bastion (MPLS)
 
 | Source         | Destination           | Port | Protocol  | Purpose                      | Mandatory |
 |----------------|-----------------------|------|-----------|------------------------------|-----------|
 | Access Manager | Bastion (HAProxy VIP) | 443  | TCP/HTTPS | API, session brokering       | Yes |
 | Bastion        | Access Manager        | 443  | TCP/HTTPS | SSO callbacks, health checks | Yes |
-| Bastion        | FortiAuthenticator    | 1812 | TCP/UDP   | RADIUS authentication        | Yes |
-| Bastion        | FortiAuthenticator    | 1813 | TCP/UDP   | RADIUS accounting            | Yes |
-| Bastion        | Active Directory      | 389  | TCP       | LDAP authentication          | Yes |
-| Bastion        | Active Directory      | 636  | TCP       | LDAPS (secure LDAP)          | Recommended |
-| Bastion        | Active Directory      | 88   | TCP/UDP   | Kerberos authentication      | Optional |
-| Bastion        | Active Directory      | 464  | TCP/UDP   | Kerberos password change     | Optional |
+
+### Firewall Rules: Bastion (DMZ) ↔ Cyber VLAN (via Fortigate, Per Site)
+
+| Source | Destination | Port | Protocol | Purpose | Mandatory |
+|--------|-------------|------|----------|---------|-----------|
+| Bastion (DMZ) | FortiAuth-1 (Cyber) | 1812 | UDP | RADIUS authentication | Yes |
+| Bastion (DMZ) | FortiAuth-1 (Cyber) | 1813 | UDP | RADIUS accounting | Yes |
+| Bastion (DMZ) | FortiAuth-2 (Cyber) | 1812 | UDP | RADIUS failover | Yes |
+| Bastion (DMZ) | FortiAuth-2 (Cyber) | 1813 | UDP | RADIUS failover accounting | Yes |
+| Bastion (DMZ) | AD DC (Cyber) | 636 | TCP | LDAPS user/group lookup | Yes |
+| Bastion (DMZ) | AD DC (Cyber) | 389 | TCP | LDAP (fallback) | Recommended |
+| Bastion (DMZ) | AD DC (Cyber) | 3268 | TCP | Global Catalog | Optional |
+| Bastion (DMZ) | AD DC (Cyber) | 88 | TCP/UDP | Kerberos | Optional |
+
+### Firewall Rules: Cyber VLAN Internal (Same VLAN, No Fortigate Needed)
+
+| Source | Destination | Port | Protocol | Purpose | Mandatory |
+|--------|-------------|------|----------|---------|-----------|
+| FortiAuth-1 (Cyber) | AD DC (Cyber) | 389 | TCP | LDAP user sync | Yes |
+| FortiAuth-1 (Cyber) | AD DC (Cyber) | 636 | TCP | LDAPS user sync (recommended) | Yes |
+| FortiAuth-2 (Cyber) | AD DC (Cyber) | 389 | TCP | LDAP user sync | Yes |
+| FortiAuth-1 (Cyber) | FortiAuth-2 (Cyber) | 443 | TCP | HA replication sync | Yes |
+
+### Firewall Rules: General
+
+| Source         | Destination           | Port | Protocol  | Purpose                      | Mandatory |
+|----------------|-----------------------|------|-----------|------------------------------|-----------|
 | Bastion        | NTP Server            | 123  | UDP       | Time synchronization         | Yes |
 | Bastion        | DNS Server            | 53   | UDP/TCP   | Name resolution              | Yes |
 | Admin Network  | Bastion               | 2242 | TCP       | CLI administration (SSH)     | Yes |
 | Bastion        | SMTP Server           | 25   | TCP       | SMTP notifications           | Yes |
-| Bastion        | SMTP Server           | 465  | TCP       | SMTPS notifications          | Optional |
 | Bastion        | SMTP Server           | 587  | TCP       | SMTP+STARTTLS notifications  | Recommended |
-| Bastion        | TACACS+ Server        | 49   | TCP/UDP   | TACACS+ authentication       | Optional |
 | Bastion        | SIEM/Syslog           | 514  | UDP       | Syslog (unencrypted)         | Optional |
 | Bastion        | SIEM/Syslog           | 6514 | TCP       | Syslog over TLS              | Recommended |
 
@@ -370,27 +457,34 @@ MPLS Connectivity:
 [ ] Redundant MPLS paths configured (if applicable)
 [ ] QoS policies configured for session traffic (optional)
 
-Firewall Rules:
-[ ] Access Manager → Bastion (HTTPS 443) allowed
-[ ] Bastion → Access Manager (HTTPS 443) allowed
-[ ] Bastion → FortiAuthenticator (RADIUS 1812/1813) allowed
-[ ] Bastion → Active Directory (LDAP 389/636, Kerberos 88/464) allowed
+VLAN Design (Per Site):
+[ ] DMZ VLAN created (10.10.X.0/25): HAProxy, Bastion, RDS
+[ ] Cyber VLAN created (10.10.X.128/25): FortiAuth HA pair, AD DC
+[ ] Fortigate configured as inter-VLAN router (DMZ <-> Cyber)
+[ ] VLAN trunking configured on switches
+
+Fortigate Inter-VLAN Firewall Rules (Per Site):
+[ ] Bastion (DMZ) → FortiAuth-1 (Cyber): 1812/1813 UDP ALLOWED
+[ ] Bastion (DMZ) → FortiAuth-2 (Cyber): 1812/1813 UDP ALLOWED
+[ ] Bastion (DMZ) → AD DC (Cyber): 636 TCP ALLOWED (LDAPS)
+[ ] Bastion (DMZ) → AD DC (Cyber): 389 TCP ALLOWED (LDAP fallback)
+[ ] FortiAuth (Cyber) → AD DC (Cyber): 389/636 TCP ALLOWED (same VLAN)
+[ ] FortiAuth-1 ↔ FortiAuth-2: 443 TCP ALLOWED (HA sync)
+
+Other Firewall Rules:
+[ ] Access Manager → Bastion (HTTPS 443 via MPLS) allowed
+[ ] Bastion → Access Manager (HTTPS 443 via MPLS) allowed
 [ ] Bastion → NTP, DNS allowed
-[ ] Bastion → Target systems (SSH 22, RDP 3389, etc.) allowed
+[ ] Bastion → Target systems (SSH 22, RDP 3389, WinRM 5985/5986) allowed
 [ ] HAProxy → Bastion nodes (HTTPS 443, SSH 22, RDP 3389) allowed
 [ ] Bastion-1 ↔ Bastion-2 (SSH 2242, MariaDB 3306/3307) allowed (per site)
 [ ] Bastion → SIEM/Syslog (514/6514) allowed (optional)
 
 IP Addressing:
-[ ] IP addresses allocated for all components (HAProxy, Bastion, RDS)
-[ ] HAProxy VIP addresses reserved (1 per site)
+[ ] DMZ VLAN IPs allocated: HAProxy (X.5, X.6, X.100), Bastion (X.11, X.12), RDS (X.30)
+[ ] Cyber VLAN IPs allocated: FortiAuth (X.50, X.51, X.52), AD DC (X.60)
 [ ] Static IP assignments documented
-[ ] IP routing verified between all network segments
-
-VLANs and Subnets:
-[ ] Network subnets defined for each site
-[ ] VLANs configured (if applicable)
-[ ] VLAN trunking configured on switches
+[ ] IP routing verified between DMZ and Cyber VLANs
 
 +===============================================================================+
 ```
@@ -572,79 +666,48 @@ Before configuring WALLIX Bastion HA (Master/Master or Master/Slave):
 
 ## Access Manager Prerequisites
 
-**IMPORTANT**: The 2 WALLIX Access Managers are managed by a separate team and are NOT part of this deployment. However, we need to coordinate with the Access Manager team for integration.
+> **IMPORTANT**: The 2 WALLIX Access Managers are installed, configured, and operated by the **client's team**. They are NOT part of this deployment. Our only responsibility is to configure the Bastion-side integration after all sites are deployed.
 
-### Access Manager Information Needed
+### What the Client AM Team Provides to Us
 
-| Information             | Description                                    | Responsibility |
-|-------------------------|------------------------------------------------|----------------|
-| **Access Manager URLs** | HTTPS endpoints for both AM instances          | AM team provides |
-| **Access Manager IPs**  | IP addresses of AM1 and AM2                    | AM team provides |
-| **HA Configuration**    | Active-Passive details (which is primary)      | AM team provides |
-| **API Endpoints**       | REST API URLs for session brokering            | AM team provides |
-| **API Credentials**     | Service account for Bastion → AM communication | AM team creates |
-| **SSL Certificates**    | CA certificates for HTTPS communication        | AM team provides |
+| Information | Description | When Needed |
+|-------------|-------------|-------------|
+| **AM URLs** | HTTPS endpoints for AM1 and AM2 | Phase: AM integration (Week 9) |
+| **AM IPs** | IP addresses of AM1 and AM2 | Phase: AM integration |
+| **CA Certificate** | HTTPS CA cert for secure communication | Phase: AM integration |
+| **SAML IdP Metadata** | URL or XML file for SSO setup | Phase: AM integration |
+| **API Credentials** | API key for Bastion → AM API calls | Phase: AM integration |
+| **Bastion API Key** | API key AM will use to call Bastion | Phase: AM integration |
 
----
-
-### Access Manager Integration Points
-
-The Access Managers provide the following services to the Bastion sites:
-
-| Service                 | Description                                        | Integration Method |
-|-------------------------|----------------------------------------------------|--------------------|
-| **SSO Integration**     | Single Sign-On for end users                       | SAML 2.0 or OIDC |
-| **MFA**                 | Multi-factor authentication via FortiAuthenticator | RADIUS proxy through AM |
-| **Session Brokering**   | Routes user sessions to appropriate Bastion site   | REST API calls |
-| **License Integration** | Centralized license pool management (optional)     | AM API |
-
----
-
-### Access Manager Checklist
+### Access Manager Coordination Checklist
 
 ```
 +===============================================================================+
-|  ACCESS MANAGER INTEGRATION CHECKLIST                                         |
+|  ACCESS MANAGER COORDINATION CHECKLIST                                        |
 +===============================================================================+
 
-Access Manager Information:
-[ ] Access Manager 1 URL and IP address documented
-[ ] Access Manager 2 URL and IP address documented
-[ ] HA configuration details received (Active-Passive roles)
-[ ] Failover mechanism understood (automatic or manual)
-
-API Integration:
-[ ] API endpoints documented (session brokering, health checks)
-[ ] API service account credentials received (username/password or API key)
-[ ] API rate limits and quotas documented
-[ ] API authentication method confirmed (Bearer token, OAuth 2.0, etc.)
-
-SSL/TLS Certificates:
-[ ] CA certificates for Access Manager HTTPS endpoints obtained
-[ ] CA certificates installed on all Bastion nodes
-[ ] Certificate trust chain verified
-
-SSO Configuration:
-[ ] SSO method confirmed (SAML 2.0, OIDC, or LDAP passthrough)
-[ ] SSO metadata exchanged (if SAML)
-[ ] SSO endpoints configured on Access Manager side
-[ ] Test user accounts created for SSO testing
-
-MFA Configuration:
-[ ] FortiAuthenticator RADIUS configuration on Access Manager confirmed
-[ ] RADIUS shared secrets exchanged (AM ↔ FortiAuth, Bastion ↔ FortiAuth)
-[ ] MFA policy defined (when MFA is required)
-
-Session Brokering:
-[ ] Session brokering rules defined (which users go to which sites)
-[ ] Load balancing algorithm configured (round-robin, least-loaded, etc.)
-[ ] Health check endpoints configured on Bastion side
-
-Coordination with AM Team:
+Coordination with Client AM Team:
+[ ] AM team contact information documented (email, phone, escalation)
 [ ] Deployment timeline communicated to AM team
-[ ] Maintenance windows coordinated
-[ ] Contact information for AM team documented (email, phone, Slack)
-[ ] Escalation procedures agreed upon
+[ ] Integration window scheduled (Week 9 of deployment)
+[ ] AM team confirms AM is operational before integration begins
+
+Information to Request from AM Team:
+[ ] AM1 URL and IP address
+[ ] AM2 URL and IP address
+[ ] HTTPS CA certificate (PEM)
+[ ] SAML IdP metadata URL (or XML file)
+[ ] API base URL and API key for Bastion registration
+[ ] Confirmation that MPLS routes to Bastion sites are configured
+
+Our Deliverables to AM Team:
+[ ] Per-site HAProxy VIP addresses (Bastion URLs)
+[ ] Per-site health check endpoint URLs
+[ ] Per-site API keys generated from Bastion
+[ ] SP metadata XML from each Bastion site
+
+Note: Full Bastion-side integration procedure is in
+      15-access-manager-integration.md
 
 +===============================================================================+
 ```
@@ -655,61 +718,61 @@ Coordination with AM Team:
 
 ### License Pools
 
-The licensing is split into two separate pools:
+| Pool | Managed By | Scope | Notes |
+|------|------------|-------|-------|
+| **Access Manager License** | Client AM team | AM-side sessions | NOT our responsibility |
+| **WALLIX Bastion License** | Our deployment team | PAM enforcement sessions | Our responsibility |
+| **FortiAuthenticator License** | Our deployment team | Per-site FortiAuth appliances | Our responsibility |
+| **FortiToken Mobile License** | Our deployment team | ~30 tokens per site (25 users + spare) | Our responsibility |
 
-#### Access Manager License Pool
+#### Access Manager License
 
-| Component             | Quantity | Concurrent Sessions      | Notes |
-|-----------------------|----------|--------------------------|-------|
-| Access Manager 1      | 1        | Part of 500 session pool | Managed by AM team |
-| Access Manager 2      | 1        | Part of 500 session pool | Managed by AM team |
-| **Total AM Sessions** | -        | **500 concurrent**       | Shared between 2 AM instances |
+> **Managed by the client's AM team. Not our deployment responsibility.**
 
-**License Type**: Concurrent sessions (not named users)
-
-**Managed By**: Access Manager team (not part of this deployment)
+We do not purchase, activate, or manage AM licenses. The client team handles AM licensing independently.
 
 ---
 
-#### Bastion License Pool
+#### WALLIX Bastion License Pool
 
-| Component                  | Quantity      | Concurrent Sessions | Notes |
-|----------------------------|---------------|---------------------|-------|
-| Site 1 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
-| Site 2 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
-| Site 3 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
-| Site 4 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
-| Site 5 Bastion Cluster     | 2 appliances  | Shared pool         | Active-Active or Active-Passive |
-| **Total Bastion Sessions** | 10 appliances | **450 concurrent**  | Shared across all 5 sites |
+| Component | Quantity | Notes |
+|-----------|----------|-------|
+| Site 1 Bastion Cluster | 2 appliances = 1 HA license | Active-Active or Active-Passive |
+| Site 2 Bastion Cluster | 2 appliances = 1 HA license | Active-Active or Active-Passive |
+| Site 3 Bastion Cluster | 2 appliances = 1 HA license | Active-Active or Active-Passive |
+| Site 4 Bastion Cluster | 2 appliances = 1 HA license | Active-Active or Active-Passive |
+| Site 5 Bastion Cluster | 2 appliances = 1 HA license | Active-Active or Active-Passive |
 
-**License Type**: Concurrent sessions (not named users)
+**Total appliances**: 10 (across 5 sites)
 
-**Managed By**: This team (Bastion deployment)
+**License model**: Concurrent sessions, shared across all 5 sites.
+
+**Scale**: ~25 privileged users per site × 5 sites = ~125 simultaneous target sessions maximum. Recommendation: purchase **150 concurrent session license** to provide growth buffer.
 
 **HA Licensing**: Each HA cluster (2 appliances) counts as **1 license**, not 2.
 
+**License Type**: Concurrent sessions (not named users)
+
 ---
 
-### Total Licensed Capacity
+#### FortiAuthenticator and FortiToken Licenses
 
-| Pool           | Concurrent Sessions | Notes |
-|----------------|---------------------|-------|
-| Access Manager | 500                 | Managed by AM team |
-| Bastion        | 450                 | Managed by Bastion team |
-| **Total**      | **950**             | Combined capacity |
+| Component | Quantity | Notes |
+|-----------|----------|-------|
+| FortiAuthenticator 300F (or VM) license | 10 (2 per site × 5 sites) | Per-appliance license |
+| FortiToken Mobile | ~150 tokens | ~30 per site × 5 sites (25 users + spare) |
+
+**Managed By**: Our deployment team (purchase with site hardware)
 
 ---
 
 ### License Activation
 
-| Component          | Activation Method                       | Notes |
-|--------------------|-----------------------------------------|-------|
-| **Access Manager** | License server or online activation     | Managed by AM team |
-| **Bastion**        | License file uploaded via Web UI or CLI | Requires license key from WALLIX |
-
-**License File Format**: `.lic` file provided by WALLIX
-
-**License Renewal**: Subscription-based (annual or multi-year)
+| Component | Activation Method | Notes |
+|-----------|-------------------|-------|
+| **Bastion** | License file uploaded via Web UI or CLI | `.lic` file from WALLIX |
+| **FortiAuthenticator** | License file uploaded via FortiAuth Web UI | From Fortinet support portal |
+| **FortiToken Mobile** | License file uploaded via FortiAuth Web UI | Activates token quota |
 
 ---
 
@@ -720,30 +783,25 @@ The licensing is split into two separate pools:
 |  LICENSING READINESS CHECKLIST                                                |
 +===============================================================================+
 
-Access Manager Licenses (Managed by AM Team):
-[ ] Access Manager license pool confirmed: 500 concurrent sessions
-[ ] License activation keys received from WALLIX
-[ ] License server access credentials available (if applicable)
+Bastion Licenses (Our Responsibility):
+[ ] Bastion concurrent session license purchased (recommend: 150 sessions)
+[ ] License file (.lic) received from WALLIX
 [ ] License expiration date documented
 [ ] License renewal process understood
 
-Bastion Licenses (Managed by Bastion Team):
-[ ] Bastion license pool purchased: 450 concurrent sessions
-[ ] License file (.lic) received from WALLIX (or license key)
-[ ] License activation method confirmed (Web UI or CLI)
-[ ] License expiration date documented
-[ ] License renewal process understood
-[ ] License support contact information documented
+FortiAuthenticator Licenses (Our Responsibility):
+[ ] FortiAuthenticator license for all 10 appliances obtained
+[ ] FortiToken Mobile license obtained (~150 tokens total)
+[ ] License files received from Fortinet
 
-License Pooling Configuration:
-[ ] License pooling method confirmed (API-based or local)
-[ ] Access Manager license pool accessible from Bastions (if integrated)
-[ ] License usage monitoring configured (alerts at 80%, 90% capacity)
+Access Manager Licenses (Client AM Team):
+[ ] Client AM team confirms AM is licensed and operational
+[ ] AM licensing does not affect our deployment timeline
+[ ] Note in project docs: AM licensing is client's responsibility
 
-Compliance:
-[ ] License terms and conditions reviewed
-[ ] Named user vs. concurrent session licensing understood
-[ ] Over-licensing strategy defined (buffer for growth)
+License Monitoring:
+[ ] Bastion license usage alerts configured (warn at 80% capacity)
+[ ] FortiToken quota usage monitored in FortiAuthenticator console
 
 +===============================================================================+
 ```
@@ -1158,8 +1216,8 @@ This prerequisites document outlines all requirements for deploying 5 WALLIX Bas
 1. Complete this prerequisites checklist
 2. Review network design in [01-network-design.md](01-network-design.md)
 3. Choose HA architecture in [02-ha-architecture.md](02-ha-architecture.md)
-4. Coordinate with Access Manager team using [03-access-manager-integration.md](03-access-manager-integration.md)
-5. Begin Site 1 deployment following [04-site-deployment.md](04-site-deployment.md)
+4. Coordinate with Access Manager team using [15-access-manager-integration.md](15-access-manager-integration.md)
+5. Begin Site 1 deployment following [05-site-deployment.md](05-site-deployment.md)
 
 ---
 
@@ -1170,8 +1228,8 @@ This prerequisites document outlines all requirements for deploying 5 WALLIX Bas
 | [README.md](README.md)                                               | Main installation guide overview |
 | [01-network-design.md](01-network-design.md)                         | MPLS topology, connectivity, detailed port matrix |
 | [02-ha-architecture.md](02-ha-architecture.md)                       | Active-Active vs Active-Passive comparison |
-| [03-access-manager-integration.md](03-access-manager-integration.md) | SSO, MFA, brokering, licensing integration |
-| [04-site-deployment.md](04-site-deployment.md)                       | Per-site deployment template |
+| [15-access-manager-integration.md](15-access-manager-integration.md) | SSO, MFA, brokering, licensing integration |
+| [05-site-deployment.md](05-site-deployment.md)                       | Per-site deployment template |
 | [HOWTO.md](HOWTO.md)                                                 | Step-by-step installation walkthrough |
 
 ---

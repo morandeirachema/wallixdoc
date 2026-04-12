@@ -9,11 +9,12 @@
 | Property | Value |
 |----------|-------|
 | **Purpose** | Disaster recovery and business continuity procedures for multi-site PAM deployment |
-| **Scope** | All 5 Bastion sites, 2 Access Managers, HAProxy, WALLIX RDS, FortiAuthenticator |
+| **Scope** | All 5 Bastion sites, per-site FortiAuth HA, per-site AD, HAProxy, WALLIX RDS |
+| **AM Scope** | AM is client-managed — coordinate with client team for AM failures |
 | **Classification** | Confidential - Operations Team Only |
 | **Review Frequency** | Quarterly, or after any major incident |
-| **Version** | 1.0 |
-| **Last Updated** | February 2026 |
+| **Version** | 2.0 |
+| **Last Updated** | April 2026 |
 
 ---
 
@@ -49,24 +50,23 @@ This document defines recovery procedures for every component in the 5-site WALL
 |  CONTINGENCY PLAN COVERAGE                                                    |
 +===============================================================================+
 |                                                                               |
-|  Access Manager Layer:                                                        |
-|  +-------------------+          +-------------------+                         |
-|  | AM-1 (DC-A)       |   HA     | AM-2 (DC-B)       |                         |
-|  | 10.100.1.10       |<-------> | 10.100.2.10       |                         |
-|  +-------------------+          +-------------------+                         |
+|  Client-Managed (Not Our DR Scope):                                           |
+|  +-------------------+  HA  +-------------------+                             |
+|  | AM-1 (client DC-A)|<---->| AM-2 (client DC-B)|  Coordinate with client     |
+|  +-------------------+      +-------------------+  team for AM failures        |
 |                                                                               |
-|  Site Layer (x5):                                                             |
+|  Per-Site (x5) — Our Scope:                                                   |
 |  +---------------------------------------------------------------+            |
-|  |  HAProxy Pair    Bastion Cluster    WALLIX RDS                |            |
-|  |  (Active-Passive) (Active-Active     (Single Instance)        |            |
-|  |                   or Active-Passive)                          |            |
+|  |  DMZ VLAN (10.10.X.0/25):                                     |            |
+|  |  HAProxy HA  | Bastion Cluster  | WALLIX RDS                  |            |
+|  |  (Keepalived)| (Active-Active   | (Single Instance)           |            |
+|  |              |  or Actv-Passive)|                             |            |
 |  +---------------------------------------------------------------+            |
-|                                                                               |
-|  Shared Infrastructure:                                                       |
-|  +-------------------------------+  +-------------------------------+         |
-|  | FortiAuthenticator (Primary)  |  | FortiAuthenticator (Secondary)|         |
-|  | 10.20.0.60                    |  | 10.20.0.61                    |         |
-|  +-------------------------------+  +-------------------------------+         |
+|  +---------------------------------------------------------------+            |
+|  |  Cyber VLAN (10.10.X.128/25):                                 |            |
+|  |  FortiAuth-1 (Primary) | FortiAuth-2 (Secondary) | AD DC      |            |
+|  |  10.10.X.50            | 10.10.X.51             | 10.10.X.60  |            |
+|  +---------------------------------------------------------------+            |
 |                                                                               |
 +===============================================================================+
 ```
@@ -84,9 +84,11 @@ This document defines recovery procedures for every component in the 5-site WALL
 | **Bastion (single node)** | 0-60 s (automatic failover) | 0 (replicated) | None - partner takes over |
 | **Bastion (cluster)** | 2 h | 1 h (last backup) | Site PAM access unavailable |
 | **WALLIX RDS** | 1 h | 24 h (last backup) | OT RemoteApp access unavailable |
-| **Access Manager (single)** | 0 s (HA failover) | 0 (replicated) | None - partner takes over |
-| **Access Manager (both)** | 4 h | 1 h | SSO/MFA/brokering unavailable |
-| **FortiAuthenticator** | 15 min (failover to secondary) | N/A | MFA unavailable |
+| **FortiAuth (single node, per site)** | 0 s (RADIUS failover) | N/A | None — Bastion uses secondary |
+| **FortiAuth (both nodes, per site)** | 30 min | N/A | MFA unavailable for that site |
+| **Active Directory (per site)** | 30 min (restore) | 1 h | AD auth unavailable for that site |
+| **Access Manager (single, client)** | 0 s (AM HA failover) | 0 | None — client AM HA handles it |
+| **Access Manager (both, client)** | Coordinate with client | N/A | SSO unavailable, RADIUS still works |
 | **MPLS (single site)** | Carrier-dependent | N/A | Site isolated from AM |
 | **MariaDB** | 1 h | 15 min (binlog) | Session data at risk |
 | **Full site** | 4 h (redirect to other sites) | 1 h | Site capacity reduced |
@@ -232,7 +234,7 @@ curl -X PATCH https://am.company.com/api/v1/bastions/bastion-siteX \
 # Check hardware, network, OS, services
 
 # 2. Rebuild HAProxy pair if necessary
-# Follow 05-haproxy-setup.md
+# Follow 06-haproxy-setup.md
 
 # 3. Restore configuration from backup (Git repository)
 git clone git@config-server.company.com:haproxy/siteX.git
@@ -408,90 +410,109 @@ wabadmin session test --target "rds-siteX" --account "ot-access"
 
 ---
 
-### Access Manager Failures
+### Access Manager Failures (Client-Managed)
 
-#### Scenario 6: Single Access Manager Failure
+> The Access Manager is installed and operated by the client team. AM failures are handled
+> by the client team. Our role is to:
+> 1. Detect the impact on Bastion-side SSO integration
+> 2. Fall back to RADIUS-based authentication (Bastion → FortiAuth)
+> 3. Notify the client AM team
 
-**Detection**:
-- HA partner detects failure and takes over
-- Health check alerts: AM node unreachable
-- No user impact if HA failover is successful
-
-**Impact**: None — HA partner handles all requests.
-
-**Recovery** (restore HA redundancy):
-
-```bash
-# 1. Diagnose the failed AM node
-# Check via IPMI/iLO or console access
-
-# 2. If service issue, restart Access Manager services
-# (Handled by Access Manager team)
-
-# 3. Verify HA failover occurred
-# Check from surviving AM node
-# Verify all Bastion sites can reach the surviving AM
-
-# 4. Once failed node is restored, verify HA resync
-# Confirm configuration replication is current
-# Confirm license pool data is synchronized
-
-# 5. Test failback (optional, coordinate with AM team)
-```
-
-**Validation Checklist**:
-- [ ] Surviving AM node handles all SSO/MFA requests
-- [ ] All 5 Bastion sites can authenticate
-- [ ] Session brokering continues without interruption
-- [ ] Failed AM node restored and HA resynchronized
-
----
-
-#### Scenario 7: Both Access Managers Down
+#### Scenario 6: Access Manager Unreachable
 
 **Detection**:
-- SSO authentication fails for all users
-- Session brokering API unreachable
-- All Bastion sites report AM connectivity failure
+- SSO authentication (SAML redirect) fails
+- Bastion logs report "AM unreachable" or SAML assertion timeout
+- Client AM team's own alerting triggers
 
-**Impact**: SSO, MFA enforcement, and centralized session brokering unavailable. Users cannot authenticate via normal channels.
+**Impact**: SSO login unavailable. Direct RADIUS-based authentication (AD + FortiToken TOTP) via per-site FortiAuth still works.
 
-**Immediate Workaround**: Invoke break glass procedures. See [13-break-glass-procedures.md](13-break-glass-procedures.md).
+**Immediate Workaround**:
 
 ```bash
-# 1. Enable local authentication on each Bastion
-wabadmin auth configure --method local --fallback enable
+# RADIUS authentication still works while AM is down
+# Users can authenticate with AD credentials + FortiToken TOTP directly on Bastion
+# (if Bastion is configured for direct RADIUS as fallback — verify with wabadmin auth show)
 
-# 2. Users authenticate directly to Bastion with local credentials
-# (Break glass accounts must be pre-created)
+# Check Bastion auth configuration
+wabadmin auth show
+# Look for: RADIUS server configured AND SSO fallback behavior
 
-# 3. Notify all site administrators
+# Verify RADIUS to per-site FortiAuth still works
+wabadmin auth test-radius --user testuser@company.local --site site1
+
+# 1. Notify client AM team of the outage
+# 2. Communicate to users: use direct Bastion URL with AD+TOTP credentials
+# 3. Monitor AM recovery via health endpoint:
+curl -k https://am1.client.com/health
 ```
 
 **Recovery**:
 
 ```bash
-# 1. Restore at least one Access Manager (coordinate with AM team)
-# 2. Verify SSO metadata is valid
-# 3. Test authentication from each Bastion site
+# Recovery is handled by client AM team
+# Our actions:
+# 1. Verify SSO works after AM restored
 wabadmin sso status
-wabadmin auth test --user test@company.com
 
-# 4. Disable local authentication fallback
-wabadmin auth configure --method local --fallback disable
+# 2. Test SAML login from Bastion
+wabadmin auth test-saml --provider ClientAccessManager --user testuser
 
-# 5. Restore second AM node for HA
-# 6. Verify license pool synchronization
+# 3. Confirm users can log in via SSO again
 ```
 
 **Validation Checklist**:
-- [ ] At least one AM node operational
-- [ ] SSO authentication working from all 5 sites
-- [ ] MFA enforcement re-enabled
-- [ ] Session brokering functional
-- [ ] License pool data intact
-- [ ] Local auth fallback disabled
-- [ ] HA restored between both AM nodes
+- [ ] RADIUS (FortiAuth) authentication unaffected during AM outage
+- [ ] Client AM team notified and engaged
+- [ ] SSO restored after AM recovery
+- [ ] SAML assertion flow tested from all 5 sites
+
+---
+
+#### Scenario 7: Both Access Managers Down (Extended Outage)
+
+**Detection**:
+- SSO authentication fails from all 5 sites
+- Client AM team reports extended outage
+
+**Impact**: SSO login unavailable. RADIUS authentication via FortiAuth still works.
+
+**Immediate Workaround**:
+
+```bash
+# 1. RADIUS authentication is the fallback (per-site FortiAuth, not AM)
+# Users authenticate with: AD credentials + FortiToken TOTP
+
+# 2. If break glass is needed (RADIUS also fails):
+# See 14-break-glass-procedures.md
+
+# 3. Notify operations team and all users of SSO outage
+
+# 4. Escalate to client AM team
+```
+
+**Recovery** (client team restores AM):
+
+```bash
+# After client AM team confirms AM is restored:
+# 1. Test Bastion → AM HTTPS connectivity
+curl -k https://am1.client.com/health
+
+# 2. Verify SAML metadata still valid
+wabadmin auth saml-verify --provider ClientAccessManager
+
+# 3. Test SSO login from each site
+for site in 1 2 3 4 5; do
+  echo "Testing SSO Site ${site}..."
+  wabadmin auth test-saml --site site${site} --provider ClientAccessManager
+done
+```
+
+**Validation Checklist**:
+- [ ] RADIUS authentication continued working throughout AM outage
+- [ ] Client AM team engaged and restored AM
+- [ ] SSO (SAML) restored and tested from all 5 sites
+- [ ] No user data loss during outage
 
 ---
 
@@ -508,31 +529,41 @@ wabadmin auth configure --method local --fallback disable
 
 **Recovery**:
 
+Each site has its own FortiAuthenticator HA pair (Primary at 10.10.X.50, Secondary at 10.10.X.51, VIP at 10.10.X.52) in the Cyber VLAN. A single-node failure causes automatic RADIUS failover within the site — no action required. The following applies when both nodes of a site's FortiAuth pair are down.
+
 ```bash
-# 1. Test primary FortiAuthenticator
-nc -zvu 10.20.0.60 1812
-wabadmin auth test-radius --user test@company.com --debug
+# Replace X with the affected site number (1-5)
 
-# 2. If primary is down, verify failover to secondary
-nc -zvu 10.20.0.61 1812
+# 1. Test whether the site FortiAuth VIP is responding
+nc -zvu 10.10.X.52 1812
+# If VIP is down, test individual nodes:
+nc -zvu 10.10.X.50 1812   # Primary
+nc -zvu 10.10.X.51 1812   # Secondary
 
-# 3. If both are down, invoke break glass for MFA bypass
-# See 13-break-glass-procedures.md, Scenario: FortiAuthenticator Down
+# 2. Verify from Bastion (run on bastion1-siteX)
+wabadmin auth test-radius --user testuser@company.local --debug
 
-# 4. Coordinate with Security team to restore FortiAuthenticator
+# 3. If both nodes are down, invoke break glass for MFA bypass
+# See 14-break-glass-procedures.md, Scenario: FortiAuthenticator Down
 
-# 5. Once restored, verify MFA from each Bastion site
-for site in 1 2 3 4 5; do
-  echo "Testing Site ${site}..."
-  ssh bastion1-site${site}.company.com "wabadmin auth test-radius --user test@company.com --token 000000"
-done
+# 4. Coordinate with Security team to restore FortiAuthenticator nodes
+#    - Log in to FortiAuthenticator admin console via console/IPMI
+#    - Check sync status between Primary and Secondary
+#    - Restore from FortiAuthenticator configuration backup if needed
+
+# 5. Once restored, verify TOTP authentication from the affected site's Bastion
+wabadmin auth test-radius --user testuser@company.local --token 000000
+# Note: --token is the 6-digit TOTP code from FortiToken Mobile
+
+# 6. Verify HA pair is synchronized (on FortiAuthenticator admin console)
+#    System > High Availability > Status — both nodes must show "In sync"
 ```
 
 **Validation Checklist**:
-- [ ] RADIUS connectivity restored (primary and secondary)
-- [ ] MFA challenge works for test user
-- [ ] FortiToken push notifications received
-- [ ] All 5 Bastion sites can reach FortiAuthenticator
+- [ ] RADIUS VIP (10.10.X.52) responding on UDP 1812
+- [ ] Both FortiAuth nodes (10.10.X.50, 10.10.X.51) reachable from Bastion
+- [ ] TOTP authentication succeeds for test user
+- [ ] FortiAuth HA pair shows "In sync" status
 - [ ] MFA bypass (if temporarily enabled) is revoked
 
 ---
@@ -542,22 +573,27 @@ done
 #### Scenario 9: MPLS Network Failure (Single Site Isolated)
 
 **Detection**:
-- Access Manager cannot reach the site Bastions
-- Site health check fails in AM dashboard
-- Users at the site cannot authenticate via SSO
+- Access Manager cannot reach the site Bastions (client AM team reports)
+- Users at the site cannot authenticate via SSO (SAML redirect fails)
+- Bastion logs show SAML metadata fetch timeout
 
-**Impact**: Isolated site cannot communicate with Access Managers. Local sessions in progress continue, but new SSO/brokered sessions fail.
+**Impact**: Isolated site cannot communicate with Access Managers or peer sites. SSO login fails, but per-site FortiAuth RADIUS authentication continues to work (FortiAuth is in the local Cyber VLAN, not MPLS-dependent).
 
 **Immediate Workaround**:
 
 ```bash
-# 1. Enable local authentication on isolated site
+# RADIUS via per-site FortiAuth still works — no inter-site path required
+# Users can authenticate with AD credentials + FortiToken TOTP directly on Bastion
+
+# 1. Enable local authentication fallback on isolated site (if RADIUS also fails)
 wabadmin auth configure --method local --fallback enable
 
-# 2. Users can authenticate with local/break glass accounts
-# Direct access: https://10.10.X.11 (bypass HAProxy VIP if also affected)
+# 2. Users access the site Bastion directly if needed
+# VIP: https://10.10.X.100
+# Direct Bastion-1: https://10.10.X.11
 
 # 3. Existing sessions continue until timeout
+# 4. Notify client AM team of isolation (MPLS circuit failure)
 ```
 
 **Recovery**:
@@ -565,25 +601,25 @@ wabadmin auth configure --method local --fallback enable
 ```bash
 # 1. Coordinate with MPLS carrier for circuit restoration
 # 2. Verify MPLS connectivity restored
-ping 10.100.1.10  # AM-1
-ping 10.100.2.10  # AM-2
+ping am1.client.com   # AM-1 (client provides IP/hostname)
+ping am2.client.com   # AM-2 (client provides IP/hostname)
 
-# 3. Verify Access Manager health check passes
-curl -X GET https://am.company.com/api/v1/bastions/bastion-siteX/health \
-  -H "Authorization: Bearer AM_API_KEY"
+# 3. Verify Bastion SAML connectivity to AM
+wabadmin sso status
 
-# 4. Disable local authentication fallback
+# 4. Disable local authentication fallback (if it was enabled)
 wabadmin auth configure --method local --fallback disable
 
-# 5. Test SSO and session brokering
+# 5. Test SSO login from affected site
+wabadmin auth test-saml --provider ClientAccessManager --user testuser
 ```
 
 **Validation Checklist**:
 - [ ] MPLS connectivity restored (verified by ping/traceroute)
-- [ ] Access Manager shows site as healthy
-- [ ] SSO authentication working
-- [ ] Session brokering functional
-- [ ] Local auth fallback disabled
+- [ ] RADIUS (FortiAuth) authentication was unaffected during MPLS outage
+- [ ] SAML SSO authentication working after recovery
+- [ ] Local auth fallback disabled (if it was enabled)
+- [ ] Client AM team confirms site is visible in AM dashboard
 
 ---
 
@@ -605,7 +641,7 @@ for site in 1 2 3 4 5; do
 done
 
 # 2. Enable local auth on all affected sites (break glass)
-# See 13-break-glass-procedures.md
+# See 14-break-glass-procedures.md
 
 # 3. Coordinate MPLS carrier restoration
 
@@ -746,10 +782,14 @@ openssl req -new -newkey rsa:4096 -nodes \
 **Recovery**:
 
 ```bash
+# License sizing: 25 users x 5 sites = 125 max simultaneous sessions
+# Recommended pool: 150 total (30 per site), alert threshold at 80% (24/site)
+
 # 1. Identify license consumption per site
-wabadmin license status
-curl -X GET https://am.company.com/api/v1/licenses/pool/bastion-pool-450 \
-  -H "Authorization: Bearer AM_API_KEY"
+for site in 1 2 3 4 5; do
+  echo "Site ${site} license usage:"
+  ssh bastion1-site${site}.company.com "wabadmin license status" 2>/dev/null || echo "UNREACHABLE"
+done
 
 # 2. Terminate idle sessions to free licenses
 for site in 1 2 3 4 5; do
@@ -760,16 +800,16 @@ done
 
 # 3. If genuine capacity issue, request emergency license increase
 # Contact WALLIX licensing: support@wallix.com
-# Reference: License Pool bastion-pool-450
+# Reference: Current Bastion license pool (150 concurrent sessions total)
 
 # 4. Long-term: review session policies
 # - Reduce maximum session duration
-# - Implement session idle timeout
+# - Implement session idle timeout (30 minutes recommended)
 # - Review authorization policies for over-provisioning
 ```
 
 **Validation Checklist**:
-- [ ] License consumption below 90% threshold
+- [ ] License consumption below 80% threshold per site (24 of 30)
 - [ ] New sessions can be created successfully
 - [ ] Idle session cleanup policy in place
 - [ ] Capacity planning review scheduled
@@ -789,39 +829,44 @@ done
 **Recovery**:
 
 ```bash
-# 1. IMMEDIATE: Disable site in Access Manager
-curl -X PATCH https://am.company.com/api/v1/bastions/bastion-siteX \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{"enabled": false}'
+# 1. IMMEDIATE: Notify client AM team — site X is down
+#    Client AM team will disable the site in AM and route sessions elsewhere
+#    Our role: confirm Bastion unreachable, provide status updates
 
-# 2. Access Manager routes sessions to remaining 4 sites automatically
-
-# 3. Verify remaining sites can handle additional load
+# 2. Verify remaining sites can handle additional load
+#    (Total capacity: 150 sessions / 5 sites = 30/site; 4 remaining sites = 120 capacity)
 for site in 1 2 3 4 5; do
   echo "Site ${site} license usage:"
   ssh bastion1-site${site}.company.com "wabadmin license status" 2>/dev/null || echo "UNREACHABLE"
 done
 
+# 3. Check if 4 remaining sites have capacity for redirected sessions
+#    If > 120 active sessions expected, terminate non-critical sessions:
+#    wabadmin session cleanup --priority low
+
 # 4. Communicate to users: site X unavailable, use alternative sites
 
-# 5. When datacenter is restored:
-#    a. Rebuild HAProxy pair (05-haproxy-setup.md)
+# 5. When datacenter is restored, rebuild in order:
+#    a. Rebuild HAProxy pair — see 06-haproxy-setup.md
 #    b. Restore Bastion from backup (or rebuild + restore config)
-#    c. Rebuild WALLIX RDS (08-rds-jump-host.md)
-#    d. Re-register with Access Manager
-#    e. Run full validation (10-testing-validation.md)
+wabadmin restore --input /backup/bastion-siteX-latest.tar.gz
+#    c. Rebuild WALLIX RDS — see 09-rds-jump-host.md
+#    d. Verify per-site FortiAuth HA pair is operational
+nc -zvu 10.10.X.52 1812   # FortiAuth VIP
+#    e. Verify per-site AD DC is operational
+ldapsearch -H ldap://10.10.X.60 -x -b "" -s base
+#    f. Run full validation — see 11-testing-validation.md
+#    g. Notify client AM team to re-enable site X in AM
 
-# 6. Re-enable site
-curl -X PATCH https://am.company.com/api/v1/bastions/bastion-siteX \
-  -H "Authorization: Bearer AM_API_KEY" \
-  -d '{"enabled": true}'
+# 6. Confirm with client AM team that site X is showing healthy in AM dashboard
 ```
 
 **Validation Checklist**:
-- [ ] Remaining sites handling redirected load
+- [ ] Client AM team notified and site X removed from AM routing
+- [ ] Remaining sites (4) handling redirected load within 120-session capacity
 - [ ] Users notified of site unavailability
 - [ ] Disaster recovery timeline communicated to stakeholders
-- [ ] Full site rebuilt and validated before re-enabling
+- [ ] Full site rebuilt and validated before client AM team re-enables it
 - [ ] Post-incident review scheduled
 
 ---
@@ -845,27 +890,31 @@ for site in 1 2 3 4 5; do
   ping -c 2 -W 2 10.10.${site}.100 && echo "HEALTHY" || echo "DOWN"
 done
 
-# 2. Disable affected sites in Access Manager
+# 2. Notify client AM team — provide list of affected sites
+#    Client AM team will disable affected sites in AM and reroute sessions
+
 # 3. Assess capacity of remaining sites
-#    Total pool: 450 sessions
-#    If 2 sites down: remaining 3 sites must handle all sessions
+#    Total pool: 150 sessions, 30/site
+#    If 2 sites down: remaining 3 sites = 90 session capacity
+#    If 3 sites down: remaining 2 sites = 60 session capacity
 
 # 4. If capacity insufficient:
 #    a. Terminate non-critical sessions to prioritize critical access
+wabadmin session cleanup --priority low
 #    b. Restrict access to essential personnel only
-#    c. Request emergency license capacity
+#    c. Request emergency license capacity from WALLIX: support@wallix.com
 
-# 5. Activate break glass procedures if Access Manager is also affected
-# See 13-break-glass-procedures.md
+# 5. Activate break glass procedures if RADIUS (FortiAuth) is also affected
+# See 14-break-glass-procedures.md
 
-# 6. Restore sites in priority order (highest capacity first)
+# 6. Restore sites in priority order (most critical business operations first)
 ```
 
 ---
 
 ## Planned Maintenance Procedures
 
-### Standalone Bastion Upgrade (WALLIX Bastion 12.3.2)
+### Standalone Bastion Upgrade (WALLIX Bastion 12.1.x)
 
 ```bash
 # Official upgrade procedure using BastionSecureUpgrade
@@ -890,7 +939,7 @@ BastionSecureUpgrade -i /home/wabupgrade/<BASTION_ISO_NAME>.iso \
 reboot
 ```
 
-### HA Cluster Bastion Upgrade (WALLIX Bastion 12.3.2)
+### HA Cluster Bastion Upgrade (WALLIX Bastion 12.1.x)
 
 ```bash
 # Official HA upgrade procedure — all nodes must be upgraded together
@@ -943,7 +992,7 @@ bastion-replication --monitoring
 
 ```bash
 # 1. Verify Bastion version
-#    Access Bastion web UI and confirm version is 12.3.2
+#    Access Bastion web UI and confirm version is 12.1.x
 
 # 2. Check crypto algorithms and HTTP security level
 WABSecurityLevel
@@ -962,7 +1011,7 @@ bastion-replication --monitoring
 ```
 
 **Post-Upgrade Validation Checklist**:
-- [ ] Bastion version confirmed as 12.3.2
+- [ ] Bastion version confirmed as 12.1.x
 - [ ] Crypto algorithms verified with `WABSecurityLevel`
 - [ ] Web UI accessible
 - [ ] SSH proxy functional
@@ -1169,17 +1218,17 @@ Conduct a post-incident review within 5 business days of any Severity 1 or Sever
 
 | Document | Relevance |
 |----------|-----------|
-| [05-haproxy-setup.md](05-haproxy-setup.md) | HAProxy configuration and troubleshooting |
-| [06-bastion-active-active.md](06-bastion-active-active.md) | Active-Active cluster recovery |
-| [07-bastion-active-passive.md](07-bastion-active-passive.md) | Active-Passive cluster recovery |
-| [08-rds-jump-host.md](08-rds-jump-host.md) | WALLIX RDS rebuild procedures |
-| [09-licensing.md](09-licensing.md) | License pool management |
-| [10-testing-validation.md](10-testing-validation.md) | Post-recovery validation procedures |
-| [11-architecture-diagrams.md](11-architecture-diagrams.md) | Network topology reference |
-| [13-break-glass-procedures.md](13-break-glass-procedures.md) | Emergency access when normal channels fail |
-| [03-access-manager-integration.md](03-access-manager-integration.md) | Access Manager recovery |
+| [06-haproxy-setup.md](06-haproxy-setup.md) | HAProxy configuration and troubleshooting |
+| [07-bastion-active-active.md](07-bastion-active-active.md) | Active-Active cluster recovery |
+| [08-bastion-active-passive.md](08-bastion-active-passive.md) | Active-Passive cluster recovery |
+| [09-rds-jump-host.md](09-rds-jump-host.md) | WALLIX RDS rebuild procedures |
+| [10-licensing.md](10-licensing.md) | License pool management |
+| [11-testing-validation.md](11-testing-validation.md) | Post-recovery validation procedures |
+| [12-architecture-diagrams.md](12-architecture-diagrams.md) | Network topology reference |
+| [14-break-glass-procedures.md](14-break-glass-procedures.md) | Emergency access when normal channels fail |
+| [15-access-manager-integration.md](15-access-manager-integration.md) | Access Manager recovery |
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: February 2026
+**Document Version**: 2.0
+**Last Updated**: April 2026
