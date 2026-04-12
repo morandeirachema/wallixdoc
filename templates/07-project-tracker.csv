@@ -1,0 +1,42 @@
+Task ID,Phase,Task Name,Owner,Planned Start,Planned End,Actual Start,Actual End,Status (Not Started / In Progress / Complete / Blocked),% Complete,Depends On,Blockers / Issues,Notes
+P1-01,Phase 1,Kickoff workshop,Consultant,,,,,,0,,,
+P1-02,Phase 1,AD / LDAP environment assessment,Consultant,,,,,,0,P1-01,,
+P1-03,Phase 1,Network and firewall review,Consultant,,,,,,0,P1-01,,
+P1-04,Phase 1,Target system inventory,Consultant + Client,,,,,,0,P1-01,,Requires client IT team participation
+P1-05,Phase 1,OT system assessment (if in scope),Consultant + OT team,,,,,,0,P1-01,,Requires OT team access
+P1-06,Phase 1,Architecture Design Document (ADD) — draft,Consultant,,,,,,0,P1-02;P1-03;P1-04,,
+P1-07,Phase 1,ADD review and sign-off workshop,Consultant + Client tech lead,,,,,,0,P1-06,,Client sign-off required before Phase 2
+P1-08,Phase 1,Pre-production lab setup,Consultant,,,,,,0,P1-07,,Lab servers must be provisioned by client
+P1-09,Phase 1,Pre-production integration testing,Consultant,,,,,,0,P1-08,,
+P2-01,Phase 2,Server provisioning confirmation,Client infra team,,,,,,0,P1-07,,Client dependency — critical path
+P2-02,Phase 2,Bastion node installation — Site 1,Consultant,,,,,,0,P2-01,,
+P2-03,Phase 2,Bastion HA configuration — Site 1,Consultant,,,,,,0,P2-02,,
+P2-04,Phase 2,HAProxy + Keepalived configuration — Site 1,Consultant,,,,,,0,P2-02,,
+P2-05,Phase 2,TLS certificate installation,Consultant,,,,,,0,P2-02,,Certificates must be issued before this step
+P2-06,Phase 2,AD / LDAP integration,Consultant + AD admin,,,,,,0,P2-02,,AD service account required
+P2-07,Phase 2,FortiAuthenticator RADIUS integration,Consultant,,,,,,0,P2-02,,FortiAuthenticator must be reachable
+P2-08,Phase 2,Target device onboarding — batch 1,Consultant,,,,,,0,P2-06,,Firewall rules for target VLANs must be in place
+P2-09,Phase 2,Target device onboarding — batch 2,Consultant,,,,,,0,P2-08,,
+P2-10,Phase 2,Credential vault population,Consultant,,,,,,0,P2-08,,
+P2-11,Phase 2,SIEM integration,Consultant + SecOps,,,,,,0,P2-02,,SIEM connector credentials required
+P2-12,Phase 2,Access Manager integration (if in scope),Consultant,,,,,,0,P2-06,,
+P2-13,Phase 2,Additional sites deployment (repeat P2-02 to P2-10 per site),Consultant,,,,,,0,P2-10,,Per-site deployment — one row per additional site
+P3-01,Phase 3,MFA rollout — token provisioning,Consultant + IT Manager,,,,,,0,P2-07,,FortiToken hardware must be on-site
+P3-02,Phase 3,JIT access configuration and testing,Consultant,,,,,,0,P2-12,,
+P3-03,Phase 3,Credential rotation configuration and testing,Consultant,,,,,,0,P2-10,,
+P3-04,Phase 3,RBAC review and tightening,Consultant + CISO,,,,,,0,P2-06,,
+P3-05,Phase 3,HA failover testing,Consultant + Client tech lead,,,,,,0,P2-03,,Client witness required
+P3-06,Phase 3,OT latency testing (if OT in scope),Consultant + OT team,,,,,,0,P2-08,,
+P3-07,Phase 3,End-to-end UAT,Consultant + Client team,,,,,,0,P3-01;P3-05,,UAT sign-off sheet required
+P3-08,Phase 3,Compliance evidence collection,Consultant,,,,,,0,P3-07,,
+P3-09,Phase 3,Go-live readiness checklist review,Consultant + Client tech lead,,,,,,0,P3-07,,Both checklists (technical + organisational) must be complete
+P3-10,Phase 3,Go-live,Consultant + Client,,,,,,0,P3-09,,CISO / Operations Manager approval required
+P4-01,Phase 4,Administrator training delivery,Consultant,,,,,,0,P3-10,,
+P4-02,Phase 4,Operator training delivery — all sites,Consultant,,,,,,0,P3-10,,One session per shift team per site
+P4-03,Phase 4,Vendor onboarding guide distribution,IT Manager,,,,,,0,P4-01,,
+P4-04,Phase 4,Operations runbook finalisation,Consultant,,,,,,0,P3-08,,
+P4-05,Phase 4,Break-glass procedure rehearsal,Consultant + Admins,,,,,,0,P4-01,,Physical credentials must be in the safe before this
+P4-06,Phase 4,Hypercare period (2 weeks),Consultant,,,,,,0,P3-10,,Daily check-in with IT Manager
+P4-07,Phase 4,One-month adoption review meeting,Consultant + Client,,,,,,0,P4-06,,
+P4-08,Phase 4,Final project report,Consultant,,,,,,0,P4-07,,
+P4-09,Phase 4,Project closure sign-off,Client project sponsor,,,,,,0,P4-08,,

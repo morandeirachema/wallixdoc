@@ -1,0 +1,60 @@
+Section,Category,Line Item,Value (€),Notes / Source
+BREACH RISK,Input,Industry average breach cost (SLE baseline),4880000,IBM Cost of a Data Breach 2024 — adjust for sector
+BREACH RISK,Input,Sector adjustment multiplier,1.00,Healthcare: 2.00 / Financial: 1.25 / Industrial: 0.97 / Energy: 0.97 / Retail: 0.61
+BREACH RISK,Input,Client-specific adjustment multiplier,1.00,"Increase for: large data volumes, high public profile, prior incidents"
+BREACH RISK,Calculated,Estimated Single Loss Expectancy (SLE),=B3*B4*B5,Formula: SLE = Baseline × Sector multiplier × Client multiplier
+BREACH RISK,Input,Industry annual breach probability (%),27,Ponemon Institute 2024 — percentage as decimal e.g. 0.27
+BREACH RISK,Input,Client risk profile adjustment,1.00,"Increase for: no current controls, external-facing systems, known vulnerabilities"
+BREACH RISK,Calculated,Annual Rate of Occurrence (ARO),=B8*B9,Formula: ARO = Industry probability × Client adjustment
+BREACH RISK,Calculated,Pre-control Annualised Loss Expectancy (ALE),=B6*B10,Formula: ALE = SLE × ARO
+BREACH RISK,Input,Risk reduction with full PAM deployed (%),74,"Verizon DBIR 2024: 74% of breaches involve privileged access — PAM directly reduces this exposure"
+BREACH RISK,Calculated,Residual ARO,=B10*(1-(B12/100)),Formula: Residual ARO = ARO × (1 - Risk reduction %)
+BREACH RISK,Calculated,Residual ALE,=B6*B13,Formula: Residual ALE = SLE × Residual ARO
+BREACH RISK,Calculated,Annual risk reduction value,=B11-B14,Formula: Risk reduction value = Pre-control ALE - Residual ALE
+,,,,
+COMPLIANCE,Input,GDPR maximum fine exposure,0,Set to max fine or estimated proportional fine if GDPR applies
+COMPLIANCE,Input,NIS2 maximum fine exposure,0,Set to max fine if NIS2 applies (essential: €10M / important: €7M or turnover %)
+COMPLIANCE,Input,PCI-DSS maximum fine exposure,0,Set to estimated card scheme fine + certification loss if PCI-DSS applies
+COMPLIANCE,Input,NERC CIP maximum fine exposure,0,Up to $1M/day per violation — set if applicable
+COMPLIANCE,Input,Other framework fine exposure,0,Enter any other applicable framework
+COMPLIANCE,Calculated,Total maximum fine exposure,=SUM(B18:B22),Sum of all applicable framework exposures
+COMPLIANCE,Input,Probability of fine without PAM (%),15,Conservative estimate — adjust based on regulatory environment and recent enforcement
+COMPLIANCE,Calculated,Annualised compliance fine risk,=B23*(B25/100),Formula: Annual fine risk = Total exposure × Probability
+,,,,
+INSURANCE,Input,Current annual cyber insurance premium,0,Enter client's actual premium
+INSURANCE,Input,Estimated premium reduction with full PAM (%),25,Typical range 20-35% — verify with client's broker
+INSURANCE,Calculated,Annual insurance premium saving,=B29*(B30/100),Formula: Saving = Premium × Reduction %
+,,,,
+OPERATIONAL,Input,Number of privileged users,0,From 03-user-inventory.csv
+OPERATIONAL,Input,Average manual offboarding time per user (hours),4,Time to manually remove access from all systems
+OPERATIONAL,Input,Hourly rate for IT staff (€),70,Blended rate including oncosts
+OPERATIONAL,Calculated,Annual offboarding time saving (hours),=B34*(B35/12)*2,"Assumes 2 offboardings per month at avg team size — adjust for actual turnover"
+OPERATIONAL,Calculated,Annual offboarding cost saving,=B37*B36,Formula: Saving = Hours saved × Hourly rate
+OPERATIONAL,Input,Number of audit cycles per year,2,Typically 1-2 external audits per year
+OPERATIONAL,Input,Audit preparation time saved per cycle (days),3,Time saved on privileged access evidence collection
+OPERATIONAL,Calculated,Annual audit preparation saving,=B40*B41*8*B36,Formula: Saving = Cycles × Days × 8 hours × Hourly rate
+OPERATIONAL,Input,Number of managed accounts for rotation,0,From 02-asset-inventory.csv — accounts with rotation enabled
+OPERATIONAL,Input,Manual password resets per account per year (if no rotation),4,Quarterly manual rotation — adjust to actual
+OPERATIONAL,Input,Time per manual password reset (minutes),25,Typical IT service desk handling time
+OPERATIONAL,Calculated,Annual password reset saving (hours),=B43*B44*(B45/60),Formula: Hours = Accounts × Resets/year × Minutes/reset ÷ 60
+OPERATIONAL,Calculated,Annual password reset cost saving,=B46*B36,Formula: Saving = Hours × Hourly rate
+OPERATIONAL,Calculated,Total annual operational saving,=SUM(B38;B41;B47),Sum of all operational savings
+,,,,
+INVESTMENT,Input,WALLIX Bastion software licenses (Year 1),0,From WALLIX quote — include all nodes
+INVESTMENT,Input,FortiToken licenses (Year 1),0,From Fortinet quote — hardware + software tokens
+INVESTMENT,Input,FortiAuthenticator licenses (Year 1),0,If not already deployed
+INVESTMENT,Input,Implementation professional services,0,From 06-scope-proposal-template.csv effort × daily rate
+INVESTMENT,Input,Hardware (servers / appliances if required),0,If client must procure new hardware
+INVESTMENT,Input,Training (if billed separately),0,Typically included in services
+INVESTMENT,Input,Other Year 1 costs,0,Travel / accommodation / other
+INVESTMENT,Calculated,Total Year 1 investment,=SUM(B51:B57),Sum of all Year 1 costs
+INVESTMENT,Input,Annual recurring cost (Year 2 onwards),0,License maintenance + support + internal effort estimate
+,,,,
+ROI SUMMARY,Calculated,Total annual benefit,=B15+B26+B31+B48,Risk reduction + compliance + insurance + operational
+ROI SUMMARY,Calculated,Net Year 1 benefit,=B61-B58,Total annual benefit minus Year 1 investment
+ROI SUMMARY,Calculated,ROI Year 1 (%),=(B61/B58-1)*100,Formula: (Annual benefit / Investment - 1) × 100
+ROI SUMMARY,Calculated,Payback period (months),=(B58/B61)*12,Formula: (Investment / Annual benefit) × 12
+ROI SUMMARY,Input,Discount rate for NPV (%),8,Use client's cost of capital or 8% as default
+ROI SUMMARY,Calculated,Year 2 net benefit,=B61-B59,Year 2: annual benefit minus recurring cost only
+ROI SUMMARY,Calculated,Year 3 net benefit,=B61-B59,Year 3: same as Year 2
+ROI SUMMARY,Calculated,3-year undiscounted net benefit,=B62+(B67*2),Year 1 net + Year 2 net + Year 3 net

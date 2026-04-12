@@ -1,0 +1,8 @@
+User ID,Full Name,AD Username,Email,Department,Site,Job Title,WALLIX Role,AD Groups (for LDAP mapping),MFA Type (HW / SW / None),Token Serial (if HW),Token Assigned Date,Training Session Date,Training Completed (Y/N),Go-Live Ready (Y/N),Account Active in AD (Y/N),Notes
+U-001,,,,IT Ops,,Systems Administrator,WALLIX Admin,CN=PAM-Admins,,,,,,N,Y,
+U-002,,,,IT Ops,,Systems Administrator,WALLIX Operator,CN=PAM-Operators,,,,,,N,Y,
+U-003,,,,OT Ops,,SCADA Engineer,WALLIX Operator,CN=PAM-OT-Users,HW,,,,,N,Y,Hardware token — control room
+U-004,,,,OT Ops,,PLC Technician,WALLIX Operator,CN=PAM-OT-Users,HW,,,,,N,Y,Hardware token — no smartphone on site
+U-005,,,,Security,,Security Analyst,WALLIX Auditor,CN=PAM-Auditors,SW,,,,,N,Y,FortiToken Mobile
+U-006,,,,External,,Vendor Engineer,WALLIX External,CN=PAM-Vendors,SW,,,,,N,N,JIT access only via Access Manager portal
+U-007,,,,IT Ops,,AD Administrator,WALLIX Admin,CN=PAM-Admins,SW,,,,,N,Y,FortiToken Mobile

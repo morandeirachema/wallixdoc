@@ -1,0 +1,8 @@
+Asset ID,Hostname,IP Address,FQDN,Site,Zone / VLAN,OS,OS Version,Protocol,Port,Device Type,Owner / Team,Business Function,PAM Priority (H/M/L),Account Name(s),Current Password Known (Y/N),Rotation Capable (Y/N),Rotation Plugin,Notes / Special Constraints,Onboarding Status
+A-001,,,,,,,Windows Server 2022,RDP,3389,Server,IT Ops,,H,Administrator,Y,Y,windows_local_account,,Not started
+A-002,,,,,,,RHEL 10,SSH,22,Server,IT Ops,,H,root,N,Y,unix_ssh,,Not started
+A-003,,,,,,,RHEL 9,SSH,22,Server,IT Ops,,M,svc-backup,Y,Y,unix_ssh,,Not started
+A-004,,,,,,,Windows Server 2022,RDP,3389,Jump Host,IT Ops,,H,Administrator,Y,Y,windows_local_account,,Not started
+A-005,,,,,,,Network Device,SSH,22,Switch / Router,Network,,M,admin,N,Y,cisco_ios,,Not started
+A-006,,,,,,,,Telnet,23,PLC / RTU,OT Ops,,H,plcadmin,N,N,—,Serial-to-IP converter required,Not started
+A-007,,,,,,,Windows Server 2022,HTTP,443,Web HMI,OT Ops,,H,admin,Y,N,—,Web-based HMI — evaluate Web Tunnel,Not started

@@ -1,0 +1,13 @@
+Risk ID,Category,Risk Description,Current Controls,Likelihood (1-5),Impact (1-5),Risk Score (L×I),Risk Level (H/M/L),PAM Mitigation,Residual Likelihood,Residual Impact,Residual Score,Residual Level,Owner,Target Date,Status,Notes
+R-001,Credential Theft,Privileged account passwords stolen via phishing or credential stuffing,Password policy only,4,5,20,H,MFA enforced at Bastion — stolen password alone insufficient,1,5,5,L,CISO,,Open,
+R-002,Shared Accounts,Generic accounts (admin / root) prevent individual accountability,None,5,4,20,H,Credential injection from vault — sessions attributed to named user,2,4,8,M,IT Manager,,Open,
+R-003,Vendor Access,Persistent vendor VPN accounts not reviewed or expired,Manual review (ad hoc),4,4,16,H,JIT access via Access Manager — time-limited sessions,1,4,4,L,IT Manager,,Open,
+R-004,No Session Recording,No audit trail of privileged actions — forensics impossible post-incident,Syslog (incomplete),4,5,20,H,Full session recording for all proxied connections,1,4,4,L,CISO,,Open,
+R-005,Stale Privileged Accounts,Former employees / contractors retain access after offboarding,Manual removal (delayed),3,5,15,H,AD integration — disabling account removes all Bastion access immediately,1,5,5,L,IT Manager,,Open,
+R-006,Unmanaged OT Access,Direct IT-to-OT access bypasses all controls,No Bastion in front of OT,4,5,20,H,Bastion deployed in OT DMZ — sole ingress for all privileged OT sessions,1,5,5,L,OT Manager,,Open,
+R-007,Password Rotation,Static credentials on target systems never rotated,Manual / never,3,4,12,M,Automated rotation via credential vault,1,4,4,L,IT Manager,,Open,
+R-008,No MFA,Single-factor authentication for privileged access,None,5,5,25,H,FortiAuthenticator TOTP MFA at Bastion,1,5,5,L,CISO,,Open,
+R-009,Insider Threat,Authorised user abuses privileged access with no monitoring,None,2,5,10,M,Session recording + SIEM alerting + JIT approval workflow,1,4,4,L,CISO,,Open,
+R-010,Compliance Gap,No evidence of privileged access controls for audit (NIS2 / IEC 62443),Ad hoc logs,4,4,16,H,Structured audit reports + session recording retention + compliance mapping,1,4,4,L,Compliance,,Open,
+R-011,HA Failure,Single Bastion node — outage blocks all privileged access,None,2,5,10,M,HA deployment — Active-Active or Active-Passive with automatic failover,1,5,5,L,IT Manager,,Open,
+R-012,Serial / Legacy PLC,Legacy PLCs not reachable via modern protocols — outside PAM scope,None,2,4,8,M,Serial-to-IP converter + Telnet proxy through Bastion,1,3,3,L,OT Manager,,Open,

@@ -1,0 +1,8 @@
+Token ID,Token Type,Token Serial Number,Assigned To (Full Name),AD Username,Department,Site,Distributed By,Distribution Date,Activation Date,Activation Confirmed (Y/N),First Login Test (Y/N),First Login Test Date,Replacement For (Token ID),Battery / Expiry Year (HW only),Status (Active / Spare / Lost / Decommissioned),Notes
+T-001,FortiToken 200 (HW),,,,,,,,,N,N,,—,—,Spare,Master spare — stored in IT safe
+T-002,FortiToken 200 (HW),,,,OT Ops,Site 1,,,,,N,,—,,Active,Control room operator — no smartphone permitted
+T-003,FortiToken 200 (HW),,,,OT Ops,Site 1,,,,,N,,—,,Active,Control room operator — no smartphone permitted
+T-004,FortiToken 200 (HW),,,,OT Ops,Site 2,,,,,N,,—,,Active,Control room operator — no smartphone permitted
+T-005,FortiToken Mobile (SW),N/A,,,,All sites,,,,,N,,N/A,N/A,Active,IT admin — FortiToken Mobile app on personal phone
+T-006,FortiToken Mobile (SW),N/A,,,,All sites,,,,,N,,N/A,N/A,Active,IT admin — FortiToken Mobile app on personal phone
+T-007,FortiToken Mobile (SW),N/A,,,,All sites,,,,,N,,N/A,N/A,Active,Vendor — JIT access only
