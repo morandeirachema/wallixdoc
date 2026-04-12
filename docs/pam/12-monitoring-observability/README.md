@@ -65,7 +65,7 @@
 ```bash
 # Basic service health
 curl -sk https://wallix.company.com/health
-# Returns: {"status": "healthy", "version": "12.3.2"}
+# Returns: {"status": "healthy", "version": "12.1.x"}
 
 # Detailed health check
 curl -sk https://wallix.company.com/api/health/detailed
@@ -409,7 +409,7 @@ if $programname == 'wab-audit' then {
 ```
 # CEF format for SIEM integration
 template(name="CEFFormat" type="string"
-  string="CEF:0|WALLIX|WALLIX Bastion|12.3.2|%msg:R,ERE,0,DFLT:event_id=([^,]+)--end%|%msg:R,ERE,0,DFLT:event_name=([^,]+)--end%|%msg:R,ERE,0,DFLT:severity=([^,]+)--end%|%msg%\n")
+  string="CEF:0|WALLIX|WALLIX Bastion|12.1.x|%msg:R,ERE,0,DFLT:event_id=([^,]+)--end%|%msg:R,ERE,0,DFLT:event_name=([^,]+)--end%|%msg:R,ERE,0,DFLT:severity=([^,]+)--end%|%msg%\n")
 ```
 
 ### Log Categories

@@ -906,7 +906,7 @@ resource "wallix_authorization" "linux_admin_access" {
     "severity": "info",
     "source": {
       "host": "wallix.company.com",
-      "version": "12.3.2",
+      "version": "12.1.x",
       "cluster_node": "primary"
     },
     "actor": {

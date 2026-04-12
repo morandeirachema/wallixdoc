@@ -1,10 +1,20 @@
-# 49 - Active Directory + FortiAuthenticator 300F: Complete 2FA Integration
+# 49 - Active Directory + FortiAuthenticator 6.4+: Complete 2FA Integration
 
 ## Production Deployment Guide for WALLIX Bastion
 
-This guide provides end-to-end, production-ready procedures to integrate WALLIX Bastion with Active Directory for identity management and FortiAuthenticator 300F for two-factor authentication (2FA). Every step is ordered by component (AD first, FortiAuthenticator second, WALLIX third) and validated with testable checkpoints.
+This guide provides end-to-end, production-ready procedures to integrate WALLIX
+Bastion with Active Directory for identity management and FortiAuthenticator 6.4+
+for two-factor authentication (2FA). Every step is ordered by component (AD
+first, FortiAuthenticator second, WALLIX third) and validated with testable
+checkpoints.
 
-**Scope:** Single-domain Active Directory, FortiAuthenticator 300F (hardware appliance) with FortiToken Mobile, WALLIX Bastion 12.x, 5-site multi-datacenter deployment.
+**Scope:** This guide applies **per-site**. Each of the 5 sites has its own
+FortiAuthenticator 6.4+ HA pair in the Cyber VLAN and its own AD DC in the
+Cyber VLAN. WALLIX Bastion nodes are in the DMZ VLAN. LDAPS and RADIUS traffic
+crosses the Fortigate inter-VLAN boundary within each site. Repeat this
+configuration independently for each site.
+
+**MFA method:** TOTP only via FortiToken Mobile. No push notification, no SMS.
 
 ---
 
@@ -14,7 +24,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 2. [Authentication Flow — How It Works](#2-authentication-flow--how-it-works)
 3. [Prerequisites and Planning](#3-prerequisites-and-planning)
 4. [Phase 1: Active Directory Preparation](#4-phase-1-active-directory-preparation)
-5. [Phase 2: FortiAuthenticator 300F Configuration](#5-phase-2-fortiauthenticator-300f-configuration)
+5. [Phase 2: FortiAuthenticator 6.4+ Configuration](#5-phase-2-fortiauthenticator-6-4-configuration)
 6. [Phase 3: WALLIX Bastion Configuration](#6-phase-3-wallix-bastion-configuration)
 7. [Phase 4: End-to-End Testing](#7-phase-4-end-to-end-testing)
 8. [Phase 5: User Enrollment at Scale](#8-phase-5-user-enrollment-at-scale)
@@ -36,7 +46,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 | Component | Role | What It Does | What It Does NOT Do |
 |-----------|------|--------------|---------------------|
 | **Active Directory** | Identity Provider | Stores users, groups, passwords; validates credentials via LDAPS | Does not perform 2FA |
-| **FortiAuthenticator 300F** | MFA Provider | Manages FortiTokens, validates OTP/push via RADIUS | Does NOT validate passwords |
+| **FortiAuthenticator 6.4+** | MFA Provider | Manages FortiTokens, validates TOTP via RADIUS | Does NOT validate passwords |
 | **WALLIX Bastion** | PAM Gateway | Orchestrates login flow: LDAP Phase 1 + RADIUS Phase 2 | Does not store AD passwords |
 
 ### 1.2 Network Architecture
@@ -66,7 +76,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 |     v                       v                                                 |
 |  +------------------+   +----------------------+                              |
 |  | Active Directory |   | FortiAuthenticator   |                              |
-|  | DC1: 10.20.0.10  |   | 300F Primary         |                              |
+|  | DC1: 10.20.0.10  |   | FortiAuth Primary    |                              |
 |  | DC2: 10.20.0.11  |   | 10.20.0.60           |                              |
 |  +------------------+   |                      |                              |
 |     ^                   | FortiAuth Secondary  |                              |
@@ -75,7 +85,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 |     | User sync                     |                                         |
 |     +-------------------------------+                                         |
 |                                                                               |
-|  SHARED INFRASTRUCTURE VLAN: 10.20.0.0/24                                     |
+|  CYBER VLAN (per-site): 10.20.0.0/24 (example — replicate per site)                                     |
 +===============================================================================+
 ```
 
@@ -96,7 +106,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 | 11 | FortiAuth Primary             | FortiGuard Servers          | 443/TCP  | HTTPS    | License validation, updates |
 | 12 | FortiAuth Primary             | FortiAuth Secondary         | 8009/TCP | HA Sync  | Configuration + token replication |
 | 13 | Administrators                | FortiAuth Primary           | 443/TCP  | HTTPS    | Web UI management |
-| 14 | User mobile devices           | FortiGuard Push Servers     | 443/TCP  | HTTPS    | Push notifications |
+| 14 | User mobile devices           | FortiGuard Push Servers     | 443/TCP  | HTTPS    | TOTP codes |
 
 ---
 
@@ -107,7 +117,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 |                2FA LOGIN FLOW (STEP BY STEP)                                   |
 +================================================================================+
 |                                                                                |
-|  User                WALLIX Bastion        Active Directory   FortiAuth 300F   |
+|  User                WALLIX Bastion        Active Directory   FortiAuthenticator 6.4+   |
 |  ====                ==============        ================   ==============   |
 |    |                       |                      |                  |         |
 |    | 1. Username + Password|                      |                  |         |
@@ -139,7 +149,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 |    |                       |<----------------------------------------|         |
 |    |                       |                      |                  |         |
 |    | 10. "Enter OTP" or    |                      |                  |         |
-|    |     Push notification |                      |                  |         |
+|    |     TOTP code |                      |                  |         |
 |    |<----------------------|                      |                  |         |
 |    |                       |                      |                  |         |
 |    | 11. OTP / Push Approve|                      |                  |         |
@@ -171,7 +181,7 @@ This guide provides end-to-end, production-ready procedures to integrate WALLIX 
 
 | Component               | Requirement                 | Details |
 |-------------------------|-----------------------------|-------------------------------------------------|
-| **FortiAuthenticator**  | 300F hardware appliance     | Rack-mounted, 1U, dual power supply |
+| **FortiAuthenticator**  | 6.4+ (hardware or VM)       | Specific model not mandated — 6.4+ firmware required |
 | **FortiAuth Firmware**  | 6.4+ (6.6+ recommended)     | Check: `get system status` via CLI |
 | **FortiToken Licenses** | Per-user FortiToken Mobile  | Purchased in packs (5, 25, 100, 1000) |
 | **FortiCare Support**   | Active subscription         | Required for firmware updates |
@@ -222,7 +232,7 @@ Complete this worksheet before proceeding:
 |  PAM Groups OU:        ____________________________                         |
 |  CA Certificate:       [ ] Exported  [ ] Copied to Bastion                  |
 |                                                                             |
-|  FORTIAUTHENTICATOR 300F                                                    |
+|  FORTIAUTHENTICATOR 6.4+                                                    |
 |  ========================                                                   |
 |  Primary FQDN:         ____________________________                         |
 |  Primary IP:           ____________________________                         |
@@ -257,7 +267,7 @@ Complete **every** item before proceeding to Phase 1:
 |  ==============                                                             |
 |  [ ] Active Directory operational with LDAPS (port 636) enabled             |
 |  [ ] AD CS deployed -- DCs have valid LDAPS certificates                    |
-|  [ ] FortiAuthenticator 300F rack-mounted, powered, IP assigned             |
+|  [ ] FortiAuthenticator 6.4+ deployed (hardware or VM), IP assigned             |
 |  [ ] FortiAuth firmware 6.4+ verified (get system status)                   |
 |  [ ] FortiAuth base license activated                                       |
 |  [ ] FortiToken Mobile licenses loaded (count matches user count)           |
@@ -278,7 +288,7 @@ Complete **every** item before proceeding to Phase 1:
 |  TIME SYNCHRONIZATION (CRITICAL FOR OTP)                                    |
 |  =======================================                                    |
 |  [ ] NTP configured on all WALLIX Bastion nodes                             |
-|  [ ] NTP configured on FortiAuthenticator 300F                              |
+|  [ ] NTP configured on FortiAuthenticator 6.4+                              |
 |  [ ] NTP configured on AD Domain Controllers                                |
 |  [ ] Clock drift verified < 5 seconds across all components                 |
 |                                                                             |
@@ -539,16 +549,16 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 
 ---
 
-## 5. Phase 2: FortiAuthenticator 300F Configuration
+## 5. Phase 2: FortiAuthenticator 6.4+ Configuration
 
 ### 5.1 Initial Appliance Setup
 
-#### Rack Mount and Power On
+#### Initial Hardware or VM Setup
 
-The FortiAuthenticator 300F is a 1U rack-mount appliance. Connect:
-- Port 1 (mgmt) to the management/shared infrastructure VLAN (10.20.0.0/24)
-- Dual power supplies to separate power feeds (redundancy)
-- Console cable for initial configuration
+For hardware appliances, rack-mount and connect port 1 (mgmt) to the Cyber
+VLAN switch. Connect dual power supplies to separate power feeds (redundancy).
+For VM deployments, attach the network adapter to the Cyber VLAN port group.
+Connect a console cable (hardware) or open a VM console for initial setup.
 
 #### CLI Initial Configuration
 
@@ -601,7 +611,7 @@ execute ping 10.10.1.11       # WALLIX Bastion Site 1, Node 1
 
 # Verify firmware version
 get system status
-# Expected: Version: FortiAuthenticator-300F v6.6.x
+# Expected: Version: FortiAuthenticator-VM v6.6.x (or hardware model version)
 ```
 
 ### 5.2 Configure NTP (Critical)
@@ -925,7 +935,7 @@ diagnose system ntp status
 |  PHASE 2 CHECKPOINT                                                         |
 +=============================================================================+
 |                                                                             |
-|  [ ] FortiAuth 300F configured with static IP, hostname, DNS                |
+|  [ ] FortiAuthenticator 6.4+ configured with static IP, hostname, DNS                |
 |  [ ] NTP synchronized (drift < 1 second)                                    |
 |  [ ] SSL certificate installed for web UI                                   |
 |  [ ] SMTP configured and test email sent successfully                       |
@@ -1391,7 +1401,7 @@ wabadmin auth test \
    "Waiting for FortiToken authentication..."
 
 5. On FortiToken Mobile app:
-   - Push notification appears
+   - TOTP code appears
    - Review: "Login to WALLIX Bastion"
    - Tap "Approve"
 
@@ -1417,7 +1427,7 @@ Password: [AD password]
 # Option A: Enter 6-digit OTP from FortiToken Mobile
 OTP: 123456
 
-# Option B: Approve push notification on phone
+# Option B: Approve TOTP code on phone
 
 # Step 3: Target selection appears
 # jadmin has access to the following targets:
@@ -1469,7 +1479,7 @@ done
 +=============================================================================+
 |                                                                             |
 |  [ ] CLI RADIUS test passed (wabadmin auth test)                            |
-|  [ ] Web UI login with MFA -- push notification approved                    |
+|  [ ] Web UI login with MFA -- TOTP code approved                    |
 |  [ ] Web UI login with MFA -- manual OTP entry                              |
 |  [ ] SSH proxy login with MFA passed                                        |
 |  [ ] RDP proxy login with MFA passed                                        |
@@ -1547,12 +1557,12 @@ ENROLLMENT STEPS (5 minutes):
 3. TEST YOUR LOGIN:
    - Go to https://wallix.company.com
    - Enter your username and password as usual
-   - When prompted, approve the push notification on your phone
+   - When prompted, approve the TOTP code on your phone
      OR enter the 6-digit code shown in FortiToken Mobile
 
 WHAT CHANGES:
 - You will see a second prompt after entering your password
-- Approve the push notification (recommended) or type the 6-digit code
+- Approve the TOTP code (recommended) or type the 6-digit code
 - Nothing else changes -- same username, same password, same targets
 
 NEED HELP?
@@ -1888,10 +1898,10 @@ wabadmin audit search --type mfa-bypass --last 24h
    Drift Tolerance: 1 interval (+/-30 seconds)
    Higher values reduce security, lower values cause false rejections
 
-5. Enable push notification details
+5. Enable TOTP code details
    FortiAuth > Authentication > FortiToken > Settings
-   [x] Show source IP in push notification
-   [x] Show service name in push notification
+   [x] Show source IP in TOTP code
+   [x] Show service name in TOTP code
    Reason: helps users detect phishing attempts
 ```
 
@@ -2182,10 +2192,10 @@ chronyc tracking                          # On WALLIX Bastion
 #### "MFA timeout — no response"
 
 ```bash
-# User didn't receive push notification:
+# User didn't receive TOTP code:
 # 1. Check phone has internet connectivity
 # 2. Check FortiToken app is installed and token activated
-# 3. Check push notification permissions on phone
+# 3. Check TOTP code permissions on phone
 # 4. Try manual OTP entry instead of push
 
 # Increase timeout if network latency is high:
@@ -2283,7 +2293,7 @@ wabadmin audit stats --type mfa --group-by method --last 30d
 |  [ ] CA certificate exported and distributed                                |
 |  [ ] LDAP bind test successful from all Bastion nodes                       |
 |                                                                             |
-|  PHASE 2: FORTIAUTHENTICATOR 300F                                           |
+|  PHASE 2: FORTIAUTHENTICATOR 6.4+                                           |
 |  [ ] Firmware 6.4+ verified                                                 |
 |  [ ] NTP synchronized (drift < 1 second)                                    |
 |  [ ] SSL certificate installed                                              |
@@ -2305,7 +2315,7 @@ wabadmin audit stats --type mfa --group-by method --last 30d
 |  [ ] Break-glass account created with alert                                 |
 |                                                                             |
 |  PHASE 4: END-TO-END TESTING                                                |
-|  [ ] Web UI login with push notification -- PASSED                          |
+|  [ ] Web UI login with TOTP code -- PASSED                          |
 |  [ ] Web UI login with manual OTP -- PASSED                                 |
 |  [ ] SSH proxy login with MFA -- PASSED                                     |
 |  [ ] RDP proxy login with MFA -- PASSED                                     |

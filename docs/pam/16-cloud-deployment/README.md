@@ -1,5 +1,11 @@
 # 16 - Deployment Options
 
+> **This section covers on-premises deployment patterns. WALLIX Bastion in
+> this deployment is installed exclusively on bare metal hardware appliances
+> and VMs — no cloud, container, or SaaS deployment. No Docker or Kubernetes
+> is used. All components are physically located in on-premises datacenter
+> buildings connected by a private MPLS backbone.**
+
 > **Note**: This documentation focuses on **on-premises deployment**. For cloud-specific guidance, refer to the official WALLIX documentation linked below.
 
 ---
@@ -12,7 +18,7 @@ For authoritative deployment guidance, always refer to the official WALLIX docum
 
 | Document | URL | Description |
 |----------|-----|-------------|
-| **Deployment Guide (12.3.2)** | [bastion_12.0.2_en_deployment_guide.pdf](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf) | Official deployment procedures |
+| **Deployment Guide (12.1.x)** | [bastion_12.0.2_en_deployment_guide.pdf](https://marketplace-wallix.s3.amazonaws.com/bastion_12.0.2_en_deployment_guide.pdf) | Official deployment procedures |
 | **Administration Guide** | [bastion_en_administration_guide.pdf](https://pam.wallix.one/documentation/admin-doc/bastion_en_administration_guide.pdf) | Complete administration reference |
 | **Architecture Guide** | [architecture.html](https://pam.wallix.one/documentation/deployment/getting-started/architecture.html) | Deployment architecture patterns |
 | **Documentation Portal** | [pam.wallix.one](https://pam.wallix.one/documentation) | All official documentation |

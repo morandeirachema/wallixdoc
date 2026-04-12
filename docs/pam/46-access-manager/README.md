@@ -1,17 +1,38 @@
-# 46 - WALLIX Access Manager Setup and Configuration
+# 46 - WALLIX Access Manager
+
+> **SCOPE: CLIENT-MANAGED — Bastion-side integration only.**
+>
+> Access Manager is **installed, configured, and operated by the client's own
+> team**. We do NOT install or configure Access Manager. Our scope is limited
+> to the Bastion-side registration that allows the client's Access Manager to
+> communicate with each WALLIX Bastion node.
+>
+> What we provide to the client AM team:
+> - Bastion API endpoint: `https://<bastion-vip>:443/api/`
+> - API user credentials (read-only, dedicated to AM integration)
+> - SAML Service Provider metadata URL for SSO configuration
+> - Health check URL for AM-side monitoring
+> - Firewall rules required (AM to Bastion TCP/443)
+>
+> The Installation, System Requirements, and Initial Configuration sections
+> below are retained for reference — they describe what the client AM team
+> handles on their side. Do NOT follow these steps in our deployment.
+>
+> For Bastion-side configuration steps, see:
+> - [48 - AM Bastion Connectivity](../48-access-manager-bastion-connectivity/README.md)
 
 ## Table of Contents
 
 1. [Access Manager Overview](#access-manager-overview)
 2. [Architecture and Components](#architecture-and-components)
-3. [System Requirements](#system-requirements)
-4. [Installation](#installation)
-5. [Initial Configuration](#initial-configuration)
+3. [System Requirements](#system-requirements) *(client-managed — reference only)*
+4. [Installation](#installation) *(client-managed — reference only)*
+5. [Initial Configuration](#initial-configuration) *(client-managed — reference only)*
 6. [Integration with WALLIX Bastion](#integration-with-wallix-bastion)
-7. [User Portal Configuration](#user-portal-configuration)
-8. [Application Connector Setup](#application-connector-setup)
-9. [Authentication Configuration](#authentication-configuration)
-10. [Authorization Policies](#authorization-policies)
+7. [User Portal Configuration](#user-portal-configuration) *(client-managed — reference only)*
+8. [Application Connector Setup](#application-connector-setup) *(client-managed — reference only)*
+9. [Authentication Configuration](#authentication-configuration) *(client-managed — reference only)*
+10. [Authorization Policies](#authorization-policies) *(client-managed — reference only)*
 11. [Monitoring and Logging](#monitoring-and-logging)
 12. [Troubleshooting](#troubleshooting)
 13. [Best Practices](#best-practices)
@@ -219,6 +240,10 @@ OUTBOUND (From Access Manager)
 ---
 
 ## Installation
+
+> **CLIENT-MANAGED — Do not perform these steps.** The client's AM team
+> installs and manages both Access Manager nodes. This section is retained
+> for reference so we understand what the client AM team is doing.
 
 ### Pre-Installation Checklist
 
@@ -434,6 +459,59 @@ sudo wallix-am test smtp --to admin@company.com
 
 ## Integration with WALLIX Bastion
 
+> **This section is OUR scope.** We configure the Bastion side of the
+> AM-to-Bastion integration. The client AM team configures the AM side.
+> Steps marked [CLIENT TEAM] are performed by the client's AM team.
+> Steps marked [OUR SCOPE] are performed by us on the Bastion nodes.
+
+### What We Provide to the Client AM Team
+
+| Item | Value | Notes |
+|------|-------|-------|
+| Bastion API endpoint | `https://<site-vip>/api/` | Per-site HAProxy VIP |
+| API user name | `am-integration` | Read-only, dedicated to AM |
+| API key | Generated per Bastion cluster | One per site |
+| SAML SP metadata URL | `https://<site-vip>/saml/metadata` | For AM SSO config |
+| Health check URL | `https://<site-vip>/api/version` | Returns HTTP 200 if healthy |
+| Required firewall rule | AM nodes TCP/443 -> Bastion VIP | All sites |
+
+### Bastion-Side Configuration (OUR SCOPE)
+
+#### Create the AM Integration API User (on each Bastion cluster)
+
+```bash
+# On WALLIX Bastion (repeat per site)
+wabadmin user add \
+  --name am-integration \
+  --email am-integration@company.com \
+  --profile api-user \
+  --api-key-enabled true
+
+# Generate API key — provide to client AM team
+wabadmin user api-key generate am-integration
+# Copy the API key output and hand it to the client AM team
+```
+
+#### Validate AM Connectivity from Bastion (OUR SCOPE)
+
+```bash
+# From Bastion, verify AM can reach the API
+curl -sk -H "X-Auth-Token: <api-key>" \
+  https://<bastion-vip>/api/version | python3 -m json.tool
+# Expected: {"product": "WALLIX Bastion", "version": "12.1.x", ...}
+```
+
+#### Check AM Registration Status (OUR SCOPE)
+
+```bash
+# Verify Access Manager is registered and healthy
+wabadmin am-status
+# Expected: Access Manager: Connected (Site: <site-name>)
+```
+
+For complete step-by-step Bastion-side procedures, see
+[48 - Access Manager Bastion Connectivity](../48-access-manager-bastion-connectivity/README.md).
+
 ### Bastion Integration Architecture
 
 ```
@@ -489,7 +567,7 @@ sudo wallix-am bastion test "Primary Bastion"
 # Expected output:
 # ✓ Connection successful
 # ✓ API authentication verified
-# ✓ Version: WALLIX Bastion 12.3.2
+# ✓ Version: WALLIX Bastion 12.1.x
 # ✓ Status: Healthy
 ```
 
@@ -1089,5 +1167,5 @@ sudo iptables -L OUTPUT -n -v | grep 443
 ---
 
 *Document Version: 1.0*
-*Last Updated: February 2026*
+*Last Updated: April 2026*
 *Applies to: WALLIX Access Manager 5.2.x*

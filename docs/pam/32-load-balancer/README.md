@@ -2045,7 +2045,7 @@ output "load_balancer_fqdn" {
 |                                                                           |
 |   {                                                                       |
 |       "status": "healthy",                                                |
-|       "version": "12.3.2",                                                |
+|       "version": "12.1.x",                                                |
 |       "node": "wallix-node1",                                             |
 |       "timestamp": "2026-01-31T10:30:00Z",                                |
 |       "components": {                                                     |
@@ -2587,5 +2587,5 @@ awk '$10 > 5 {print $7,$10}' /var/log/nginx/access.log | sort -t' ' -k2 -rn | he
 | Item | Value |
 |------|-------|
 | Document Version | 1.0 |
-| WALLIX Bastion Version | 12.3.2 |
+| WALLIX Bastion Version | 12.1.x |
 | Last Updated | January 2026 |

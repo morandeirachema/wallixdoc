@@ -1634,7 +1634,7 @@ Session Detail View:
 |  |   ============================                                        |   |
 |  |                                                                       |   |
 |  |   [x] Enable push authentication                                      |   |
-|  |       Receive push notifications for login approval                   |   |
+|  |       Receive TOTP codes for login approval                   |   |
 |  |                                                                       |   |
 |  |   [x] Require biometric to approve                                    |   |
 |  |       Face ID / Touch ID / Fingerprint required                       |   |
@@ -1656,7 +1656,7 @@ Session Detail View:
 |                                                                               |
 |  +-----------------------------------------------------------------------+   |
 |  |                                                                       |   |
-|  |   Send a test push notification to verify setup:                      |   |
+|  |   Send a test TOTP code to verify setup:                      |   |
 |  |                                                                       |   |
 |  |   Device: [iPhone 14 Pro     v]                                       |   |
 |  |                                                                       |   |

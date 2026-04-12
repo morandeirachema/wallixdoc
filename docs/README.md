@@ -1,125 +1,164 @@
 # WALLIX Bastion Documentation
 
-> Complete reference for **WALLIX Bastion** with Fortigate MFA — 48 sections covering PAM fundamentals, authentication, session management, deployment, operations, compliance, and licensing.
+> Complete reference for **WALLIX Bastion 12.1.x** with FortiAuthenticator
+> MFA — 50 sections covering PAM fundamentals, authentication, session
+> management, deployment, operations, compliance, and licensing.
 >
-> Built on WALLIX Bastion 12.x technology with integrated Fortinet multi-factor authentication and Access Manager.
+> Deployment: 5-site on-premises multi-datacenter, bare metal hardware
+> appliances and VMs, MPLS backbone. FortiAuthenticator 6.4+ HA pair per
+> site. Access Manager is client-managed.
 
 ---
 
 ## Documentation Structure
 
-This documentation is organized in a single PAM category:
-
 ```
 docs/
-└── pam/    # PAM/WALLIX Core (48 sections)
+└── pam/    # PAM/WALLIX Core (50 sections, 00-49)
             # Authentication, authorization, password management,
             # session recording, API, deployment, operations,
-            # Fortigate MFA integration, Access Manager, licensing
+            # FortiAuthenticator MFA integration, Access Manager, licensing
 ```
 
 ---
 
-## PAM / WALLIX Core Documentation
+## Group 1 — Fundamentals
 
-### Getting Started (00-05)
-
-| # | Section | Description |
-|---|---------|-------------|
-| 00 | [Official Resources](./pam/00-official-resources/README.md) | Curated links to official WALLIX docs and PDFs |
-| 01 | [Quick Start](./pam/01-quick-start/README.md) | Quick installation and configuration guide |
-| 02 | [Introduction](./pam/02-introduction/README.md) | WALLIX overview, product suite, market positioning |
-| 03 | [Architecture](./pam/03-architecture/README.md) | Deployment models, component architecture |
-| 04 | [Core Components](./pam/04-core-components/README.md) | Session Manager, Password Manager, Access Manager |
-| 05 | [Configuration](./pam/05-configuration/README.md) | Object model, domains, devices, accounts |
-
-### Authentication & Authorization (06-07)
+Core concepts and initial orientation. Start here before anything else.
 
 | # | Section | Description |
 |---|---------|-------------|
-| 06 | [Authentication](./pam/06-authentication/README.md) | MFA, SSO, LDAP/AD, OIDC/SAML, Kerberos, FortiAuthenticator |
-| 07 | [Authorization](./pam/07-authorization/README.md) | RBAC, approval workflows, time windows |
+| 00 | [Official Resources](./pam/00-official-resources/README.md) | Curated links to official WALLIX documentation, PDFs, and support portal |
+| 01 | [Quick Start](./pam/01-quick-start/README.md) | First-run walkthrough: UI tour, initial objects, learning path by role |
+| 02 | [Introduction](./pam/02-introduction/README.md) | WALLIX company overview, product suite, PAM market positioning vs CyberArk |
+| 03 | [Architecture](./pam/03-architecture/README.md) | 5-site MPLS topology, per-site VLAN design, proxy vs agent model, data flows |
+| 04 | [Core Components](./pam/04-core-components/README.md) | Session Manager, Password Manager, Access Manager — roles and interactions |
+| 05 | [Configuration](./pam/05-configuration/README.md) | Object model (domains, devices, accounts, authorizations), configuration walkthroughs |
 
-### Credential & Session Management (08-09)
+---
 
-| # | Section | Description |
-|---|---------|-------------|
-| 08 | [Password Management](./pam/08-password-management/README.md) | Vault, rotation, checkout workflows |
-| 09 | [Session Management](./pam/09-session-management/README.md) | Recording, monitoring, audit trails |
+## Group 2 — Authentication & Identity
 
-### API & Automation (10)
-
-| # | Section | Description |
-|---|---------|-------------|
-| 10 | [API & Automation](./pam/10-api-automation/README.md) | REST API, scripting, DevOps integration |
-
-### Infrastructure & High Availability (11-14)
+How users prove their identity to WALLIX Bastion and how the MFA chain works.
 
 | # | Section | Description |
 |---|---------|-------------|
-| 11 | [High Availability](./pam/11-high-availability/README.md) | Clustering, DR, backup, failover |
-| 12 | [Monitoring & Observability](./pam/12-monitoring-observability/README.md) | Prometheus, Grafana, alerting, logs |
-| 13 | [Troubleshooting](./pam/13-troubleshooting/README.md) | Diagnostics, common issues, log analysis |
-| 14 | [Best Practices](./pam/14-best-practices/README.md) | Security hardening, design patterns |
+| 06 | [Authentication](./pam/06-authentication/README.md) | LDAP/AD per-site, RADIUS/FortiAuth TOTP chain, Kerberos SSO, SAML, OIDC |
+| 07 | [Authorization](./pam/07-authorization/README.md) | RBAC, access policies, approval workflows, time windows, JIT |
+| 34 | [LDAP/AD Integration](./pam/34-ldap-ad-integration/README.md) | Per-site AD DC (Cyber VLAN), LDAPS over Fortigate, group sync, troubleshooting |
+| 35 | [Kerberos Authentication](./pam/35-kerberos-authentication/README.md) | Kerberos SPNEGO, keytab generation, cross-realm trust, Windows SSO |
+| 49 | [AD + FortiAuthenticator 2FA](./pam/49-ad-fortiauthenticator-2fa/README.md) | End-to-end 2FA integration: LDAP Phase 1 + TOTP Phase 2 via FortiAuth 6.4+ |
 
-### Reference & Appendix (15-22)
+---
 
-| # | Section | Description |
-|---|---------|-------------|
-| 15 | [Appendix](./pam/15-appendix/README.md) | Glossary, quick reference, cheat sheets |
-| 16 | [Deployment Options](./pam/16-cloud-deployment/README.md) | On-premises VMs, bare metal, Terraform IaC |
-| 17 | [API Reference](./pam/17-api-reference/README.md) | Complete REST API documentation |
-| 18 | [Error Reference](./pam/18-error-reference/README.md) | Error codes, causes, remediation |
-| 19 | [System Requirements](./pam/19-system-requirements/README.md) | Hardware sizing, performance tuning |
-| 20 | [Upgrade Guide](./pam/20-upgrade-guide/README.md) | Version upgrades, HA procedures |
-| 21 | [Operational Runbooks](./pam/21-operational-runbooks/README.md) | Daily/weekly/monthly procedures |
-| 22 | [FAQ & Known Issues](./pam/22-faq-known-issues/README.md) | Common questions, limitations |
+## Group 3 — Session & Credential Management
 
-### Compliance & Incident Response (23-25)
+How sessions are proxied, recorded, and credentials are stored and injected.
 
 | # | Section | Description |
 |---|---------|-------------|
-| 23 | [Incident Response](./pam/23-incident-response/README.md) | Security playbooks, forensics |
-| 24 | [Compliance & Audit](./pam/24-compliance-audit/README.md) | SOC2, ISO27001, PCI-DSS, HIPAA, GDPR |
-| 25 | [JIT Access](./pam/25-jit-access/README.md) | Just-In-Time access, approval workflows, time-bounded access |
+| 08 | [Password Management](./pam/08-password-management/README.md) | Credential vault (AES-256), automatic rotation, checkout/checkin workflows |
+| 09 | [Session Management](./pam/09-session-management/README.md) | Session recording, real-time monitoring, keystroke logging, audit trail |
+| 38 | [Command Filtering](./pam/38-command-filtering/README.md) | Command whitelisting/blacklisting, regex patterns, SSH and RDP restrictions |
+| 39 | [Session Recording Playback](./pam/39-session-recording-playback/README.md) | Playback controls, OCR text search, forensic export, retention policies |
+| 43 | [Session Sharing & Collaboration](./pam/43-session-sharing/README.md) | Multi-user session sharing, dual-control (4-eyes), supervisor monitoring |
 
-### Performance & Infrastructure (26-32)
+---
 
-| # | Section | Description |
-|---|---------|-------------|
-| 26 | [Performance Benchmarks](./pam/26-performance-benchmarks/README.md) | Capacity planning, load testing, optimization |
-| 27 | [Vendor-Specific Integration](./pam/27-vendor-integration/README.md) | Cisco, Microsoft, Red Hat |
-| 28 | [Certificate Management](./pam/28-certificate-management/README.md) | TLS/SSL, CSR generation, renewal, Let's Encrypt, HSM |
-| 29 | [Disaster Recovery](./pam/29-disaster-recovery/README.md) | DR runbooks, RTO/RPO, failover procedures, PITR |
-| 30 | [Backup and Restore](./pam/30-backup-restore/README.md) | Full/selective backup, PITR, offsite storage |
-| 31 | [wabadmin CLI Reference](./pam/31-wabadmin-reference/README.md) | Complete CLI command reference, syntax, examples |
-| 32 | [Load Balancer Configuration](./pam/32-load-balancer/README.md) | HAProxy, Nginx, F5, health checks, SSL termination |
+## Group 4 — Deployment & Infrastructure
 
-### Advanced Authentication (33-40)
+Installing, sizing, and configuring the Bastion infrastructure.
 
 | # | Section | Description |
 |---|---------|-------------|
-| 33 | [Password Rotation Troubleshooting](./pam/33-password-rotation-troubleshooting/README.md) | Rotation failures, SSH keys, custom scripts |
-| 34 | [LDAP/AD Integration](./pam/34-ldap-ad-integration/README.md) | Active Directory, LDAP sync, group mapping |
-| 35 | [Kerberos Authentication](./pam/35-kerberos-authentication/README.md) | Kerberos, SPNEGO, keytab, cross-realm trust |
-| 36 | [Network Configuration](./pam/36-network-validation/README.md) | Firewall rules, DNS, NTP, validation procedures |
-| 37 | [Compliance Evidence](./pam/37-compliance-evidence/README.md) | Evidence collection, audit artifacts, attestation |
-| 38 | [Command Filtering](./pam/38-command-filtering/README.md) | Command whitelisting/blacklisting, regex patterns |
-| 39 | [Session Recording Playback](./pam/39-session-recording-playback/README.md) | Playback, OCR search, forensics, export |
+| 11 | [High Availability](./pam/11-high-availability/README.md) | Active-Active and Active-Passive HA models, Pacemaker/Corosync, MariaDB replication |
+| 16 | [Deployment Options](./pam/16-cloud-deployment/README.md) | On-premises deployment patterns: bare metal appliances and VMs only |
+| 19 | [System Requirements](./pam/19-system-requirements/README.md) | Hardware sizing, CPU/RAM/disk for each component, capacity planning |
+| 20 | [Upgrade Guide](./pam/20-upgrade-guide/README.md) | Version upgrade procedures, HA cluster rolling upgrades, pre/post checks |
+| 32 | [Load Balancer Configuration](./pam/32-load-balancer/README.md) | HAProxy Active-Passive with Keepalived VRRP, health checks, SSL termination |
+| 36 | [Network Configuration](./pam/36-network-validation/README.md) | Firewall rules (Fortigate inter-VLAN), DNS, NTP, connectivity validation |
 
-### Advanced Features (40-48)
+---
+
+## Group 5 — Access Manager & Licensing
+
+Access Manager integration (client-managed) and WALLIX licensing.
 
 | # | Section | Description |
 |---|---------|-------------|
-| 40 | [Account Discovery & Onboarding](./pam/40-account-discovery/README.md) | Discovery scanning, orphaned accounts, bulk import |
-| 41 | [SSH Key Lifecycle](./pam/41-ssh-key-lifecycle/README.md) | SSH key generation, rotation, revocation, CA, HSM |
-| 42 | [Service Account Lifecycle](./pam/42-service-account-lifecycle/README.md) | Service account governance, rotation, decommissioning |
-| 43 | [Session Sharing & Collaboration](./pam/43-session-sharing/README.md) | Multi-user sessions, dual-control, training |
-| 44 | [User Self-Service Portal](./pam/44-user-self-service/README.md) | Password management, MFA enrollment, credential checkout |
-| 45 | [Privileged Task Automation](./pam/45-privileged-task-automation/README.md) | Automated privileged tasks, service accounts, runbooks |
-| 46 | [Access Manager Setup](./pam/46-access-manager/README.md) | WALLIX Access Manager installation, configuration, integration |
-| 47 | [Licensing Guide](./pam/47-licensing/README.md) | Licensing models, HA licensing, multi-site scenarios, activation |
-| 48 | [Access Manager Bastion Connectivity](./pam/48-access-manager-bastion-connectivity/README.md) | API integration, session brokering, multi-site federation |
+| 46 | [Access Manager](./pam/46-access-manager/README.md) | AM overview, client-managed scope, Bastion-side API user and key provisioning |
+| 47 | [Licensing Guide](./pam/47-licensing/README.md) | Licensing models (Session, Password, Discovery), HA licensing, multi-site activation |
+| 48 | [AM Bastion Connectivity](./pam/48-access-manager-bastion-connectivity/README.md) | Bastion-side API integration, SAML SP config, session brokering, HA routing |
+
+---
+
+## Group 6 — Operations & Monitoring
+
+Day-to-day administration, monitoring, troubleshooting, and CLI reference.
+
+| # | Section | Description |
+|---|---------|-------------|
+| 10 | [API & Automation](./pam/10-api-automation/README.md) | REST API usage, scripting with Python/Ansible/Terraform, DevOps integration |
+| 12 | [Monitoring & Observability](./pam/12-monitoring-observability/README.md) | Prometheus metrics, Grafana dashboards, Alertmanager, SIEM log forwarding |
+| 13 | [Troubleshooting](./pam/13-troubleshooting/README.md) | Diagnostic procedures, log analysis, LDAP/AD and certificate issue resolution |
+| 14 | [Best Practices](./pam/14-best-practices/README.md) | Security hardening checklist, operational design patterns, configuration hygiene |
+| 21 | [Operational Runbooks](./pam/21-operational-runbooks/README.md) | Daily/weekly/monthly procedures, alert escalation, failover testing, break-glass |
+| 22 | [FAQ & Known Issues](./pam/22-faq-known-issues/README.md) | Common questions, known limitations, compatibility notes |
+| 31 | [wabadmin CLI Reference](./pam/31-wabadmin-reference/README.md) | Complete wabadmin command reference: syntax, flags, examples, output formats |
+
+---
+
+## Group 7 — Compliance & Security
+
+Audit evidence, compliance frameworks, incident response, and JIT access.
+
+| # | Section | Description |
+|---|---------|-------------|
+| 23 | [Incident Response](./pam/23-incident-response/README.md) | Security incident playbooks, account compromise, session termination procedures |
+| 24 | [Compliance & Audit](./pam/24-compliance-audit/README.md) | SOC 2 Type II, ISO 27001, NIS2, PCI-DSS, HIPAA — control mapping and evidence |
+| 25 | [JIT Access](./pam/25-jit-access/README.md) | Just-In-Time privileged access, time-bounded grants, approval workflow design |
+| 37 | [Compliance Evidence](./pam/37-compliance-evidence/README.md) | Evidence collection procedures, audit artifact packaging, attestation sign-off |
+
+---
+
+## Group 8 — Advanced Features
+
+Account lifecycle management, SSH key governance, automation, and self-service.
+
+| # | Section | Description |
+|---|---------|-------------|
+| 27 | [Vendor-Specific Integration](./pam/27-vendor-integration/README.md) | Cisco IOS/NX-OS, Microsoft Windows Server 2022, Red Hat RHEL 9/10 specifics |
+| 40 | [Account Discovery & Onboarding](./pam/40-account-discovery/README.md) | Discovery scanning, orphaned account detection, bulk import via CSV |
+| 41 | [SSH Key Lifecycle](./pam/41-ssh-key-lifecycle/README.md) | SSH key generation, rotation, revocation, CA-based trust, HSM integration |
+| 42 | [Service Account Lifecycle](./pam/42-service-account-lifecycle/README.md) | Service account governance, rotation scheduling, decommissioning procedures |
+| 44 | [User Self-Service Portal](./pam/44-user-self-service/README.md) | Self-service password management, MFA enrollment, credential checkout request |
+| 45 | [Privileged Task Automation](./pam/45-privileged-task-automation/README.md) | Automated privileged operations, scheduled runbooks, service account scripting |
+
+---
+
+## Group 9 — Performance & Recovery
+
+Capacity, certificates, disaster recovery, backup, and rotation troubleshooting.
+
+| # | Section | Description |
+|---|---------|-------------|
+| 26 | [Performance Benchmarks](./pam/26-performance-benchmarks/README.md) | Session throughput benchmarks, capacity planning, load test results |
+| 28 | [Certificate Management](./pam/28-certificate-management/README.md) | TLS/SSL lifecycle: CSR generation, CA signing, renewal, Let's Encrypt, HSM |
+| 29 | [Disaster Recovery](./pam/29-disaster-recovery/README.md) | DR runbooks, RTO/RPO targets, failover procedures, point-in-time recovery |
+| 30 | [Backup and Restore](./pam/30-backup-restore/README.md) | Full and selective backup procedures, offsite storage, restore validation |
+| 33 | [Password Rotation Troubleshooting](./pam/33-password-rotation-troubleshooting/README.md) | Rotation failure diagnosis, SSH key rotation issues, custom rotation scripts |
+
+---
+
+## Group 10 — Reference
+
+Glossary, complete API reference, and error code catalog.
+
+| # | Section | Description |
+|---|---------|-------------|
+| 15 | [Appendix](./pam/15-appendix/README.md) | Glossary of PAM terms, quick reference cards, CyberArk-to-WALLIX comparison |
+| 17 | [API Reference](./pam/17-api-reference/README.md) | Complete REST API documentation: endpoints, parameters, request/response examples |
+| 18 | [Error Reference](./pam/18-error-reference/README.md) | Error codes catalog with causes, log locations, and remediation steps |
 
 ---
 
@@ -127,45 +166,42 @@ docs/
 
 ### By Role
 
-```
-Architect       → pam/02 → pam/03 → pam/11 → pam/14 → pam/16
-Engineer        → pam/02 → pam/04 → pam/05 → pam/08 → pam/10
-Security        → pam/06 → pam/47 → pam/40 → pam/07 → pam/25 → pam/09 → pam/39 → pam/23
-Operations      → pam/21 → pam/13 → pam/18 → pam/31
-DevOps          → pam/10 → pam/17 → examples/
-Compliance      → pam/24 → pam/25 → pam/09 → pam/39 → pam/07
-```
+| Role | Recommended Path |
+|------|-----------------|
+| **Architect** | 02 → 03 → 11 → 16 → 19 → 32 → [install/README.md](../install/README.md) |
+| **Deployment Engineer** | 03 → 04 → 05 → 11 → 32 → 36 → [install/HOWTO.md](../install/HOWTO.md) |
+| **Security Engineer** | 06 → 34 → 49 → 07 → 25 → 09 → 39 → 23 → 24 |
+| **Operations** | 21 → 13 → 14 → 18 → 31 → 12 |
+| **DevOps / Automation** | 10 → 17 → [examples/](../examples/README.md) |
+| **Compliance Officer** | 24 → 37 → 25 → 09 → 39 → 07 |
+| **Access Manager Team** | 46 → 48 → [install/03-access-manager-integration.md](../install/03-access-manager-integration.md) |
 
 ### By Task
 
 | Task | Path |
 |------|------|
-| First deployment | pam/02 → pam/19 → [install/HOWTO.md](../install/HOWTO.md) |
-| Troubleshoot issue | pam/31 → pam/13 → pam/18 |
-| Prepare for audit | pam/24 → pam/09 → pam/39 → pam/21 |
-| Review session recordings | pam/39 → pam/09 → pam/23 |
-| Set up automation | pam/10 → pam/17 → [examples/](../examples/README.md) |
-| Configure Fortigate MFA | pam/06 → pam/47 → [pre/04-fortiauthenticator-setup.md](../pre/04-fortiauthenticator-setup.md) |
+| First deployment (5-site) | 02 → 19 → [install/HOWTO.md](../install/HOWTO.md) |
+| Set up FortiAuthenticator MFA | 06 → 49 → [pre/04-fortiauthenticator-setup.md](../pre/04-fortiauthenticator-setup.md) |
+| Configure per-site AD/LDAP | 06 → 34 → [pre/06-ad-integration.md](../pre/06-ad-integration.md) |
+| Register Bastion with Access Manager | 46 → 48 → [install/03-access-manager-integration.md](../install/03-access-manager-integration.md) |
+| Set up HA cluster | 11 → 32 → [install/06-bastion-active-active.md](../install/06-bastion-active-active.md) |
+| Prepare for audit | 24 → 37 → 09 → 39 → 21 |
+| Troubleshoot authentication | 06 → 34 → 13 → 31 |
+| Review session recordings | 39 → 09 → 23 |
+| Configure backup and DR | 30 → 29 → [install/12-contingency-plan.md](../install/12-contingency-plan.md) |
+| Automate with REST API | 10 → 17 → [examples/](../examples/README.md) |
 
 ---
 
 ## Version Coverage
 
-| Product | Version |
-|---------|---------|
-| WALLIX Bastion | 12.3.2 |
-| WALLIX Access Manager | 5.x |
-| WALLIX PEDM | 3.x |
-| FortiAuthenticator | 6.4+ |
-
-### What's New in 12.x
-
-- OpenID Connect (OIDC) authentication
-- Single Sign-On without credential re-entry
-- RDP resolution enforcement
-- LUKS disk encryption by default
-- Debian 12 (Bookworm) base
-- Argon2ID key derivation
+| Component | Version | Notes |
+|-----------|---------|-------|
+| **WALLIX Bastion** | 12.1.x | On-premises, bare metal hardware appliances and VMs |
+| **FortiAuthenticator** | 6.4+ | Per-site HA pair in Cyber VLAN — TOTP only via FortiToken Mobile |
+| **HAProxy** | 2.8+ | Active-Passive per site with Keepalived VRRP |
+| **MariaDB** | 10.11+ | Galera/replication for Bastion HA clustering |
+| **Last Updated** | April 2026 | |
 
 ---
 
@@ -173,74 +209,26 @@ Compliance      → pam/24 → pam/25 → pam/09 → pam/39 → pam/07
 
 | Symbol | Meaning |
 |--------|---------|
-| `code` | Commands, config, API calls |
-| **Bold** | Important terms, UI elements |
-| > Quote | Tips and notes |
+| `code` | Commands, configuration snippets, API calls |
+| **Bold** | Important terms, UI element names |
+| > Quote | Tips, warnings, and contextual notes |
+| [CLIENT TEAM] | Action performed by the client's team, not us |
+| [OUR SCOPE] | Action performed by our deployment team |
 
 ---
 
 ## Coverage Summary
 
-| Category | Sections | Location | Status |
-|----------|----------|----------|--------|
-| PAM Core | 48 | docs/pam/ | Complete |
-| **Total** | **48** | | **Complete** |
-
----
-
-## Documentation Quality Standards
-
-### Consistency Standards
-
-| Standard | Requirement | Reference |
-|----------|-------------|-----------|
-| **Terminology** | Use standardized glossary terms | [15-appendix](./pam/15-appendix/README.md) |
-| **Cross-references** | All READMEs include "See Also" section | All sections |
-| **ASCII Diagrams** | 79-character width, outer frame with `=` borders | [CLAUDE.md](../CLAUDE.md) |
-| **Code Examples** | Working examples with expected output | All technical sections |
-| **External URLs** | Verified current and official sources only | [00-official-resources](./pam/00-official-resources/README.md) |
-
-### Quality Metrics
-
-Current documentation state:
-
-| Metric | Status | Details |
-|--------|--------|---------|
-| **Cross-reference coverage** | 48/48 (100%) | All sections fully linked |
-| **Terminology consistency** | Standardized | Via glossary in section 15 |
-| **Port documentation** | Complete | 30+ ports documented |
-| **Missing protocols** | 0 | WinRM added, all protocols covered |
-| **Practical examples** | 15+ scenarios | Real-world use cases throughout |
-| **Error documentation** | Comprehensive | Error codes with remediation scenarios |
-
-### External References Verification
-
-Guidelines for maintaining documentation quality:
-
-| Task | Standard |
-|------|----------|
-| **URL Validation** | Check all external URLs quarterly, verify HTTPS |
-| **Official Sources** | Use only official WALLIX resources from [pam.wallix.one](https://pam.wallix.one) |
-| **Version Specificity** | Link to versioned docs (12.x), avoid "latest" links |
-| **Broken Links** | Replace or remove within 30 days of detection |
-
-### A++ Quality Indicators
-
-This documentation achieves A++ quality through:
-
-- **Complete cross-references**: Every section links to related topics
-- **No missing topics**: 48 sections cover all PAM aspects end-to-end
-- **Practical examples**: Real-world scenarios with working code
-- **Comprehensive troubleshooting**: Error codes, logs, remediation steps
-- **Integration-ready configs**: Production-ready Fortigate, HAProxy, AD configs
-- **Production-ready samples**: Tested Ansible playbooks, Terraform modules, API scripts
-- **Multi-site architecture**: Complete 5-site deployment with HA and Access Manager integration
-- **Compliance mapping**: Direct mapping to SOC2, ISO27001, NIS2 controls
-- **CLI reference**: Complete wabadmin command reference with examples
-- **Operational runbooks**: Daily/weekly/monthly operational procedures
+| Category | Sections | Location |
+|----------|----------|----------|
+| PAM Core | 50 (00–49) | docs/pam/ |
+| Installation Guide | 14 | install/ |
+| Pre-Production Lab | 13 | pre/ |
+| Automation Examples | 3 | examples/ |
+| **Total PAM sections** | **50** | |
 
 ---
 
 <p align="center">
-  <sub>48 Sections • PAM with Fortigate MFA • February 2026</sub>
+  <sub>50 Sections • WALLIX Bastion 12.1.x • FortiAuthenticator 6.4+ • April 2026</sub>
 </p>

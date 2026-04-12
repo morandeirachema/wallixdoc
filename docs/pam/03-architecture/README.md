@@ -292,6 +292,100 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 
 ## Deployment Models
 
+> **This deployment** is an on-premises, 5-site multi-datacenter installation
+> on bare metal hardware appliances and VMs. No cloud, container, or SaaS
+> deployment is used. All components are physically located in datacenter
+> buildings connected by a private MPLS backbone.
+
+### Production Deployment: 5-Site Multi-Datacenter
+
+This is the reference architecture for this deployment.
+
+```
++===============================================================================+
+|  5-SITE WALLIX BASTION DEPLOYMENT — PRODUCTION REFERENCE ARCHITECTURE        |
++===============================================================================+
+|                                                                               |
+|  ACCESS MANAGERS (HA Active-Passive — CLIENT-MANAGED)                         |
+|  +-----------------------------+   +-----------------------------+            |
+|  |  Access Manager 1 (DC-A)   |   |  Access Manager 2 (DC-B)   |            |
+|  |  SSO / MFA / Session Broker|<->|  SSO / MFA / Session Broker|            |
+|  |  CLIENT TEAM MANAGES       |   |  CLIENT TEAM MANAGES       |            |
+|  +-------------+--------------+   +--------------+--------------+            |
+|                |                                 |                           |
+|                +----------------+----------------+                           |
+|                           MPLS Network                                       |
+|          +----------+----------+----------+----------+                       |
+|          |          |          |          |          |                       |
+|       Site 1     Site 2     Site 3     Site 4     Site 5                    |
+|                                                                               |
+|  PER-SITE LAYOUT (identical for all 5 sites):                                 |
+|                                                                               |
+|  +----------------------------------+  +----------------------------+         |
+|  |          DMZ VLAN                |  |       Cyber VLAN           |         |
+|  |                                  |  |                            |         |
+|  |  +------------+  +------------+  |  |  +--------------------+   |         |
+|  |  | HAProxy 1  |  | HAProxy 2  |  |  |  | FortiAuthenticator |   |         |
+|  |  | (Active)   |  | (Standby)  |  |  |  | Primary (6.4+)     |   |         |
+|  |  +-----+------+  +-----+------+  |  |  +--------------------+   |         |
+|  |        |               |         |  |  | FortiAuthenticator |   |         |
+|  |        +-------+-------+         |  |  | Secondary (6.4+)   |   |         |
+|  |                |                 |  |  +--------------------+   |         |
+|  |         +------+------+          |  |                            |         |
+|  |         |             |          |  |  +--------------------+   |         |
+|  |  +------+---+  +------+---+      |  |  |  AD Domain         |   |         |
+|  |  | Bastion  |  | Bastion  |      |  |  |  Controller        |   |         |
+|  |  | Node 1   |  | Node 2   |      |  |  |  (per site)        |   |         |
+|  |  | (HA)     |  | (HA)     |      |  |  +--------------------+   |         |
+|  |  +----------+  +----------+      |  |                            |         |
+|  |                                  |  |                            |         |
+|  |  +----------------------------+  |  |                            |         |
+|  |  |  WALLIX RDS (Jump Host)    |  |  |                            |         |
+|  |  |  OT RemoteApp access       |  |  |                            |         |
+|  |  +----------------------------+  |  |                            |         |
+|  +----------------------------------+  +----------------------------+         |
+|                    |                             |                            |
+|                    +-------- Fortigate ----------+                            |
+|                              (inter-VLAN routing + firewall)                  |
+|                                                                               |
++===============================================================================+
+```
+
+**Key architecture facts:**
+
+| Aspect | Value |
+|--------|-------|
+| Sites | 5 (all datacenter buildings, MPLS-connected) |
+| HAProxy per site | 2 (Active-Passive with Keepalived VRRP) |
+| WALLIX Bastion per site | 2 (HA — Active-Active or Active-Passive) |
+| RDS per site | 1 (standalone, OT RemoteApp jump host) |
+| FortiAuthenticator per site | 2 (HA pair in Cyber VLAN — NOT shared) |
+| AD DC per site | 1 (Cyber VLAN — NOT centralized) |
+| Access Manager total | 2 (HA Active-Passive, CLIENT-MANAGED) |
+| Inter-site Bastion comms | None — all inter-site routing via Access Manager |
+
+**VLAN separation per site:**
+
+| VLAN | Hosts | Purpose |
+|------|-------|---------|
+| DMZ VLAN | 2x HAProxy, 2x WALLIX Bastion, 1x RDS | User-facing services and PAM proxying |
+| Cyber VLAN | 2x FortiAuthenticator, 1x AD DC | Identity and authentication backend |
+
+**FortiAuthenticator placement — critical note:**
+FortiAuthenticator is deployed as a **per-site HA pair** in the Cyber VLAN.
+It is NOT a shared central service. Each site has its own independent pair.
+RADIUS requests travel from Bastion nodes (DMZ VLAN) to FortiAuthenticator
+(Cyber VLAN) via Fortigate inter-VLAN routing.
+
+**Access Manager — scope note:**
+Access Manager is **client-managed**. The client's AM team installs, configures,
+and operates both AM nodes. Our scope is limited to Bastion-side registration:
+providing the API endpoint, SAML metadata, and health check URL to the client
+AM team. See [46 - Access Manager](../46-access-manager/README.md) and
+[48 - AM Bastion Connectivity](../48-access-manager-bastion-connectivity/README.md).
+
+---
+
 ### Model 1: Standalone (Single Appliance)
 
 ```
@@ -344,7 +438,7 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 ```
                     +-----------------+
                     |  Load Balancer  |
-                    |  (F5/HAProxy)   |
+                    |  (HAProxy)      |
                     +--------+--------+
                              |
               +--------------+--------------+
@@ -371,32 +465,6 @@ This is the **most significant architectural difference** between WALLIX and Cyb
 - Zero-downtime requirements
 - Geographic redundancy
 - Disaster recovery
-
----
-
-### Model 4: Multi-Site / Distributed
-
-```
-        SITE A (Primary)                    SITE B (DR/Secondary)
-+-----------------------------+     +-----------------------------+
-|                             |     |                             |
-|  +---------------------+    |     |   +---------------------+   |
-|  |  Bastion Cluster    |    |     |   |  Bastion Cluster    |   |
-|  |  (Active)           |<--+-----+--> |  (Standby/Active)   |   |
-|  +---------------------+    |     |   +---------------------+   |
-|            |                |     |            |                |
-|            v                |     |            v                |
-|  +---------------------+    |     |   +---------------------+   |
-|  |  Local Database     |---+-----+-->|  Replica Database    |   |
-|  +---------------------+    |     |   +---------------------+   |
-|                             |     |                             |
-+-----------------------------+     +-----------------------------+
-              |                                   |
-              +---------------+-------------------+
-                              |
-                    Global Load Balancer
-                      (GSLB / DNS-based)
-```
 
 ---
 

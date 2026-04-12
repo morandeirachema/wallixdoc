@@ -1,6 +1,74 @@
-# WALLIX Access Manager - Quick Setup Guide
+# WALLIX Access Manager - Bastion-Side Integration Guide
 
-This guide provides a streamlined installation path for WALLIX Access Manager. For comprehensive documentation, see [README.md](README.md).
+> **SCOPE: CLIENT-MANAGED — We do NOT install or configure Access Manager.**
+>
+> Access Manager is installed and managed by the client's team. This guide
+> covers the Bastion-side steps needed to register Bastion with the client's
+> Access Manager. The original "quick install" content below is retained for
+> reference only — do NOT follow those installation steps in our deployment.
+>
+> **Our deliverables to the client AM team (per site):**
+> - Bastion API endpoint URL and API key
+> - SAML Service Provider metadata URL
+> - Health check URL
+> - Firewall rule requirements (AM -> Bastion TCP/443)
+>
+> For the full Bastion-side integration procedure, see:
+> [48 - Access Manager Bastion Connectivity](../48-access-manager-bastion-connectivity/README.md)
+
+---
+
+## Bastion-Side Registration Steps (OUR SCOPE)
+
+### Step 1: Create API Integration User on Bastion
+
+```bash
+# Run on each WALLIX Bastion cluster (once per site)
+wabadmin user add \
+  --name am-integration \
+  --email am-integration@company.com \
+  --profile api-user \
+  --api-key-enabled true
+
+# Generate the API key — provide to client AM team
+wabadmin user api-key generate am-integration
+```
+
+### Step 2: Verify Bastion API Endpoint is Reachable
+
+```bash
+# Test from AM network (client AM team performs this)
+curl -sk -H "X-Auth-Token: <api-key>" \
+  https://<bastion-vip>/api/version
+# Expected: HTTP 200, JSON with product/version info
+```
+
+### Step 3: Provide Integration Details to Client AM Team
+
+| Item | Value |
+|------|-------|
+| API endpoint | `https://<site-vip>/api/` |
+| API user | `am-integration` |
+| API key | (from Step 1 output) |
+| SAML metadata URL | `https://<site-vip>/saml/metadata` |
+| Health check URL | `https://<site-vip>/api/version` |
+
+### Step 4: Confirm AM Registration
+
+```bash
+# After client AM team configures their side
+wabadmin am-status
+# Expected: Access Manager: Connected
+```
+
+---
+
+## Client AM Team Quick Install Reference (REFERENCE ONLY)
+
+> The following steps are performed by the client AM team on their servers.
+> This content is retained for context only.
+
+For comprehensive documentation, see [README.md](README.md).
 
 ---
 

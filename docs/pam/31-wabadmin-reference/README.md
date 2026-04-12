@@ -947,7 +947,7 @@ wabadmin log-level reset --all
 wabadmin status
 # Output:
 # WALLIX Bastion Status
-# Version: 12.3.2
+# Version: 12.1.x
 # Status: Running
 # Uptime: 47 days
 # Active Sessions: 15

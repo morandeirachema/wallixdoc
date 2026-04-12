@@ -1,8 +1,25 @@
 # 48 - Access Manager Bastion Connectivity
 
-## Connecting WALLIX Access Manager to WALLIX Bastion
+## Connecting WALLIX Access Manager to WALLIX Bastion (Bastion-Side Only)
 
-This section covers the connectivity features, protocols, and configuration patterns that WALLIX Access Manager uses to communicate with WALLIX Bastion instances. It details API integration, session brokering, credential injection, high availability routing, and multi-site federation.
+> **SCOPE: Bastion-side configuration only.** Access Manager is client-managed.
+> This section covers the WALLIX Bastion configuration steps and integration
+> parameters that enable the client's Access Manager to communicate with each
+> Bastion cluster. We do not install, configure, or operate Access Manager.
+>
+> What we configure on the Bastion side:
+> - API integration user and API key (one per site cluster)
+> - SAML Service Provider settings for AM SSO
+> - Health check endpoint availability
+> - Firewall rules permitting AM-to-Bastion TCP/443
+>
+> What the client AM team configures on their side:
+> - Bastion registration in AM (API endpoint + API key)
+> - SSO trust (using our SAML metadata URL)
+> - Session brokering rules and target discovery
+
+This section details connectivity features, protocols, and configuration
+patterns for the AM-to-Bastion communication path.
 
 ---
 
@@ -204,7 +221,7 @@ sudo wallix-am bastion test "Bastion-Site1"
 # Expected output:
 # ✓ API endpoint reachable
 # ✓ Authentication successful
-# ✓ Bastion version: 12.3.2
+# ✓ Bastion version: 12.1.x
 # ✓ License valid
 # ✓ Targets available: 245
 ```
@@ -1076,5 +1093,5 @@ sudo wallix-am cache flush --type api
 ---
 
 *Document Version: 1.0*
-*Last Updated: March 2026*
-*Applies to: WALLIX Access Manager 5.2.x, WALLIX Bastion 12.3.2*
+*Last Updated: April 2026*
+*Applies to: WALLIX Access Manager 5.2.x, WALLIX Bastion 12.1.x*

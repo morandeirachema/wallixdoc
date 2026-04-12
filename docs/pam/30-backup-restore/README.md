@@ -1529,7 +1529,7 @@ sudo /opt/wab/scripts/full-restore.sh \
 # Backup manifest:
 # {
 #     "backup_date": "2026-01-31T02:00:01+00:00",
-#     "bastion_version": "12.3.2",
+#     "bastion_version": "12.1.x",
 #     "hostname": "wallix-prod.company.com",
 #     ...
 # }
@@ -1839,9 +1839,9 @@ sudo /opt/wab/scripts/pitr-restore.sh \
 | Backup Version | Restore Version | Method | Notes |
 |----------------|-----------------|--------|-------|
 | 12.0.x | 12.0.x | Direct | Full compatibility |
-| 12.0.x | 12.3.2 | Migration | Run upgrade after restore |
-| 12.1.x | 12.3.2 | Migration | Run upgrade after restore |
-| 12.3.2 | 12.3.2 | Direct | Full compatibility |
+| 12.0.x | 12.1.x | Migration | Run upgrade after restore |
+| 12.1.x | 12.1.x | Migration | Run upgrade after restore |
+| 12.1.x | 12.1.x | Direct | Full compatibility |
 | 11.x | 12.x | Not supported | Upgrade to 12.0 first |
 
 ### Cross-Version Restore Procedure
@@ -2290,7 +2290,7 @@ mariadb -e "SHOW MASTER STATUS\G"
 ## See Also
 
 **Related Sections:**
-- [FortiAuthenticator 300F Backup](./fortiauthenticator-backup.md) - FortiAuthenticator backup and recovery procedures
+- [FortiAuthenticator 6.4+ Backup](./fortiauthenticator-backup.md) - FortiAuthenticator per-site backup and recovery procedures
 - [29 - Disaster Recovery](../29-disaster-recovery/README.md) - DR runbooks and RTO/RPO
 - [11 - High Availability](../11-high-availability/README.md) - HA architecture
 

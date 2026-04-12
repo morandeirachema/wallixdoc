@@ -593,13 +593,13 @@ A: Behavior depends on license type:
 
 ## Known Issues
 
-### Version 12.3.2
+### Version 12.1.x
 
 | Issue ID | Description | Workaround | Status |
 |----------|-------------|------------|--------|
-| WAB-12345 | RDP clipboard may fail with certain Unicode characters | Use file transfer instead | Fixed in 12.3.2 |
+| WAB-12345 | RDP clipboard may fail with certain Unicode characters | Use file transfer instead | Fixed in 12.1.x |
 | WAB-12346 | LDAP sync may timeout with >50,000 users | Increase sync timeout, use pagination | Under investigation |
-| WAB-12347 | Session recording playback slow on Firefox | Use Chrome or Edge | Fixed in 12.3.2 |
+| WAB-12347 | Session recording playback slow on Firefox | Use Chrome or Edge | Fixed in 12.1.x |
 | WAB-12348 | API rate limiting not applied to health endpoints | N/A (by design) | Won't fix |
 | WAB-12349 | HA failover may take >30s under heavy load | Pre-scale resources | Improved in 12.2 |
 
@@ -673,11 +673,11 @@ A: Behavior depends on license type:
 
 | From Version | To Version | Direct Upgrade | Notes |
 |--------------|------------|----------------|-------|
-| 12.0.x | 12.3.2 | ✓ Yes | Recommended |
-| 12.1.x | 12.3.2 | ✓ Yes | Recommended |
-| 11.x | 12.3.2 | ✓ Yes | See migration guide |
-| 10.x | 12.3.2 | ✗ No | Upgrade to 11.x first |
-| 9.x | 12.3.2 | ✗ No | Upgrade to 10.x, then 11.x |
+| 12.0.x | 12.1.x | ✓ Yes | Recommended |
+| 12.1.x | 12.1.x | ✓ Yes | Recommended |
+| 11.x | 12.1.x | ✓ Yes | See migration guide |
+| 10.x | 12.1.x | ✗ No | Upgrade to 11.x first |
+| 9.x | 12.1.x | ✗ No | Upgrade to 10.x, then 11.x |
 
 ### API Version Compatibility
 

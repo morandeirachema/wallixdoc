@@ -1,5 +1,13 @@
 # 34 - LDAP/Active Directory Integration and Troubleshooting
 
+> **Deployment context:** In this 5-site deployment, Active Directory is
+> deployed **per-site** — one AD DC per site in the Cyber VLAN. There is no
+> centralized LDAP server shared across sites. WALLIX Bastion (DMZ VLAN)
+> connects to its local site's AD DC (Cyber VLAN) via LDAPS (port 636/TCP),
+> crossing the Fortigate inter-VLAN boundary. This guide applies to each site
+> independently. The firewall rules described here are Fortigate inter-VLAN
+> rules, not perimeter firewall rules.
+
 ## Table of Contents
 
 1. [LDAP/AD Overview](#ldapad-overview)
@@ -89,29 +97,21 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 
 ### WALLIX to LDAP/AD Communication
 
+In this deployment, Active Directory is per-site. WALLIX Bastion in the DMZ
+VLAN connects to the local AD DC in the Cyber VLAN via LDAPS (636/TCP),
+crossing the Fortigate inter-VLAN boundary within the same site.
+
 ```
 +==============================================================================+
-|                    LDAP/AD INTEGRATION ARCHITECTURE                          |
+|             LDAP/AD INTEGRATION ARCHITECTURE (PER SITE)                      |
 +==============================================================================+
 |                                                                              |
-|                        ENTERPRISE NETWORK                                    |
+|  DMZ VLAN                              Cyber VLAN (same site)               |
+|  --------                              ----------------------------          |
 |                                                                              |
-|   +------------------+          +------------------+                         |
-|   |     Domain       |          |     Domain       |                         |
-|   |   Controller 1   |          |   Controller 2   |                         |
-|   |   (Primary)      |          |   (Secondary)    |                         |
-|   |                  |          |                  |                         |
-|   | LDAPS: 636       |          | LDAPS: 636       |                         |
-|   | GC: 3269         |          | GC: 3269         |                         |
-|   +--------+---------+          +--------+---------+                         |
-|            |                             |                                   |
-|            |     TLS 1.2/1.3             |                                   |
-|            |     Encrypted               |                                   |
-|            +-------------+---------------+                                   |
-|                          |                                                   |
-|                          v                                                   |
 |   +-----------------------------------------------------------------+        |
 |   |                    WALLIX BASTION                               |        |
+|   |                    (DMZ VLAN)                                   |        |
 |   |                                                                 |        |
 |   |  +-------------------+   +-------------------+                  |        |
 |   |  |  LDAP Connector   |   |  Auth Module      |                  |        |
@@ -131,19 +131,30 @@ WALLIX Bastion integrates with LDAP/Active Directory through two distinct mechan
 |   |  +-------------------+   +-------------------+                  |        |
 |   |                                                                 |        |
 |   +-----------------------------------------------------------------+        |
+|                    |                                                         |
+|        LDAPS (636/TCP) via Fortigate inter-VLAN                              |
+|        TLS 1.2/1.3 encrypted                                                 |
+|                    |                                                         |
+|   +------------------+                                                       |
+|   |  AD Domain       |                                                       |
+|   |  Controller      |                                                       |
+|   |  (per-site,      |                                                       |
+|   |  Cyber VLAN)     |                                                       |
+|   |                  |                                                       |
+|   | LDAPS: 636/TCP   |                                                       |
+|   +------------------+                                                       |
 |                                                                              |
-|   NETWORK REQUIREMENTS                                                       |
-|   ====================                                                       |
+|   FIREWALL RULES REQUIRED (Fortigate inter-VLAN):                            |
+|   =================================================                          |
 |                                                                              |
 |   +-------------------------------------------------------------------+      |
-|   | Protocol  | Port  | Direction          | Description              |      |
-|   +-----------+-------+--------------------+--------------------------+      |
-|   | LDAPS     | 636   | WALLIX -> DC       | Secure LDAP queries      |      |
-|   | LDAP+TLS  | 389   | WALLIX -> DC       | StartTLS LDAP (alt.)     |      |
-|   | Global Cat| 3269  | WALLIX -> DC       | Multi-domain queries     |      |
-|   | Kerberos  | 88    | WALLIX -> DC       | Optional SSO             |      |
-|   | DNS       | 53    | WALLIX -> DNS      | SRV record lookup        |      |
-|   +-----------+-------+--------------------+--------------------------+      |
+|   | Protocol  | Port  | Direction                | Description        |      |
+|   +-----------+-------+--------------------------+--------------------+      |
+|   | LDAPS     | 636   | Bastion DMZ -> AD Cyber  | Secure LDAP queries|      |
+|   | LDAP+TLS  | 389   | Bastion DMZ -> AD Cyber  | StartTLS (alt.)    |      |
+|   | Kerberos  | 88    | Bastion DMZ -> AD Cyber  | Optional SSO       |      |
+|   | DNS       | 53    | Bastion DMZ -> DNS       | Name resolution    |      |
+|   +-----------+-------+--------------------------+--------------------+      |
 |                                                                              |
 +==============================================================================+
 ```

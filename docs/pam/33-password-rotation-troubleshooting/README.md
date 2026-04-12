@@ -2916,4 +2916,4 @@ Password rotation in WALLIX Bastion is an automated process that changes credent
 
 ---
 
-*Document Version: 1.0 | Last Updated: January 2026 | WALLIX Bastion 12.3.2*
+*Document Version: 1.0 | Last Updated: January 2026 | WALLIX Bastion 12.1.x*

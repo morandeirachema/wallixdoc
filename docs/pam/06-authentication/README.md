@@ -15,6 +15,30 @@
 
 ---
 
+## Deployment Context
+
+In this 5-site deployment, authentication components are distributed as follows:
+
+| Component | Placement | Notes |
+|-----------|-----------|-------|
+| **WALLIX Bastion** | DMZ VLAN (2 nodes per site) | Orchestrates login: LDAP Phase 1 + RADIUS Phase 2 |
+| **FortiAuthenticator 6.4+** | Cyber VLAN (HA pair PER SITE) | Validates TOTP via RADIUS — not shared across sites |
+| **Active Directory DC** | Cyber VLAN (1 DC per site) | Per-site — not a centralized directory |
+| **Fortigate** | Between DMZ and Cyber VLAN | Routes LDAPS (636) and RADIUS (1812/UDP) inter-VLAN |
+
+**FortiAuthenticator is deployed as a per-site HA pair.** There is no shared
+or centralized FortiAuthenticator service. Each site's Bastion nodes send
+RADIUS requests to their local FortiAuthenticator pair in the Cyber VLAN,
+routed via Fortigate inter-VLAN rules.
+
+**Active Directory is per-site.** Each site has its own AD DC in the Cyber
+VLAN. WALLIX Bastion performs LDAPS bind (port 636/TCP) across the Fortigate
+inter-VLAN boundary.
+
+**MFA method:** TOTP only via FortiToken Mobile. No SMS, no push notification.
+
+---
+
 ## Authentication Overview
 
 ### Authentication Layers
@@ -41,16 +65,17 @@ WALLIX Bastion supports multiple authentication layers:
 |   |                                                                     |   |
 |   +---------------------------------------------------------------------+   |
 |     |                                                                       |
-|     |  Step 2: Multi-Factor Authentication (Optional but Recommended)       |
-|     |  -------------------------------------------------------------        |
+|     |  Step 2: Multi-Factor Authentication (required — TOTP via FortiAuth)   |
+|     |  -------------------------------------------------------------------   |
 |     v                                                                       |
 |   +---------------------------------------------------------------------+   |
 |   |                    SECOND FACTOR                                    |   |
 |   |                                                                     |   |
-|   |  +----------+  +---------+  +---------+  +---------+  +---------+   |   |
-|   |  |FortiToken|  |  RADIUS |  |   SMS   |  |  Push   |  |  X.509  |   |   |
-|   |  |          |  |  (OTP)  |  |         |  |         |  |  Cert   |   |   |
-|   |  +----------+  +---------+  +---------+  +---------+  +---------+   |   |
+|   |  +------------------------------+  +------------------------------+  |   |
+|   |  | FortiToken Mobile (TOTP)     |  | X.509 Certificate (optional) |  |   |
+|   |  | RADIUS via FortiAuth 6.4+    |  |                              |  |   |
+|   |  | per-site HA pair, Cyber VLAN |  |                              |  |   |
+|   |  +------------------------------+  +------------------------------+  |   |
 |   |                                                                     |   |
 |   +---------------------------------------------------------------------+   |
 |     |                                                                       |
@@ -66,13 +91,18 @@ WALLIX Bastion supports multiple authentication layers:
 
 ### Authentication Methods Summary
 
-| Method | Primary Auth | MFA Capable | SSO | Use Case |
-|--------|-------------|-------------|-----|----------|
-| **Local** | Yes | Via FortiToken | No | Small deployments |
-| **LDAP/AD** | Yes | Via external | No | Enterprise standard |
+In this deployment the primary authentication method is **LDAP/AD** (per-site
+AD DC, Cyber VLAN) and the MFA second factor is **TOTP via FortiAuthenticator
+6.4+** (per-site HA pair, Cyber VLAN, RADIUS protocol). Both flows cross the
+Fortigate inter-VLAN boundary from DMZ VLAN to Cyber VLAN.
+
+| Method | Primary Auth | MFA Method | SSO | Notes |
+|--------|-------------|------------|-----|-------|
+| **Local** | Yes | FortiToken TOTP | No | Break-glass accounts only |
+| **LDAP/AD** | Yes | FortiToken TOTP via RADIUS | No | Standard — per-site AD DC |
 | **RADIUS** | Yes | Native | No | MFA integration |
-| **Kerberos** | Yes | Via external | Yes | Windows SSO |
-| **SAML** | Yes | Via IdP | Yes | Federation/cloud |
+| **Kerberos** | Yes | FortiToken TOTP | Yes | Windows SSO |
+| **SAML** | Yes | Via IdP | Yes | Federation |
 | **X.509** | Yes | Inherent | Yes | High security |
 
 ---
@@ -134,35 +164,42 @@ User Settings:
 
 ### Overview
 
-LDAP/AD integration allows WALLIX to authenticate users against existing directory services.
+LDAP/AD integration allows WALLIX to authenticate users against existing
+directory services. In this deployment, Active Directory is deployed
+**per-site** — each site has its own AD DC in the Cyber VLAN. There is
+no centralized LDAP server shared across sites.
 
-**CyberArk Comparison**: Similar to LDAP integration in CyberArk, with vault/directory sync.
+WALLIX Bastion (DMZ VLAN) connects to the local site's AD DC (Cyber VLAN)
+via LDAPS (port 636/TCP). This connection crosses the Fortigate inter-VLAN
+boundary and must be permitted by firewall policy.
 
 ### Architecture
 
 ```
 +=============================================================================+
-|                      LDAP/AD INTEGRATION                                    |
+|                  LDAP/AD INTEGRATION (PER-SITE)                             |
 +=============================================================================+
 |                                                                             |
-|   +----------+          +-------------+          +------------------+       |
-|   |   User   |----------|   WALLIX    |----------|   Active         |       |
-|   |          |  Login   |   Bastion   |  LDAP    |   Directory      |       |
-|   +----------+          +------+------+  Bind    +------------------+       |
-|                                |                                            |
-|                                |                                            |
-|                         +------+------+                                     |
-|                         |             |                                     |
-|                         v             v                                     |
-|                  +-------------+ +-------------+                            |
-|                  | User Auth   | | Group Sync  |                            |
-|                  |             | |             |                            |
-|                  | * Validate  | | * Fetch     |                            |
-|                  |   password  | |   groups    |                            |
-|                  | * Get user  | | * Map to    |                            |
-|                  |   attributes| |   WALLIX    |                            |
-|                  |             | |   groups    |                            |
-|                  +-------------+ +-------------+                            |
+|   DMZ VLAN                          Cyber VLAN (same site)                 |
+|   --------                          ----------------------------            |
+|                                                                             |
+|   +----------+                      +------------------+                   |
+|   |   User   |                      |   Active         |                   |
+|   |          |  Login               |   Directory DC   |                   |
+|   +----+-----+                      |   (per-site)     |                   |
+|        |                            +--------+---------+                   |
+|        v                                     |                             |
+|   +----+--------+   LDAPS (636/TCP)          |                             |
+|   |   WALLIX    |---via Fortigate----------->|                             |
+|   |   Bastion   |   inter-VLAN              |                             |
+|   +------+------+                            |                             |
+|          |                                   |                             |
+|    +-----+------+                            |                             |
+|    v            v                            v                             |
+| +--------+  +--------+              +-----------------+                   |
+| | User   |  | Group  |              |  Validate creds |                   |
+| | Auth   |  | Sync   |              |  Fetch groups   |                   |
+| +--------+  +--------+              +-----------------+                   |
 |                                                                             |
 +=============================================================================+
 ```
@@ -276,7 +313,13 @@ Configuration:
 
 ### Overview
 
-RADIUS provides flexible authentication, often used for MFA integration with various vendors.
+RADIUS is the protocol used to deliver MFA in this deployment. WALLIX Bastion
+(DMZ VLAN) sends RADIUS Access-Request packets to the FortiAuthenticator 6.4+
+HA pair (Cyber VLAN, same site), routed via Fortigate inter-VLAN rules on
+port 1812/UDP. FortiAuthenticator validates the TOTP code and returns
+Access-Accept or Access-Reject.
+
+RADIUS is also used for general MFA vendor integration.
 
 ### Configuration
 
@@ -339,28 +382,28 @@ WALLIX supports multiple MFA methods for enhanced security.
 
 ### MFA Methods
 
+In this deployment, the enforced MFA method is **TOTP via FortiToken Mobile**,
+delivered through the per-site FortiAuthenticator 6.4+ HA pair over RADIUS.
+
 ```
 +=============================================================================+
-|                          MFA METHODS                                        |
+|                  MFA METHOD IN THIS DEPLOYMENT                              |
 +=============================================================================+
 |                                                                             |
-|   +-----------------+  +-----------------+  +-----------------+             |
-|   |      FortiToken |  |     RADIUS      |  |   PUSH/SMS      |             |
-|   |                 |  |     (OTP)       |  |                 |             |
-|   |  * Google Auth  |  |  * RSA SecurID  |  |  * Trustelem    |             |
-|   |  * Microsoft    |  |  * Duo          |  |  * External     |             |
-|   |    Authenticator|  |  * Azure MFA    |  |    gateway      |             |
-|   |  * Authy        |  |  * Okta         |  |                 |             |
-|   |                 |  |                 |  |                 |             |
-|   +-----------------+  +-----------------+  +-----------------+             |
+|   +---------------------------------+                                        |
+|   |   FortiToken Mobile (TOTP)      |                                        |
+|   |                                 |                                        |
+|   |  * Time-based OTP (30-second)   |                                        |
+|   |  * SHA-1, 6 digits              |                                        |
+|   |  * FortiToken Mobile app        |                                        |
+|   |    (iOS / Android)              |                                        |
+|   |  * Validated by FortiAuth 6.4+  |                                        |
+|   |    via RADIUS (1812/UDP)        |                                        |
+|   |  * Per-site HA pair in          |                                        |
+|   |    Cyber VLAN                   |                                        |
+|   +---------------------------------+                                        |
 |                                                                             |
-|   +-----------------+  +-----------------+                                  |
-|   |   CERTIFICATE   |  |    WEBAUTHN     |                                  |
-|   |                 |  |    FortiToken   |                                  |
-|   |  * FortiToken   |  |  * FortiToken   |                                  |
-|   |  * PKI certs    |  |  * Windows      |                                  |
-|   |                 |  |    Hello        |                                  |
-|   +-----------------+  +-----------------+                                  |
+|   Note: No SMS, no push notification in this deployment.                    |
 |                                                                             |
 +=============================================================================+
 ```

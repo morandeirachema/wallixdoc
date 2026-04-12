@@ -947,5 +947,5 @@ wabadmin license-check
 ---
 
 *Document Version: 1.0*
-*Last Updated: February 2026*
+*Last Updated: April 2026*
 *Applies to: WALLIX Bastion 12.x, Access Manager 5.x*

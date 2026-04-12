@@ -1,8 +1,16 @@
-# FortiAuthenticator 300F Backup and Recovery
+# FortiAuthenticator 6.4+ Backup and Recovery
 
-## Production Backup Procedures for FortiAuthenticator 300F Appliance
+## Production Backup Procedures for FortiAuthenticator 6.4+
 
-This document covers the complete backup and recovery strategy for the FortiAuthenticator 300F appliance deployed as the centralized MFA provider for the 5-site WALLIX Bastion infrastructure. Loss of FortiAuthenticator data requires re-enrolling all FortiToken users across all sites — a process that can take days. Proper backup is critical.
+This document covers the complete backup and recovery strategy for the
+FortiAuthenticator 6.4+ appliances deployed as **per-site HA pairs** in the
+Cyber VLAN at each of the 5 sites. Each site operates its own independent
+FortiAuthenticator pair — there is no centralized shared appliance. Apply
+these procedures to each site independently.
+
+Loss of FortiAuthenticator data at a site requires re-enrolling all FortiToken
+users for that site — a process that can take hours to days. Proper backup is
+critical for each site's pair.
 
 ---
 
@@ -32,10 +40,10 @@ This document covers the complete backup and recovery strategy for the FortiAuth
 
 ```
 +===============================================================================+
-|                  FORTIAUTHENTICATOR 300F DEPLOYMENT                           |
+|                  FORTIAUTHENTICATOR 6.4+ DEPLOYMENT (PER SITE)                           |
 +===============================================================================+
 |                                                                               |
-|  Appliance:       FortiAuthenticator 300F (hardware)                          |
+|  Appliance:       FortiAuthenticator 6.4+ (hardware)                          |
 |  Firmware:        FortiAuthenticator v6.6.x                                   |
 |  Role:            Centralized MFA provider (RADIUS + FortiToken)              |
 |  Scope:           All 5 sites, 10 Bastion nodes, 2 Access Managers            |
@@ -106,7 +114,7 @@ This document covers the complete backup and recovery strategy for the FortiAuth
 |                  FORTIAUTHENTICATOR BACKUP ARCHITECTURE                       |
 +===============================================================================+
 |                                                                               |
-|  FortiAuthenticator 300F                                                      |
+|  FortiAuthenticator 6.4+                                                      |
 |  (10.20.0.60)                                                                 |
 |       |                                                                       |
 |       |--- Daily 02:00 -----> SFTP Server (10.20.0.50)                        |
@@ -164,11 +172,11 @@ This document covers the complete backup and recovery strategy for the FortiAuth
 5. Click "Backup"
 
 6. Save the file:
-   Filename format: FAC300F_full_YYYYMMDD_manual.bak
-   Example:         FAC300F_full_20260409_manual.bak
+   Filename format: FAC-backup_full_YYYYMMDD_manual.bak
+   Example:         FAC-backup_full_20260409_manual.bak
 
 7. Transfer to backup server:
-   scp FAC300F_full_20260409_manual.bak backup-user@10.20.0.50:/backups/fortiauth/manual/
+   scp FAC-backup_full_20260409_manual.bak backup-user@10.20.0.50:/backups/fortiauth/manual/
 ```
 
 ### When to Perform Manual Backup
@@ -204,7 +212,7 @@ execute backup config sftp 10.20.0.50 /backups/fortiauth/ backup-user _REDACTED
 # Backup successful.
 
 # Backup to TFTP (alternative, no encryption — lab only)
-execute backup config tftp 10.20.0.50 FAC300F_backup.bak
+execute backup config tftp 10.20.0.50 FAC-backup_backup.bak
 ```
 
 ### Verify CLI Backup Completed
@@ -488,7 +496,7 @@ PREREQUISITE: Have the backup encryption password available.
    WARNING: This will overwrite all current configuration, users,
    and token assignments. The appliance will reboot.
 
-6. Wait for reboot (approximately 3-5 minutes for 300F)
+6. Wait for reboot (approximately 3-5 minutes for hardware appliances)
 
 7. Verify restoration:
    - Log in to Web UI
@@ -519,7 +527,7 @@ ssh admin@10.20.0.60
 get system status
 
 # Expected output:
-# Version: FortiAuthenticator-300F v6.6.x
+# Version: FortiAuthenticator-VM v6.6.x
 # Serial-Number: FAC3HDXXXXXXXX
 # System time: 2026-04-09 06:15:32
 ```
@@ -570,7 +578,7 @@ get system ntp
 
 ```
 +===============================================================================+
-|  SCENARIO: Primary FortiAuthenticator 300F hardware failure                   |
+|  SCENARIO: Primary FortiAuthenticator 6.4+ hardware failure                   |
 +===============================================================================+
 |                                                                               |
 |  Impact:  MFA unavailable if HA is not configured                             |
@@ -586,7 +594,7 @@ get system ntp
 |                                                                               |
 |  WITHOUT HA (backup restore):                                                 |
 |  ============================                                                 |
-|  1. Deploy replacement 300F or VM appliance                                   |
+|  1. Deploy replacement hardware appliance or VM                                   |
 |  2. Configure base network settings (IP, DNS, NTP, gateway)                   |
 |  3. Restore latest backup from SFTP server                                    |
 |  4. Verify RADIUS clients and user/token data                                 |
@@ -625,10 +633,10 @@ Pre-upgrade procedure:
 
 Rollback if upgrade fails:
 1. If appliance is accessible:
-   execute restore config sftp 10.20.0.50 /backups/fortiauth/manual/FAC300F_pre-upgrade_YYYYMMDD.bak backup-user _REDACTED
+   execute restore config sftp 10.20.0.50 /backups/fortiauth/manual/FAC-backup_pre-upgrade_YYYYMMDD.bak backup-user _REDACTED
 
 2. If appliance is inaccessible (bricked):
-   a. Connect via console cable (serial port on 300F rear panel)
+   a. Connect via console cable (serial port on appliance rear panel)
    b. Boot into maintenance mode (hold button during POST)
    c. Reinstall previous firmware from USB/TFTP
    d. Restore configuration backup after firmware is running
@@ -766,8 +774,8 @@ end
 grep -i "backup" /var/log/fortiauth/fortiauth.log
 
 # Expected entries (daily):
-# 2026-04-09T02:00:01 FAC300F backup[]: Scheduled backup started
-# 2026-04-09T02:01:15 FAC300F backup[]: Backup completed, transferred to 10.20.0.50
+# 2026-04-09T02:00:01 FAC-backup backup[]: Scheduled backup started
+# 2026-04-09T02:01:15 FAC-backup backup[]: Backup completed, transferred to 10.20.0.50
 ```
 
 ### Nagios / Zabbix Check
@@ -829,7 +837,7 @@ exit 0
 ### Storage Estimation
 
 ```
-FortiAuthenticator 300F backup size (typical):
+FortiAuthenticator 6.4+ backup size (typical):
   - Small deployment (< 100 users):    ~5 MB per backup
   - Medium deployment (100-500 users):  ~12 MB per backup
   - Large deployment (500-2000 users):  ~25 MB per backup
@@ -988,7 +996,7 @@ ssh backup-user@10.20.0.50 "ls -ld /backups/fortiauth"
 #    Backups from older firmware generally restore on newer firmware.
 
 # 3. Appliance does not boot after restore
-#    a. Wait 10 minutes (300F restore can take time with large user databases)
+#    a. Wait 10 minutes (restore can take time with large user databases)
 #    b. Connect via console cable to see boot messages
 #    c. If stuck, power cycle and attempt restore again
 #    d. If repeated failure, factory reset and restore:

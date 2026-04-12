@@ -578,7 +578,7 @@ ls -la /mnt/backup/wallix/weekly/
 curl -fsSL https://repo.wallix.com/wallix.gpg | gpg --dearmor -o /usr/share/keyrings/wallix.gpg
 
 cat > /etc/apt/sources.list.d/wallix.list << 'EOF'
-deb [signed-by=/usr/share/keyrings/wallix.gpg] https://repo.wallix.com/bastion/12.3.2 bookworm main
+deb [signed-by=/usr/share/keyrings/wallix.gpg] https://repo.wallix.com/bastion/12.1.x bookworm main
 EOF
 
 apt update
@@ -1545,7 +1545,7 @@ wabadmin health-check
 ### Preventing Split-Brain
 
 ```bash
-# WALLIX Bastion 12.3.2 uses bastion-replication and Keepalived
+# WALLIX Bastion 12.1.x uses bastion-replication and Keepalived
 # for HA. STONITH/fencing is not applicable.
 # Instead, ensure Keepalived is properly configured for VIP failover:
 systemctl status keepalived

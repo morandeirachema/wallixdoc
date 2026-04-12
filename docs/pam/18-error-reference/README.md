@@ -293,12 +293,12 @@
   Possible Causes:
   * RADIUS server overloaded
   * Network latency
-  * MFA push notification not acknowledged
+  * MFA TOTP code not acknowledged
 
   Resolution:
   1. Increase RADIUS timeout in configuration
   2. Check RADIUS server load
-  3. Verify user received push notification
+  3. Verify user received TOTP code
 
 +===============================================================================+
 ```

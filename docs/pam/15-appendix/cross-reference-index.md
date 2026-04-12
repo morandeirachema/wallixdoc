@@ -36,7 +36,7 @@ This index provides rapid access to topics across all 47 documentation sections.
 
 | Topic | Section | Link | Description |
 |-------|---------|------|-------------|
-| **MFA / Multi-Factor Authentication** | 06 | [Authentication](../06-authentication/README.md) | FortiToken, RADIUS, SMS, push notifications |
+| **MFA / Multi-Factor Authentication** | 06 | [Authentication](../06-authentication/README.md) | FortiToken, RADIUS, SMS, TOTP codes |
 | **FortiAuthenticator MFA** | 06 | [Authentication](../06-authentication/README.md) | FortiAuthenticator RADIUS integration with FortiToken |
 | **LDAP Integration** | 06, 34 | [Authentication](../06-authentication/README.md), [LDAP/AD](../34-ldap-ad-integration/README.md) | Active Directory, LDAP sync, group mapping |
 | **Active Directory** | 34 | [LDAP/AD Integration](../34-ldap-ad-integration/README.md) | AD domain integration, user sync, nested groups |
@@ -265,9 +265,9 @@ wabadmin diagnostics-bundle
 | Item | Version |
 |------|---------|
 | Documentation Version | 8.0 |
-| WALLIX Bastion | 12.3.2 |
+| WALLIX Bastion | 12.1.x |
 | API Version | v3.12 |
-| Last Updated | February 2026 |
+| Last Updated | April 2026 |
 
 ---
 

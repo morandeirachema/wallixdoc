@@ -142,7 +142,7 @@
   +------------------------------------------------------------------------+
   | Component          | Version                                           |
   +--------------------+---------------------------------------------------+
-  | WALLIX Bastion     | 12.3.2                                            |
+  | WALLIX Bastion     | 12.1.x                                            |
   | Operating System   | Debian 12 (Bookworm)                              |
   | MariaDB            | 10.11 with optimized settings                     |
   | Kernel             | 6.1.x with performance tuning                     |

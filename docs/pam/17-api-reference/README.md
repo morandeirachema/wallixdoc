@@ -1256,7 +1256,7 @@
   {
     "status": "success",
     "data": {
-      "version": "12.3.2",
+      "version": "12.1.x",
       "uptime_seconds": 864000,
       "status": "healthy",
       "components": {

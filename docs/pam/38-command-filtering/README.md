@@ -2109,7 +2109,7 @@ curl -X GET "https://bastion.company.com/api/v3.12/audit/events" \
 |  CEF FORMAT                                                                   |
 |  ==========                                                                   |
 |                                                                               |
-|  CEF:0|WALLIX|Bastion|12.3.2|201|Command Blocked|7|                            |
+|  CEF:0|WALLIX|Bastion|12.1.x|201|Command Blocked|7|                            |
 |  src=10.0.1.50 suser=jsmith dhost=srv-prod-01 duser=root                     |
 |  cs1=prevent-destructive-commands cs1Label=FilterName                         |
 |  cs2=rm -rf /var/log/* cs2Label=BlockedCommand                               |
@@ -2124,7 +2124,7 @@ curl -X GET "https://bastion.company.com/api/v3.12/audit/events" \
 |  {                                                                            |
 |      "vendor": "WALLIX",                                                      |
 |      "product": "Bastion",                                                    |
-|      "version": "12.3.2",                                                       |
+|      "version": "12.1.x",                                                       |
 |      "event_id": 201,                                                         |
 |      "event_name": "Command Blocked",                                         |
 |      "severity": 7,                                                           |

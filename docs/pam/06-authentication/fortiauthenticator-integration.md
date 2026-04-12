@@ -27,33 +27,45 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 
 ## Integration Architecture
 
+> **Deployment scope:** FortiAuthenticator is deployed as a **per-site HA pair**
+> in the Cyber VLAN. It is NOT a shared or centralized service. This guide
+> applies to each site independently. Repeat the configuration for each of the
+> 5 sites, pointing to the local site's FortiAuthenticator pair.
+>
+> RADIUS traffic (1812/UDP) from Bastion (DMZ VLAN) to FortiAuthenticator
+> (Cyber VLAN) crosses the Fortigate inter-VLAN boundary. MFA method is
+> TOTP only via FortiToken Mobile — no push notification.
+
 ```
 +===============================================================================+
-|            FORTIAUTHENTICATOR MFA FLOW (LDAP + RADIUS)                        |
+|            FORTIAUTHENTICATOR MFA FLOW (LDAP + RADIUS) — PER SITE            |
 +===============================================================================+
+|                                                                               |
+|  DMZ VLAN                                    Cyber VLAN (same site)           |
+|  --------                                    ----------------------------      |
 |                                                                               |
 |  PHASE 1 -- Primary Authentication (WALLIX validates credentials via LDAP)    |
 |  -----------------------------------------------------------------------      |
 |                                                                               |
-|   User Browser         WALLIX Bastion           Active Directory              |
-|   ============         ==============           ================              |
+|   User Browser         WALLIX Bastion           Active Directory (per-site)   |
+|   ============         ==============           ==========================     |
 |        |                     |                          |                     |
 |   1.   |--- Credentials ---->|                          |                     |
-|        |                     |--- LDAP bind (636) ----->|                     |
-|        |                     |                          | Validate password   |
+|        |                     |--- LDAPS (636/TCP) ----->|                     |
+|        |                     |     via Fortigate        | Validate password   |
 |        |                     |<-- LDAP success ---------|                     |
 |        |                     |                          |                     |
 |  PHASE 2 -- Second Factor (WALLIX calls FortiAuthenticator via RADIUS)        |
 |  -----------------------------------------------------------------------      |
 |                                                                               |
-|   User Browser         WALLIX Bastion          FortiAuthenticator             |
-|   ============         ==============          ==================             |
+|   User Browser         WALLIX Bastion          FortiAuthenticator (per-site)  |
+|   ============         ==============          ============================   |
 |        |                     |                          |                     |
-|        |                     |--- RADIUS Access-Req --->|                     |
-|        |                     |                          | 2. Trigger Push/OTP |
-|        |<-- MFA Challenge ---|<-- RADIUS Challenge -----|                     |
+|        |                     |--- RADIUS (1812/UDP) --->|                     |
+|        |                     |     via Fortigate        | 2. Validate TOTP   |
+|        |<-- "Enter OTP" -----|<-- RADIUS Challenge -----|                     |
 |        |                     |                          |                     |
-|   3.   |--- OTP / Approve -->|                          |                     |
+|   3.   |--- TOTP code ------>|                          |                     |
 |        |                     |--- RADIUS Access-Req --->|                     |
 |        |                     |<-- RADIUS Access-Acc ----|                     |
 |        |<-- Session Start ---|                          |                     |
@@ -65,17 +77,20 @@ This guide covers complete integration of FortiAuthenticator with WALLIX Bastion
 
 FortiAuthenticator maintains two distinct connections for two separate purposes:
 
+Each connection crosses the Fortigate inter-VLAN boundary (DMZ VLAN to Cyber
+VLAN within the same site). This configuration applies per-site independently.
+
 | Connection | Direction | Protocol | Port | When | Purpose |
 |-----------|-----------|----------|------|------|---------|
-| WALLIX Bastion → FortiAuth | Bastion initiates | RADIUS | 1812/UDP | Every login | Trigger and verify MFA second factor |
-| FortiAuth → Active Directory | FortiAuth initiates | LDAPS | 636/TCP | Every 15 min | Sync user list for token assignment |
-| WALLIX Bastion → Active Directory | Bastion initiates | LDAPS | 636/TCP | Every login | Validate AD password (Phase 1) |
+| Bastion (DMZ) → FortiAuth (Cyber VLAN) | Bastion initiates | RADIUS | 1812/UDP | Every login | Verify TOTP second factor |
+| FortiAuth (Cyber VLAN) → AD DC (Cyber VLAN) | FortiAuth initiates | LDAPS | 636/TCP | Every 15 min | Sync user list for token assignment |
+| Bastion (DMZ) → AD DC (Cyber VLAN) | Bastion initiates | LDAPS | 636/TCP | Every login | Validate AD password (Phase 1) |
 
 **Why FortiAuth needs AD connectivity:**
 FortiAuth must know which users exist in order to assign FortiTokens to them. It syncs the user list from AD periodically (every 15 minutes). Without this sync, every user would need to be created manually in FortiAuth — impractical at scale across 5 sites.
 
 **What FortiAuth does NOT do:**
-FortiAuth does **not** validate passwords. WALLIX performs password validation directly against AD in Phase 1 before RADIUS is ever called. FortiAuth only receives the username in the RADIUS request and uses it solely to look up the assigned token and trigger push/OTP.
+FortiAuth does **not** validate passwords. WALLIX performs password validation directly against AD in Phase 1 before RADIUS is ever called. FortiAuth only receives the username in the RADIUS request and uses it solely to look up the assigned token and return a TOTP challenge.
 
 > **FortiAuthenticator RADIUS policy** must set First Factor to **None**. Setting it to LDAP would cause double password validation (WALLIX already validated it) and will break authentication in this deployment.
 
@@ -106,8 +121,8 @@ Complete all items before starting the FortiAuthenticator MFA integration:
 
 | Item | Requirement |
 |------|-------------|
-| **Appliance Model** | FortiAuthenticator VM, 200F, 400F, or higher |
-| **Firmware Version** | 6.4+ recommended (6.6+ for latest features) |
+| **Appliance** | FortiAuthenticator 6.4+ (hardware or VM — model not specified) |
+| **Firmware Version** | 6.4+ required (6.6+ recommended for latest features) |
 | **CPU** | 2+ vCPU (VM), dedicated (hardware) |
 | **RAM** | 4 GB minimum, 8 GB recommended |
 | **Disk** | 60 GB minimum for logs and user database |
@@ -254,64 +269,70 @@ ldapsearch -x -H ldaps://dc.company.com:636 \
 
 #### Port Matrix
 
-> **Note:** FortiAuthenticator receives RADIUS requests from all 10 Bastion nodes across 5 sites **and** from both Access Manager nodes. All sources must be registered as RADIUS clients or authentication will be rejected.
+> **Per-site configuration.** Each site has its own FortiAuthenticator HA pair
+> in the Cyber VLAN. The table below uses `10.X.Y.Z` notation where `X`
+> represents the site number. Replicate this configuration for each site.
+> RADIUS traffic crosses the Fortigate inter-VLAN boundary (DMZ to Cyber VLAN).
+> Access Manager nodes (client-managed) also register as RADIUS clients.
 
-| Source                              | Destination                      | Port | Protocol | Description                       |
-|-------------------------------------|----------------------------------|------|----------|-----------------------------------|
-| WALLIX Bastion Site 1 (10.10.1.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 1 (10.10.1.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 2 (10.10.2.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 2 (10.10.2.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 3 (10.10.3.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 3 (10.10.3.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 4 (10.10.4.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 4 (10.10.4.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 5 (10.10.5.11)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| WALLIX Bastion Site 5 (10.10.5.12)  | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication             |
-| All Bastion nodes (10.10.X.11/12)   | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting (all 10 nodes)  |
-| Access Manager 1 (10.100.1.10)      | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication (AM MFA)    |
-| Access Manager 1 (10.100.1.10)      | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting                 |
-| Access Manager 2 (10.100.2.10)      | FortiAuthenticator (10.20.0.60)  | 1812 | UDP      | RADIUS Authentication (AM MFA)    |
-| Access Manager 2 (10.100.2.10)      | FortiAuthenticator (10.20.0.60)  | 1813 | UDP      | RADIUS Accounting                 |
-| FortiAuthenticator (10.20.0.60)     | AD DC1 (10.20.0.10)              | 636  | TCP      | LDAPS (user sync, primary)        |
-| FortiAuthenticator (10.20.0.60)     | AD DC2 (10.20.0.11)              | 636  | TCP      | LDAPS (user sync, failover)       |
-| FortiAuthenticator (10.20.0.60)     | AD DC1 (10.20.0.10)              | 389  | TCP      | LDAP (fallback only)              |
-| FortiAuthenticator (10.20.0.60)     | SMTP Server                      | 587  | TCP      | Token enrollment emails           |
-| FortiAuthenticator (10.20.0.60)     | NTP (10.20.0.20 / 10.20.0.21)    | 123  | UDP      | Time sync (critical for OTP)      |
-| FortiAuthenticator (10.20.0.60)     | FortiGuard Servers               | 443  | TCP      | License validation, updates       |
-| Administrators                      | FortiAuthenticator (10.20.0.60)  | 443  | TCP      | Web UI management                 |
-| Users (mobile devices)              | FortiGuard Push Servers          | 443  | TCP      | Push notifications                |
+| Source | Destination | Port | Protocol | Description |
+|--------|-------------|------|----------|-------------|
+| Bastion Node 1 (DMZ VLAN, site N) | FortiAuth Primary (Cyber VLAN, site N) | 1812 | UDP | RADIUS Auth |
+| Bastion Node 2 (DMZ VLAN, site N) | FortiAuth Primary (Cyber VLAN, site N) | 1812 | UDP | RADIUS Auth |
+| Bastion Node 1 (DMZ VLAN, site N) | FortiAuth Secondary (Cyber VLAN, site N) | 1812 | UDP | RADIUS Auth (failover) |
+| Bastion Node 2 (DMZ VLAN, site N) | FortiAuth Secondary (Cyber VLAN, site N) | 1812 | UDP | RADIUS Auth (failover) |
+| Bastion nodes (both) | FortiAuth Primary/Secondary | 1813 | UDP | RADIUS Accounting |
+| Access Manager 1 (10.100.1.10) | FortiAuth (all sites) | 1812 | UDP | RADIUS Auth (AM MFA, client-managed AM) |
+| Access Manager 2 (10.100.2.10) | FortiAuth (all sites) | 1812 | UDP | RADIUS Auth (AM MFA, client-managed AM) |
+| FortiAuth Primary (Cyber VLAN) | AD DC (Cyber VLAN, same site) | 636 | TCP | LDAPS user sync (every 15 min) |
+| FortiAuth Primary | FortiAuth Secondary | 8009 | TCP | HA sync (config + token replication) |
+| FortiAuth Primary | SMTP Server | 587 | TCP | Token enrollment emails |
+| FortiAuth Primary | NTP servers | 123 | UDP | Time sync (critical for TOTP) |
+| FortiAuth Primary | FortiGuard Servers | 443 | TCP | License validation, updates |
+| Administrators | FortiAuth Primary | 443 | TCP | Web UI management |
 
 #### Network Architecture
 
+Per-site layout — DMZ VLAN and Cyber VLAN separated by Fortigate:
+
 ```
 +=============================================================================+
-|              FORTIAUTHENTICATOR NETWORK PLACEMENT                           |
+|          FORTIAUTHENTICATOR NETWORK PLACEMENT (PER SITE)                    |
 +=============================================================================+
 |                                                                             |
-|            +-----------------+         +-----------------+                  |
-|            | WALLIX Bastion  |         | WALLIX Bastion  |                  |
-|            | Node 1          |         | Node 2          |                  |
-|            | 10.10.X.11      |         | 10.10.X.12      |                  |
-|            +--------+--------+         +--------+--------+                  |
-|                     |                           |                           |
-|                     +-------------+-------------+                           |
-|                                   |                                         |
-|                          RADIUS (1812/1813)                                 |
-|                                   |                                         |
-|                       +-----------v----------+                              |
-|                       |  FortiAuthenticator  |                              |
-|                       |  10.20.0.60          |                              |
-|                       | fortiauth.company.com|                              |
-|                       +-----------+----------+                              |
-|                                   |                                         |
-|                              LDAPS (636)                                    |
-|                                   |                                         |
-|                          +--------v---------+                               |
-|                          |   AD Domain      |                               |
-|                          |   Controller     |                               |
-|                          |  10.20.0.10      |                               |
-|                          +------------------+                               |
+|  DMZ VLAN                            Cyber VLAN (same site)                |
+|  --------                            ----------------------------           |
+|                                                                             |
+|  +------------------+  +------------------+                                |
+|  | WALLIX Bastion   |  | WALLIX Bastion   |                                |
+|  | Node 1 (DMZ)     |  | Node 2 (DMZ)     |                                |
+|  +--------+---------+  +--------+---------+                                |
+|           |                     |                                          |
+|           +----------+----------+                                          |
+|                      |                                                     |
+|                 RADIUS 1812/UDP                                             |
+|                 (via Fortigate                                              |
+|                  inter-VLAN)                                               |
+|                      |                                                     |
+|     +----------------+-------------------+                                 |
+|     v                                    v                                 |
+|  +---------------------+  +---------------------+                          |
+|  | FortiAuthenticator  |  | FortiAuthenticator  |                          |
+|  | Primary (6.4+)      |  | Secondary (6.4+)    |                          |
+|  | Cyber VLAN          |  | Cyber VLAN          |                          |
+|  +---------+-----------+  +----------+----------+                          |
+|            |                         |                                     |
+|            +----------HA Sync--------+                                     |
+|            |  (8009/TCP)                                                   |
+|            |                                                               |
+|       LDAPS 636/TCP                                                        |
+|            |                                                               |
+|  +---------v----------+                                                    |
+|  |  AD Domain         |                                                    |
+|  |  Controller        |                                                    |
+|  |  (per-site,        |                                                    |
+|  |   Cyber VLAN)      |                                                    |
+|  +--------------------+                                                    |
 |                                                                             |
 +=============================================================================+
 ```
@@ -590,9 +611,9 @@ end
    - Second Factor: FortiToken
 
    Options:
-   [x] Allow Push Notification
-   [x] Allow OTP
-   [ ] Allow SMS (optional)
+   [ ] Allow Push Notification  (NOT used in this deployment)
+   [x] Allow OTP               (TOTP via FortiToken Mobile — required)
+   [ ] Allow SMS               (NOT used in this deployment)
 
    Timeout: 60 seconds
 
@@ -877,7 +898,7 @@ wabadmin auth test \
    "Waiting for FortiToken authentication..."
 
 5. On FortiToken Mobile app:
-   - Push notification received
+   - TOTP code received
    - Review login details
    - Tap "Approve"
 
@@ -897,7 +918,7 @@ Password: [AD password]
 # "FortiToken verification required. Check your mobile app or enter OTP:"
 
 # Either:
-# - Approve push notification on phone, OR
+# - Approve TOTP code on phone, OR
 # - Enter 6-digit OTP from FortiToken
 
 # After MFA, target selection appears
@@ -949,7 +970,7 @@ ENROLLMENT STEPS:
 3. Test your login:
    - Go to https://wallix.company.com
    - Enter username and password
-   - Approve push notification on phone
+   - Approve TOTP code on phone
 
 NEED HELP?
 Contact IT Support: support@company.com or ext. 1234
